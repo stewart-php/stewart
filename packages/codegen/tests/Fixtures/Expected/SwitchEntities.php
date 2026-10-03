@@ -11,19 +11,23 @@ declare(strict_types=1);
 namespace Stewart\Codegen\Tests\Fixtures\Expected;
 
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\HaContext;
 
 /**
  * The `switch` entities.
  */
-final class SwitchEntities
+final readonly class SwitchEntities
 {
-    /** Pump */
-    public SwitchEntity $pump {
-        get => new SwitchEntity($this->ha, new EntityId('switch.pump'));
+    public function __construct(private HaContext $ha)
+    {
     }
 
-    public function __construct(private readonly HaContext $ha)
+    /**
+     * @throws IdentifierException
+     */
+    public function getEntity(string|EntityId $id): SwitchEntity
     {
+        return new SwitchEntity($this->ha, EntityId::fromStringOrId($id));
     }
 }

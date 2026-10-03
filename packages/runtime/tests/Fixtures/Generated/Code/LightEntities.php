@@ -11,24 +11,23 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Tests\Fixtures\Generated\Code;
 
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\HaContext;
 
 /**
  * The `light` entities.
  */
-final class LightEntities
+final readonly class LightEntities
 {
-    /** Hall */
-    public LightEntity $hall {
-        get => new LightEntity($this->ha, new EntityId('light.hall'));
-    }
-
-    /** Porch */
-    public LightEntity $porch {
-        get => new LightEntity($this->ha, new EntityId('light.porch'));
-    }
-
-    public function __construct(private readonly HaContext $ha)
+    public function __construct(private HaContext $ha)
     {
+    }
+
+    /**
+     * @throws IdentifierException
+     */
+    public function getEntity(string|EntityId $id): LightEntity
+    {
+        return new LightEntity($this->ha, EntityId::fromStringOrId($id));
     }
 }

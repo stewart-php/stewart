@@ -393,8 +393,6 @@ final class ConfigLoaderTest extends TestCase
                 - switch.*
               exclude:
                 - light.debug_*
-              rename:
-                light.1st_floor: firstFloor
               attributes:
                 sensor:
                   include: [battery*]
@@ -404,7 +402,6 @@ final class ConfigLoaderTest extends TestCase
         self::assertSame('src/generated', $codegen->outputDir->value);
         self::assertSame(['light.*', 'switch.*'], $codegen->include);
         self::assertSame(['light.debug_*'], $codegen->exclude);
-        self::assertSame(['light.1st_floor' => 'firstFloor'], $codegen->rename);
         self::assertEquals(new DomainAttributesConfig('sensor', ['battery*'], []), $codegen->attributes->find('sensor'));
     }
 

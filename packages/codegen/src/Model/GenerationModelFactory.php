@@ -9,7 +9,6 @@ use Stewart\Codegen\Attribute\AttributeKindInference;
 use Stewart\Codegen\Attribute\AttributeModel;
 use Stewart\Codegen\Attribute\AttributeSelector;
 use Stewart\Codegen\Attribute\Collection\AttributeModelCollection;
-use Stewart\Codegen\Entity\EntityModelFactory;
 use Stewart\Codegen\Entity\EntitySelector;
 use Stewart\Codegen\Entity\UnmatchedEntitySelector;
 use Stewart\Codegen\Exception\CodegenException;
@@ -36,7 +35,6 @@ final readonly class GenerationModelFactory
     public function __construct(
         private AttributeKindInference $attributeKinds,
         private EntitySelector $entitySelector,
-        private EntityModelFactory $entityModels,
         private AttributeSelector $attributeSelector,
         private ServiceCatalogParser $serviceCatalogParser,
         private MemberReservations $memberReservations,
@@ -65,7 +63,7 @@ final readonly class GenerationModelFactory
                 accessor: $accessors->claim(Identifier::convertToCamelCase($domain)),
                 classStem: $classStems->claim(Identifier::convertToPascalCase($domain)),
                 traits: $this->domainCatalog->getTraitsForDomain($domain),
-                entities: $this->entityModels->buildEntityModels($states, $options->renames),
+                entityIds: $states->sortedByEntityId()->listEntityIds(),
                 attributes: $this->buildAttributeModels($attributes->typed),
                 handleServices: $this->buildServiceModels($catalog->forEntityHandle($domain), MemberScope::EntityHandle),
                 services: $this->buildServiceModels($catalog->forDomain($domain), MemberScope::DomainServices),
@@ -80,7 +78,6 @@ final readonly class GenerationModelFactory
                 ...$options->filter->listUnmatchedIncludes($snapshot->states)->mapToList(
                     static fn(Selector $include): UnmatchedEntitySelector => new UnmatchedEntitySelector($include->getPattern()),
                 ),
-                ...$this->entityModels->listUnmatchedRenames($selection->generated, $options->renames),
                 ...$unseenAttributes,
             ]),
         );

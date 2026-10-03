@@ -12,24 +12,44 @@ namespace Stewart\Runtime\Tests\Fixtures\Generated\Code;
 
 use Stewart\Contracts\Entity\Entity;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Entity\TypedEntity;
+use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Exception\StateException;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\Service\ServiceTarget;
-use Stewart\Contracts\Service\ServiceTargetSource;
 use Stewart\Contracts\StateChangeStream;
 
 /**
  * One `light` entity.
  */
-final readonly class LightEntity implements ServiceTargetSource
+final readonly class LightEntity implements TypedEntity
 {
+    private const array GENERATED_ENTITY_IDS = ['light.hall' => true, 'light.porch' => true];
+
     private Entity $entity;
 
+    /**
+     * @throws IdentifierException
+     */
     public function __construct(
         HaContext $ha,
         public EntityId $id,
     ) {
+        if (!self::isGeneratedEntityId($id)) {
+            throw IdentifierException::entityNotGenerated($id->value, self::getDomain());
+        }
+
         $this->entity = $ha->getEntity($id);
+    }
+
+    public static function getDomain(): string
+    {
+        return 'light';
+    }
+
+    public static function isGeneratedEntityId(EntityId $id): bool
+    {
+        return isset(self::GENERATED_ENTITY_IDS[$id->value]);
     }
 
     public function getState(): ?LightState

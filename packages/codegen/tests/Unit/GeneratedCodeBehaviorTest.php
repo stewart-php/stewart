@@ -7,22 +7,28 @@ namespace Stewart\Codegen\Tests\Unit;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 use Stewart\Codegen\Tests\Fixtures\Expected\Entities;
+use Stewart\Codegen\Tests\Fixtures\Expected\LightEntity;
 use Stewart\Codegen\Tests\Fixtures\Expected\LightState;
 use Stewart\Codegen\Tests\Fixtures\Expected\Manifest;
 use Stewart\Codegen\Tests\Fixtures\Expected\Services;
+use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Exception\IdentifierError;
 use Stewart\Contracts\Generated\GeneratedFormat;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\StateChange;
+use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\HaContext\RecordingHaContext;
 
 #[CoversNothing]
 final class GeneratedCodeBehaviorTest extends TestCase
 {
+    use AssertsReason;
+
     public function testHandleServiceTargetsOwnEntity(): void
     {
         $ha = new RecordingHaContext();
 
-        new Entities($ha)->light->hall->turnOn(brightnessPct: 60, flash: 'short');
+        new Entities($ha)->light->getEntity('light.hall')->turnOn(brightnessPct: 60, flash: 'short');
 
         self::assertSame('light.turn_on', $ha->getLastCall()->getServiceName());
         self::assertSame(['brightness_pct' => 60, 'flash' => 'short'], $ha->getLastCall()->data);
@@ -33,7 +39,7 @@ final class GeneratedCodeBehaviorTest extends TestCase
     {
         $ha = new RecordingHaContext();
 
-        new Entities($ha)->light->hall->turnOff();
+        new Entities($ha)->light->getEntity('light.hall')->turnOff();
 
         self::assertSame([], $ha->getLastCall()->data);
     }
@@ -42,7 +48,7 @@ final class GeneratedCodeBehaviorTest extends TestCase
     {
         $ha = new RecordingHaContext();
 
-        new Entities($ha)->light->hall->state('on');
+        new Entities($ha)->light->getEntity('light.hall')->state('on');
 
         self::assertSame('light.state', $ha->getLastCall()->getServiceName());
     }
@@ -57,7 +63,7 @@ final class GeneratedCodeBehaviorTest extends TestCase
             'friendly_name' => 'Hall',
         ]);
 
-        $hall = new Entities($ha)->light->hall;
+        $hall = new Entities($ha)->light->getEntity('light.hall');
         $state = $hall->requireState();
 
         self::assertTrue($state->isOn());
@@ -72,23 +78,42 @@ final class GeneratedCodeBehaviorTest extends TestCase
 
     public function testStateIsNullForUnseenEntity(): void
     {
-        self::assertNull(new Entities(new RecordingHaContext())->light->hall->getState());
+        self::assertNull(new Entities(new RecordingHaContext())->light->getEntity('light.hall')->getState());
         self::assertNull(LightState::fromNullableState(null));
     }
 
     public function testNumericDomainReadsNumber(): void
     {
         $ha = new RecordingHaContext()->seedState('sensor.hall_temperature', '21.4', ['battery' => 80]);
-        $state = new Entities($ha)->sensor->hallTemperature->getState();
+        $state = new Entities($ha)->sensor->getEntity('sensor.hall_temperature')->getState();
 
         self::assertNotNull($state);
         self::assertSame(21.4, $state->getStateAsFloat());
         self::assertSame(80.0, $state->getBattery());
     }
 
-    public function testRenamedEntityKeepsId(): void
+    public function testLookupKeepsMangledIdsApart(): void
     {
-        self::assertSame('sensor.hall_humidity', (string) new Entities(new RecordingHaContext())->sensor->roomHumidity->id);
+        $light = new Entities(new RecordingHaContext())->light;
+
+        self::assertSame('light.porch_2', (string) $light->getEntity('light.porch_2')->id);
+        self::assertSame('light.porch2', (string) $light->getEntity(new EntityId('light.porch2'))->id);
+        self::assertSame('light', LightEntity::getDomain());
+    }
+
+    public function testUngeneratedIdIsRefused(): void
+    {
+        $light = new Entities(new RecordingHaContext())->light;
+
+        $this->assertThrowsReason(IdentifierError::EntityNotGenerated, static fn() => $light->getEntity('light.hal'));
+    }
+
+    public function testOtherDomainIdIsRefused(): void
+    {
+        $this->assertThrowsReason(
+            IdentifierError::EntityNotGenerated,
+            static fn() => new LightEntity(new RecordingHaContext(), new EntityId('switch.fan')),
+        );
     }
 
     public function testHandleDeliversOwnStateChanges(): void
@@ -96,7 +121,7 @@ final class GeneratedCodeBehaviorTest extends TestCase
         $ha = new RecordingHaContext();
         $seen = [];
 
-        new Entities($ha)->binarySensor->hallMotion->watchStateChanges()
+        new Entities($ha)->binarySensor->getEntity('binary_sensor.hall_motion')->watchStateChanges()
             ->whenChangedTo('on')
             ->subscribe(static function (StateChange $change) use (&$seen): void {
                 $seen[] = $change->entityId->value;
@@ -114,7 +139,7 @@ final class GeneratedCodeBehaviorTest extends TestCase
         $ha = new RecordingHaContext();
         $services = new Services($ha);
 
-        $services->light->turnOn(new Entities($ha)->light->hall, brightnessPct: 40);
+        $services->light->turnOn(new Entities($ha)->light->getEntity('light.hall'), brightnessPct: 40);
         self::assertSame(['light.hall'], $ha->getLastCall()->listTargetedEntityIds());
 
         $services->light->turnOn(ServiceTarget::forAreas('kitchen'));
@@ -146,14 +171,14 @@ final class GeneratedCodeBehaviorTest extends TestCase
     {
         $ha = new RecordingHaContext();
 
-        new Entities($ha)->light->hall->turnOn(white: true);
+        new Entities($ha)->light->getEntity('light.hall')->turnOn(white: true);
 
         self::assertSame(['white' => true], $ha->getLastCall()->data);
     }
 
     public function testIdleLightStillHasTypedAccessors(): void
     {
-        $state = new Entities(new RecordingHaContext()->seedState('light.porch2', 'off', []))->light->porch2->requireState();
+        $state = new Entities(new RecordingHaContext()->seedState('light.porch2', 'off', []))->light->getEntity('light.porch2')->requireState();
 
         self::assertNull($state->getBrightness());
         self::assertNull($state->getEffect());

@@ -11,29 +11,23 @@ declare(strict_types=1);
 namespace Stewart\Codegen\Tests\Fixtures\Expected;
 
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\HaContext;
 
 /**
  * The `sensor` entities.
  */
-final class SensorEntities
+final readonly class SensorEntities
 {
-    /** Broken Probe */
-    public SensorEntity $brokenProbe {
-        get => new SensorEntity($this->ha, new EntityId('sensor.broken_probe'));
-    }
-
-    /** Hall Humidity */
-    public SensorEntity $roomHumidity {
-        get => new SensorEntity($this->ha, new EntityId('sensor.hall_humidity'));
-    }
-
-    /** Hall Temperature */
-    public SensorEntity $hallTemperature {
-        get => new SensorEntity($this->ha, new EntityId('sensor.hall_temperature'));
-    }
-
-    public function __construct(private readonly HaContext $ha)
+    public function __construct(private HaContext $ha)
     {
+    }
+
+    /**
+     * @throws IdentifierException
+     */
+    public function getEntity(string|EntityId $id): SensorEntity
+    {
+        return new SensorEntity($this->ha, EntityId::fromStringOrId($id));
     }
 }

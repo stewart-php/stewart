@@ -17,11 +17,11 @@ use Stewart\Codegen\Emitter\Entity\EntityStateEmitter;
 use Stewart\Codegen\Emitter\GeneratedCodePrinter;
 use Stewart\Codegen\Emitter\ManifestEmitter;
 use Stewart\Codegen\Emitter\ModelFileEmitter;
+use Stewart\Codegen\Emitter\PhpStormMetaEmitter;
 use Stewart\Codegen\Emitter\Service\DomainServicesEmitter;
 use Stewart\Codegen\Emitter\Service\ServiceMethodEmitter;
 use Stewart\Codegen\Emitter\ServicesRootEmitter;
 use Stewart\Codegen\Emitter\SourceTree;
-use Stewart\Codegen\Entity\EntityModelFactory;
 use Stewart\Codegen\Entity\EntitySelector;
 use Stewart\Codegen\Generator;
 use Stewart\Codegen\Model\DomainCatalog;
@@ -59,7 +59,6 @@ return static function (ContainerConfigurator $container): void {
     $services->set(GenerationModelFactory::class);
     $services->set(AttributeKindInference::class);
     $services->set(EntitySelector::class);
-    $services->set(EntityModelFactory::class);
     $services->set(AttributeSelector::class);
     $services->set(AttributeCatalog::class);
     $services->set(ServiceCatalogParser::class);
@@ -75,6 +74,7 @@ return static function (ContainerConfigurator $container): void {
     $services->set(EntitiesRootEmitter::class);
     $services->set(ServicesRootEmitter::class);
     $services->set(ManifestEmitter::class);
+    $services->set(PhpStormMetaEmitter::class);
     $services->set(DomainEntitiesEmitter::class);
     $services->set(EntityHandleEmitter::class);
     $services->set(EntityStateEmitter::class);

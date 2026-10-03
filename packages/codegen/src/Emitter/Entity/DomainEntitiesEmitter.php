@@ -8,15 +8,12 @@ use Stewart\Codegen\Emitter\DomainFileEmitter;
 use Stewart\Codegen\Emitter\EmitContext;
 use Stewart\Codegen\Model\DomainModel;
 use Stewart\Codegen\Output\GeneratedFile;
-use Stewart\Codegen\Php\MemberScope;
-use Stewart\Codegen\Php\ReservesMemberNames;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\HaContext;
 
-final readonly class DomainEntitiesEmitter implements DomainFileEmitter, ReservesMemberNames
+final readonly class DomainEntitiesEmitter implements DomainFileEmitter
 {
-    private const array RESERVED_MEMBER_NAMES = ['ha'];
-
     public function supportsDomain(DomainModel $domain): bool
     {
         return $domain->hasEntities();
@@ -25,36 +22,28 @@ final readonly class DomainEntitiesEmitter implements DomainFileEmitter, Reserve
     public function emitFile(DomainModel $domain, EmitContext $context): GeneratedFile
     {
         $namespace = $context->createNamespace();
-        $context->importClass($namespace, HaContext::class, $domain->getEntitiesClass());
-        $entityId = $context->importClass($namespace, EntityId::class, $domain->getEntitiesClass());
+        $declared = $domain->getEntitiesClass();
+        $context->importClass($namespace, HaContext::class, $declared);
+        $entityId = $context->importClass($namespace, EntityId::class, $declared);
+        $identifierException = $context->importClass($namespace, IdentifierException::class, $declared);
 
-        $class = $namespace->addClass($domain->getEntitiesClass())
+        $class = $namespace->addClass($declared)
             ->setFinal()
+            ->setReadOnly()
             ->addComment(\sprintf('The `%s` entities.', $domain->domain));
 
         $class->addMethod('__construct')
             ->addPromotedParameter('ha')
             ->setType(HaContext::class)
-            ->setPrivate()
-            ->setReadOnly();
+            ->setPrivate();
 
-        foreach ($domain->entities as $entity) {
-            $class->addProperty($entity->accessor)
-                ->setType($context->resolveClassName($domain->getHandleClass()))
-                ->addComment($entity->friendlyName)
-                ->addHook('get', \sprintf(
-                    'new %s($this->ha, new %s(%s))',
-                    $domain->getHandleClass(),
-                    $entityId,
-                    var_export($entity->entityId->value, true),
-                ));
-        }
+        $class->addMethod('getEntity')
+            ->setReturnType($context->resolveClassName($domain->getHandleClass()))
+            ->addComment('@throws ' . $identifierException)
+            ->setBody(\sprintf('return new %s($this->ha, %s::fromStringOrId($id));', $domain->getHandleClass(), $entityId))
+            ->addParameter('id')
+            ->setType('string|' . EntityId::class);
 
-        return $context->printFile($namespace, $domain->getEntitiesClass());
-    }
-
-    public function listReservedMemberNames(MemberScope $scope): array
-    {
-        return $scope === MemberScope::DomainCollection ? self::RESERVED_MEMBER_NAMES : [];
+        return $context->printFile($namespace, $declared);
     }
 }

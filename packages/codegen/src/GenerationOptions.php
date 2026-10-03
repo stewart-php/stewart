@@ -14,10 +14,8 @@ final readonly class GenerationOptions
 
     private AttributeFilterCollection $attributes;
 
-    /** @param array<string, string> $renames */
     public function __construct(
         ?EntityFilter $filter = null,
-        public array $renames = [],
         ?AttributeFilterCollection $attributes = null,
     ) {
         $this->filter = $filter ?? EntityFilter::allowingEverything();

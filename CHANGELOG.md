@@ -4,6 +4,30 @@ Every package, the `ghcr.io/stewart-php/runtime` image, the Helm chart and the s
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). On 0.x, a minor release may break; its "Upgrading"
 section says what to change.
 
+## [Unreleased]
+
+### Added
+
+- `$entities->light->getEntity('light.hall')` returns the typed entity; it also takes an ID string from app options
+- `stewart generate` writes `.phpstorm.meta.php` so PhpStorm completes entity IDs
+
+### Changed
+
+- Generated entity classes implement `TypedEntity` and throw `IdentifierError::EntityNotGenerated` for IDs outside
+  their generated domain
+- Generated code format 2; regenerate after upgrading
+
+### Removed
+
+- Per-entity properties such as `$entities->light->hall`
+- The `codegen.rename` setting
+
+### Upgrading
+
+1. Remove `codegen.rename` from `stewart.yaml` and any `STEWART_CODEGEN__RENAME` from `.env`; both are now refused.
+2. Run `make generate`.
+3. Replace `$entities-><domain>-><entity>` with `$entities-><domain>->getEntity('<entity id>')`.
+
 ## [0.2.1] - 2026-10-03
 
 The first published release of the 0.2 line; see 0.2.0 for what it adds and how to upgrade.

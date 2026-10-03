@@ -17,7 +17,6 @@ final readonly class GenerationOptionsFactory
     {
         return new GenerationOptions(
             EntityFilter::fromPatterns($codegen->include, $codegen->exclude),
-            $codegen->rename,
             $this->buildAttributeFilters($codegen),
         );
     }

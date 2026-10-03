@@ -9,10 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Stewart\Client\State\EntityStateDecoder;
 use Stewart\Codegen\Emitter\EmitContext;
 use Stewart\Codegen\Entity\EntityFilter;
-use Stewart\Codegen\Entity\EntityModelFactory;
 use Stewart\Codegen\Entity\UnmatchedEntitySelector;
-use Stewart\Codegen\Entity\UnmatchedRename;
-use Stewart\Codegen\Exception\CodegenError;
 use Stewart\Codegen\GenerationOptions;
 use Stewart\Codegen\GenerationTarget;
 use Stewart\Codegen\Model\GenerationModelFactory;
@@ -22,19 +19,14 @@ use Stewart\Codegen\Snapshot\Snapshot;
 use Stewart\Codegen\Snapshot\SnapshotCodec;
 use Stewart\Codegen\Tests\Fixtures\GenerationRun;
 use Stewart\Codegen\Tests\Fixtures\GoldenSnapshot;
-use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Filesystem\TempDirectory;
 
 #[CoversClass(GenerationModelFactory::class)]
-#[CoversClass(EntityModelFactory::class)]
 #[CoversClass(EntityFilter::class)]
 #[CoversClass(EmitContext::class)]
-#[CoversClass(UnmatchedRename::class)]
 #[CoversClass(UnmatchedEntitySelector::class)]
 final class GenerationModelFactoryTest extends TestCase
 {
-    use AssertsReason;
-
     private TempDirectory $temp;
 
     protected function setUp(): void
@@ -66,49 +58,14 @@ final class GenerationModelFactoryTest extends TestCase
         self::assertStringContainsString('public function __construct(public EntityStateContract $raw)', $state);
     }
 
-    public function testRenameTakingNaturalNameFails(): void
+    public function testMetaFileCompletesEachDomainLookup(): void
     {
-        $this->assertThrowsReason(
-            CodegenError::RenameCollision,
-            fn() => $this->writeFiles(self::createSnapshot(['light.hall', 'light.hall_2']), ['light.hall_2' => 'hall']),
-        );
-    }
+        $this->writeFiles(self::createSnapshot(['light.porch_2', 'switch.fan', 'light.hall']));
 
-    public function testRenamesSharingANameFail(): void
-    {
-        $this->assertThrowsReason(
-            CodegenError::RenameCollision,
-            fn() => $this->writeFiles(self::createSnapshot(['light.hall', 'light.porch']), ['light.hall' => 'lamp', 'light.porch' => 'Lamp']),
-        );
-    }
+        $meta = (string) file_get_contents($this->temp->getFilePath('.phpstorm.meta.php'));
 
-    public function testRenameToReservedMemberFails(): void
-    {
-        $this->assertThrowsReason(
-            CodegenError::RenameReserved,
-            fn() => $this->writeFiles(self::createSnapshot(['light.hall']), ['light.hall' => 'ha']),
-        );
-    }
-
-    public function testRenamedEntityLeavesNaturalNameFree(): void
-    {
-        $this->writeFiles(self::createSnapshot(['light.hall', 'light.hall_2', 'light.porch2', 'light.porch_2']), ['light.hall' => 'hallCeiling', 'light.porch_2' => 'porchTwo']);
-
-        $entities = (string) file_get_contents($this->temp->getFilePath('LightEntities.php'));
-
-        self::assertStringContainsString('public LightEntity $hall2 {', $entities);
-        self::assertStringContainsString('public LightEntity $porch2 {', $entities);
-        self::assertStringContainsString('public LightEntity $porchTwo {', $entities);
-    }
-
-    public function testRenameOfUngeneratedEntityIsWarned(): void
-    {
-        $report = $this->writeFiles(GoldenSnapshot::loadSnapshot(), ['light.nowhere' => 'nowhere', 'light.debug_strip' => 'strip']);
-
-        self::assertSame(
-            ['The rename of light.nowhere to nowhere matches no generated entity.', 'The rename of light.debug_strip to strip matches no generated entity.'],
-            self::describeWarnings($report),
-        );
+        self::assertStringContainsString("registerArgumentsSet('stewart_light_entity_ids', 'light.hall', 'light.porch_2');", $meta);
+        self::assertStringContainsString("expectedArguments(\\Acme\\Home\\SwitchEntities::getEntity(), 0, argumentsSet('stewart_switch_entity_ids'));", $meta);
     }
 
     public function testIncludeMatchingNoEntityIsWarned(): void
@@ -125,16 +82,13 @@ final class GenerationModelFactoryTest extends TestCase
         self::assertSame([], self::describeWarnings($report));
     }
 
-    /**
-     * @param array<string, string> $renames
-     * @param list<string> $include
-     */
-    private function writeFiles(Snapshot $snapshot, array $renames = [], array $include = ['*']): GenerationReport
+    /** @param list<string> $include */
+    private function writeFiles(Snapshot $snapshot, array $include = ['*']): GenerationReport
     {
         return new GenerationRun(
             GoldenSnapshot::resolveGenerator(),
             new GenerationTarget('Acme\Home', $this->temp->path),
-            new GenerationOptions(EntityFilter::fromPatterns($include, ['light.debug_*']), $renames),
+            new GenerationOptions(EntityFilter::fromPatterns($include, ['light.debug_*'])),
         )->writeFiles($snapshot);
     }
 

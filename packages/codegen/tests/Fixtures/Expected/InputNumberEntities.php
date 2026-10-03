@@ -11,19 +11,23 @@ declare(strict_types=1);
 namespace Stewart\Codegen\Tests\Fixtures\Expected;
 
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\HaContext;
 
 /**
  * The `input_number` entities.
  */
-final class InputNumberEntities
+final readonly class InputNumberEntities
 {
-    /** Target Temperature */
-    public InputNumberEntity $targetTemperature {
-        get => new InputNumberEntity($this->ha, new EntityId('input_number.target_temperature'));
+    public function __construct(private HaContext $ha)
+    {
     }
 
-    public function __construct(private readonly HaContext $ha)
+    /**
+     * @throws IdentifierException
+     */
+    public function getEntity(string|EntityId $id): InputNumberEntity
     {
+        return new InputNumberEntity($this->ha, EntityId::fromStringOrId($id));
     }
 }

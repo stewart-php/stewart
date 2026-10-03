@@ -30,4 +30,9 @@ final class GeneratedCodePrinter extends PsrPrinter
             . self::buildHeaderComment() . "\n\n"
             . $this->printNamespace($namespace);
     }
+
+    public function printGeneratedStatements(string $namespace, string $statements): string
+    {
+        return "<?php\n\n" . self::buildHeaderComment() . \sprintf("\n\nnamespace %s;\n\n%s\n", $namespace, $statements);
+    }
 }

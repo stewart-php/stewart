@@ -16,4 +16,9 @@ final class IdentifierException extends StewartException
     {
         return self::createForReason(IdentifierError::AppIdInvalid, ['appId' => $appId]);
     }
+
+    public static function entityNotGenerated(string $entityId, string $domain): self
+    {
+        return self::createForReason(IdentifierError::EntityNotGenerated, ['entityId' => $entityId, 'domain' => $domain]);
+    }
 }

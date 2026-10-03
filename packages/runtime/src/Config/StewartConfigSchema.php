@@ -24,7 +24,6 @@ final class StewartConfigSchema implements ConfigurationInterface
 
     public const string OFF = 'off';
 
-    private const string MEMBER_NAME = '/\A[A-Za-z_][A-Za-z0-9_]*\z/';
 
     private const int DEFAULT_SIZE_LIMIT_BYTES = 64 * 1024 * 1024;
 
@@ -288,7 +287,6 @@ final class StewartConfigSchema implements ConfigurationInterface
                         ->append($this->createScalarNode('output_dir', 'Directory the classes are written to, relative to the project root.', 'generated'))
                         ->append($this->createPatternListNode('include', 'Entity selectors that get classes. Exact IDs or globs (* and ?).', ['*']))
                         ->append($this->createPatternListNode('exclude', 'Entity selectors that do not, whatever include says.', []))
-                        ->append($this->createRenameNode())
                         ->append($this->createDomainAttributesNode())
                     ->end()
                 ->end()
@@ -327,23 +325,6 @@ final class StewartConfigSchema implements ConfigurationInterface
             ->scalarPrototype()->cannotBeEmpty()->end()
             ->performNoDeepMerging()
             ->defaultValue($default);
-
-        return $node;
-    }
-
-    private function createRenameNode(): ArrayNodeDefinition
-    {
-        $node = new ArrayNodeDefinition('rename');
-        $node
-            ->info('Entity ID => the member name you would rather write.')
-            ->normalizeKeys(false)
-            ->scalarPrototype()
-                ->validate()
-                    ->ifTrue(static fn(mixed $name): bool => !\is_string($name) || preg_match(self::MEMBER_NAME, $name) !== 1)
-                    ->thenInvalid('%s is not a PHP member name.')
-                ->end()
-            ->end()
-            ->defaultValue([]);
 
         return $node;
     }

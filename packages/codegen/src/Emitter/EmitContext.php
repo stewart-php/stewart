@@ -47,4 +47,9 @@ final readonly class EmitContext
     {
         return GeneratedFile::forClass($shortName, $this->printer->printGenerated($namespace));
     }
+
+    public function printStatements(string $path, string $namespace, string $statements): GeneratedFile
+    {
+        return new GeneratedFile($path, $this->printer->printGeneratedStatements($namespace, $statements));
+    }
 }

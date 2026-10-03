@@ -17,8 +17,6 @@ enum CodegenError: string implements ExceptionReason
     case UnmarkedFileInTheWay = 'unmarked_file_in_the_way';
     case ShrinkRefused = 'shrink_refused';
     case HomeAssistantNotRunning = 'home_assistant_not_running';
-    case RenameCollision = 'rename_collision';
-    case RenameReserved = 'rename_reserved';
 
     public function messageTemplate(): string
     {
@@ -32,8 +30,6 @@ enum CodegenError: string implements ExceptionReason
             self::UnmarkedFileInTheWay => '{path} was not written by stewart generate; move it out of the output directory.',
             self::ShrinkRefused => 'Generating would delete {deleted} of {existing} generated files; run `make generate ARGS=--allow-shrink` if that is intended.',
             self::HomeAssistantNotRunning => 'Home Assistant is {state}; run `stewart generate` again once it has started.',
-            self::RenameCollision => 'The rename of {entity} to {name} collides with {other}; give one of them another name in codegen.rename.',
-            self::RenameReserved => 'The rename of {entity} to {name} collides with a generated member; choose another name in codegen.rename.',
         };
     }
 }
