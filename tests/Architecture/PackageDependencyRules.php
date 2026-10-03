@@ -7,8 +7,11 @@ namespace Stewart\Tests\Architecture;
 use PHPat\Selector\Selector;
 use PHPat\Test\Builder\Rule;
 use PHPat\Test\PHPat;
+use Stewart\Runtime\Config\BackoffPolicy;
 use Stewart\Runtime\Config\ControlAddress;
 use Stewart\Runtime\Config\ControlConfig;
+use Stewart\Runtime\Config\MqttConfig;
+use Stewart\Runtime\Config\MqttServerUrl;
 use Stewart\Runtime\Config\ProjectRoot;
 use Stewart\Runtime\Console\StewartCommand;
 use Stewart\Runtime\Control\ControlPlaneFactory;
@@ -75,8 +78,30 @@ final class PackageDependencyRules
             ->classes(
                 Selector::inNamespace('Stewart\Store\Redis'),
                 Selector::inNamespace('Amp\Redis'),
+                Selector::inNamespace('Stewart\Mqtt'),
             )
             ->because('a backend is an optional install, resolved from the URL scheme at boot');
+    }
+
+    public function testMqttClientReachesRuntimeOnlyThroughItsPort(): Rule
+    {
+        return PHPat::rule()
+            ->classes(Selector::inNamespace('Stewart\Mqtt'))
+            ->excluding(TestCodeSelector::selectTestCode())
+            ->canOnly()
+            ->dependOn()
+            ->classes(
+                Selector::inNamespace('Stewart\Mqtt'),
+                Selector::inNamespace('Stewart\Runtime\Broker\Mqtt'),
+                Selector::classname(MqttConfig::class),
+                Selector::classname(MqttServerUrl::class),
+                Selector::classname(BackoffPolicy::class),
+                Selector::inNamespace('Stewart\Contracts'),
+                Selector::inNamespace('Stewart\Support'),
+                Selector::inNamespace('Amp'),
+                Selector::inNamespace('Psr\Log'),
+            )
+            ->because('the client plugs into the broker through the MqttLink port and knows nothing else of the daemon');
     }
 
     public function testSupportLeansOnContractsAlone(): Rule
@@ -107,6 +132,7 @@ final class PackageDependencyRules
                 Selector::inNamespace('Stewart\Client'),
                 Selector::inNamespace('Stewart\Store'),
                 Selector::inNamespace('Stewart\Codegen'),
+                Selector::inNamespace('Stewart\Mqtt'),
             )
             ->shouldNot()
             ->dependOn()
@@ -253,6 +279,7 @@ final class PackageDependencyRules
                 Selector::inNamespace('Stewart\Store'),
                 Selector::inNamespace('Stewart\Codegen'),
                 Selector::inNamespace('Stewart\Runtime'),
+                Selector::inNamespace('Stewart\Mqtt'),
             )
             ->excluding(TestCodeSelector::selectTestCode())
             ->shouldNot()

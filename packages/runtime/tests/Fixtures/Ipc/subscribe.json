@@ -20,6 +20,10 @@
                     "regex": "/^x/"
                 },
                 {
+                    "kind": "mqtt_filter",
+                    "filter": "home/+/#"
+                },
+                {
                     "kind": "any"
                 }
             ]

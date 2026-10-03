@@ -108,7 +108,7 @@ test-process: ## Worker process smoke tests against Valkey (no Home Assistant ne
 	$(RUN_APP) vendor/bin/phpunit --testsuite=process
 
 .PHONY: test-persistence
-test-persistence: ## Storage tests against the Valkey service (no Home Assistant needed)
+test-persistence: ## Tests against the Valkey and Mosquitto services (no Home Assistant needed)
 	$(RUN_APP) vendor/bin/phpunit --testsuite=persistence
 
 .PHONY: test-integration

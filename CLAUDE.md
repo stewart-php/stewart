@@ -3,6 +3,7 @@
 
 - If it necessary to store these decisions/history use ADRs or other documents, but try to minimize
 - Dont commit anything in git by yourself
+- Commit messages: `type(component): few-word summary`, an empty line, then a few `- ` bullets naming the main changes, each only a few words; no decisions, reasons or history, nothing else
 - PHP runs only in the container; use the `make` targets (`make check`, or `stan`/`cs`/`test` alone). `make test-package PKG=<name>` installs one package on its own; `make test-packages [LOWEST=1]` runs them all.
 
 # Coding instuctions

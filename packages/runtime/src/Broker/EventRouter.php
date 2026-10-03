@@ -7,17 +7,20 @@ namespace Stewart\Runtime\Broker;
 use Closure;
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\Event\HaEvent;
+use Stewart\Contracts\Mqtt\MqttMessage;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Topic\TopicEvent;
+use Stewart\Runtime\Broker\Mqtt\MqttMessageRouter;
 use Stewart\Runtime\Ipc\Message\BrokerMessage;
 use Stewart\Runtime\Ipc\Message\EventFired;
+use Stewart\Runtime\Ipc\Message\MqttMessageDelivery;
 use Stewart\Runtime\Ipc\Message\Publish;
 use Stewart\Runtime\Ipc\Message\TopicMessage;
 use Stewart\Runtime\Ipc\Wire\EncodedStateChange;
 use Stewart\Runtime\Model\Collection\SubscriptionIdCollection;
 use Stewart\Runtime\Model\SubscriptionKind;
 
-final readonly class EventRouter
+final readonly class EventRouter implements MqttMessageRouter
 {
     public function __construct(
         private WorkerSlotRegistry $slots,
@@ -72,6 +75,21 @@ final readonly class EventRouter
         $this->logger->debug('Topic published', [
             'topic' => $message->topic,
             'from' => $message->publisherScope->wireValue(),
+            'workers' => $routes->listWorkerIds()->toInts(),
+        ]);
+    }
+
+    public function routeMqttMessage(MqttMessage $message): void
+    {
+        $routes = $this->registry->findRoutes(SubscriptionKind::Mqtt, $message->topic);
+
+        $this->deliverToMatched(
+            $routes,
+            static fn(SubscriptionIdCollection $deliverTo): BrokerMessage => new MqttMessageDelivery($message, $deliverTo->listValues()),
+        );
+
+        $this->logger->debug('MQTT message routed', [
+            'topic' => $message->topic,
             'workers' => $routes->listWorkerIds()->toInts(),
         ]);
     }

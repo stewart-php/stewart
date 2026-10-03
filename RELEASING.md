@@ -4,7 +4,7 @@ This repository is the only place Stewart is developed. Everything else is publi
 
 | Artifact | Where | Built by |
 |---|---|---|
-| `stewart-php/{contracts,support,client,store,store-redis,runtime,codegen,testing}` | Read-only `stewart-php/<name>` repositories, Packagist | `split.yml` |
+| `stewart-php/{contracts,support,client,store,store-redis,mqtt,runtime,codegen,testing}` | Read-only `stewart-php/<name>` repositories, Packagist | `split.yml` |
 | `stewart-php/skeleton` | Read-only `stewart-php/skeleton` (a GitHub template repository), Packagist | `split.yml` |
 | `ghcr.io/stewart-php/runtime`, `…-dev` | GHCR, linux/amd64 and linux/arm64 | `release.yml`, `rebuild.yml` via `runtime-image.yml` |
 | `oci://ghcr.io/stewart-php/charts/stewart` | GHCR | `release.yml` |
@@ -54,14 +54,14 @@ A broken release is fixed by a new patch release, never by moving or deleting a 
 
 Done once, by an owner of the `stewart-php` organization, before `v0.1.0`.
 
-1. **Repositories.** Create `client`, `codegen`, `contracts`, `runtime`, `store`, `store-redis`, `support`,
+1. **Repositories.** Create `client`, `codegen`, `contracts`, `mqtt`, `runtime`, `store`, `store-redis`, `support`,
    `testing` and `skeleton` under `stewart-php`, each empty, with issues, wiki and projects off. Their description
    says they are read-only splits. Mark `skeleton` as a template repository.
 2. **Split token.** Create a GitHub App owned by `stewart-php` with *Contents* and *Workflows: read and write* (every
-   split carries `.github/workflows`), install it on those nine repositories, then add its client ID as the variable
+   split carries `.github/workflows`), install it on those ten repositories, then add its client ID as the variable
    `SPLIT_APP_CLIENT_ID` and its private key as the secret `SPLIT_APP_PRIVATE_KEY` in this repository. Until the
    variable exists, `Split` is skipped.
-3. **Packagist.** Run `Split` from the Actions tab so it fills the repositories. Then submit each of the nine on
+3. **Packagist.** Run `Split` from the Actions tab so it fills the repositories. Then submit each of the ten on
    packagist.org under the `stewart-php` vendor and enable the GitHub hook. Optionally, add `PACKAGIST_USERNAME`
    (variable) and `PACKAGIST_TOKEN` (secret) so `split.yml` also triggers an update itself.
 4. **GHCR.** After the first release, open the `runtime` and `charts/stewart` packages in the organization's

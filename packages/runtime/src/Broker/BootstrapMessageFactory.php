@@ -40,6 +40,7 @@ final readonly class BootstrapMessageFactory
             initializeTimeout: $config->supervision->initializeTimeout->findDuration(),
             servicesFile: is_file($userServicesFile) ? $userServicesFile : null,
             generatedNamespace: $config->codegen->namespace->value,
+            mqttEnabled: $config->mqtt !== null,
         );
         $this->storeSettings = $config->persistence === null ? null : $this->buildStoreSettings($config->persistence);
     }

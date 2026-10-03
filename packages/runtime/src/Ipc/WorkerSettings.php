@@ -17,5 +17,6 @@ final readonly class WorkerSettings
         public ?Duration $initializeTimeout,
         public ?string $servicesFile,
         public string $generatedNamespace,
+        public bool $mqttEnabled,
     ) {}
 }

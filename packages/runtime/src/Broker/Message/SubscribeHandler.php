@@ -29,11 +29,13 @@ final readonly class SubscribeHandler implements WorkerMessageHandler
     public function handle(WorkerHandle $handle, WorkerMessage $message): void
     {
         if (!$message->kind->isBrokerRouted()) {
-            $handle->send(new SubscriptionAck(
-                $message->subscriptionId,
-                false,
-                \sprintf('%s subscriptions are worker-local and must not be announced.', $message->kind->value),
-            ));
+            $this->refuseSubscription($handle, $message, \sprintf('%s subscriptions are worker-local and must not be announced.', $message->kind->value));
+
+            return;
+        }
+
+        if (!$message->kind->acceptsSelector($message->selector)) {
+            $this->refuseSubscription($handle, $message, \sprintf('%s subscriptions do not accept %s selectors.', $message->kind->value, $message->selector->getKind()->value));
 
             return;
         }
@@ -53,5 +55,10 @@ final readonly class SubscribeHandler implements WorkerMessageHandler
             'kind' => $message->kind->value,
             'selector' => $message->selector->toCanonicalKey(),
         ]);
+    }
+
+    private function refuseSubscription(WorkerHandle $handle, Subscribe $message, string $reason): void
+    {
+        $handle->send(new SubscriptionAck($message->subscriptionId, false, $reason));
     }
 }

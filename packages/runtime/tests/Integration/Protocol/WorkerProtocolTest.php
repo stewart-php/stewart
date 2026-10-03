@@ -10,8 +10,11 @@ use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\HaEvent;
+use Stewart\Contracts\Exception\MqttError;
+use Stewart\Contracts\Exception\MqttException;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exception\TopicException;
+use Stewart\Contracts\Mqtt\MqttMessage;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
@@ -22,6 +25,8 @@ use Stewart\Runtime\Ipc\Message\AppFailed;
 use Stewart\Runtime\Ipc\Message\EventFired;
 use Stewart\Runtime\Ipc\Message\HaConnectionLost;
 use Stewart\Runtime\Ipc\Message\LogRecord;
+use Stewart\Runtime\Ipc\Message\MqttMessageDelivery;
+use Stewart\Runtime\Ipc\Message\MqttPublish;
 use Stewart\Runtime\Ipc\Message\Ping;
 use Stewart\Runtime\Ipc\Message\Pong;
 use Stewart\Runtime\Ipc\Message\Publish;
@@ -47,6 +52,7 @@ use Stewart\Runtime\Tests\Fixtures\Protocol\EdgeWatcher;
 use Stewart\Runtime\Tests\Fixtures\Protocol\EventLogger;
 use Stewart\Runtime\Tests\Fixtures\Protocol\InitCaller;
 use Stewart\Runtime\Tests\Fixtures\Protocol\InMemoryStoreBackendOpener;
+use Stewart\Runtime\Tests\Fixtures\Protocol\MqttRelay;
 use Stewart\Runtime\Tests\Fixtures\Protocol\OperatorChain;
 use Stewart\Runtime\Tests\Fixtures\Protocol\OutageWatcher;
 use Stewart\Runtime\Tests\Fixtures\Protocol\PayloadPublisher;
@@ -481,6 +487,38 @@ final class WorkerProtocolTest extends TestCase
         $this->shutDown('done');
     }
 
+    public function testMqttAppIsRefusedWhileMqttIsUnset(): void
+    {
+        $this->start([new WorkerApp(id: new AppId('mqtt-relay'), class: MqttRelay::class, options: [])]);
+
+        $failure = $this->receiveUntil(AppFailed::class);
+        $ready = $this->receiveUntil(WorkerReady::class);
+
+        self::assertSame(MqttException::class, $failure->class);
+        self::assertSame(MqttError::NotConfigured->value, $failure->details?->reason);
+        self::assertSame(['mqtt-relay'], $ready->failedAppIds->collection->toStrings());
+
+        $this->shutDown('done');
+    }
+
+    public function testMqttMessageReachesTheWatchingApp(): void
+    {
+        $this->start([new WorkerApp(id: new AppId('mqtt-relay'), class: MqttRelay::class, options: [])], mqttEnabled: true);
+
+        $subscribe = $this->receiveUntil(Subscribe::class);
+        $this->receiveUntil(WorkerReady::class);
+
+        self::assertSame(SubscriptionKind::Mqtt, $subscribe->kind);
+
+        $this->send(new MqttMessageDelivery(new MqttMessage('home/hall/temp', '21.5'), [$subscribe->subscriptionId]));
+        $publish = $this->receiveUntil(MqttPublish::class);
+
+        self::assertSame(MqttRelay::RELAY_TOPIC, $publish->message->topic);
+        self::assertSame('mqtt-relay', $publish->publisherScope->wireValue());
+
+        $this->shutDown('done');
+    }
+
     public function testResyncReplaysChangesAfterOutage(): void
     {
         $this->start([
@@ -606,7 +644,7 @@ final class WorkerProtocolTest extends TestCase
     }
 
     /** @param list<WorkerApp> $apps */
-    private function start(array $apps, float $callTimeout = 30.0, string $timeZone = 'UTC'): void
+    private function start(array $apps, float $callTimeout = 30.0, string $timeZone = 'UTC', bool $mqttEnabled = false): void
     {
         $spawner = new InMemoryWorkerSpawner(IpcCodec::createForWorkerBootstrap(), new InMemoryStoreBackendOpener($this->store, SystemClock::inUtc()));
 
@@ -617,6 +655,7 @@ final class WorkerProtocolTest extends TestCase
                 callTimeout: Duration::seconds($callTimeout),
                 timeZone: $timeZone,
                 store: new StoreSettings('memory://', 'protocol', Duration::seconds(1), Duration::seconds(1)),
+                mqttEnabled: $mqttEnabled,
             ),
             self::createInitialSnapshot(),
         );

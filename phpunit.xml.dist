@@ -38,11 +38,13 @@
             <directory>packages/codegen/src</directory>
             <directory>packages/store/src</directory>
             <directory>packages/store-redis/src</directory>
+            <directory>packages/mqtt/src</directory>
             <directory>packages/runtime/src</directory>
         </include>
     </source>
     <php>
         <ini name="memory_limit" value="512M"/>
         <env name="TEST_STORE_URL" value="redis://valkey:6379/15"/>
+        <env name="TEST_MQTT_URL" value="mqtt://mosquitto:1883"/>
     </php>
 </phpunit>

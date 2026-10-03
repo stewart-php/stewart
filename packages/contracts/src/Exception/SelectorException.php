@@ -16,4 +16,9 @@ final class SelectorException extends StewartException
     {
         return self::createForReason(SelectorError::RegexInvalid, ['pattern' => $pattern, 'compileError' => $compileError]);
     }
+
+    public static function mqttFilterInvalid(string $filter): self
+    {
+        return self::createForReason(SelectorError::MqttFilterInvalid, ['filter' => $filter]);
+    }
 }

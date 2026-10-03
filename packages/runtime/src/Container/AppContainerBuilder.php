@@ -10,6 +10,7 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\ExceptionReason;
 use Stewart\Contracts\Exception\StewartException;
 use Stewart\Contracts\HaContext;
+use Stewart\Contracts\Mqtt\Mqtt;
 use Stewart\Contracts\Schedule\Scheduler;
 use Stewart\Contracts\Store\ReadableStore;
 use Stewart\Contracts\Store\Store;
@@ -25,6 +26,7 @@ use Stewart\Runtime\Schedule\WorkerScheduler;
 use Stewart\Runtime\Schedule\WorkerTimers;
 use Stewart\Runtime\Worker\WorkerHaContext;
 use Stewart\Runtime\Worker\WorkerLogger;
+use Stewart\Runtime\Worker\WorkerMqtt;
 use Stewart\Store\ReadOnlyStore;
 use Stewart\Store\ScopedStore;
 use Symfony\Component\Config\FileLocator;
@@ -46,6 +48,8 @@ final readonly class AppContainerBuilder
 
     public const string STORES = '.stewart.stores';
 
+    public const string MQTT = '.stewart.mqtt';
+
     public const string GLOBAL_STORE = '.stewart.store.global';
 
     public const string READ_ONLY_GLOBAL_STORE = '.stewart.store.global.read_only';
@@ -63,6 +67,8 @@ final readonly class AppContainerBuilder
     private const string STORE_SUFFIX = '.store';
 
     private const string READ_ONLY_STORE_SUFFIX = '.store.read_only';
+
+    private const string MQTT_SUFFIX = '.mqtt';
 
     private const string ENTITIES_SUFFIX = '.entities';
 
@@ -167,6 +173,7 @@ final readonly class AppContainerBuilder
             self::CONTEXT => $runtime->context,
             self::SCHEDULER => $runtime->scheduler,
             self::STORES => $runtime->stores,
+            self::MQTT => $runtime->mqtt,
         ];
 
         $this->registerFrameworkServices($container, array_keys($synthetics), $runtime->generated);
@@ -223,6 +230,7 @@ final readonly class AppContainerBuilder
         $container->setAlias(Timers::class, self::TIMERS)->setPublic(true);
         $container->setAlias(Store::class, self::GLOBAL_STORE)->setPublic(true);
         $container->setAlias(ReadableStore::class, self::READ_ONLY_GLOBAL_STORE)->setPublic(true);
+        $container->setAlias(Mqtt::class, self::MQTT)->setPublic(true);
 
         $this->registerSharedGeneratedRoots($container, $generated);
     }
@@ -303,6 +311,10 @@ final readonly class AppContainerBuilder
         $container->register($serviceId . self::READ_ONLY_STORE_SUFFIX, ReadOnlyStore::class)
             ->addArgument(new Reference($serviceId . self::STORE_SUFFIX));
 
+        $container->register($serviceId . self::MQTT_SUFFIX, WorkerMqtt::class)
+            ->setFactory([new Reference(self::MQTT), 'forApp'])
+            ->addArgument($appId);
+
         if ($generated === null) {
             return;
         }
@@ -323,6 +335,7 @@ final readonly class AppContainerBuilder
             Timers::class => $serviceId . self::TIMERS_SUFFIX,
             Store::class => $serviceId . self::STORE_SUFFIX,
             ReadableStore::class => $serviceId . self::READ_ONLY_STORE_SUFFIX,
+            Mqtt::class => $serviceId . self::MQTT_SUFFIX,
         ];
 
         if ($generated !== null) {

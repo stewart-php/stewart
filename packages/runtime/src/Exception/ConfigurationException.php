@@ -156,4 +156,9 @@ final class ConfigurationException extends StewartException
             ? 'No automations were found; check the #[Automation] attribute.'
             : 'Known automations: ' . implode(', ', $knownAppIds->toStrings()) . '.';
     }
+
+    public static function mqttPackageMissing(): self
+    {
+        return self::createForReason(ConfigurationError::MqttPackageMissing);
+    }
 }

@@ -10,4 +10,5 @@ enum SelectorKind: string
     case Glob = 'glob';
     case Regex = 'regex';
     case AnyOf = 'any_of';
+    case MqttFilter = 'mqtt_filter';
 }

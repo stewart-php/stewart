@@ -9,6 +9,7 @@ use Stewart\Runtime\App\GeneratedRoots;
 use Stewart\Runtime\Schedule\WorkerScheduler;
 use Stewart\Runtime\Worker\WorkerHaContext;
 use Stewart\Runtime\Worker\WorkerLogger;
+use Stewart\Runtime\Worker\WorkerMqtt;
 use Stewart\Store\Stores;
 use Stewart\Support\Time\Deadlines;
 
@@ -21,6 +22,7 @@ final readonly class AppRuntimeServices
         public WorkerScheduler $scheduler,
         public WorkerHaContext $context,
         public Stores $stores,
+        public WorkerMqtt $mqtt,
         public ?GeneratedRoots $generated = null,
     ) {}
 }

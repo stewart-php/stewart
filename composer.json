@@ -7,6 +7,7 @@
         "php": ">=8.4.1",
         "stewart-php/client": "0.x-dev",
         "stewart-php/contracts": "0.x-dev",
+        "stewart-php/mqtt": "0.x-dev",
         "stewart-php/runtime": "0.x-dev",
         "stewart-php/store": "0.x-dev",
         "stewart-php/store-redis": "0.x-dev",
@@ -34,6 +35,7 @@
                     "stewart-php/client": "0.x-dev",
                     "stewart-php/codegen": "0.x-dev",
                     "stewart-php/contracts": "0.x-dev",
+                    "stewart-php/mqtt": "0.x-dev",
                     "stewart-php/runtime": "0.x-dev",
                     "stewart-php/store": "0.x-dev",
                     "stewart-php/store-redis": "0.x-dev",
@@ -51,6 +53,7 @@
             "Stewart\\Client\\Tests\\": "packages/client/tests/",
             "Stewart\\Store\\Tests\\": "packages/store/tests/",
             "Stewart\\Store\\Redis\\Tests\\": "packages/store-redis/tests/",
+            "Stewart\\Mqtt\\Tests\\": "packages/mqtt/tests/",
             "Stewart\\Codegen\\Tests\\": "packages/codegen/tests/",
             "Stewart\\Runtime\\Tests\\": "packages/runtime/tests/",
             "Stewart\\Testing\\Tests\\": "packages/testing/tests/"

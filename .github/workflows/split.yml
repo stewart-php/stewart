@@ -25,6 +25,7 @@ jobs:
           - { directory: packages/client, repository: client }
           - { directory: packages/codegen, repository: codegen }
           - { directory: packages/contracts, repository: contracts }
+          - { directory: packages/mqtt, repository: mqtt }
           - { directory: packages/runtime, repository: runtime }
           - { directory: packages/store, repository: store }
           - { directory: packages/store-redis, repository: store-redis }
@@ -61,7 +62,7 @@ jobs:
     steps:
       - name: Ask Packagist to read the new versions
         run: |
-          for repository in client codegen contracts runtime store store-redis support testing skeleton; do
+          for repository in client codegen contracts mqtt runtime store store-redis support testing skeleton; do
             curl -fsS -X POST -H 'Content-Type: application/json' \
               "https://packagist.org/api/update-package?username=$USERNAME&apiToken=$TOKEN" \
               -d "{\"repository\":{\"url\":\"https://github.com/stewart-php/$repository\"}}"

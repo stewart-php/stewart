@@ -16,6 +16,8 @@ services:
     depends_on:
       valkey:
         condition: service_healthy
+      mosquitto:
+        condition: service_healthy
     init: true
     stdin_open: true
     tty: true
@@ -26,6 +28,17 @@ services:
       test: ["CMD", "valkey-cli", "ping"]
       interval: 2s
       timeout: 2s
+      retries: 15
+    init: true
+
+  # Anonymous access on 1883; only the mqtt package's service tests use it.
+  mosquitto:
+    image: eclipse-mosquitto:2
+    command: ["mosquitto", "-c", "/mosquitto-no-auth.conf"]
+    healthcheck:
+      test: ["CMD", "mosquitto_sub", "-t", "$$SYS/broker/uptime", "-C", "1", "-W", "2"]
+      interval: 2s
+      timeout: 3s
       retries: 15
     init: true
 

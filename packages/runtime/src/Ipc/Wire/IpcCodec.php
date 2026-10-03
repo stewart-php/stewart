@@ -22,7 +22,7 @@ use Throwable;
 
 final readonly class IpcCodec
 {
-    public const int PROTOCOL_VERSION = 13;
+    public const int PROTOCOL_VERSION = 14;
 
     private const string UNKNOWN_TYPE = '?';
 
@@ -43,6 +43,7 @@ final readonly class IpcCodec
             new EpochInstantConverter(),
             new DurationConverter(),
             new SelectorConverter(),
+            new MqttMessageConverter(),
             new ExceptionDetailsConverter(),
             StringIdentifierConverter::createForEntityIds(),
             StringIdentifierConverter::createForAppIds(),
