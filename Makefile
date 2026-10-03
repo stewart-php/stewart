@@ -149,3 +149,25 @@ chart-lint: ## Lint the Helm chart and validate what it renders for each charts/
 .PHONY: test-skeleton
 test-skeleton: ## Install skeleton/ against this checkout and run a new project's first steps
 	$(RUN) sh bin/test-skeleton.sh
+
+# --- demo -----------------------------------------------------------------
+
+# var/demo is the skeleton linked to this checkout; package edits show up without reinstalling.
+DEMO := $(DC) run --rm -w /app/var/demo
+
+.PHONY: demo
+demo: demo-create ## Run the demo project in var/demo [ONLY="hello porch", DRY_RUN=1]
+	$(DEMO) $(if $(DRY_RUN),-e STEWART_SERVICE_CALLS__DRY_RUN=true) php vendor/bin/stewart run $(addprefix --only=,$(ONLY))
+
+.PHONY: demo-create
+demo-create: ## Create var/demo from skeleton/ unless it exists; apps/ and .env come back from the last demo-clean
+	@test -d var/demo/vendor || $(RUN) sh bin/demo.sh create
+
+.PHONY: demo-sh
+demo-sh: demo-create ## Shell in var/demo with Valkey and Mosquitto up
+	$(DEMO) php sh
+
+.PHONY: demo-clean
+demo-clean: ## Delete var/demo and stop its services, keeping apps/ and .env for the next demo [PURGE=1 drops them]
+	$(RUN) env PURGE=$(PURGE) sh bin/demo.sh clean
+	$(DC) stop valkey mosquitto

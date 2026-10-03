@@ -109,12 +109,14 @@ run Valkey for you. Its README lists every value, including `code.mode=git` for 
 ## Upgrading
 
 ```bash
-make update     # composer update; commit composer.lock
+make update               # composer update within the current release line; commit composer.lock
+make upgrade VERSION=0.3  # move to another release line: requirements, image tags, pull, install
 ```
 
 Dependabot proposes Stewart releases and runtime image tags. A minor release on 0.x may break; read its "Upgrading"
-notes in the [changelog](https://github.com/stewart-php/stewart/blob/main/CHANGELOG.md) before merging. Keep the
-image tag in `Dockerfile` and the compose files on the same minor as `stewart-php/runtime` in `composer.lock`.
+notes in the [changelog](https://github.com/stewart-php/stewart/blob/main/CHANGELOG.md) before upgrading. Keep the
+image tag in `Dockerfile` and the compose files on the same minor as `stewart-php/runtime` in `composer.lock`;
+`make upgrade` moves both together.
 
 ## License
 
