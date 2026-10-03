@@ -1,0 +1,40 @@
+{
+    "name": "stewart-php/skeleton",
+    "description": "A new Stewart project: Home Assistant automations in PHP",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.4.1",
+        "psr/log": "^3.0",
+        "stewart-php/codegen": "^0.1",
+        "stewart-php/contracts": "^0.1",
+        "stewart-php/runtime": "^0.1",
+        "stewart-php/store-redis": "^0.1",
+        "symfony/dependency-injection": "^7.4 || ^8.0"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^2.2",
+        "phpunit/phpunit": "^13.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "apps/",
+            "App\\Generated\\": "generated/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "App\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "create-env": "@php -r \"file_exists('.env') || file_put_contents('.env', preg_replace('/^STEWART_CONTROL__TOKEN=$/m', 'STEWART_CONTROL__TOKEN=' . bin2hex(random_bytes(16)), file_get_contents('.env.example')));\"",
+        "post-create-project-cmd": "@create-env"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    }
+}

@@ -1,0 +1,7 @@
+{
+    "t": "shutdown",
+    "m": {
+        "reason": "stopping",
+        "grace_us": 5000000
+    }
+}

@@ -1,0 +1,55 @@
+includes:
+    - vendor/phpat/phpat/extension.neon
+
+parameters:
+    level: max
+    paths:
+        - packages/contracts/src
+        - packages/support/src
+        - packages/client/src
+        - packages/store/src
+        - packages/store-redis/src
+        - packages/codegen/src
+        - packages/runtime/src
+        - packages/testing/src
+        - packages/contracts/tests
+        - packages/support/tests
+        - packages/client/tests
+        - packages/store/tests
+        - packages/store-redis/tests
+        - packages/codegen/tests
+        - packages/runtime/tests
+        - packages/testing/tests
+        - packages/runtime/bin
+        - packages/runtime/config
+        - packages/codegen/config
+        - packages/store-redis/config
+        - packages/runtime/bin/stewart
+        - tests
+    tmpDir: var/phpstan
+    treatPhpDocTypesAsCertain: false
+    checkExplicitMixed: true
+    phpat:
+        ignore_built_in_classes: true
+    ignoreErrors:
+        # The point of the fixture: an app written against classes nobody has generated yet.
+        -
+            identifier: class.notFound
+            path: packages/runtime/tests/Fixtures/Container/NeedsMissingClass.php
+
+services:
+    -
+        class: Stewart\Tests\Architecture\PackageDependencyRules
+        tags:
+            - phpat.test
+    -
+        class: Stewart\Tests\Architecture\ExceptionModelRules
+        tags:
+            - phpat.test
+
+rules:
+    - Stewart\Tests\Architecture\ThrowsStewartExceptionsRule
+    - Stewart\Tests\Architecture\NoRawClockReadRule
+    - Stewart\Tests\Architecture\NoRawTimeValueRule
+    - Stewart\Tests\Architecture\MethodNameRule
+    - Stewart\Tests\Architecture\TypedCollectionRule

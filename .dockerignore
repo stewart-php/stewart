@@ -1,0 +1,3 @@
+# The images copy only .docker/; everything else stays out of the build context.
+*
+!.docker/

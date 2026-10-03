@@ -1,0 +1,32 @@
+# Runs the image .github/workflows/image.yml builds from this repository. Copy this file and a filled-in .env to the
+# server, set the image below, then: docker compose -f compose.image.yaml up -d
+services:
+  stewart:
+    image: ghcr.io/OWNER/REPOSITORY:main
+    env_file: .env
+    depends_on:
+      valkey:
+        condition: service_healthy
+    restart: unless-stopped
+    stop_grace_period: 15s
+    healthcheck:
+      test: ["CMD", "stewart", "status", "--probe=readiness", "--timeout=5s"]
+      interval: 30s
+      timeout: 10s
+      start_period: 1m
+      retries: 3
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    command: ["valkey-server", "--appendonly", "yes"]
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+    restart: unless-stopped
+
+volumes:
+  valkey-data:

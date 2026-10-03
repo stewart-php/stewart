@@ -1,0 +1,12 @@
+code:
+  mode: volume
+  volume:
+    claimName: stewart-checkout
+homeAssistant:
+  url: ws://homeassistant.local:8123/api/websocket
+  existingSecret: stewart-home-assistant
+control:
+  existingSecret: stewart-control
+valkey:
+  storage:
+    enabled: false

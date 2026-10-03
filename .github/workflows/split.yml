@@ -1,0 +1,69 @@
+# Mirrors every package and the skeleton into its read-only repository under stewart-php, on main and on every tag.
+# Needs a GitHub App installed on those repositories (vars.SPLIT_APP_ID, secrets.SPLIT_APP_PRIVATE_KEY).
+name: Split
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: split-${{ github.ref }}
+
+jobs:
+  split:
+    name: ${{ matrix.repository }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { directory: packages/client, repository: client }
+          - { directory: packages/codegen, repository: codegen }
+          - { directory: packages/contracts, repository: contracts }
+          - { directory: packages/runtime, repository: runtime }
+          - { directory: packages/store, repository: store }
+          - { directory: packages/store-redis, repository: store-redis }
+          - { directory: packages/support, repository: support }
+          - { directory: packages/testing, repository: testing }
+          - { directory: skeleton, repository: skeleton }
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.SPLIT_APP_ID }}
+          private-key: ${{ secrets.SPLIT_APP_PRIVATE_KEY }}
+          owner: stewart-php
+          repositories: ${{ matrix.repository }}
+      - uses: danharrin/monorepo-split-github-action@14e42e2437f674b8987c1f50ca3689116aea1893 # v2.4.5
+        env:
+          GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+        with:
+          package_directory: ${{ matrix.directory }}
+          repository_organization: stewart-php
+          repository_name: ${{ matrix.repository }}
+          branch: main
+          tag: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          user_name: stewart-split[bot]
+          user_email: stewart-split[bot]@users.noreply.github.com
+
+  packagist:
+    needs: split
+    if: vars.PACKAGIST_USERNAME != ''
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Ask Packagist to read the new versions
+        run: |
+          for repository in client codegen contracts runtime store store-redis support testing skeleton; do
+            curl -fsS -X POST -H 'Content-Type: application/json' \
+              "https://packagist.org/api/update-package?username=$USERNAME&apiToken=$TOKEN" \
+              -d "{\"repository\":{\"url\":\"https://github.com/stewart-php/$repository\"}}"
+            echo
+          done
+        env:
+          USERNAME: ${{ vars.PACKAGIST_USERNAME }}
+          TOKEN: ${{ secrets.PACKAGIST_TOKEN }}

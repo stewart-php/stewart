@@ -1,0 +1,12 @@
+# Added by the Makefile for development: Xdebug, the Composer cache in var/, dependencies installed by `make install`.
+services:
+  stewart:
+    image: ghcr.io/stewart-php/runtime:0.1-dev
+    environment:
+      STEWART_BOOT_COMPOSER: never
+      COMPOSER_HOME: /app/var/composer
+      XDEBUG_MODE: "${XDEBUG_MODE:-off}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    stdin_open: true
+    tty: true

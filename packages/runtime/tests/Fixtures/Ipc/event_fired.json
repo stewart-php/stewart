@@ -1,0 +1,27 @@
+{
+    "t": "event_fired",
+    "m": {
+        "event": {
+            "type": "zha_event",
+            "data": {
+                "args": [
+                    1,
+                    2
+                ],
+                "params": {
+                    "duration": 0.5
+                }
+            },
+            "origin": "REMOTE",
+            "fired_at_us": 1758700000123456,
+            "context": {
+                "id": "c",
+                "parent_id": null,
+                "user_id": null
+            }
+        },
+        "deliver_to": [
+            "w0:1"
+        ]
+    }
+}

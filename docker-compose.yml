@@ -1,0 +1,43 @@
+services:
+  php:
+    build:
+      context: .
+      dockerfile: .docker/php/Dockerfile
+      target: dev
+    image: stewart-php:dev
+    user: "${UID:-1000}:${GID:-1000}"
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      XDEBUG_MODE: "${XDEBUG_MODE:-off}"
+      # Inside the bind mount, so the non-root container user can write the cache.
+      COMPOSER_HOME: /app/var/composer
+    depends_on:
+      valkey:
+        condition: service_healthy
+    init: true
+    stdin_open: true
+    tty: true
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+    init: true
+
+  docs:
+    image: node:24-alpine
+    user: "${UID:-1000}:${GID:-1000}"
+    working_dir: /app/docs/site
+    volumes:
+      - .:/app
+    environment:
+      NPM_CONFIG_CACHE: /app/var/npm
+      ASTRO_TELEMETRY_DISABLED: "1"
+    ports:
+      - "127.0.0.1:4321:4321"
+    init: true

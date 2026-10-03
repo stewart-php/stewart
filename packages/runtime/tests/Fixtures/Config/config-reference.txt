@@ -1,0 +1,183 @@
+# Every setting stewart.yaml understands.
+#
+# Any of them can be set from the environment instead: STEWART_, then the keys,
+# uppercased, joined by a double underscore. A single underscore belongs to a key
+# name. App options and lists take inline YAML, such as [hall, kitchen].
+#
+#   log_level               ->  STEWART_LOG_LEVEL
+#   apps.demo.worker        ->  STEWART_APPS__DEMO__WORKER
+#   apps.demo.options.rooms ->  STEWART_APPS__DEMO__OPTIONS__ROOMS
+#
+# A value in this file can also read a variable: ${HA_TOKEN}, or ${HA_TOKEN:-fallback}.
+# The environment wins over this file, and --log-level wins over both.
+
+
+# Worker processes to run. 0 means min(4, cpu count).
+workers:              0
+
+# How much the daemon says.
+log_level:            info # One of "debug"; "info"; "notice"; "warning"; "error"
+
+# How log lines are written: line for a terminal, json for a log collector. --json-logs overrides it.
+log_format:           line # One of "line"; "json"
+
+# How long a worker gets to dispose its apps before it is killed.
+shutdown_grace:       5s
+
+# Topic messages and Home Assistant events buffered per worker, together up to this many, before the oldest are dropped.
+worker_event_buffer:  1000
+
+# State changes sent to a worker in one message at most.
+worker_state_batch:   256
+
+# Events queued per subscription while its handler is busy, before the oldest are dropped.
+subscription_buffer:  100
+
+# The instance to connect to. `run` and `generate` need it. The token is a secret: set it from the environment.
+home_assistant:
+
+    # http:// and https:// are accepted and rewritten; /api/websocket is appended unless the path already ends in /websocket.
+    url:                  ~ # Required
+
+    # A long-lived access token: Home Assistant, Profile -> Security.
+    token:                ~ # Required
+
+    # How long opening the websocket and authenticating may take.
+    connect_timeout:      10s
+
+    # How long Home Assistant may take to answer one command.
+    command_timeout:      30s
+
+    # A full get_states for a large instance is several megabytes in one message.
+    message_size_limit:   67108864
+
+    # The frame limit bites before the message limit, and looks like a disconnect.
+    frame_size_limit:     67108864
+
+    # Time between websocket pings that detect a silently dead connection. Rounded to whole seconds.
+    heartbeat_interval:   10s
+
+    # Unanswered pings before the connection is treated as lost.
+    heartbeat_missed_limit: 3
+
+# How long the broker waits between attempts to reach Home Assistant again. It never stops trying.
+reconnect:
+
+    # Wait before the first retry. Doubles per attempt.
+    initial_delay:        1s
+
+    # Ceiling for the doubling.
+    max_delay:            60s
+
+# What the broker does about workers that die or stop responding.
+supervision:
+
+    # Restarts allowed inside the window before a worker is quarantined and its apps stay down.
+    restart_attempts:     5
+
+    # Span the restart count is measured over.
+    restart_window:       60s
+
+    # Wait before the first restart of a worker. Doubles per attempt.
+    restart_initial_delay: 1s
+
+    # Ceiling for the doubling.
+    restart_max_delay:    30s
+
+    # Time between liveness probes. "off" disables the watchdog.
+    ping_interval:        10s
+
+    # Round-trip lag before a worker is reported as falling behind.
+    lag_threshold:        500ms
+
+    # Missed liveness probes before a worker is killed and restarted. 0 only logs.
+    unresponsive_after:   3
+
+    # Time an app gets in initialize() before it is dropped; apps initialize concurrently. "off" waits forever.
+    initialize_timeout:   60s
+
+    # Time a worker gets to report its apps ready before it is restarted; keep it above initialize_timeout. "off" disables.
+    ready_timeout:        5m
+
+# Bounds on the service calls workers may have in flight through the shared connection.
+service_calls:
+
+    # Calls one worker may have outstanding before further ones are refused. 0 is unlimited.
+    max_in_flight_per_worker: 64
+
+    # Calls the whole broker may have outstanding. 0 is unlimited.
+    max_in_flight:        256
+
+    # Log service calls and answer them as succeeded instead of sending them, to develop against a live Home Assistant.
+    dry_run:              false
+
+# Where apps keep what must survive a restart. Without a url, an app that asks for a store is not started.
+persistence:
+
+    # Storage URL, for example redis://valkey:6379/0. Credentials and the database index belong in it.
+    url:                  null
+
+    # What every key is filed under, so two installations can share one server.
+    prefix:               stewart
+
+    # How long one storage operation may take.
+    timeout:              2s
+
+    # After the store times out or is unreachable, how long a worker fails store calls at once before it tries again.
+    recovery_interval:    5s
+
+# The read-only socket `stewart status` connects to. The token is a secret: set it from the environment.
+control:
+
+    # unix://path, relative to the project root, or tcp://host:port. "off" disables the socket; an empty environment variable means unset, so use the word.
+    listen:               'unix://var/run/stewart.sock'
+
+    # Shared secret every client presents. Required while listen is set: the daemon refuses to start without one.
+    token:                null
+
+# What `stewart generate` writes: typed classes over the entities and services of your own instance.
+codegen:
+
+    # Namespace of the generated classes. Composer must map it to output_dir.
+    namespace:            App\Generated
+
+    # Directory the classes are written to, relative to the project root.
+    output_dir:           generated
+
+    # Entity selectors that get classes. Exact IDs or globs (* and ?).
+    include:
+
+        # Default:
+        - *
+
+    # Entity selectors that do not, whatever include says.
+    exclude:              []
+
+    # Entity ID => the member name you would rather write.
+    rename:               []
+
+    # Per-domain attribute keys for the state classes, keyed by domain. Known Home Assistant attributes get typed accessors; everything else stays reachable through attributes().
+    attributes:
+
+        # Prototype
+        -
+
+            # Keys or globs that get an accessor when seen, in addition to the known ones.
+            include:              []
+
+            # Keys or globs that never get one, known or included.
+            exclude:              []
+
+# Per-app overrides, keyed by the ID in the automation's #[Automation] attribute. Automations are found by scanning, not listed here.
+apps:
+
+    # Prototype
+    -
+        enabled:              true
+
+        # Pin to a worker index. Omit to have it distributed round-robin.
+        worker:               null
+
+        # Passed to the app constructor as named arguments.
+        options:              []
+

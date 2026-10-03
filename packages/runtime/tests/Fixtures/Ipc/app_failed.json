@@ -1,0 +1,17 @@
+{
+    "t": "app_failed",
+    "m": {
+        "scope": "demo",
+        "phase": "handler",
+        "class": "RuntimeException",
+        "message": "boom",
+        "trace": "#0 {main}",
+        "origin": "subscription w0:1",
+        "occurrence": 100,
+        "details": {
+            "class": "Stewart\\Contracts\\Exception\\StateException",
+            "reason": "entity_not_found",
+            "context": {"entityId": "light.hall", "known": ["a", null]}
+        }
+    }
+}

@@ -1,0 +1,65 @@
+{
+    "name": "stewart-php/stewart",
+    "description": "Write Home Assistant automations in PHP.",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.4.1",
+        "stewart-php/client": "0.x-dev",
+        "stewart-php/contracts": "0.x-dev",
+        "stewart-php/runtime": "0.x-dev",
+        "stewart-php/store": "0.x-dev",
+        "stewart-php/store-redis": "0.x-dev",
+        "stewart-php/support": "0.x-dev",
+        "symfony/console": "^7.4 || ^8.0",
+        "symfony/dependency-injection": "^7.4 || ^8.0"
+    },
+    "require-dev": {
+        "amphp/http-server": "^3.4",
+        "amphp/websocket-server": "^4.0",
+        "friendsofphp/php-cs-fixer": "^3.75",
+        "phpat/phpat": "^0.12.5",
+        "phpstan/phpstan": "^2.2",
+        "phpunit/phpunit": "^13.3",
+        "stewart-php/codegen": "0.x-dev",
+        "stewart-php/testing": "0.x-dev"
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "packages/*",
+            "options": {
+                "symlink": true,
+                "versions": {
+                    "stewart-php/client": "0.x-dev",
+                    "stewart-php/codegen": "0.x-dev",
+                    "stewart-php/contracts": "0.x-dev",
+                    "stewart-php/runtime": "0.x-dev",
+                    "stewart-php/store": "0.x-dev",
+                    "stewart-php/store-redis": "0.x-dev",
+                    "stewart-php/support": "0.x-dev",
+                    "stewart-php/testing": "0.x-dev"
+                }
+            }
+        }
+    ],
+    "autoload-dev": {
+        "psr-4": {
+            "Stewart\\Tests\\": "tests/",
+            "Stewart\\Contracts\\Tests\\": "packages/contracts/tests/",
+            "Stewart\\Support\\Tests\\": "packages/support/tests/",
+            "Stewart\\Client\\Tests\\": "packages/client/tests/",
+            "Stewart\\Store\\Tests\\": "packages/store/tests/",
+            "Stewart\\Store\\Redis\\Tests\\": "packages/store-redis/tests/",
+            "Stewart\\Codegen\\Tests\\": "packages/codegen/tests/",
+            "Stewart\\Runtime\\Tests\\": "packages/runtime/tests/",
+            "Stewart\\Testing\\Tests\\": "packages/testing/tests/"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true
+    }
+}

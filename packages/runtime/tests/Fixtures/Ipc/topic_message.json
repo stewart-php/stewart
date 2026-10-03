@@ -1,0 +1,17 @@
+{
+    "t": "topic_message",
+    "m": {
+        "event": {
+            "topic": "presence.home",
+            "payload": {
+                "who": "resident",
+                "confidence": 0.92
+            },
+            "publisher": "presence",
+            "published_at_us": 1758700000123456
+        },
+        "deliver_to": [
+            "w1:2"
+        ]
+    }
+}

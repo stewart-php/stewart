@@ -1,0 +1,14 @@
+code:
+  mode: image
+  image:
+    repository: ghcr.io/example/home
+    tag: v1.0.0
+homeAssistant:
+  url: ws://homeassistant.local:8123/api/websocket
+  existingSecret: stewart-home-assistant
+config:
+  apps:
+    hello:
+      options:
+        watch: sun.sun
+workers: 2

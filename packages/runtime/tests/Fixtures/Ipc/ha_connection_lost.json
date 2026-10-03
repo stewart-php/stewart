@@ -1,0 +1,7 @@
+{
+    "t": "ha_connection_lost",
+    "m": {
+        "lost_at_us": 1758700000123456,
+        "reason": "websocket closed"
+    }
+}

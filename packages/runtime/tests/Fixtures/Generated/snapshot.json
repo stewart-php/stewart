@@ -1,0 +1,105 @@
+{
+    "ha_version": "2026.9.1",
+    "states": [
+        {
+            "entity_id": "light.debug_strip",
+            "state": "off",
+            "attributes": {
+                "friendly_name": "Debug Strip"
+            },
+            "last_changed": "2026-09-01T08:00:00.000000Z",
+            "last_updated": "2026-09-01T08:00:00.000000Z",
+            "context": null
+        },
+        {
+            "entity_id": "light.hall",
+            "state": "on",
+            "attributes": {
+                "friendly_name": "Hall",
+                "brightness": 200,
+                "color_temp_kelvin": 3700,
+                "is_hue_group": false,
+                "supported_color_modes": [
+                    "color_temp"
+                ]
+            },
+            "last_changed": "2026-09-01T08:00:00.000000Z",
+            "last_updated": "2026-09-01T08:00:00.000000Z",
+            "context": null
+        },
+        {
+            "entity_id": "light.porch",
+            "state": "off",
+            "attributes": {
+                "friendly_name": "Porch"
+            },
+            "last_changed": "2026-09-01T08:00:00.000000Z",
+            "last_updated": "2026-09-01T08:00:00.000000Z",
+            "context": null
+        }
+    ],
+    "registry": [
+        {
+            "entity_id": "light.hall",
+            "disabled_by": null,
+            "hidden_by": null,
+            "name": null
+        }
+    ],
+    "services": {
+        "light": {
+            "turn_off": {
+                "name": "Turn off",
+                "description": "Turns off one or more lights.",
+                "fields": {
+                    "transition": {
+                        "name": "Transition",
+                        "description": "Duration it takes to get to the next state.",
+                        "selector": {
+                            "number": {
+                                "min": 0,
+                                "max": 300,
+                                "unit_of_measurement": "seconds"
+                            }
+                        }
+                    }
+                },
+                "target": {
+                    "entity": [
+                        {
+                            "domain": [
+                                "light"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "turn_on": {
+                "name": "Turn on",
+                "description": "Turns on one or more lights and adjusts their properties, even when they are on already.",
+                "target": {
+                    "entity": [
+                        {
+                            "domain": [
+                                "light"
+                            ]
+                        }
+                    ]
+                },
+                "fields": {
+                    "brightness_pct": {
+                        "name": "Brightness",
+                        "description": "Percentage of full brightness.",
+                        "selector": {
+                            "number": {
+                                "min": 0,
+                                "max": 100,
+                                "unit_of_measurement": "%"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

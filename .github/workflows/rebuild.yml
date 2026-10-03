@@ -1,0 +1,41 @@
+# Rebuilds the runtime images of the latest release every week, so the rolling tags (0.1, later 1 and 1.2) pick up
+# PHP and Alpine security fixes. Exact version tags stay as released.
+name: Rebuild runtime image
+
+on:
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  latest:
+    runs-on: ubuntu-24.04
+    outputs:
+      tag: ${{ steps.latest.outputs.tag }}
+      version: ${{ steps.latest.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - id: latest
+        name: Find the latest release
+        run: |
+          tag=$(git tag --list 'v*.*.*' --sort=-version:refname | head -n 1)
+          if [ -z "$tag" ]; then echo 'No release to rebuild.' >&2; exit 1; fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+
+  image:
+    needs: latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    uses: ./.github/workflows/runtime-image.yml
+    with:
+      ref: ${{ needs.latest.outputs.tag }}
+      version: ${{ needs.latest.outputs.version }}
+      rolling-only: true

@@ -1,0 +1,20 @@
+/docs/
+/.idea/
+/.env
+/vendor/
+/var/
+/composer.lock.bak
+
+# Symlinked path repositories; composer still writes here.
+/packages/*/vendor/
+/packages/*/composer.lock
+/packages/*/var/
+
+# Documentation site: generated diagrams and the Node toolchain.
+/docs/pages/diagrams/
+/docs/site/node_modules/
+/docs/site/dist/
+/docs/site/.astro/
+
+.php-cs-fixer.cache
+.phpunit.result.cache

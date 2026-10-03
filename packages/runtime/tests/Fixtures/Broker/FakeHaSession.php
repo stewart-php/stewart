@@ -1,0 +1,146 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Stewart\Runtime\Tests\Fixtures\Broker;
+
+use Amp\DeferredFuture;
+use Amp\Future;
+use Closure;
+use DateTimeZone;
+use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Service\ServiceResponse;
+use Stewart\Contracts\Service\ServiceTarget;
+use Stewart\Contracts\State\Collection\EntityStateCollection;
+use Stewart\Contracts\State\EntityState;
+use Stewart\Runtime\Broker\HaSession;
+use Stewart\Runtime\Broker\HaSessionListener;
+use Stewart\Runtime\Broker\StateCacheSnapshot;
+use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
+use Stewart\Testing\Async\Latch;
+use Throwable;
+
+final class FakeHaSession implements HaSession
+{
+    public ?HaSessionListener $listener = null;
+
+    public ?Throwable $openFailure = null;
+
+    public ?Throwable $closeFailure = null;
+
+    /** @var (Closure(): void)|null */
+    public ?Closure $duringOpen = null;
+
+    public int $revision = 1;
+
+    public int $calls = 0;
+
+    public bool $connected = true;
+
+    /** @var list<string> */
+    public array $entityIds = ['light.hall'];
+
+    private bool $open = false;
+
+    private ?Latch $callLatch = null;
+
+    /** @var DeferredFuture<null>|null */
+    private ?DeferredFuture $nextCall = null;
+
+    public static function createOpened(): self
+    {
+        $session = new self();
+        $session->open = true;
+
+        return $session;
+    }
+
+    public function open(HaSessionListener $listener): void
+    {
+        $this->listener = $listener;
+
+        if ($this->duringOpen !== null) {
+            ($this->duringOpen)();
+        }
+
+        if ($this->openFailure !== null) {
+            throw $this->openFailure;
+        }
+
+        $this->open = true;
+    }
+
+    public function close(): void
+    {
+        $this->open = false;
+
+        if ($this->closeFailure !== null) {
+            throw $this->closeFailure;
+        }
+    }
+
+    public function isOpen(): bool
+    {
+        return $this->open;
+    }
+
+    public function isConnected(): bool
+    {
+        return $this->connected;
+    }
+
+    public function snapshotStateCache(): StateCacheSnapshot
+    {
+        return new StateCacheSnapshot(EntityStatesFragment::fromCollection(EntityStateCollection::keyedByEntityId([new EntityState(new EntityId('light.hall'), 'on')])), $this->revision);
+    }
+
+    public function countEntities(): int
+    {
+        return \count($this->entityIds);
+    }
+
+    public function getTimeZone(): DateTimeZone
+    {
+        return new DateTimeZone('Europe/Budapest');
+    }
+
+    public function getHaVersion(): ?string
+    {
+        return $this->open ? '2026.8.1' : null;
+    }
+
+    public function listEntityIds(): array
+    {
+        return $this->entityIds;
+    }
+
+    /** @return Future<null> */
+    public function waitForNextCall(): Future
+    {
+        return ($this->nextCall ??= new DeferredFuture())->getFuture();
+    }
+
+    public function holdCalls(): Latch
+    {
+        return $this->callLatch = new Latch();
+    }
+
+    public function callService(
+        string $domain,
+        string $service,
+        array $data = [],
+        ?ServiceTarget $target = null,
+        bool $returnResponse = false,
+    ): ServiceResponse {
+        ++$this->calls;
+
+        $called = $this->nextCall;
+        $this->nextCall = null;
+        $called?->complete();
+
+        $latch = $this->callLatch;
+        $latch?->waitUntilOpen();
+
+        return new ServiceResponse($domain, $service);
+    }
+}

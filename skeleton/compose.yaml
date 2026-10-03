@@ -1,0 +1,39 @@
+# Runs this checkout in the published runtime image: `make up` locally or on a server, `make deploy` after a push.
+services:
+  stewart:
+    image: ghcr.io/stewart-php/runtime:0.1
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - .:/app
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      STEWART_BOOT_COMPOSER: auto
+    depends_on:
+      valkey:
+        condition: service_healthy
+    restart: unless-stopped
+    stop_grace_period: 15s
+    healthcheck:
+      test: ["CMD", "stewart", "status", "--probe=readiness", "--timeout=5s"]
+      interval: 30s
+      timeout: 10s
+      start_period: 2m
+      retries: 3
+
+  # Append-only, so a power cut loses no recent writes; reachable only from the services in this file.
+  valkey:
+    image: valkey/valkey:8-alpine
+    command: ["valkey-server", "--appendonly", "yes"]
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+    restart: unless-stopped
+
+volumes:
+  valkey-data:

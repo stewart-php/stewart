@@ -1,0 +1,26 @@
+{
+    "t": "pong",
+    "m": {
+        "nonce": 42,
+        "loop_lag_us": 1250,
+        "memory_bytes": 12345678,
+        "apps": [
+            {
+                "scope": "demo",
+                "state": "running",
+                "subscriptions": 2,
+                "schedules": 1,
+                "delivered": 30,
+                "subscription_dropped": 1,
+                "schedule_runs": 4,
+                "publishes": 2,
+                "failures": 3
+            }
+        ],
+        "store": {
+            "available": false,
+            "last_failure": "timed out",
+            "last_failure_at_us": 1700000000000000
+        }
+    }
+}

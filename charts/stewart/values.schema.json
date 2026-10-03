@@ -1,0 +1,112 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["code", "homeAssistant"],
+    "properties": {
+        "code": {
+            "type": "object",
+            "required": ["mode"],
+            "properties": {
+                "mode": {"enum": ["image", "git", "volume"]},
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "repository": {"type": "string"},
+                        "tag": {"type": "string", "minLength": 1},
+                        "pullPolicy": {"enum": ["Always", "IfNotPresent", "Never"]}
+                    }
+                },
+                "git": {
+                    "type": "object",
+                    "properties": {
+                        "url": {"type": "string"},
+                        "ref": {"type": "string", "minLength": 1},
+                        "tokenSecret": {"$ref": "#/definitions/secretKey"},
+                        "sshKeySecret": {"$ref": "#/definitions/secretKey"}
+                    }
+                },
+                "volume": {
+                    "type": "object",
+                    "properties": {"claimName": {"type": "string"}}
+                },
+                "generateOnStart": {"type": "boolean"}
+            },
+            "allOf": [
+                {
+                    "if": {"properties": {"mode": {"const": "image"}}},
+                    "then": {"properties": {"image": {"properties": {"repository": {"minLength": 1}}}}}
+                },
+                {
+                    "if": {"properties": {"mode": {"const": "git"}}},
+                    "then": {"properties": {"git": {"properties": {"url": {"minLength": 1}}}}}
+                },
+                {
+                    "if": {"properties": {"mode": {"const": "volume"}}},
+                    "then": {"properties": {"volume": {"properties": {"claimName": {"minLength": 1}}}}}
+                }
+            ]
+        },
+        "runtimeImage": {
+            "type": "object",
+            "properties": {
+                "repository": {"type": "string", "minLength": 1},
+                "tag": {"type": "string"},
+                "pullPolicy": {"enum": ["Always", "IfNotPresent", "Never"]}
+            }
+        },
+        "homeAssistant": {
+            "type": "object",
+            "required": ["url"],
+            "properties": {
+                "url": {"type": "string", "pattern": "^(wss?|https?)://"},
+                "existingSecret": {"type": "string"},
+                "existingSecretKey": {"type": "string", "minLength": 1},
+                "token": {"type": "string"}
+            }
+        },
+        "persistence": {
+            "type": "object",
+            "properties": {
+                "url": {"type": "string"},
+                "existingSecret": {"type": "string"},
+                "existingSecretKey": {"type": "string", "minLength": 1}
+            }
+        },
+        "control": {
+            "type": "object",
+            "properties": {
+                "existingSecret": {"type": "string"},
+                "existingSecretKey": {"type": "string", "minLength": 1}
+            }
+        },
+        "config": {"type": "object"},
+        "logLevel": {"enum": ["debug", "info", "notice", "warning", "error"]},
+        "logFormat": {"enum": ["line", "json"]},
+        "workers": {"type": "integer", "minimum": 0},
+        "env": {"type": "array"},
+        "terminationGracePeriodSeconds": {"type": "integer", "minimum": 7},
+        "valkey": {
+            "type": "object",
+            "properties": {
+                "enabled": {"type": "boolean"},
+                "storage": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {"type": "boolean"},
+                        "size": {"type": "string"},
+                        "storageClass": {"type": "string"}
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "secretKey": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+                "key": {"type": "string", "minLength": 1}
+            }
+        }
+    }
+}

@@ -1,0 +1,29 @@
+Daemon
+                                                                      
+version        0.1.0-test                                             
+pid            42                                                     
+up             1h 02m                                                 
+memory         12.0 MiB                                               
+home assistant connected since 30s ago, version 2026.8.1              
+reconnects     1, last outage 4s                                      
+store          down, last failure 20s ago: connection refused         
+entities       2000                                                   
+time zone      Europe/Budapest                                        
+workers        1 live of 2                                            
+service calls  1 in flight, 0 refused                                 
+routing        2 subscriptions, 1 patterns, cache 100 hits / 7 misses 
+
+Workers
+worker phase                   pid  ready apps lag    memory  pong   missed restarts queued dropped batches          calls 
+0      live                    4242 yes   demo 1.5 ms 4.0 MiB 7s ago 0      0        2      4       40 (5 coalesced) 1     
+1      restart_scheduled in 4s -    no    echo -      -       never  0      2        -      -       -                0     
+
+Apps
+app  worker state   reported subs schedules delivered dropped runs publishes calls ok/failed p95     failures 
+demo 0      running 7s ago   1    1         12        1       3    2         4/1             > 10 ms 1        
+echo 1      unknown never    0    0         0         0       0    0         0/0             -       0        
+
+Failures
+app  when       phase   reason      message      
+demo 1m 00s ago handler unreachable lamp offline 
+

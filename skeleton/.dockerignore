@@ -1,0 +1,10 @@
+.env
+.git
+.github
+.idea
+deploy
+tests
+var
+vendor
+compose*.yaml
+Makefile

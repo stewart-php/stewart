@@ -1,0 +1,42 @@
+{
+    "name": "stewart-php/testing",
+    "description": "Shared test doubles for the Stewart packages. A development dependency, not part of the app-facing API",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.4.1",
+        "amphp/amp": "^3.1",
+        "amphp/byte-stream": "^2.1",
+        "amphp/http-client": "^5.3",
+        "amphp/socket": "^2.4",
+        "amphp/websocket": "^2.0.4",
+        "amphp/websocket-client": "^2.0.2",
+        "phpunit/phpunit": "^13.3",
+        "psr/log": "^3.0",
+        "stewart-php/contracts": "self.version",
+        "stewart-php/store": "self.version",
+        "stewart-php/support": "self.version"
+    },
+    "conflict": {
+        "amphp/dns": "<2.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Stewart\\Testing\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Stewart\\Testing\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.x-dev"
+        }
+    },
+    "minimum-stability": "stable",
+    "config": {
+        "sort-packages": true
+    }
+}

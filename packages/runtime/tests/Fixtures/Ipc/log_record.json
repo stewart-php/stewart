@@ -1,0 +1,13 @@
+{
+    "t": "log_record",
+    "m": {
+        "scope": "demo",
+        "level": "warning",
+        "message": "Something odd",
+        "context": {
+            "to": "on",
+            "count": 3
+        },
+        "exception": null
+    }
+}

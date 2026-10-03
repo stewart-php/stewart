@@ -1,0 +1,49 @@
+# Clones this repository on every start, so the server needs only this file and a filled-in .env. Set the URL below,
+# then: docker compose -f compose.git.yaml up -d. Redeploy after a push: docker compose -f compose.git.yaml restart stewart
+services:
+  stewart:
+    image: ghcr.io/stewart-php/runtime:0.1
+    env_file: .env
+    environment:
+      STEWART_BOOT_GIT_URL: https://github.com/OWNER/REPOSITORY.git
+      STEWART_BOOT_GIT_REF: main
+      STEWART_BOOT_COMPOSER: auto
+      # A private repository: a token with read access in ./git-token, readable by uid 10001.
+      # STEWART_BOOT_GIT_TOKEN_FILE: /run/secrets/git_token
+    # secrets:
+    #   - git_token
+    volumes:
+      - app:/app
+      - composer-cache:/tmp/composer
+    depends_on:
+      valkey:
+        condition: service_healthy
+    restart: unless-stopped
+    stop_grace_period: 15s
+    healthcheck:
+      test: ["CMD", "stewart", "status", "--probe=readiness", "--timeout=5s"]
+      interval: 30s
+      timeout: 10s
+      start_period: 3m
+      retries: 3
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    command: ["valkey-server", "--appendonly", "yes"]
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+    restart: unless-stopped
+
+# secrets:
+#   git_token:
+#     file: ./git-token
+
+volumes:
+  app:
+  composer-cache:
+  valkey-data:

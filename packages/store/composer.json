@@ -1,0 +1,38 @@
+{
+    "name": "stewart-php/store",
+    "description": "Scoping, encoding and hydration for Stewart's key-value storage. Backend-agnostic",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.4.1",
+        "ext-json": "*",
+        "stewart-php/contracts": "self.version",
+        "stewart-php/support": "self.version"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^13.3",
+        "stewart-php/testing": "self.version"
+    },
+    "suggest": {
+        "stewart-php/store-redis": "A Redis backend, the only one shipped today"
+    },
+    "autoload": {
+        "psr-4": {
+            "Stewart\\Store\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Stewart\\Store\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.x-dev"
+        }
+    },
+    "minimum-stability": "stable",
+    "config": {
+        "sort-packages": true
+    }
+}

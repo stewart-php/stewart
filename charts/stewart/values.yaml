@@ -1,0 +1,126 @@
+# Where the project code comes from.
+code:
+  # image: your project's image (built by the skeleton's image workflow), which includes vendor/.
+  # git: an init container clones code.git.url and installs dependencies into an emptyDir on every start.
+  # volume: an existing PersistentVolumeClaim holding a checkout; dependencies are installed on start.
+  mode: image
+  image:
+    repository: ""
+    tag: main
+    pullPolicy: IfNotPresent
+  git:
+    url: ""
+    ref: main
+    # A Secret holding an HTTPS token with read access, for a private repository.
+    tokenSecret:
+      name: ""
+      key: token
+    # A Secret holding an SSH deploy key, for git@ URLs.
+    sshKeySecret:
+      name: ""
+      key: ssh-privatekey
+  volume:
+    claimName: ""
+  # Regenerate the entity and service classes from Home Assistant on every start; a failure keeps the committed ones.
+  # In image mode this turns off readOnlyRootFilesystem, since the classes are rewritten inside the image's /app.
+  generateOnStart: false
+
+# PHP and the entrypoint; runs the code in git and volume modes, and the git init container.
+runtimeImage:
+  repository: ghcr.io/stewart-php/runtime
+  # Defaults to the chart's appVersion major.minor, such as 0.1.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+homeAssistant:
+  url: ""
+  # Put the long-lived access token in a Secret and name it here, or give it inline in token.
+  existingSecret: ""
+  existingSecretKey: token
+  token: ""
+
+# Where apps keep state across restarts. Empty, with valkey.enabled, means the Valkey below.
+persistence:
+  url: ""
+  existingSecret: ""
+  existingSecretKey: url
+
+# The control socket stays inside the pod; its token is generated once per release unless a Secret is named.
+# Tools that render with `helm template` (no cluster lookup) should name a Secret, or the token changes on every render.
+control:
+  existingSecret: ""
+  existingSecretKey: token
+
+# stewart.yaml content; when set it replaces the project's own file, so repeat the app options it holds.
+config: {}
+
+logLevel: info
+logFormat: json
+# 0 is min(4, CPUs), where a CPU limit counts as the CPUs available.
+workers: 0
+
+# Extra environment variables for the Stewart container, such as STEWART_APPS__HELLO__ENABLED.
+env: []
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 512Mi
+
+podAnnotations: {}
+podLabels: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+
+# Above the daemon's shutdown_grace (5s by default) plus a second, so workers can dispose their apps.
+terminationGracePeriodSeconds: 30
+
+probes:
+  startup:
+    periodSeconds: 10
+    timeoutSeconds: 10
+    failureThreshold: 30
+  liveness:
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 3
+  readiness:
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 3
+
+valkey:
+  enabled: true
+  image:
+    repository: valkey/valkey
+    tag: 8-alpine
+    pullPolicy: IfNotPresent
+  storage:
+    enabled: true
+    size: 1Gi
+    storageClass: ""
+  resources:
+    requests:
+      cpu: 20m
+      memory: 32Mi
+    limits:
+      memory: 256Mi

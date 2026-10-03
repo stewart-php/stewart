@@ -1,0 +1,9 @@
+Stewart runs as deployment/{{ include "stewart.fullname" . }} in {{ .Release.Namespace }}; there is one pod, by design.
+
+  kubectl -n {{ .Release.Namespace }} logs -f deployment/{{ include "stewart.fullname" . }}
+  kubectl -n {{ .Release.Namespace }} exec deployment/{{ include "stewart.fullname" . }} -- stewart status
+{{- if not .Values.control.existingSecret }}
+
+The control token lives in secret/{{ include "stewart.fullname" . }}. If you render this chart with `helm template`,
+name a Secret in control.existingSecret instead, so the token does not change on every render.
+{{- end }}

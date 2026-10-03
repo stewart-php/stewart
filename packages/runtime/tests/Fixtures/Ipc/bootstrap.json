@@ -1,0 +1,28 @@
+{
+    "t": "bootstrap",
+    "m": {
+        "protocol": 13,
+        "worker_id": 1,
+        "time_zone": "Europe/Budapest",
+        "apps": [
+            {"id": "demo", "class": "Stewart\\Runtime\\Tests\\Fixtures\\Apps\\Demo", "options": {"watch": "input_boolean.hall"}},
+            {"id": "echo", "class": "Stewart\\Runtime\\Tests\\Fixtures\\Apps\\Relay", "options": {}}
+        ],
+        "settings": {
+            "log_level": "info",
+            "call_timeout_us": 35000000,
+            "shutdown_grace_us": 5000000,
+            "subscription_buffer": 100,
+            "initialize_timeout_us": 60000000,
+            "services_file": "/app/services.php",
+            "generated_namespace": "Stewart\\Generated"
+        },
+        "store": {
+            "dsn": "redis://:not-a-secret@valkey:6379/0",
+            "prefix": "stewart",
+            "timeout_us": 5000000,
+            "recovery_interval_us": 5000000
+        },
+        "known_app_ids": ["demo", "echo"]
+    }
+}

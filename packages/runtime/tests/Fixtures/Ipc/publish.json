@@ -1,0 +1,15 @@
+{
+    "t": "publish",
+    "m": {
+        "topic": "demo.triggered",
+        "payload": {
+            "state": "on",
+            "nested": [
+                1.0,
+                null
+            ]
+        },
+        "publisher_scope": "demo",
+        "published_at_us": 1758700000123456
+    }
+}

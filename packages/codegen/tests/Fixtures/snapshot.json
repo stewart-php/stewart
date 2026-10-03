@@ -1,0 +1,479 @@
+{
+    "ha_version": "2026.9.1",
+    "states": [
+        {
+            "entity_id": "binary_sensor.hall_motion",
+            "state": "on",
+            "attributes": {
+                "friendly_name": "Hall Motion",
+                "device_class": "motion"
+            },
+            "last_changed": "2026-09-01T08:00:00.000000Z",
+            "last_updated": "2026-09-01T08:00:00.000000Z",
+            "context": null
+        },
+        {
+            "entity_id": "input_number.target_temperature",
+            "state": "21.5",
+            "attributes": {
+                "friendly_name": "Target Temperature",
+                "min": 7.5,
+                "max": 35.5,
+                "step": 0.5
+            },
+            "last_changed": "2026-09-01T08:00:00.000000Z",
+            "last_updated": "2026-09-01T08:00:00.000000Z",
+            "context": null
+        },
+        {
+            "entity_id": "light.1st_floor",
+            "state": "on",
+            "attributes": {
+                "friendly_name": "First Floor",
+                "brightness": 180,
+                "supported_color_modes": [
+                    "brightness"
+                ]
+            },
+            "last_changed": "2026-09-01T08:00:00.000000Z",
+            "last_updated": "2026-09-01T08:00:00.000000Z",
+            "context": null
+        },
+        {
+            "entity_id": "light.attic",
+            "state": "off",
+            "attributes": {
+                "friendly_name": "Attic"
+            },
+            "last_changed": "2026-09-01T08:00:00.000000Z",
+            "last_updated": "2026-09-01T08:00:00.000000Z",
+            "context": null
+        },
+        {
+            "entity_id": "light.cellar",
+            "state": "off",
+            "attributes": {
+                "friendly_name": "Cellar"
+            },
+            "last_changed": "2026-09-01T08:00:00.000000Z",
+            "last_updated": "2026-09-01T08:00:00.000000Z",
+            "context": null
+        },
+        {
+            "entity_id": "light.debug_strip",
+            "state": "off",
+            "attributes": {
+                "friendly_name": "Debug Strip"
+            },
+            "last_changed": "2026-09-01T08:00:00.000000Z",
+            "last_updated": "2026-09-01T08:00:00.000000Z",
+            "context": null
+        },
+        {
+            "entity_id": "light.hall",
+            "state": "on",
+            "attributes": {
+                "friendly_name": "Hall",
+                "brightness": 200,
+                "color_temp_kelvin": 3700,
+                "is_hue_group": false,
+                "supported_color_modes": [
+                    "color_temp"
+                ]
+            },
+            "last_changed": "2026-09-01T08:00:00.000000Z",
+            "last_updated": "2026-09-01T08:00:00.000000Z",
+            "context": null
+        },
+        {
+            "entity_id": "light.porch2",
+            "state": "off",
+            "attributes": {
+                "friendly_name": "Porch 2"
+            },
+            "last_changed": "2026-09-01T08:00:00.000000Z",
+            "last_updated": "2026-09-01T08:00:00.000000Z",
+            "context": null
+        },
+        {
+            "entity_id": "light.porch_2",
+            "state": "off",
+            "attributes": {
+                "friendly_name": "Porch Two"
+            },
+            "last_changed": "2026-09-01T08:00:00.000000Z",
+            "last_updated": "2026-09-01T08:00:00.000000Z",
+            "context": null
+        },
+        {
+            "entity_id": "sensor.broken_probe",
+            "state": "unavailable",
+            "attributes": {
+                "friendly_name": "Broken Probe",
+                "battery": "nonsense",
+                "level": [
+                    "not",
+                    "a",
+                    "level"
+                ]
+            },
+            "last_changed": "2026-09-01T08:00:00.000000Z",
+            "last_updated": "2026-09-01T08:00:00.000000Z",
+            "context": null
+        },
+        {
+            "entity_id": "sensor.hall_humidity",
+            "state": "51.2",
+            "attributes": {
+                "friendly_name": "Hall Humidity",
+                "battery": 79.5,
+                "level": "high",
+                "unit_of_measurement": "%",
+                "Local Time": "08:00",
+                "local_time": "08:00",
+                "06-19 13:01": 1
+            },
+            "last_changed": "2026-09-01T08:00:00.000000Z",
+            "last_updated": "2026-09-01T08:00:00.000000Z",
+            "context": null
+        },
+        {
+            "entity_id": "sensor.hall_temperature",
+            "state": "21.4",
+            "attributes": {
+                "friendly_name": "Hall Temperature",
+                "battery": 80,
+                "level": 3,
+                "unit_of_measurement": "°C",
+                "calibrated_at": null,
+                "Local Time": "08:00",
+                "local_time": "08:00",
+                "06-19 13:01": 1
+            },
+            "last_changed": "2026-09-01T08:00:00.000000Z",
+            "last_updated": "2026-09-01T08:00:00.000000Z",
+            "context": null
+        },
+        {
+            "entity_id": "switch.pump",
+            "state": "on",
+            "attributes": {
+                "friendly_name": "Pump"
+            },
+            "last_changed": "2026-09-01T08:00:00.000000Z",
+            "last_updated": "2026-09-01T08:00:00.000000Z",
+            "context": null
+        }
+    ],
+    "registry": [
+        {
+            "entity_id": "light.attic",
+            "disabled_by": "user",
+            "hidden_by": null,
+            "name": null
+        },
+        {
+            "entity_id": "light.cellar",
+            "disabled_by": null,
+            "hidden_by": "user",
+            "name": "Cellar"
+        },
+        {
+            "entity_id": "light.hall",
+            "disabled_by": null,
+            "hidden_by": null,
+            "name": null
+        }
+    ],
+    "services": {
+        "homeassistant": {
+            "set_location": {
+                "name": "Set location",
+                "description": "Updates the Home Assistant location.",
+                "fields": {
+                    "longitude": {
+                        "name": "Longitude",
+                        "description": "Longitude of your location.",
+                        "required": true,
+                        "selector": {
+                            "number": {
+                                "min": -180,
+                                "max": 180,
+                                "step": "any"
+                            }
+                        }
+                    },
+                    "latitude": {
+                        "name": "Latitude",
+                        "description": "Latitude of your location.",
+                        "required": true,
+                        "selector": {
+                            "number": {
+                                "min": -90,
+                                "max": 90,
+                                "step": "any"
+                            }
+                        }
+                    },
+                    "elevation": {
+                        "name": "Elevation",
+                        "description": "Elevation of your location above sea level.",
+                        "required": false,
+                        "selector": {
+                            "number": {
+                                "step": "any"
+                            }
+                        }
+                    }
+                }
+            },
+            "turn_on": {
+                "name": "Generic turn on",
+                "description": "Generic service to turn devices on under any domain.",
+                "fields": [],
+                "target": {
+                    "entity": []
+                }
+            }
+        },
+        "light": {
+            "state": {
+                "name": "Set state",
+                "description": "Writes a state straight onto a light, bypassing its integration.",
+                "fields": {
+                    "value": {
+                        "required": true,
+                        "name": "Value",
+                        "description": "The state to write.",
+                        "selector": {
+                            "text": []
+                        }
+                    }
+                },
+                "target": {
+                    "entity": [
+                        {
+                            "domain": [
+                                "light"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "turn_off": {
+                "name": "Turn off",
+                "description": "Turns off one or more lights.",
+                "fields": {
+                    "transition": {
+                        "name": "Transition",
+                        "description": "Duration it takes to get to the next state.",
+                        "selector": {
+                            "number": {
+                                "min": 0,
+                                "max": 300,
+                                "unit_of_measurement": "seconds"
+                            }
+                        }
+                    }
+                },
+                "target": {
+                    "entity": [
+                        {
+                            "domain": [
+                                "light"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "turn_on": {
+                "name": "Turn on",
+                "description": "Turns on one or more lights and adjusts their properties, even when they are on already.",
+                "fields": {
+                    "transition": {
+                        "name": "Transition",
+                        "description": "Duration it takes to get to the next state.",
+                        "selector": {
+                            "number": {
+                                "min": 0,
+                                "max": 300,
+                                "unit_of_measurement": "seconds"
+                            }
+                        }
+                    },
+                    "rgb_color": {
+                        "name": "RGB color",
+                        "description": "The color in RGB format.",
+                        "selector": {
+                            "color_rgb": []
+                        }
+                    },
+                    "brightness_pct": {
+                        "name": "Brightness",
+                        "description": "Percentage of full brightness.",
+                        "selector": {
+                            "number": {
+                                "min": 0,
+                                "max": 100,
+                                "unit_of_measurement": "%"
+                            }
+                        }
+                    },
+                    "effect": {
+                        "name": "Effect",
+                        "description": "Light effect.",
+                        "selector": {
+                            "text": []
+                        }
+                    },
+                    "profile": {
+                        "name": "Profile",
+                        "description": "A light profile, if the integration offers any."
+                    },
+                    "advanced_fields": {
+                        "name": "Advanced options",
+                        "collapsed": true,
+                        "fields": {
+                            "color_temp_kelvin": {
+                                "name": "Color temperature",
+                                "description": "Colour temperature in Kelvin.",
+                                "selector": {
+                                    "color_temp": {
+                                        "unit": "kelvin",
+                                        "min": 2000,
+                                        "max": 6500
+                                    }
+                                }
+                            },
+                            "flash": {
+                                "name": "Flash",
+                                "description": "Tell the light to flash.",
+                                "selector": {
+                                    "select": {
+                                        "options": [
+                                            "long",
+                                            "short"
+                                        ]
+                                    }
+                                }
+                            },
+                            "white": {
+                                "name": "White",
+                                "description": "Set the light to white mode.",
+                                "selector": {
+                                    "constant": {
+                                        "value": true,
+                                        "label": "Enabled"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "target": {
+                    "entity": [
+                        {
+                            "domain": [
+                                "light"
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "notify": {
+            "mobile_app_phone": {
+                "name": "Send a notification via mobile_app_phone",
+                "description": "Sends a notification message through the mobile_app_phone integration.",
+                "fields": {
+                    "message": {
+                        "required": true,
+                        "name": "Message",
+                        "description": "Body of the notification.",
+                        "selector": {
+                            "text": []
+                        }
+                    },
+                    "data": {
+                        "name": "Data",
+                        "description": "Extended information for the notification.",
+                        "selector": {
+                            "object": []
+                        }
+                    },
+                    "target": {
+                        "name": "Target",
+                        "description": "Who receives it.",
+                        "selector": {
+                            "text": {
+                                "multiple": true
+                            }
+                        }
+                    },
+                    "title": {
+                        "name": "Title",
+                        "description": "Title of the notification.",
+                        "selector": {
+                            "text": []
+                        }
+                    }
+                }
+            }
+        },
+        "switch": {
+            "turn_on": {
+                "name": "Turn on",
+                "description": "Turns a switch on.",
+                "fields": [],
+                "target": {
+                    "entity": [
+                        {
+                            "domain": [
+                                "switch"
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "weather": {
+            "get_forecasts": {
+                "name": "Get forecasts",
+                "description": "Retrieves the forecast from selected weather services.",
+                "fields": {
+                    "type": {
+                        "required": true,
+                        "name": "Forecast type",
+                        "description": "The scope of the weather forecast.",
+                        "selector": {
+                            "select": {
+                                "options": [
+                                    {
+                                        "label": "Daily",
+                                        "value": "daily"
+                                    },
+                                    {
+                                        "label": "Hourly",
+                                        "value": "hourly"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "target": {
+                    "entity": [
+                        {
+                            "domain": [
+                                "weather"
+                            ]
+                        }
+                    ]
+                },
+                "response": {
+                    "optional": false
+                }
+            }
+        }
+    }
+}

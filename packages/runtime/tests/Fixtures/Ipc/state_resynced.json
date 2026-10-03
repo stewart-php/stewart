@@ -1,0 +1,29 @@
+{
+    "t": "state_resynced",
+    "m": {
+        "states": [
+            {
+                "entity_id": "light.hall",
+                "state": "on",
+                "attributes": {
+                    "brightness": 254,
+                    "rgb_color": [
+                        255,
+                        170,
+                        80
+                    ],
+                    "gain": 1.0
+                },
+                "last_changed_at_us": 1758700000123456,
+                "last_updated_at_us": 1758700000123456,
+                "context": {
+                    "id": "ctx",
+                    "parent_id": "parent",
+                    "user_id": null
+                }
+            }
+        ],
+        "revision": 9,
+        "outage_us": 12500000
+    }
+}

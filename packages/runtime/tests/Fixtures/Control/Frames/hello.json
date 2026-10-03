@@ -1,0 +1,6 @@
+{
+    "type": "hello",
+    "token": "golden-token",
+    "client": "stewart status",
+    "protocol": 15
+}

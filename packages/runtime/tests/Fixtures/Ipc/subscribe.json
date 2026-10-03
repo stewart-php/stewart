@@ -1,0 +1,28 @@
+{
+    "t": "subscribe",
+    "m": {
+        "subscription_id": "w0:1",
+        "scope": "demo",
+        "kind": "topic",
+        "selector": {
+            "kind": "any_of",
+            "selectors": [
+                {
+                    "kind": "exact",
+                    "value": "a.b"
+                },
+                {
+                    "kind": "glob",
+                    "pattern": "demo.*"
+                },
+                {
+                    "kind": "regex",
+                    "regex": "/^x/"
+                },
+                {
+                    "kind": "any"
+                }
+            ]
+        }
+    }
+}

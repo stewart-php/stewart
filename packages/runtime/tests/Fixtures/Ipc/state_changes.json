@@ -1,0 +1,29 @@
+{
+    "t": "state_changes",
+    "m": {
+        "changes": [
+            {
+                "entity_id": "light.hall",
+                "from": {
+                    "entity_id": "light.hall",
+                    "state": "off",
+                    "attributes": {},
+                    "last_changed_at_us": 1758700000123456,
+                    "last_updated_at_us": 1758700000123456,
+                    "context": null
+                },
+                "to": {
+                    "entity_id": "light.hall",
+                    "state": "on",
+                    "attributes": {"brightness": 254, "gain": 1.0},
+                    "last_changed_at_us": 1758700000123456,
+                    "last_updated_at_us": 1758700000123456,
+                    "context": {"id": "ctx", "parent_id": null, "user_id": "user"}
+                },
+                "fired_at_us": 1758700000123456,
+                "context": {"id": "ctx", "parent_id": null, "user_id": null},
+                "origin": "live"
+            }
+        ]
+    }
+}

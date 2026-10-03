@@ -1,0 +1,15 @@
+apiVersion: v2
+name: stewart
+description: Home Assistant automations in PHP, run by Stewart
+type: application
+# The release workflow sets both to the Stewart version it publishes.
+version: 0.1.0
+appVersion: "0.1.0"
+kubeVersion: ">=1.27.0-0"
+home: https://github.com/stewart-php/stewart-php
+sources:
+  - https://github.com/stewart-php/stewart-php
+keywords:
+  - home-assistant
+  - automation
+  - php

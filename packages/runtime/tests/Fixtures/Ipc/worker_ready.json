@@ -1,0 +1,12 @@
+{
+    "t": "worker_ready",
+    "m": {
+        "app_ids": [
+            "demo"
+        ],
+        "failed_app_ids": [
+            "broken"
+        ],
+        "memory_bytes": 12345678
+    }
+}

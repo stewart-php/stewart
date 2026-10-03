@@ -1,0 +1,50 @@
+{
+    "name": "stewart-php/client",
+    "description": "Home Assistant WebSocket client. Usable on its own",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.4.1",
+        "amphp/amp": "^3.1",
+        "amphp/pipeline": "^1.2",
+        "amphp/websocket": "^2.0.4",
+        "amphp/websocket-client": "^2.0.2",
+        "ext-json": "*",
+        "psr/log": "^3.0",
+        "revolt/event-loop": "^1.0.9",
+        "stewart-php/contracts": "self.version",
+        "stewart-php/support": "self.version"
+    },
+    "require-dev": {
+        "amphp/http-server": "^3.4",
+        "amphp/socket": "^2.4",
+        "amphp/websocket-server": "^4.0",
+        "phpunit/phpunit": "^13.3",
+        "stewart-php/testing": "self.version"
+    },
+    "conflict": {
+        "amphp/dns": "<2.2"
+    },
+    "suggest": {
+        "ext-zlib": "Websocket permessage-deflate, so the state snapshot crosses the network compressed"
+    },
+    "autoload": {
+        "psr-4": {
+            "Stewart\\Client\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Stewart\\Client\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.x-dev"
+        }
+    },
+    "minimum-stability": "stable",
+    "config": {
+        "sort-packages": true
+    }
+}

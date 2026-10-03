@@ -1,0 +1,26 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Stewart\Contracts\Exception;
+
+use Throwable;
+
+/** @extends StewartException<ScheduleError> */
+final class ScheduleException extends StewartException
+{
+    public static function cronInvalid(string $expression, Throwable $previous): self
+    {
+        return self::createForReason(ScheduleError::CronInvalid, ['expression' => $expression], $previous);
+    }
+
+    public static function timeOfDayInvalid(string $value): self
+    {
+        return self::createForReason(ScheduleError::TimeOfDayInvalid, ['value' => $value]);
+    }
+
+    public static function timeOfDayOutOfRange(string $unit, int $value, int $highest): self
+    {
+        return self::createForReason(ScheduleError::TimeOfDayOutOfRange, ['unit' => $unit, 'value' => $value, 'highest' => $highest]);
+    }
+}

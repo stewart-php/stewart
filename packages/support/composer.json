@@ -1,0 +1,35 @@
+{
+    "name": "stewart-php/support",
+    "description": "Framework-internal helpers shared by the Stewart packages. Not part of the app-facing API",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.4.1",
+        "ext-json": "*",
+        "amphp/amp": "^3.1",
+        "revolt/event-loop": "^1.0.9",
+        "stewart-php/contracts": "self.version"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^13.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Stewart\\Support\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Stewart\\Support\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.x-dev"
+        }
+    },
+    "minimum-stability": "stable",
+    "config": {
+        "sort-packages": true
+    }
+}

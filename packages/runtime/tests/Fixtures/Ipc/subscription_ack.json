@@ -1,0 +1,8 @@
+{
+    "t": "subscription_ack",
+    "m": {
+        "subscription_id": "w0:1",
+        "accepted": false,
+        "reason": "refused"
+    }
+}

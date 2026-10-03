@@ -1,0 +1,8 @@
+# Only what differs from the defaults: `make config-reference` lists every setting, `make config` shows what is in
+# effect. Secrets (the Home Assistant token, the control token) belong in .env, never here.
+
+apps:
+  hello:
+    options:
+      # Options become named constructor arguments of the app.
+      watch: sun.sun

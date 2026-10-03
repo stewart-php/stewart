@@ -1,0 +1,4 @@
+{
+    "type": "rejected",
+    "reason": "the token does not match control.token"
+}

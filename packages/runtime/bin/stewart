@@ -1,0 +1,29 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Composer\Autoload\ClassLoader;
+use Stewart\Runtime\Kernel\ConsoleLauncher;
+
+// Composer's bin proxy sets the path; the others cover running the file directly from a checkout or from vendor/.
+$autoload = array_find(
+    [
+        $GLOBALS['_composer_autoload_path'] ?? null,
+        __DIR__ . '/../vendor/autoload.php',
+        dirname(__DIR__, 3) . '/autoload.php',
+        dirname(__DIR__, 3) . '/vendor/autoload.php',
+    ],
+    static fn(mixed $candidate): bool => is_string($candidate) && is_file($candidate),
+);
+
+if (!is_string($autoload)) {
+    fwrite(STDERR, "Dependencies are not installed. Run: composer install\n");
+
+    exit(1);
+}
+
+/** @var ClassLoader $loader */
+$loader = require $autoload;
+
+exit(ConsoleLauncher::createForInstalledProject($loader)->launchConsole());

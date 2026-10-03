@@ -1,0 +1,125 @@
+{
+    "type": "snapshot",
+    "snapshot": {
+        "taken_at": "2026-09-26T11:00:00.000000Z",
+        "daemon": {
+            "pid": 1,
+            "started_at": "2026-09-26T10:00:00.000000Z",
+            "memory_bytes": 52428800,
+            "version": "stub",
+            "time_zone": "UTC",
+            "entities": 120,
+            "ha_version": "2026.9.1"
+        },
+        "connection": {
+            "phase": "connected",
+            "since": "2026-09-26T10:00:00.000000Z",
+            "reconnects": 1,
+            "last_outage_us": 4000000
+        },
+        "broker": {
+            "workers": 1,
+            "live_workers": 1,
+            "in_flight_service_calls": 0,
+            "refused_service_calls": 2,
+            "routing": {
+                "subscriptions": 3,
+                "patterns": 1,
+                "cached_keys": 5,
+                "cache_hits": 40,
+                "cache_misses": 5
+            }
+        },
+        "workers": [
+            {
+                "worker_id": 0,
+                "phase": "live",
+                "app_ids": [
+                    "porch"
+                ],
+                "pid": 42,
+                "ready": true,
+                "missed_probes": 0,
+                "loop_lag_us": 3000,
+                "memory_bytes": 20971520,
+                "last_pong_at": "2026-09-26T10:59:55.000000Z",
+                "restarts_in_window": 0,
+                "restart_due_at": null,
+                "outbox": {
+                    "queued": 0,
+                    "dropped": 0,
+                    "coalesced_state_changes": 7,
+                    "state_batches_sent": 90,
+                    "largest_state_batch": 12
+                },
+                "in_flight_service_calls": 0
+            }
+        ],
+        "apps": [
+            {
+                "id": "porch",
+                "class": "App\\Porch",
+                "worker_id": 0,
+                "state": "running",
+                "reported_at": "2026-09-26T10:59:55.000000Z",
+                "subscriptions": 2,
+                "schedules": 1,
+                "counters": {
+                    "delivered": 30,
+                    "subscription_dropped": 1,
+                    "schedule_runs": 4,
+                    "publishes": 2,
+                    "failures": 1
+                },
+                "service_calls": [
+                    {
+                        "outcome": "succeeded",
+                        "count": 10,
+                        "latency": {
+                            "bounds_ms": [
+                                5,
+                                10,
+                                25
+                            ],
+                            "cumulative_counts": [
+                                2,
+                                9,
+                                10
+                            ],
+                            "count": 10,
+                            "sum_us": 80000
+                        }
+                    },
+                    {
+                        "outcome": "refused",
+                        "count": 2,
+                        "latency": null
+                    }
+                ],
+                "last_failure": {
+                    "phase": "handler",
+                    "class": "RuntimeException",
+                    "message": "boom",
+                    "origin": "subscription w0:1",
+                    "reason": "entity_not_found",
+                    "at": "2026-09-26T10:30:00.000000Z"
+                }
+            }
+        ],
+        "subscriptions": [
+            {
+                "subscription_id": "w0:0",
+                "worker_id": 0,
+                "app_id": "porch",
+                "kind": "event",
+                "selector": "doorbell",
+                "exact": true
+            }
+        ],
+        "store": {
+            "available": true,
+            "last_failure": "timed out",
+            "last_failure_at": "2026-09-26T10:45:00.000000Z"
+        }
+    }
+}

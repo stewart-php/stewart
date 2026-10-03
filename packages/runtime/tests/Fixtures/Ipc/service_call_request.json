@@ -1,0 +1,18 @@
+{
+    "t": "service_call_request",
+    "m": {
+        "correlation_id": "w0:2",
+        "scope": "demo",
+        "domain": "light",
+        "service": "turn_on",
+        "data": {"transition": 1.5},
+        "target": {
+            "entity_ids": ["light.hall"],
+            "device_ids": [],
+            "area_ids": ["hall"],
+            "floor_ids": [],
+            "label_ids": []
+        },
+        "return_response": false
+    }
+}

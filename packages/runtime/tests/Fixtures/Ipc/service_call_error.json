@@ -1,0 +1,17 @@
+{
+    "t": "service_call_error",
+    "m": {
+        "correlation_id": "w0:2",
+        "message": "light.turn_on was rejected by Home Assistant: Service not found (not_found)",
+        "details": {
+            "class": "Stewart\\Contracts\\Exception\\ServiceCallException",
+            "reason": "rejected",
+            "context": {
+                "domain": "light",
+                "service": "turn_on",
+                "detail": "Service not found",
+                "errorCode": "not_found"
+            }
+        }
+    }
+}

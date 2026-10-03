@@ -1,0 +1,15 @@
+code:
+  mode: git
+  git:
+    url: https://github.com/example/home.git
+    ref: main
+    tokenSecret:
+      name: stewart-git
+  generateOnStart: true
+homeAssistant:
+  url: ws://homeassistant.local:8123/api/websocket
+  token: not-a-real-token
+persistence:
+  url: redis://valkey.shared:6379/3
+valkey:
+  enabled: false
