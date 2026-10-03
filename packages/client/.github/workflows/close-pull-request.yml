@@ -17,4 +17,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           NUMBER: ${{ github.event.pull_request.number }}
           REPOSITORY: ${{ github.repository }}
-          MESSAGE: This repository is a read-only split of https://github.com/stewart-php/stewart-php. Please open the pull request there.
+          MESSAGE: This repository is a read-only split of https://github.com/stewart-php/stewart. Please open the pull request there.

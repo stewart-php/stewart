@@ -1,6 +1,6 @@
 # Stewart Helm chart
 
-Runs a [Stewart](https://github.com/stewart-php/stewart-php) project (Home Assistant automations in PHP) on
+Runs a [Stewart](https://github.com/stewart-php/stewart) project (Home Assistant automations in PHP) on
 Kubernetes, with an optional Valkey for app state.
 
 ```bash

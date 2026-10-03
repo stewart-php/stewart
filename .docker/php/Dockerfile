@@ -44,7 +44,7 @@ ENV HOME=/tmp \
 
 LABEL org.opencontainers.image.title="Stewart runtime" \
       org.opencontainers.image.description="PHP, extensions and an entrypoint for running a Stewart project" \
-      org.opencontainers.image.source="https://github.com/stewart-php/stewart-php" \
+      org.opencontainers.image.source="https://github.com/stewart-php/stewart" \
       org.opencontainers.image.licenses="MIT"
 
 WORKDIR /app

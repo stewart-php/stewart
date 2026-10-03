@@ -1,6 +1,6 @@
 # My Stewart automations
 
-Home Assistant automations in PHP, built on [Stewart](https://github.com/stewart-php/stewart-php).
+Home Assistant automations in PHP, built on [Stewart](https://github.com/stewart-php/stewart).
 
 You need Docker with Compose and a long-lived access token from Home Assistant (Profile → Security). PHP and Composer
 run in the container; nothing else is installed on your machine. `vendor/` lives in this directory, so your IDE sees
@@ -113,7 +113,7 @@ make update     # composer update; commit composer.lock
 ```
 
 Dependabot proposes Stewart releases and runtime image tags. A minor release on 0.x may break; read its "Upgrading"
-notes in the [changelog](https://github.com/stewart-php/stewart-php/blob/main/CHANGELOG.md) before merging. Keep the
+notes in the [changelog](https://github.com/stewart-php/stewart/blob/main/CHANGELOG.md) before merging. Keep the
 image tag in `Dockerfile` and the compose files on the same minor as `stewart-php/runtime` in `composer.lock`.
 
 ## License

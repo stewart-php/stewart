@@ -57,12 +57,13 @@ Done once, by an owner of the `stewart-php` organization, before `v0.1.0`.
 1. **Repositories.** Create `client`, `codegen`, `contracts`, `runtime`, `store`, `store-redis`, `support`,
    `testing` and `skeleton` under `stewart-php`, each empty, with issues, wiki and projects off. Their description
    says they are read-only splits. Mark `skeleton` as a template repository.
-2. **Split token.** Create a GitHub App owned by `stewart-php` with *Contents: read and write*, install it on those
-   nine repositories, then add its app id as the variable `SPLIT_APP_ID` and its private key as the secret
-   `SPLIT_APP_PRIVATE_KEY` in this repository.
-3. **Packagist.** Push `main` once so `Split` fills the repositories. Then submit each of the nine on packagist.org
-   under the `stewart-php` vendor and enable the GitHub hook. Optionally, add `PACKAGIST_USERNAME` (variable) and
-   `PACKAGIST_TOKEN` (secret) so `split.yml` also triggers an update itself.
+2. **Split token.** Create a GitHub App owned by `stewart-php` with *Contents* and *Workflows: read and write* (every
+   split carries `.github/workflows`), install it on those nine repositories, then add its client ID as the variable
+   `SPLIT_APP_CLIENT_ID` and its private key as the secret `SPLIT_APP_PRIVATE_KEY` in this repository. Until the
+   variable exists, `Split` is skipped.
+3. **Packagist.** Run `Split` from the Actions tab so it fills the repositories. Then submit each of the nine on
+   packagist.org under the `stewart-php` vendor and enable the GitHub hook. Optionally, add `PACKAGIST_USERNAME`
+   (variable) and `PACKAGIST_TOKEN` (secret) so `split.yml` also triggers an update itself.
 4. **GHCR.** After the first release, open the `runtime` and `charts/stewart` packages in the organization's
    packages, make them public, and link them to this repository.
 5. **Runners.** `ubuntu-24.04-arm` runners must be available to the organization; they are free for public
@@ -73,7 +74,7 @@ Done once, by an owner of the `stewart-php` organization, before `v0.1.0`.
 
 ```bash
 cosign verify ghcr.io/stewart-php/runtime:X.Y.Z \
-  --certificate-identity-regexp 'https://github.com/stewart-php/stewart-php/' \
+  --certificate-identity-regexp 'https://github.com/stewart-php/stewart/' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 docker buildx imagetools inspect ghcr.io/stewart-php/runtime:X.Y.Z --format '{{json .Provenance}}'
 helm show chart oci://ghcr.io/stewart-php/charts/stewart --version X.Y.Z
