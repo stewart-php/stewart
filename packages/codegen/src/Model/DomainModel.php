@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Stewart\Codegen\Model;
 
 use Stewart\Codegen\Attribute\Collection\AttributeModelCollection;
-use Stewart\Codegen\Entity\Collection\EntityModelCollection;
 use Stewart\Codegen\Service\Collection\ServiceModelCollection;
+use Stewart\Contracts\Entity\Collection\EntityIdCollection;
 
 final readonly class DomainModel
 {
@@ -15,7 +15,7 @@ final readonly class DomainModel
         public string $accessor,
         public string $classStem,
         public DomainTraits $traits,
-        public EntityModelCollection $entities,
+        public EntityIdCollection $entityIds,
         public AttributeModelCollection $attributes,
         public ServiceModelCollection $handleServices,
         public ServiceModelCollection $services,
@@ -53,7 +53,7 @@ final readonly class DomainModel
 
     public function hasEntities(): bool
     {
-        return !$this->entities->isEmpty();
+        return !$this->entityIds->isEmpty();
     }
 
     public function hasServices(): bool

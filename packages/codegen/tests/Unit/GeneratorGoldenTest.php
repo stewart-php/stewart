@@ -16,6 +16,7 @@ use Stewart\Codegen\Emitter\Entity\EntityHandleEmitter;
 use Stewart\Codegen\Emitter\Entity\EntityStateEmitter;
 use Stewart\Codegen\Emitter\GeneratedCodePrinter;
 use Stewart\Codegen\Emitter\ManifestEmitter;
+use Stewart\Codegen\Emitter\PhpStormMetaEmitter;
 use Stewart\Codegen\Emitter\RootEmitter;
 use Stewart\Codegen\Emitter\Service\DomainServicesEmitter;
 use Stewart\Codegen\Emitter\Service\ServiceMethodEmitter;
@@ -38,6 +39,7 @@ use Stewart\Testing\Filesystem\TempDirectory;
 #[CoversClass(ServicesRootEmitter::class)]
 #[CoversClass(ServiceMethodEmitter::class)]
 #[CoversClass(ManifestEmitter::class)]
+#[CoversClass(PhpStormMetaEmitter::class)]
 #[CoversClass(GeneratedCodePrinter::class)]
 #[CoversClass(EmitContext::class)]
 #[CoversClass(SourceTree::class)]

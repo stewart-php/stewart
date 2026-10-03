@@ -56,7 +56,6 @@ final class GoldenSnapshot
             new GenerationTarget(self::NAMESPACE, $directory ?? self::getExpectedDirectory()),
             new GenerationOptions(
                 EntityFilter::fromPatterns(['*'], ['light.debug_*']),
-                ['sensor.hall_humidity' => 'roomHumidity'],
                 AttributeFilterCollection::keyedByDomain([new AttributeFilter('sensor', new KeyPatterns(['battery']))]),
             ),
         );

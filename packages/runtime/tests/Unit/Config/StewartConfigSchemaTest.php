@@ -178,11 +178,6 @@ final class StewartConfigSchemaTest extends TestCase
             '/Unrecognized option "class"/',
         ];
 
-        yield 'a rename that is no member name' => [
-            ['codegen' => ['rename' => ['light.hall' => '1hall']]],
-            '/path "stewart\.codegen\.rename\.light\.hall": "1hall" is not a PHP member name/',
-        ];
-
         yield 'an empty entity selector' => [
             ['codegen' => ['include' => ['']]],
             '/stewart\.codegen\.include\.0" cannot contain an empty value/',
@@ -232,7 +227,6 @@ final class StewartConfigSchemaTest extends TestCase
         self::assertSame('generated', self::getValueAt($processed, 'codegen.output_dir'));
         self::assertSame(['*'], self::getValueAt($processed, 'codegen.include'));
         self::assertSame([], self::getValueAt($processed, 'codegen.exclude'));
-        self::assertSame([], self::getValueAt($processed, 'codegen.rename'));
         self::assertSame([], self::getValueAt($processed, 'codegen.attributes'));
     }
 
@@ -259,13 +253,12 @@ final class StewartConfigSchemaTest extends TestCase
         self::processConfigs([self::addRequiredConnection(['codegen' => ['attributes' => ['sensor' => ['min_entities' => 1]]]])]);
     }
 
-    public function testRenameKeysKeepTheirDotsAndCase(): void
+    public function testFormerRenameIsRefused(): void
     {
-        $processed = self::processConfigs([self::addRequiredConnection([
-            'codegen' => ['rename' => ['light.Hall_Ceiling' => 'hallCeiling']],
-        ])]);
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessageMatches('/Unrecognized option "rename"/');
 
-        self::assertSame(['light.Hall_Ceiling' => 'hallCeiling'], self::getValueAt($processed, 'codegen.rename'));
+        self::processConfigs([self::addRequiredConnection(['codegen' => ['rename' => ['light.hall' => 'hall']]])]);
     }
 
     /**

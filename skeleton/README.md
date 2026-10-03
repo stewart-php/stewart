@@ -39,6 +39,22 @@ resolve against the imported `Stewart\Contracts\App` interface instead.
 adding devices and commit the result; the daemon logs a warning when it no longer matches Home Assistant. The classes
 name your entities, so keep this repository private if that matters to you.
 
+Entities are looked up by their ID, so a search for `light.hall` finds every use. An ID from `options` works the same:
+
+```php
+public function __construct(
+    private readonly Entities $entities,
+    private readonly string $hallLight,
+) {}
+
+public function initialize(): void
+{
+    $this->entities->light->getEntity($this->hallLight)->turnOn();
+}
+```
+
+An ID missing from the last `make generate` throws `IdentifierError::EntityNotGenerated`.
+
 ### Developing next to a running production daemon
 
 Both would run every automation against the same Home Assistant. While developing, run only the app you are working

@@ -14,16 +14,19 @@ use Stewart\Codegen\Php\ReservesMemberNames;
 use Stewart\Codegen\Service\ServiceModel;
 use Stewart\Contracts\Entity\Entity;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Entity\TypedEntity;
+use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Exception\StateException;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
-use Stewart\Contracts\Service\ServiceTargetSource;
 use Stewart\Contracts\StateChangeStream;
 
 final readonly class EntityHandleEmitter implements DomainFileEmitter, ReservesMemberNames
 {
-    private const array RESERVED_MEMBER_NAMES = ['id', 'getState', 'requireState', 'watchStateChanges', 'listAttributes', 'getEntity', 'toServiceTarget', 'ha'];
+    private const array RESERVED_MEMBER_NAMES = ['id', 'getDomain', 'isGeneratedEntityId', 'getState', 'requireState', 'watchStateChanges', 'listAttributes', 'getEntity', 'toServiceTarget', 'ha'];
+
+    private const string ENTITY_IDS_CONSTANT = 'GENERATED_ENTITY_IDS';
 
     public function __construct(private ServiceMethodEmitter $services) {}
 
@@ -37,8 +40,9 @@ final readonly class EntityHandleEmitter implements DomainFileEmitter, ReservesM
         $namespace = $context->createNamespace();
         $declared = $domain->getHandleClass();
         $stateException = $context->importClass($namespace, StateException::class, $declared);
+        $identifierException = $context->importClass($namespace, IdentifierException::class, $declared);
 
-        foreach ([Entity::class, EntityId::class, HaContext::class, StateChangeStream::class, ServiceTarget::class, ServiceTargetSource::class] as $import) {
+        foreach ([Entity::class, EntityId::class, HaContext::class, StateChangeStream::class, ServiceTarget::class, TypedEntity::class] as $import) {
             $context->importClass($namespace, $import, $declared);
         }
 
@@ -49,15 +53,34 @@ final readonly class EntityHandleEmitter implements DomainFileEmitter, ReservesM
         $class = $namespace->addClass($declared)
             ->setFinal()
             ->setReadOnly()
-            ->addImplement(ServiceTargetSource::class)
+            ->addImplement(TypedEntity::class)
             ->addComment(\sprintf('One `%s` entity.', $domain->domain));
+
+        $class->addConstant(self::ENTITY_IDS_CONSTANT, array_fill_keys($domain->entityIds->toStrings(), true))
+            ->setType('array')
+            ->setPrivate();
 
         $class->addProperty('entity')->setType(Entity::class)->setPrivate();
 
-        $constructor = $class->addMethod('__construct');
+        $constructor = $class->addMethod('__construct')->addComment('@throws ' . $identifierException);
         $constructor->addParameter('ha')->setType(HaContext::class);
         $constructor->addPromotedParameter('id')->setType(EntityId::class)->setPublic();
-        $constructor->setBody('$this->entity = $ha->getEntity($id);');
+        $constructor->setBody(\sprintf(
+            "if (!self::isGeneratedEntityId(\$id)) {\n    throw %s::entityNotGenerated(\$id->value, self::getDomain());\n}\n\n\$this->entity = \$ha->getEntity(\$id);",
+            $identifierException,
+        ));
+
+        $class->addMethod('getDomain')
+            ->setStatic()
+            ->setReturnType('string')
+            ->setBody('return ?;', [$domain->domain]);
+
+        $class->addMethod('isGeneratedEntityId')
+            ->setStatic()
+            ->setReturnType('bool')
+            ->setBody(\sprintf('return isset(self::%s[$id->value]);', self::ENTITY_IDS_CONSTANT))
+            ->addParameter('id')
+            ->setType(EntityId::class);
 
         $class->addMethod('getState')
             ->setReturnType('?' . $context->resolveClassName($domain->getStateClass()))

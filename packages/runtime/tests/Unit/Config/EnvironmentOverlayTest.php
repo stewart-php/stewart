@@ -151,9 +151,10 @@ final class EnvironmentOverlayTest extends TestCase
             ['codegen' => ['attributes' => ['sensor' => ['exclude' => ['icon']]]]],
         ];
 
-        yield 'a map setting takes an inline map' => [
-            ['STEWART_CODEGEN__RENAME' => '{light.hall_1: hall_light, switch.fan_2: fan}'],
-            ['codegen' => ['rename' => ['light.hall_1' => 'hall_light', 'switch.fan_2' => 'fan']]],
+        yield 'an option takes an inline map whole' => [
+            ['STEWART_APPS__DEMO__OPTIONS__LIGHTS' => '{hall: light.hall, porch: light.porch}'],
+            ['apps' => ['demo' => ['options' => ['lights' => ['hall' => 'light.hall', 'porch' => 'light.porch']]]]],
+            ['apps' => ['demo' => ['options' => ['lights' => []]]]],
         ];
 
         yield 'variables without the prefix are not ours' => [

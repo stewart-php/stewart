@@ -192,9 +192,6 @@ codegen:
     # Entity selectors that do not, whatever include says.
     exclude:              []
 
-    # Entity ID => the member name you would rather write.
-    rename:               []
-
     # Per-domain attribute keys for the state classes, keyed by domain. Known Home Assistant attributes get typed accessors; everything else stays reachable through attributes().
     attributes:
 

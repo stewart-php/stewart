@@ -11,19 +11,23 @@ declare(strict_types=1);
 namespace Stewart\Codegen\Tests\Fixtures\Expected;
 
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\HaContext;
 
 /**
  * The `binary_sensor` entities.
  */
-final class BinarySensorEntities
+final readonly class BinarySensorEntities
 {
-    /** Hall Motion */
-    public BinarySensorEntity $hallMotion {
-        get => new BinarySensorEntity($this->ha, new EntityId('binary_sensor.hall_motion'));
+    public function __construct(private HaContext $ha)
+    {
     }
 
-    public function __construct(private readonly HaContext $ha)
+    /**
+     * @throws IdentifierException
+     */
+    public function getEntity(string|EntityId $id): BinarySensorEntity
     {
+        return new BinarySensorEntity($this->ha, EntityId::fromStringOrId($id));
     }
 }

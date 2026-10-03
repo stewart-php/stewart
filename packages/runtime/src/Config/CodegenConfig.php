@@ -12,14 +12,12 @@ final readonly class CodegenConfig
     /**
      * @param list<string> $include
      * @param list<string> $exclude
-     * @param array<string, string> $rename
      */
     public function __construct(
         public ClassNamespace $namespace,
         public ProjectDirectory $outputDir,
         public array $include,
         public array $exclude,
-        public array $rename,
         public DomainAttributesConfigCollection $attributes,
     ) {}
 
@@ -31,7 +29,6 @@ final readonly class CodegenConfig
             outputDir: $codegen->readParsedValue('output_dir', static fn(string $directory): ProjectDirectory => new ProjectDirectory($directory)),
             include: $codegen->readStringList('include'),
             exclude: $codegen->readStringList('exclude'),
-            rename: $codegen->readStringMap('rename'),
             attributes: DomainAttributesConfigCollection::keyedByDomain(
                 $codegen->readSection('attributes')->mapSubsections(DomainAttributesConfig::fromSection(...)),
             ),

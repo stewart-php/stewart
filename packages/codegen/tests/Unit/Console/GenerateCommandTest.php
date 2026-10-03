@@ -80,11 +80,10 @@ final class GenerateCommandTest extends TestCase
     {
         $display = $this->runGenerateCommand(
             ['--snapshot-in' => GoldenSnapshot::getSnapshotPath()],
-            codegen: "  include: ['*', 'cover.*']\n  rename:\n    light.nowhere: nowhere\n",
+            codegen: "  include: ['*', 'cover.*']\n",
         )->getDisplay();
 
         self::assertStringContainsString('The codegen include cover.* matches no entity.', $display);
-        self::assertStringContainsString('The rename of light.nowhere to nowhere matches no generated entity.', $display);
     }
 
     public function testShrinkingWriteIsRefusedUntilAllowed(): void

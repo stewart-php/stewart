@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Codegen\Exception;
 
 use Stewart\Client\HaCoreState;
-use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\StewartException;
 
 /** @extends StewartException<CodegenError> */
@@ -54,15 +53,5 @@ final class CodegenException extends StewartException
     public static function homeAssistantNotRunning(HaCoreState $state): self
     {
         return self::createForReason(CodegenError::HomeAssistantNotRunning, ['state' => $state->value]);
-    }
-
-    public static function renameCollision(EntityId $entity, string $name, EntityId $other): self
-    {
-        return self::createForReason(CodegenError::RenameCollision, ['entity' => $entity->value, 'name' => $name, 'other' => $other->value]);
-    }
-
-    public static function renameReserved(EntityId $entity, string $name): self
-    {
-        return self::createForReason(CodegenError::RenameReserved, ['entity' => $entity->value, 'name' => $name]);
     }
 }

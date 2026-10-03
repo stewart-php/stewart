@@ -483,8 +483,8 @@ final class AppContainerBuilderTest extends TestCase
 
         $this->stateCache->replaceAll(EntityStateCollection::keyedByEntityId([new EntityState(new EntityId('light.hall'), 'on', ['brightness' => 200])]));
 
-        self::assertSame(200.0, $demo->entities->light->hall->getState()?->getBrightness());
-        self::assertSame('light.hall', (string) $demo->entities->light->hall->getEntity()->id);
+        self::assertSame(200.0, $demo->entities->light->getEntity('light.hall')->getState()?->getBrightness());
+        self::assertSame('light.hall', (string) $demo->entities->light->getEntity('light.hall')->getEntity()->id);
     }
 
     public function testSharedAliasExistsForServicesOfTheUsersOwn(): void
