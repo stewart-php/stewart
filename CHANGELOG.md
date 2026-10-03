@@ -4,6 +4,14 @@ Every package, the `ghcr.io/stewart-php/runtime` image, the Helm chart and the s
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). On 0.x, a minor release may break; its "Upgrading"
 section says what to change.
 
+## [0.2.1] - 2026-10-03
+
+The first published release of the 0.2 line; see 0.2.0 for what it adds and how to upgrade.
+
+### Fixed
+
+- The skeleton requires the 0.2 packages and the `runtime:0.2` image
+
 ## [0.2.0] - 2026-10-03
 
 ### Added

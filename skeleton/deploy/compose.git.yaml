@@ -2,7 +2,7 @@
 # then: docker compose -f compose.git.yaml up -d. Redeploy after a push: docker compose -f compose.git.yaml restart stewart
 services:
   stewart:
-    image: ghcr.io/stewart-php/runtime:0.1
+    image: ghcr.io/stewart-php/runtime:0.2
     env_file: .env
     environment:
       STEWART_BOOT_GIT_URL: https://github.com/OWNER/REPOSITORY.git
