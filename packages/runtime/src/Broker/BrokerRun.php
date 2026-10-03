@@ -9,6 +9,7 @@ use Closure;
 use LogicException;
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Runtime\Broker\Mqtt\MqttLink;
 use Stewart\Runtime\Lifecycle\BrokerRunPhase;
 use Throwable;
 
@@ -24,6 +25,7 @@ final class BrokerRun
         private readonly WorkerWatchdog $watchdog,
         private readonly HaSession $session,
         private readonly ControlPlane $control,
+        private readonly MqttLink $mqtt,
         private readonly LoggerInterface $logger,
         private readonly Duration $brokerShutdownGrace,
         private readonly DaemonStartTime $startTime,
@@ -101,9 +103,10 @@ final class BrokerRun
             $this->pool->shutdown($reason, $this->brokerShutdownGrace);
         });
         $sessionFailure = $this->attemptStopStep('Could not close the Home Assistant session while shutting down', $this->session->close(...));
+        $mqttFailure = $this->attemptStopStep('Could not close the MQTT connection while shutting down', $this->mqtt->close(...));
         $controlFailure = $this->attemptStopStep('Could not stop the control plane while shutting down', $this->control->stop(...));
 
-        return $workersFailure ?? $sessionFailure ?? $controlFailure;
+        return $workersFailure ?? $sessionFailure ?? $mqttFailure ?? $controlFailure;
     }
 
     private function moveTo(BrokerRunPhase $next): void

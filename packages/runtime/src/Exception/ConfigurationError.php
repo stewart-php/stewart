@@ -32,6 +32,7 @@ enum ConfigurationError: string implements ExceptionReason
     case EnvironmentValueUnparsable = 'environment_value_unparsable';
     case EnvironmentVariableConflict = 'environment_variable_conflict';
     case EnvironmentSecretFileUnreadable = 'environment_secret_file_unreadable';
+    case MqttPackageMissing = 'mqtt_package_missing';
 
     public function messageTemplate(): string
     {
@@ -60,6 +61,7 @@ enum ConfigurationError: string implements ExceptionReason
             self::EnvironmentValueUnparsable => '{variable} is not a valid inline list or map: {cause}',
             self::EnvironmentVariableConflict => '{variable} and {otherVariable} both set {valuePath}; keep one.',
             self::EnvironmentSecretFileUnreadable => '{variable} points to {path}, which cannot be read.',
+            self::MqttPackageMissing => 'mqtt.url is set, but the MQTT client is not installed; run `composer require stewart-php/mqtt`.',
         };
     }
 }

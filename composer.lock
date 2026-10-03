@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c414e05abcdbc62629feed4e2698cc2f",
+    "content-hash": "2781137af360def4f45d024c204c3264",
     "packages": [
         {
             "name": "amphp/amp",
@@ -2130,7 +2130,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/client",
-                "reference": "0af16ca174cf157e7f0f6f4dce378bcdc5e85b46"
+                "reference": "64c91b7c99e99804bd3655ea488cbbe0564598f4"
             },
             "require": {
                 "amphp/amp": "^3.1",
@@ -2188,7 +2188,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/contracts",
-                "reference": "fb8e2871b6653d785081257b0dc423fa64f24f78"
+                "reference": "4503ba1ae7426ffec161c8d82fb9a5b5d6525e54"
             },
             "require": {
                 "dragonmantank/cron-expression": "^3.4",
@@ -2224,12 +2224,60 @@
             }
         },
         {
+            "name": "stewart-php/mqtt",
+            "version": "0.x-dev",
+            "dist": {
+                "type": "path",
+                "url": "packages/mqtt",
+                "reference": "b68cc2370958eb8b4d21067634e37f63afb68d72"
+            },
+            "require": {
+                "amphp/amp": "^3.1",
+                "amphp/byte-stream": "^2.1",
+                "amphp/socket": "^2.4",
+                "php": ">=8.4.1",
+                "psr/log": "^3.0",
+                "stewart-php/contracts": "self.version",
+                "stewart-php/runtime": "self.version",
+                "stewart-php/support": "self.version",
+                "symfony/dependency-injection": "^7.4 || ^8.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^13.3",
+                "stewart-php/testing": "self.version"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Stewart\\Mqtt\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Stewart\\Mqtt\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "MQTT 3.1.1 client that connects Stewart apps to an MQTT server. Non-blocking, over amphp",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
             "name": "stewart-php/runtime",
             "version": "0.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/runtime",
-                "reference": "af8c11318cffbb04a50a973e2568f01999e76d72"
+                "reference": "bb81e48e98cc46b8a3cf390915e6fb1873e911c6"
             },
             "require": {
                 "amphp/amp": "^3.1",
@@ -2301,7 +2349,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/store",
-                "reference": "da15a6d4c01c302083a944c215d2b13ef8a3213c"
+                "reference": "a9f13365a8759d4f0c1dd3eb7705c0f28fc33f70"
             },
             "require": {
                 "ext-json": "*",
@@ -2347,7 +2395,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/store-redis",
-                "reference": "e08549580f69b04b9d1851bcce6b2fde65a97918"
+                "reference": "67f264898d4f4089305d31854041b2ef5658d361"
             },
             "require": {
                 "amphp/amp": "^3.1",
@@ -2398,7 +2446,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/support",
-                "reference": "289701605a022eaa589c76331db2080b868611aa"
+                "reference": "c684d557cdb526de0b55a26bd698234521b04c1e"
             },
             "require": {
                 "amphp/amp": "^3.1",
@@ -7367,7 +7415,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/codegen",
-                "reference": "5abd03b7708137883b1a9b5b502f4d941b6a091f"
+                "reference": "2919048fa84ed66f84f8b1d545e4d7ef16c15d07"
             },
             "require": {
                 "ext-ctype": "*",
@@ -7418,7 +7466,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/testing",
-                "reference": "79172fa7c5854f3e7e75caddcf1a91d98253d704"
+                "reference": "49e9d704417f844935e99ece6af5aff9246e1408"
             },
             "require": {
                 "amphp/amp": "^3.1",
@@ -8066,6 +8114,7 @@
         "stewart-php/client": 20,
         "stewart-php/codegen": 20,
         "stewart-php/contracts": 20,
+        "stewart-php/mqtt": 20,
         "stewart-php/runtime": 20,
         "stewart-php/store": 20,
         "stewart-php/store-redis": 20,

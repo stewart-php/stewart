@@ -2,6 +2,7 @@
 .git
 .github
 .idea
+bin
 deploy
 tests
 var

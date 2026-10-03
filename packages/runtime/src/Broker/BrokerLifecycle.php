@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Broker;
 
+use Stewart\Runtime\Broker\Mqtt\MqttLink;
+use Stewart\Runtime\Broker\Mqtt\MqttMessageRouter;
 use Stewart\Runtime\Time\ProcessTimeZone;
 use Stewart\Store\StoreBackend;
 use Throwable;
@@ -21,6 +23,8 @@ final readonly class BrokerLifecycle
         private ConnectionTracker $connection,
         private ProcessTimeZone $processTimeZone,
         private ControlPlane $control,
+        private MqttLink $mqtt,
+        private MqttMessageRouter $mqttRouter,
         private ?StoreBackend $store = null,
     ) {}
 
@@ -38,6 +42,7 @@ final readonly class BrokerLifecycle
             // A stop can land while the previous step suspends; it has already closed what would start here.
             if ($this->run->isRunning()) {
                 $this->control->start();
+                $this->mqtt->startInBackground($this->mqttRouter);
             }
 
             if ($this->run->isRunning()) {

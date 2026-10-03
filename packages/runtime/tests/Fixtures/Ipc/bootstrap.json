@@ -1,7 +1,7 @@
 {
     "t": "bootstrap",
     "m": {
-        "protocol": 13,
+        "protocol": 14,
         "worker_id": 1,
         "time_zone": "Europe/Budapest",
         "apps": [
@@ -15,7 +15,8 @@
             "subscription_buffer": 100,
             "initialize_timeout_us": 60000000,
             "services_file": "/app/services.php",
-            "generated_namespace": "Stewart\\Generated"
+            "generated_namespace": "Stewart\\Generated",
+            "mqtt_enabled": true
         },
         "store": {
             "dsn": "redis://:not-a-secret@valkey:6379/0",

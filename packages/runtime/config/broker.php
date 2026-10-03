@@ -9,13 +9,19 @@ use Stewart\Runtime\Broker\AppPlacement;
 use Stewart\Runtime\Broker\AppPlacementFactory;
 use Stewart\Runtime\Broker\BrokerLifecycle;
 use Stewart\Runtime\Broker\BrokerStoreBackendOpener;
+use Stewart\Runtime\Broker\BrokerSubscriptionListener;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\ControlPlane;
+use Stewart\Runtime\Broker\EventRouter;
 use Stewart\Runtime\Broker\HaSession;
 use Stewart\Runtime\Broker\ManifestCheck;
 use Stewart\Runtime\Broker\Message\WorkerMessageDispatcher;
 use Stewart\Runtime\Broker\Message\WorkerMessageHandler;
+use Stewart\Runtime\Broker\Mqtt\MqttLink;
+use Stewart\Runtime\Broker\Mqtt\MqttLinkResolver;
+use Stewart\Runtime\Broker\Mqtt\MqttMessageRouter;
 use Stewart\Runtime\Broker\ProcessWorkerSpawner;
+use Stewart\Runtime\Broker\SubscriptionRegistry;
 use Stewart\Runtime\Broker\WebsocketHaSession;
 use Stewart\Runtime\Broker\WorkerSpawner;
 use Stewart\Runtime\Control\ControlPlaneFactory;
@@ -33,6 +39,7 @@ return static function (ContainerConfigurator $container): void {
     $services = $container->services()->defaults()->autowire()->autoconfigure();
 
     $services->instanceof(WorkerMessageHandler::class)->tag('stewart.worker_message_handler');
+    $services->instanceof(BrokerSubscriptionListener::class)->tag('stewart.broker_subscription_listener');
 
     $services->load('Stewart\\Runtime\\Broker\\', '../src/Broker/');
     $services->set(StateCache::class);
@@ -53,6 +60,10 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(GuardedStoreBackend::class)->factory([service(BrokerStoreBackendOpener::class), 'openConfiguredBackend']);
     $services->alias(StoreBackend::class, GuardedStoreBackend::class);
+
+    $services->set(SubscriptionRegistry::class)->arg('$brokerSubscriptionListeners', tagged_iterator('stewart.broker_subscription_listener'));
+    $services->set(MqttLink::class)->factory([service(MqttLinkResolver::class), 'resolveMqttLink']);
+    $services->alias(MqttMessageRouter::class, EventRouter::class);
 
     $services->set(Filesystem::class);
     $services->set(ControlPlane::class)->factory([service(ControlPlaneFactory::class), 'createControlPlane']);

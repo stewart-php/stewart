@@ -1,0 +1,12 @@
+{
+    "t": "mqtt_publish",
+    "m": {
+        "message": {
+            "topic": "home/hall/light",
+            "payload_base64": "b27/",
+            "qos": 1,
+            "retain": true
+        },
+        "publisher_scope": "demo"
+    }
+}

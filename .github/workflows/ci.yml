@@ -42,7 +42,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: [client, codegen, contracts, runtime, store, store-redis, support, testing]
+        package: [client, codegen, contracts, mqtt, runtime, store, store-redis, support, testing]
         lowest: ['', '1']
     runs-on: ubuntu-24.04
     steps:

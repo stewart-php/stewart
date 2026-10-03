@@ -9,6 +9,7 @@ parameters:
         - packages/client/src
         - packages/store/src
         - packages/store-redis/src
+        - packages/mqtt/src
         - packages/codegen/src
         - packages/runtime/src
         - packages/testing/src
@@ -17,6 +18,7 @@ parameters:
         - packages/client/tests
         - packages/store/tests
         - packages/store-redis/tests
+        - packages/mqtt/tests
         - packages/codegen/tests
         - packages/runtime/tests
         - packages/testing/tests
@@ -24,6 +26,7 @@ parameters:
         - packages/runtime/config
         - packages/codegen/config
         - packages/store-redis/config
+        - packages/mqtt/config
         - packages/runtime/bin/stewart
         - tests
     tmpDir: var/phpstan

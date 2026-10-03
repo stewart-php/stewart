@@ -15,8 +15,11 @@ use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Tests\Fixtures\Ipc\NullTransport;
 use Stewart\Runtime\Tests\Fixtures\Worker\AppResourcesFixture;
 use Stewart\Runtime\Tests\Fixtures\Worker\WorkerHaContextFixture;
+use Stewart\Runtime\Worker\AppActivityCounters;
+use Stewart\Runtime\Worker\Context\DispatchStreams;
 use Stewart\Runtime\Worker\StderrFallback;
 use Stewart\Runtime\Worker\WorkerLogger;
+use Stewart\Runtime\Worker\WorkerMqtt;
 use Stewart\Store\DisabledStores;
 use Stewart\Store\Stores;
 
@@ -31,6 +34,7 @@ final class AppRuntimeServicesFixture
         Stores $stores = new DisabledStores(),
         ?GeneratedRoots $generated = null,
         ?WorkerLogger $logger = null,
+        bool $mqttEnabled = false,
     ): AppRuntimeServices {
         $timers = $resources->timers;
         $logger ??= new WorkerLogger($transport, new StderrFallback(new WorkerId(0)), ResourceScope::shared());
@@ -49,6 +53,13 @@ final class AppRuntimeServicesFixture
                 callTimeout: Duration::seconds(30),
             ),
             stores: $stores,
+            mqtt: new WorkerMqtt(
+                $transport,
+                new DispatchStreams($resources->dispatcher, $timers),
+                new AppActivityCounters(),
+                $mqttEnabled,
+                ResourceScope::shared(),
+            ),
             generated: $generated,
         );
     }

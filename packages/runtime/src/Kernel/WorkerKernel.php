@@ -63,6 +63,7 @@ final readonly class WorkerKernel
             ->withArgument('workerCallTimeout', $bootstrap->settings->callTimeout)
             ->withArgument('workerShutdownGrace', $bootstrap->settings->shutdownGrace)
             ->withArgument('generatedNamespace', $bootstrap->settings->generatedNamespace)
-            ->withArgument('workerStoreSettings', $bootstrap->store);
+            ->withArgument('workerStoreSettings', $bootstrap->store)
+            ->withArgument('brokerMqttEnabled', $bootstrap->settings->mqttEnabled);
     }
 }

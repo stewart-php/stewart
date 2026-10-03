@@ -36,6 +36,7 @@ final readonly class SelectorConverter implements ValueConverter
             SelectorKind::Exact => ['kind' => 'exact', 'value' => $value->getPattern()],
             SelectorKind::Glob => ['kind' => 'glob', 'pattern' => $value->getPattern()],
             SelectorKind::Regex => ['kind' => 'regex', 'regex' => $value->getPattern()],
+            SelectorKind::MqttFilter => ['kind' => 'mqtt_filter', 'filter' => $value->getPattern()],
             SelectorKind::AnyOf => ['kind' => 'any_of', 'selectors' => $value->listMembers()->mapToList($this->encodeValue(...))],
         };
     }
@@ -53,6 +54,7 @@ final readonly class SelectorConverter implements ValueConverter
             'exact' => Selector::exact(JsonShape::requireString($value, 'value')),
             'glob' => Selector::glob(JsonShape::requireString($value, 'pattern')),
             'regex' => Selector::regex(JsonShape::requireString($value, 'regex')),
+            'mqtt_filter' => Selector::mqttFilter(JsonShape::requireString($value, 'filter')),
             'any' => Selector::any(),
             'any_of' => Selector::anyOf(...array_map(
                 fn(array $selector): Selector => $this->decodeValue($selector, $path . '.selectors'),

@@ -1,0 +1,14 @@
+{
+    "t": "mqtt_message",
+    "m": {
+        "message": {
+            "topic": "home/hall/temp",
+            "payload_base64": "eyJ0IjoyMS41fQ==",
+            "qos": 0,
+            "retain": false
+        },
+        "deliver_to": [
+            "w0:3"
+        ]
+    }
+}

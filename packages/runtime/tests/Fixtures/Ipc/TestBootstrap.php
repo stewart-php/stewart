@@ -30,19 +30,20 @@ final class TestBootstrap
         string $timeZone = 'UTC',
         ?StoreSettings $store = null,
         ?string $servicesFile = null,
+        bool $mqttEnabled = false,
     ): Bootstrap {
         return new Bootstrap(
             protocol: IpcCodec::PROTOCOL_VERSION,
             workerId: new WorkerId(0),
             timeZone: $timeZone,
             apps: WorkerAppsFragment::fromCollection(WorkerAppCollection::fromApps($apps)),
-            settings: self::createSettings($callTimeout ?? Duration::seconds(30), $initializeTimeout, $servicesFile),
+            settings: self::createSettings($callTimeout ?? Duration::seconds(30), $initializeTimeout, $servicesFile, $mqttEnabled),
             store: $store,
             knownAppIds: AppIdsFragment::fromCollection(AppIdCollection::fromIds(array_map(static fn(WorkerApp $app): AppId => $app->id, $apps))),
         );
     }
 
-    private static function createSettings(Duration $callTimeout, ?Duration $initializeTimeout, ?string $servicesFile): WorkerSettings
+    private static function createSettings(Duration $callTimeout, ?Duration $initializeTimeout, ?string $servicesFile, bool $mqttEnabled): WorkerSettings
     {
         return new WorkerSettings(
             logLevel: LogLevel::Debug,
@@ -52,6 +53,7 @@ final class TestBootstrap
             initializeTimeout: $initializeTimeout,
             servicesFile: $servicesFile,
             generatedNamespace: 'Stewart\\Generated',
+            mqttEnabled: $mqttEnabled,
         );
     }
 }

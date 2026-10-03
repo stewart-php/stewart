@@ -13,6 +13,7 @@ use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\BrokerRun;
 use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\DisabledControlPlane;
+use Stewart\Runtime\Broker\Mqtt\DisabledMqttLink;
 use Stewart\Runtime\Broker\SignalHandlers;
 use Stewart\Runtime\Broker\WorkerPool;
 use Stewart\Runtime\Broker\WorkerSlot;
@@ -47,7 +48,7 @@ final class SignalHandlersTest extends TestCase
         $this->spawner = new FakeWorkerSpawner(joinLatch: new Latch());
         $pools = WorkerPoolFixture::createWorkerPool($this->spawner, timers: new ManualTimers(), logger: $this->logger);
         $this->pool = $pools->pool;
-        $this->run = new BrokerRun($pools->pool, $pools->watchdog, FakeHaSession::createOpened(), new DisabledControlPlane(), $this->logger, Duration::minutes(1), new DaemonStartTime($pools->clock));
+        $this->run = new BrokerRun($pools->pool, $pools->watchdog, FakeHaSession::createOpened(), new DisabledControlPlane(), new DisabledMqttLink($this->logger), $this->logger, Duration::minutes(1), new DaemonStartTime($pools->clock));
         $this->run->start();
 
         $this->signals = new SignalHandlers($this->run, $this->logger);

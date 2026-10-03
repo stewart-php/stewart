@@ -8,6 +8,7 @@
         "psr/log": "^3.0",
         "stewart-php/codegen": "^0.1",
         "stewart-php/contracts": "^0.1",
+        "stewart-php/mqtt": "^0.1",
         "stewart-php/runtime": "^0.1",
         "stewart-php/store-redis": "^0.1",
         "symfony/dependency-injection": "^7.4 || ^8.0"

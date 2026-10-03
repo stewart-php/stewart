@@ -19,7 +19,8 @@ final class SubscriptionRegistry
 
     private readonly SelectorIndex $index;
 
-    public function __construct()
+    /** @param iterable<BrokerSubscriptionListener> $brokerSubscriptionListeners */
+    public function __construct(private readonly iterable $brokerSubscriptionListeners = [])
     {
         $this->index = new SelectorIndex();
     }
@@ -28,6 +29,10 @@ final class SubscriptionRegistry
     {
         $this->subscriptions[$subscription->subscriptionId->value] = $subscription;
         $this->index->add($subscription->subscriptionId, $subscription->kind, $subscription->selector);
+
+        foreach ($this->brokerSubscriptionListeners as $listener) {
+            $listener->subscriptionAdded($subscription);
+        }
     }
 
     public function remove(SubscriptionId $subscriptionId, ?WorkerId $ownedBy = null): void
@@ -40,6 +45,10 @@ final class SubscriptionRegistry
 
         unset($this->subscriptions[$subscriptionId->value]);
         $this->index->remove($subscriptionId);
+
+        foreach ($this->brokerSubscriptionListeners as $listener) {
+            $listener->subscriptionRemoved($subscription);
+        }
     }
 
     public function removeWorkerSubscriptions(WorkerId $workerId): void

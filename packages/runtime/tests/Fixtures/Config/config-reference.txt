@@ -126,6 +126,45 @@ persistence:
     # After the store times out or is unreachable, how long a worker fails store calls at once before it tries again.
     recovery_interval:    5s
 
+# The MQTT server apps exchange messages with. Without a url, an app that asks for Mqtt is not started. Needs stewart-php/mqtt.
+mqtt:
+
+    # Server URL, mqtt://host:1883 or mqtts://host:8883 for TLS. Credentials belong in it: mqtt://user:password@host.
+    url:                  null
+
+    # Client identifier the server knows the daemon by. Defaults to stewart-<hostname>.
+    client_id:            null
+
+    # Longest silence before the connection is probed, and dropped when the probe goes unanswered.
+    keepalive:            30s
+
+    # How long connecting and the CONNECT handshake may take.
+    connect_timeout:      10s
+
+    # Wait before the first reconnect to the MQTT server. Doubles per attempt.
+    reconnect_initial_delay: 1s
+
+    # Ceiling for the doubling.
+    reconnect_max_delay:  60s
+
+    # QoS 1 messages kept while the server is unreachable, before the oldest are dropped. QoS 0 messages are dropped at once.
+    outbound_buffer:      100
+
+    # Message the server publishes when the daemon disappears without disconnecting.
+    will:
+
+        # Topic of the last will. Unset sends none.
+        topic:                null
+
+        # Payload of the last will.
+        payload:              ''
+
+        # Delivery guarantee: 0 at most once, 1 at least once.
+        qos:                  0
+
+        # Whether the server keeps the last will for later subscribers.
+        retain:               false
+
 # The read-only socket `stewart status` connects to. The token is a secret: set it from the environment.
 control:
 

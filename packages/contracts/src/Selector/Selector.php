@@ -13,12 +13,20 @@ final readonly class Selector
 {
     private const string ANYTHING = '*';
 
+    private const string MQTT_LEVEL_SEPARATOR = '/';
+
+    private const string MQTT_SINGLE_LEVEL = '+';
+
+    private const string MQTT_MULTI_LEVEL = '#';
+
+    private const int MQTT_MAX_FILTER_BYTES = 65535;
+
     private SelectorCollection $members;
 
     private function __construct(
         private SelectorKind $kind,
         private string $pattern,
-        private ?string $globRegex = null,
+        private ?string $compiledRegex = null,
         ?SelectorCollection $members = null,
     ) {
         $this->members = $members ?? SelectorCollection::empty();
@@ -54,6 +62,16 @@ final readonly class Selector
         }
 
         return new self(SelectorKind::Regex, $regex);
+    }
+
+    /** @throws SelectorException */
+    public static function mqttFilter(string $filter): self
+    {
+        if ($filter === '') {
+            throw SelectorException::empty('An MQTT topic filter');
+        }
+
+        return new self(SelectorKind::MqttFilter, $filter, self::compileMqttFilter($filter));
     }
 
     /** @throws SelectorException */
@@ -121,7 +139,8 @@ final readonly class Selector
         return match ($this->kind) {
             SelectorKind::Exact => $candidate === $this->pattern,
             SelectorKind::AnyOf => $this->members->anyMatches($candidate),
-            SelectorKind::Glob => $this->isAny() || preg_match($this->globRegex ?? '', $candidate) === 1,
+            SelectorKind::Glob => $this->isAny() || preg_match($this->compiledRegex ?? '', $candidate) === 1,
+            SelectorKind::MqttFilter => preg_match($this->compiledRegex ?? '', $candidate) === 1,
             SelectorKind::Regex => preg_match($this->pattern, $candidate) === 1,
         };
     }
@@ -196,5 +215,49 @@ final readonly class Selector
         }
 
         return '#\A' . $out . '\z#';
+    }
+
+    /** @throws SelectorException */
+    private static function compileMqttFilter(string $filter): string
+    {
+        if (\strlen($filter) > self::MQTT_MAX_FILTER_BYTES || str_contains($filter, "\0")) {
+            throw SelectorException::mqttFilterInvalid($filter);
+        }
+
+        $levels = explode(self::MQTT_LEVEL_SEPARATOR, $filter);
+        $lastIndex = \count($levels) - 1;
+        $compiledLevels = [];
+        $multiLevelTail = false;
+
+        foreach ($levels as $index => $level) {
+            if ($level === self::MQTT_MULTI_LEVEL && $index === $lastIndex) {
+                $multiLevelTail = true;
+
+                continue;
+            }
+
+            if ($level === self::MQTT_SINGLE_LEVEL) {
+                $compiledLevels[] = '[^/]*';
+
+                continue;
+            }
+
+            if (str_contains($level, self::MQTT_SINGLE_LEVEL) || str_contains($level, self::MQTT_MULTI_LEVEL)) {
+                throw SelectorException::mqttFilterInvalid($filter);
+            }
+
+            $compiledLevels[] = preg_quote($level, '#');
+        }
+
+        $body = implode(self::MQTT_LEVEL_SEPARATOR, $compiledLevels);
+
+        if ($multiLevelTail) {
+            $body = $compiledLevels === [] ? '.*' : $body . '(?:/.*)?';
+        }
+
+        // MQTT wildcards in the first level never match topics reserved with a leading '$'.
+        $startsWithWildcard = $levels[0] === self::MQTT_SINGLE_LEVEL || $levels[0] === self::MQTT_MULTI_LEVEL;
+
+        return '#\A' . ($startsWithWildcard ? '(?!\$)' : '') . $body . '\z#s';
     }
 }

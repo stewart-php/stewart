@@ -42,6 +42,7 @@ final class StewartConfigSchema implements ConfigurationInterface
         $this->addSupervisionSection($root);
         $this->addServiceCallsSection($root);
         $this->addPersistenceSection($root);
+        $this->addMqttSection($root);
         $this->addControlSection($root);
         $this->addCodegenSection($root);
         $this->addAppsSection($root);
@@ -210,6 +211,48 @@ final class StewartConfigSchema implements ConfigurationInterface
                         ->append($this->createScalarNode('prefix', 'What every key is filed under, so two installations can share one server.', 'stewart'))
                         ->append($this->createDurationNode('timeout', 'How long one storage operation may take.', '2s'))
                         ->append($this->createDurationNode('recovery_interval', 'After the store times out or is unreachable, how long a worker fails store calls at once before it tries again.', '5s'))
+                    ->end()
+                ->end()
+            ->end();
+    }
+
+    private function addMqttSection(ArrayNodeDefinition $root): void
+    {
+        $root
+            ->children()
+                ->arrayNode('mqtt')
+                    ->info('The MQTT server apps exchange messages with. Without a url, an app that asks for Mqtt is not started. Needs stewart-php/mqtt.')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->append($this->createScalarNode('url', 'Server URL, mqtt://host:1883 or mqtts://host:8883 for TLS. Credentials belong in it: mqtt://user:password@host.', null))
+                        ->append($this->createScalarNode('client_id', 'Client identifier the server knows the daemon by. Defaults to stewart-<hostname>.', null))
+                        ->append($this->createDurationNode('keepalive', 'Longest silence before the connection is probed, and dropped when the probe goes unanswered.', '30s'))
+                        ->append($this->createDurationNode('connect_timeout', 'How long connecting and the CONNECT handshake may take.', '10s'))
+                        ->append($this->createDurationNode('reconnect_initial_delay', 'Wait before the first reconnect to the MQTT server. Doubles per attempt.', '1s'))
+                        ->append($this->createDurationNode('reconnect_max_delay', 'Ceiling for the doubling.', '60s'))
+                        ->integerNode('outbound_buffer')
+                            ->info('QoS 1 messages kept while the server is unreachable, before the oldest are dropped. QoS 0 messages are dropped at once.')
+                            ->min(0)
+                            ->defaultValue(100)
+                        ->end()
+                        ->arrayNode('will')
+                            ->info('Message the server publishes when the daemon disappears without disconnecting.')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->append($this->createScalarNode('topic', 'Topic of the last will. Unset sends none.', null))
+                                ->append($this->createScalarNode('payload', 'Payload of the last will.', ''))
+                                ->integerNode('qos')
+                                    ->info('Delivery guarantee: 0 at most once, 1 at least once.')
+                                    ->min(0)
+                                    ->max(1)
+                                    ->defaultValue(0)
+                                ->end()
+                                ->booleanNode('retain')
+                                    ->info('Whether the server keeps the last will for later subscribers.')
+                                    ->defaultFalse()
+                                ->end()
+                            ->end()
+                        ->end()
                     ->end()
                 ->end()
             ->end();

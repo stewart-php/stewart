@@ -8,6 +8,7 @@ use Stewart\Contracts\Connection\ConnectionEvent;
 use Stewart\Contracts\Event\EventTypeSelector;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\EventStream;
+use Stewart\Contracts\Mqtt\MqttMessage;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
@@ -50,6 +51,15 @@ final readonly class DispatchStreams
     {
         /** @var DispatchSource<TopicEvent> $source */
         $source = new DispatchSource($this->dispatcher, $scope, SubscriptionKind::Topic, $selector);
+
+        return new OperatorStream($source, $this->timers);
+    }
+
+    /** @return EventStream<MqttMessage> */
+    public function watchMqttMessages(ResourceScope $scope, Selector $topicFilter): EventStream
+    {
+        /** @var DispatchSource<MqttMessage> $source */
+        $source = new DispatchSource($this->dispatcher, $scope, SubscriptionKind::Mqtt, $topicFilter);
 
         return new OperatorStream($source, $this->timers);
     }

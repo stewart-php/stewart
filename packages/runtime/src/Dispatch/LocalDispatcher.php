@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Dispatch;
 use Closure;
 use Stewart\Contracts\Connection\ConnectionEvent;
 use Stewart\Contracts\Event\HaEvent;
+use Stewart\Contracts\Mqtt\MqttMessage;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Stream\SubscriptionScope;
@@ -106,6 +107,11 @@ final class LocalDispatcher
     public function dispatchTopic(TopicEvent $event, SubscriptionIdCollection $deliverTo): void
     {
         $this->deliver(SubscriptionKind::Topic, $event, $deliverTo);
+    }
+
+    public function dispatchMqttMessage(MqttMessage $message, SubscriptionIdCollection $deliverTo): void
+    {
+        $this->deliver(SubscriptionKind::Mqtt, $message, $deliverTo);
     }
 
     public function dispatchConnection(ConnectionEvent $event): void

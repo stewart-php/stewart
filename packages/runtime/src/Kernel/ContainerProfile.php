@@ -25,7 +25,8 @@ enum ContainerProfile: string
     {
         return match ($this) {
             self::Console => ['stewart-php/codegen'],
-            self::Broker, self::Worker => ['stewart-php/store-redis'],
+            self::Broker => ['stewart-php/store-redis', 'stewart-php/mqtt'],
+            self::Worker => ['stewart-php/store-redis'],
         };
     }
 }
