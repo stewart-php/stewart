@@ -1,5 +1,5 @@
 #!/bin/sh
-# Smoke-tests the runtime image on the host: a mounted checkout, then a clone of the skeleton at boot, twice.
+# Smoke-tests the runtime image on the host: a skeleton project mounted, then the same project cloned at boot, twice.
 set -eu
 
 image="${RUNTIME_IMAGE:?set RUNTIME_IMAGE to the image under test}"
@@ -12,17 +12,12 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo '--- a mounted checkout'
-docker run --rm -u "$user" -v "$PWD:/app" -e STEWART_BOOT_COMPOSER=never "$image" doctor
-docker run --rm -u "$user" -v "$PWD:/app" -e STEWART_BOOT_COMPOSER=never "$image" --version
-
 echo '--- an unknown entrypoint setting is refused'
 if docker run --rm -e STEWART_BOOT_TYPO=1 "$image" --version 2> /dev/null; then
     echo 'STEWART_BOOT_TYPO was accepted' >&2
     exit 1
 fi
 
-echo '--- a project cloned at boot'
 rm -rf "$work"
 mkdir -p "$work"
 cp -R skeleton/. "$work/project"
@@ -42,6 +37,20 @@ composer_in_project config repositories.monorepo "{\"type\": \"path\", \"url\": 
 composer_in_project config minimum-stability dev
 composer_in_project update --no-install --no-interaction --no-progress
 
+echo '--- a mounted project'
+mounted() {
+    docker run --rm -u "$user" -v "$PWD/$work/project:/app" -v "$PWD:/monorepo:ro" -e STEWART_BOOT_COMPOSER=auto "$image" "$@"
+}
+mounted doctor
+second_start=$(mounted --version 2>&1)
+case "$second_start" in
+    *'installing dependencies'*)
+        echo 'an unchanged composer.lock was installed again' >&2
+        exit 1
+        ;;
+esac
+
+echo '--- a project cloned at boot'
 git -C "$work/project" init -q -b main
 git -C "$work/project" add -A
 git -C "$work/project" -c user.name=test -c user.email=test@example.invalid commit -q -m 'skeleton'

@@ -135,7 +135,7 @@ image: ## Build the runtime image as published, and its -dev variant [RUNTIME_IM
 	$(DOCKER) build -f .docker/php/Dockerfile --target runtime-dev -t $(RUNTIME_IMAGE)-dev .
 
 .PHONY: test-image
-test-image: image ## Smoke-test the runtime image: a mounted checkout, then the skeleton cloned at boot
+test-image: image ## Smoke-test the runtime image: a skeleton project mounted, then cloned at boot
 	RUNTIME_IMAGE=$(RUNTIME_IMAGE) sh bin/test-image.sh
 
 .PHONY: chart-lint
