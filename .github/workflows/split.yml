@@ -43,7 +43,8 @@ jobs:
           repositories: ${{ matrix.repository }}
       - uses: danharrin/monorepo-split-github-action@14e42e2437f674b8987c1f50ca3689116aea1893 # v2.4.5
         env:
-          GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+          # The action writes this before the @ of the clone URL; an app token only works there as user:password.
+          GITHUB_TOKEN: x-access-token:${{ steps.token.outputs.token }}
         with:
           package_directory: ${{ matrix.directory }}
           repository_organization: stewart-php
