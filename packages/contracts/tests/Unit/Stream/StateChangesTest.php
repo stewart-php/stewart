@@ -62,6 +62,38 @@ final class StateChangesTest extends TestCase
         self::assertSame(['on', 'on'], $this->received);
     }
 
+    public function testWhenChangedToSkipsUnavailablePrevious(): void
+    {
+        $this->listen($this->stream->whenChangedTo('on'));
+
+        $this->push($this->createChange(EntityState::UNAVAILABLE, 'on'));
+        $this->push($this->createChange(EntityState::UNKNOWN, 'on'));
+        $this->push($this->createChange(null, 'on'));
+
+        self::assertSame([], $this->received);
+    }
+
+    public function testSkippedArrivalDoesNotArmWindow(): void
+    {
+        $this->listen($this->stream->whenChangedTo('on', for: Duration::seconds(3)));
+
+        $this->push($this->createChange(EntityState::UNAVAILABLE, 'on'));
+
+        self::assertSame(0, $this->timers->countPendingTimers());
+    }
+
+    public function testReturnFromUnavailableStaysQuiet(): void
+    {
+        $this->listen($this->stream->whenChangedTo('on', for: Duration::seconds(3)));
+
+        $this->push($this->createChange('off', 'on'));
+        $this->push($this->createChange('on', EntityState::UNAVAILABLE));
+        $this->push($this->createChange(EntityState::UNAVAILABLE, 'on'));
+        $this->timers->delay(Duration::seconds(5));
+
+        self::assertSame([], $this->received);
+    }
+
     public function testWhenStableForEmitsAfterWindow(): void
     {
         $this->listen($this->stream->whenStableFor(Duration::minutes(5)));

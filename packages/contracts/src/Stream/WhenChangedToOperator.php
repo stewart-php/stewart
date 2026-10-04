@@ -26,6 +26,7 @@ final readonly class WhenChangedToOperator implements StreamSource
         private StreamSource $source,
         private string $state,
         private ?Duration $window,
+        private PreviousStateRule $previousStateRule,
     ) {
         $window?->requireAtLeastOneMillisecond('whenChangedTo');
     }
@@ -34,10 +35,11 @@ final readonly class WhenChangedToOperator implements StreamSource
     {
         $state = $this->state;
         $window = $this->window;
+        $previousStateRule = $this->previousStateRule;
 
         if ($window === null) {
-            return $this->source->attach($scope, static function (StateChange $change) use ($state, $downstream): void {
-                if ($change->changedTo($state)) {
+            return $this->source->attach($scope, static function (StateChange $change) use ($state, $previousStateRule, $downstream): void {
+                if ($change->changedTo($state) && $previousStateRule->permits($change)) {
                     $downstream($change);
                 }
             });
@@ -48,10 +50,10 @@ final readonly class WhenChangedToOperator implements StreamSource
 
         $scope->onTeardown($pendings->disarmAll(...));
 
-        return $this->source->attach($scope, static function (StateChange $change) use ($state, $pendings): void {
+        return $this->source->attach($scope, static function (StateChange $change) use ($state, $previousStateRule, $pendings): void {
             $entityId = $change->entityId->value;
 
-            if ($change->changedTo($state)) {
+            if ($change->changedTo($state) && $previousStateRule->permits($change)) {
                 $pendings->hold($entityId, $change);
                 $pendings->arm($entityId);
 

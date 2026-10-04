@@ -22,7 +22,7 @@ final readonly class StateChanges extends ComposedStream implements StateChangeS
 
     public function whenChangedTo(string $state, ?Duration $for = null): static
     {
-        return $this->extendWith(new WhenChangedToOperator($this->timers, $this->source, $state, $for));
+        return $this->extendWith(new WhenChangedToOperator($this->timers, $this->source, $state, $for, PreviousStateRule::excludingUnavailable()));
     }
 
     public function whenStableFor(Duration $window): static

@@ -9,6 +9,10 @@ use Stewart\Contracts\Time\Instant;
 
 final readonly class EntityState
 {
+    public const string UNAVAILABLE = 'unavailable';
+
+    public const string UNKNOWN = 'unknown';
+
     /** @param array<string, mixed> $attributes */
     public function __construct(
         public EntityId $entityId,
@@ -31,7 +35,7 @@ final readonly class EntityState
 
     public function isUnavailable(): bool
     {
-        return $this->state === 'unavailable' || $this->state === 'unknown';
+        return $this->state === self::UNAVAILABLE || $this->state === self::UNKNOWN;
     }
 
     public function getAttribute(string $name): mixed
