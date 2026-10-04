@@ -4,7 +4,7 @@
     "type": "library",
     "license": "MIT",
     "require": {
-        "php": ">=8.4.1",
+        "php": ">=8.5",
         "amphp/amp": "^3.1",
         "amphp/pipeline": "^1.2",
         "amphp/websocket": "^2.0.4",

@@ -167,8 +167,7 @@ final class ExceptionReasonsTest extends TestCase
         foreach (new ReflectionClass($exception)->getMethods(ReflectionMethod::IS_STATIC) as $method) {
             $returns = $method->getReturnType();
 
-            // PHP 8.5 reports a self return type by the class name it resolves to.
-            $returnsSelf = $returns instanceof ReflectionNamedType && \in_array($returns->getName(), ['self', $exception], true);
+            $returnsSelf = $returns instanceof ReflectionNamedType && $returns->getName() === $exception;
 
             if ($method->isPublic() && $returnsSelf && !\in_array($method->getName(), self::NOT_FACTORIES, true)) {
                 $factories[$method->getName()] = $method;

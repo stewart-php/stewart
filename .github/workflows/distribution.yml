@@ -1,0 +1,46 @@
+name: Distribution
+
+on:
+  pull_request:
+    paths:
+      - 'skeleton/**'
+      - '.docker/**'
+      - 'charts/**'
+      - 'bin/test-image.sh'
+      - 'bin/test-skeleton.sh'
+      - 'composer.json'
+      - 'packages/*/composer.json'
+      - 'Makefile'
+      - '.github/workflows/distribution.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: distribution-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  distribution:
+    name: Skeleton, runtime image and chart
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build the toolchain image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: .docker/php/Dockerfile
+          target: dev
+          tags: stewart-php:dev
+          load: true
+          cache-from: type=gha,scope=dev-8.5
+      - run: make test-skeleton
+      - run: make test-image
+      - name: Scan the runtime image
+        run: >
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.75.0
+          image --exit-code 1 --severity CRITICAL --ignore-unfixed stewart-runtime:local
+      - run: make chart-lint

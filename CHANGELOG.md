@@ -6,6 +6,12 @@ section says what to change.
 
 ## [Unreleased]
 
+### Changed
+
+- Requires PHP 8.5
+- Small test adjustment for PHP 8.5
+- CI now runs all newest and lowest dependency test sequentially (Newest and lowest deps still runs parallel)
+
 ### Added
 
 - `whenChangedTo()->from(...)` and `->fromAnyState()` choose which previous states a transition may come from
