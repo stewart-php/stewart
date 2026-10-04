@@ -5,7 +5,7 @@
     "license": "MIT",
     "require": {
         "php": ">=8.5",
-        "amphp/amp": "^3.1",
+        "amphp/amp": "^3.1.1",
         "amphp/byte-stream": "^2.1",
         "amphp/http-client": "^5.3",
         "amphp/socket": "^2.4",
@@ -18,7 +18,9 @@
         "stewart-php/support": "self.version"
     },
     "conflict": {
-        "amphp/dns": "<2.2"
+        "amphp/cache": "<2.0.1",
+        "amphp/dns": "<2.2",
+        "daverandom/libdns": "<2.1"
     },
     "autoload": {
         "psr-4": {

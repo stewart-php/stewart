@@ -20,6 +20,8 @@ section says what to change.
 ### Changed
 
 - Requires PHP 8.5
+- Requires `amphp/amp` 3.1.1 and excludes older `amphp/cache`, `amphp/process` and `daverandom/libdns` releases that
+  raise deprecations on PHP 8.5
 - Small test adjustment for PHP 8.5
 - CI now runs all newest and lowest dependency test sequentially (Newest and lowest deps still runs parallel)
 - Generated code format 3; regenerate after upgrading
