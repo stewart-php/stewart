@@ -12,6 +12,8 @@ use Stewart\Contracts\EventStream;
 use Stewart\Contracts\Exception\StateException;
 use Stewart\Contracts\Exception\TopicException;
 use Stewart\Contracts\HaContext;
+use Stewart\Contracts\History\EntityStateHistory;
+use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Selector\Collection\SelectorCollection;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\Service\ServiceFields;
@@ -25,6 +27,7 @@ use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Worker\Context\DispatchStreams;
+use Stewart\Runtime\Worker\Context\HistoryReader;
 use Stewart\Runtime\Worker\Context\ServiceCaller;
 use Stewart\Runtime\Worker\Context\TopicPublisher;
 
@@ -34,6 +37,7 @@ final readonly class WorkerHaContext implements HaContext
         private StateCache $states,
         private ConnectionStatus $connection,
         private ServiceCaller $serviceCalls,
+        private HistoryReader $history,
         private DispatchStreams $streams,
         private TopicPublisher $topics,
         private ResourceScope $resourceScope,
@@ -41,7 +45,7 @@ final readonly class WorkerHaContext implements HaContext
 
     public function forApp(AppId $appId): self
     {
-        return new self($this->states, $this->connection, $this->serviceCalls, $this->streams, $this->topics, ResourceScope::forApp($appId));
+        return new self($this->states, $this->connection, $this->serviceCalls, $this->history, $this->streams, $this->topics, ResourceScope::forApp($appId));
     }
 
     public function getState(EntityId|string $entityId): ?EntityState
@@ -59,6 +63,11 @@ final readonly class WorkerHaContext implements HaContext
         $id = EntityId::fromStringOrId($entityId);
 
         return $this->states->find($id) ?? throw StateException::entityNotFound($id);
+    }
+
+    public function getHistory(EntityId|string $entityId, HistoryQuery $query): EntityStateHistory
+    {
+        return $this->history->fetchHistory($this->resourceScope, EntityId::fromStringOrId($entityId), $query);
     }
 
     public function listStates(string|EntityId|Selector|SelectorCollection|null $selector = null): EntityStateCollection

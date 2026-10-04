@@ -8,11 +8,14 @@ use Stewart\Contracts\Connection\ConnectionEvent;
 use Stewart\Contracts\Entity\Entity;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\HaEvent;
+use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Exception\SelectorException;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exception\StateException;
 use Stewart\Contracts\Exception\TopicException;
+use Stewart\Contracts\History\EntityStateHistory;
+use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Selector\Collection\SelectorCollection;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\Service\ServiceResponse;
@@ -31,6 +34,9 @@ interface HaContext
 
     /** @throws StateException|IdentifierException */
     public function requireState(EntityId|string $entityId): EntityState;
+
+    /** @throws HistoryException|IdentifierException */
+    public function getHistory(EntityId|string $entityId, HistoryQuery $query): EntityStateHistory;
 
     public function listStates(string|EntityId|Selector|SelectorCollection|null $selector = null): EntityStateCollection;
 
