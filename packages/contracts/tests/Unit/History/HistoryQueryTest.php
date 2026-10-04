@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Exception\HistoryError;
 use Stewart\Contracts\Exception\TimeError;
+use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Time\Duration;
@@ -16,6 +17,7 @@ use Stewart\Testing\Exception\AssertsReason;
 
 #[CoversClass(HistoryQuery::class)]
 #[CoversClass(HistoryWindow::class)]
+#[CoversClass(HistoryDetail::class)]
 final class HistoryQueryTest extends TestCase
 {
     use AssertsReason;
@@ -46,9 +48,19 @@ final class HistoryQueryTest extends TestCase
     {
         $query = HistoryQuery::lastFor(Duration::minutes(5));
 
-        self::assertFalse($query->includesAttributes);
-        self::assertTrue($query->withAttributes()->includesAttributes);
-        self::assertFalse($query->includesAttributes);
+        self::assertSame(HistoryDetail::StateChanges, $query->detail);
+        self::assertSame(HistoryDetail::StateChangesWithAttributes, $query->withAttributes()->detail);
+        self::assertSame(HistoryDetail::StateChanges, $query->detail);
+    }
+
+    public function testAttributeChangesImplyAttributes(): void
+    {
+        $detail = HistoryQuery::lastFor(Duration::minutes(5))->withAttributeChanges()->withAttributes()->detail;
+
+        self::assertSame(HistoryDetail::AllChanges, $detail);
+        self::assertTrue($detail->includesAttributes());
+        self::assertTrue($detail->includesAttributeOnlyChanges());
+        self::assertFalse(HistoryDetail::StateChangesWithAttributes->includesAttributeOnlyChanges());
     }
 
     public function testZeroLookbackIsRefused(): void

@@ -8,6 +8,6 @@
             "starts_at_us": 1758700000123456,
             "ends_at_us": 1758701800123456
         },
-        "include_attributes": false
+        "detail": "all_changes"
     }
 }

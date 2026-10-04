@@ -12,6 +12,7 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\HistoryError;
 use Stewart\Contracts\Exception\HistoryException;
+use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\Time\Instant;
@@ -105,7 +106,7 @@ final class HistoryProxyTest extends TestCase
             ResourceScope::forApp(new AppId('demo')),
             new EntityId('light.hall'),
             new HistoryWindow(Instant::fromEpochMicroseconds(0), Instant::fromEpochMicroseconds(60_000_000)),
-            false,
+            HistoryDetail::StateChanges,
         );
     }
 

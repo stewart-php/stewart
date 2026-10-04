@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Client\Connection\Command;
 
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 
 final readonly class GetHistoryDuringPeriod implements HaCommand
@@ -12,7 +13,7 @@ final readonly class GetHistoryDuringPeriod implements HaCommand
     public function __construct(
         public EntityId $entityId,
         public HistoryWindow $window,
-        public bool $includeAttributes = false,
+        public HistoryDetail $detail = HistoryDetail::StateChanges,
     ) {}
 
     public function type(): string
@@ -33,9 +34,9 @@ final readonly class GetHistoryDuringPeriod implements HaCommand
             'end_time' => $this->window->endsAt->toIso8601(),
             'entity_ids' => [$this->entityId->value],
             'include_start_time_state' => true,
-            'significant_changes_only' => true,
-            'minimal_response' => !$this->includeAttributes,
-            'no_attributes' => !$this->includeAttributes,
+            'significant_changes_only' => !$this->detail->includesAttributeOnlyChanges(),
+            'minimal_response' => !$this->detail->includesAttributes(),
+            'no_attributes' => !$this->detail->includesAttributes(),
         ];
     }
 }

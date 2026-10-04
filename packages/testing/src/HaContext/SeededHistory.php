@@ -7,6 +7,7 @@ namespace Stewart\Testing\HaContext;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\History\Collection\HistoricalStateCollection;
 use Stewart\Contracts\History\EntityStateHistory;
+use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\Time\Instant;
@@ -27,7 +28,7 @@ final class SeededHistory
         );
     }
 
-    public function sliceForWindow(EntityId $entityId, HistoryWindow $window, bool $includeAttributes): EntityStateHistory
+    public function sliceForWindow(EntityId $entityId, HistoryWindow $window, HistoryDetail $detail): EntityStateHistory
     {
         $startState = null;
         $inWindow = [];
@@ -44,11 +45,34 @@ final class SeededHistory
 
         $states = $startState === null ? $inWindow : [$startState, ...$inWindow];
 
+        if (!$detail->includesAttributeOnlyChanges()) {
+            $states = self::dropRepeatedStates($states);
+        }
+
         return new EntityStateHistory(
             $entityId,
             $window,
-            HistoricalStateCollection::fromStates($includeAttributes ? $states : array_map(self::stripAttributes(...), $states)),
+            HistoricalStateCollection::fromStates($detail->includesAttributes() ? $states : array_map(self::stripAttributes(...), $states)),
         );
+    }
+
+    /**
+     * @param list<EntityState> $states
+     * @return list<EntityState>
+     */
+    private static function dropRepeatedStates(array $states): array
+    {
+        $kept = [];
+
+        foreach ($states as $state) {
+            $previous = $kept[\count($kept) - 1] ?? null;
+
+            if ($previous === null || $previous->state !== $state->state) {
+                $kept[] = $state;
+            }
+        }
+
+        return $kept;
     }
 
     /** @return list<EntityState> */

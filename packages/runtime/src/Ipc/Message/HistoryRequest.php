@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Ipc\Message;
 
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
@@ -17,6 +18,6 @@ final readonly class HistoryRequest implements WorkerMessage
         public ResourceScope $scope,
         public EntityId $entityId,
         public HistoryWindow $window,
-        public bool $includeAttributes,
+        public HistoryDetail $detail,
     ) {}
 }

@@ -12,6 +12,7 @@ use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\History\Collection\HistoricalStateCollection;
+use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Mqtt\MqttMessage;
 use Stewart\Contracts\Mqtt\MqttQos;
@@ -102,7 +103,7 @@ final class IpcMessageSamples
             'worker_ready' => IpcMessageSample::createRoundTrip(new WorkerReady(self::createAppIds('demo'), self::createAppIds('broken'), 12_345_678)),
             'subscribe' => IpcMessageSample::createRoundTrip(new Subscribe(new SubscriptionId('w0:1'), $demo, SubscriptionKind::Topic, Selector::anyOf(Selector::exact('a.b'), Selector::glob('demo.*'), Selector::regex('/^x/'), Selector::mqttFilter('home/+/#'), Selector::any()))),
             'unsubscribe' => IpcMessageSample::createRoundTrip(new Unsubscribe(new SubscriptionId('w0:1'))),
-            'history_request' => IpcMessageSample::createRoundTrip(new HistoryRequest(new CorrelationId('w0:3'), $demo, new EntityId('light.hall'), new HistoryWindow($at, $at->plus(Duration::minutes(30))), false)),
+            'history_request' => IpcMessageSample::createRoundTrip(new HistoryRequest(new CorrelationId('w0:3'), $demo, new EntityId('light.hall'), new HistoryWindow($at, $at->plus(Duration::minutes(30))), HistoryDetail::AllChanges)),
             'history_result' => new IpcMessageSample(self::createHistoryResult($at), self::createHistoryResult($at)),
             'history_error' => IpcMessageSample::createRoundTrip(HistoryFailed::fromException(new CorrelationId('w0:3'), HistoryException::recorderUnavailable(new EntityId('light.hall')))),
             'service_call_request' => IpcMessageSample::createRoundTrip(new ServiceCallRequest(new CorrelationId('w0:2'), $demo, 'light', 'turn_on', ['transition' => 1.5], new ServiceTarget(entityIds: [new EntityId('light.hall')], areaIds: ['hall']), false)),

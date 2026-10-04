@@ -9,6 +9,7 @@ use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\History\EntityStateHistory;
+use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
@@ -47,5 +48,5 @@ interface HaSession
     ): ServiceResponse;
 
     /** @throws HistoryException */
-    public function fetchHistory(EntityId $entityId, HistoryWindow $window, bool $includeAttributes): EntityStateHistory;
+    public function fetchHistory(EntityId $entityId, HistoryWindow $window, HistoryDetail $detail): EntityStateHistory;
 }

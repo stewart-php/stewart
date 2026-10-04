@@ -44,7 +44,7 @@ final readonly class HistoryReader
         $pending = $this->pending->open($entityId, $window);
 
         try {
-            $this->sendRequest(new HistoryRequest($pending->correlationId, $scope, $entityId, $window, $query->includesAttributes));
+            $this->sendRequest(new HistoryRequest($pending->correlationId, $scope, $entityId, $window, $query->detail));
 
             return $pending->getFuture()->await($this->deadlines->timeout($this->historyQueryTimeout));
         } catch (CancelledException $e) {

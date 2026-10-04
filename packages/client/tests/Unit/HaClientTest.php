@@ -20,6 +20,7 @@ use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\Exception\HistoryError;
 use Stewart\Contracts\Exception\ServiceCallError;
 use Stewart\Contracts\Exception\ServiceCallException;
+use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
@@ -200,7 +201,7 @@ final class HaClientTest extends TestCase
             'light.hall' => [['s' => 'off', 'lu' => 1_790_000_000], ['lu' => 1_790_000_001], ['s' => 'on', 'lu' => 1_790_000_060]],
         ]]);
 
-        $history = $client->fetchHistory(new EntityId('light.hall'), self::createWindow(), false);
+        $history = $client->fetchHistory(new EntityId('light.hall'), self::createWindow(), HistoryDetail::StateChanges);
 
         self::assertSame(['off', 'on'], $history->states->mapToList(static fn(EntityState $state): string => $state->state));
         self::assertSame('light.hall', $history->entityId->value);
@@ -213,7 +214,7 @@ final class HaClientTest extends TestCase
 
         $socket->replyWhenSent('history/history_during_period', ['type' => 'result', 'success' => true, 'result' => []]);
 
-        self::assertTrue($client->fetchHistory(new EntityId('light.hall'), self::createWindow(), false)->isEmpty());
+        self::assertTrue($client->fetchHistory(new EntityId('light.hall'), self::createWindow(), HistoryDetail::StateChanges)->isEmpty());
     }
 
     /** @param array<string, mixed>|null $reply */
@@ -230,7 +231,7 @@ final class HaClientTest extends TestCase
             $socket->replyWhenSent('history/history_during_period', $reply);
         }
 
-        $this->assertThrowsReason($reason, fn() => $client->fetchHistory(new EntityId('light.hall'), self::createWindow(), false));
+        $this->assertThrowsReason($reason, fn() => $client->fetchHistory(new EntityId('light.hall'), self::createWindow(), HistoryDetail::StateChanges));
     }
 
     /** @return iterable<string, array{array<string, mixed>|null, HistoryError}> */
@@ -248,7 +249,7 @@ final class HaClientTest extends TestCase
         $client = self::connect(FakeWebsocketConnector::createAuthenticatedConnection());
         $client->close();
 
-        $this->assertThrowsReason(HistoryError::Unreachable, fn() => $client->fetchHistory(new EntityId('light.hall'), self::createWindow(), false));
+        $this->assertThrowsReason(HistoryError::Unreachable, fn() => $client->fetchHistory(new EntityId('light.hall'), self::createWindow(), HistoryDetail::StateChanges));
     }
 
     private static function createWindow(): HistoryWindow

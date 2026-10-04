@@ -12,6 +12,7 @@ use Stewart\Client\HaClient;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\History\EntityStateHistory;
+use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
@@ -131,9 +132,9 @@ final class WebsocketHaSession implements HaSession
         return $this->client->callService($domain, $service, $data, $target, $returnResponse);
     }
 
-    public function fetchHistory(EntityId $entityId, HistoryWindow $window, bool $includeAttributes): EntityStateHistory
+    public function fetchHistory(EntityId $entityId, HistoryWindow $window, HistoryDetail $detail): EntityStateHistory
     {
-        return $this->client->fetchHistory($entityId, $window, $includeAttributes);
+        return $this->client->fetchHistory($entityId, $window, $detail);
     }
 
     private function connectSubscribeAndSeed(): void

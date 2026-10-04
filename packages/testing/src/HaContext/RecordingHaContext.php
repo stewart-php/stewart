@@ -188,7 +188,7 @@ final class RecordingHaContext implements HaContext
     {
         $id = EntityId::fromStringOrId($entityId);
         $window = $query->resolveWindowAt($this->clock->getNow());
-        $this->historyQueries = $this->historyQueries->withRecordedQuery(new RecordedHistoryQuery($id, $window, $query->includesAttributes));
+        $this->historyQueries = $this->historyQueries->withRecordedQuery(new RecordedHistoryQuery($id, $window, $query->detail));
 
         if (!$this->connected) {
             throw HistoryException::unreachable($id, 'Home Assistant is disconnected');
@@ -198,7 +198,7 @@ final class RecordingHaContext implements HaContext
             throw $this->historyFailures[$id->value];
         }
 
-        return $this->history->sliceForWindow($id, $window, $query->includesAttributes);
+        return $this->history->sliceForWindow($id, $window, $query->detail);
     }
 
     public function listStates(string|EntityId|Selector|SelectorCollection|null $selector = null): EntityStateCollection

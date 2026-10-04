@@ -12,6 +12,7 @@ use Stewart\Client\Connection\Command\GetHistoryDuringPeriod;
 use Stewart\Client\Connection\Command\GetStates;
 use Stewart\Client\Connection\Command\SubscribeEvents;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\Time\Instant;
@@ -53,7 +54,7 @@ final class HaCommandTest extends TestCase
 
     public function testHistoryWithoutAttributesAsksMinimalRows(): void
     {
-        $command = $this->createHistoryCommand(false);
+        $command = $this->createHistoryCommand(HistoryDetail::StateChanges);
 
         self::assertSame(
             [
@@ -73,9 +74,18 @@ final class HaCommandTest extends TestCase
 
     public function testHistoryWithAttributesAsksFullRows(): void
     {
-        $message = $this->createHistoryCommand(true)->toMessage();
+        $message = $this->createHistoryCommand(HistoryDetail::StateChangesWithAttributes)->toMessage();
 
         self::assertFalse($message['minimal_response']);
+        self::assertFalse($message['no_attributes']);
+        self::assertTrue($message['significant_changes_only']);
+    }
+
+    public function testHistoryOfAllChangesAsksAttributeOnlyRows(): void
+    {
+        $message = $this->createHistoryCommand(HistoryDetail::AllChanges)->toMessage();
+
+        self::assertFalse($message['significant_changes_only']);
         self::assertFalse($message['no_attributes']);
     }
 
@@ -105,12 +115,12 @@ final class HaCommandTest extends TestCase
         self::assertSame(['type' => 'auth', 'access_token' => 't'], new Authenticate('t')->toMessage());
     }
 
-    private function createHistoryCommand(bool $includeAttributes): GetHistoryDuringPeriod
+    private function createHistoryCommand(HistoryDetail $detail): GetHistoryDuringPeriod
     {
         return new GetHistoryDuringPeriod(
             new EntityId('light.hall'),
             new HistoryWindow(Instant::fromIso('2026-10-04T11:00:00Z'), Instant::fromIso('2026-10-04T12:00:00Z')),
-            $includeAttributes,
+            $detail,
         );
     }
 }

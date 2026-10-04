@@ -13,6 +13,7 @@ use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\HistoryError;
 use Stewart\Contracts\History\Collection\HistoricalStateCollection;
 use Stewart\Contracts\History\EntityStateHistory;
+use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Exception\TransportException;
@@ -63,7 +64,7 @@ final class HistoryReaderTest extends TestCase
         self::assertInstanceOf(HistoryRequest::class, $request);
         self::assertTrue($request->window->endsAt->equals($this->timers->clock->getNow()));
         self::assertTrue($request->window->getDuration()->equals(Duration::minutes(5)));
-        self::assertTrue($request->includeAttributes);
+        self::assertSame(HistoryDetail::StateChangesWithAttributes, $request->detail);
 
         $this->pending->resolve($request->correlationId, HistoricalStateCollection::fromStates([]));
 

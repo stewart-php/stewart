@@ -12,6 +12,7 @@ use Stewart\Contracts\Exception\HistoryError;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\IdentifierError;
 use Stewart\Contracts\Exception\TopicError;
+use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\Time\Duration;
@@ -88,7 +89,23 @@ final class RecordingHaContextTest extends TestCase
         self::assertSame([], $context->getHistory('light.hall', HistoryQuery::lastFor(Duration::minutes(5)))->getLastState()?->attributes);
         self::assertSame(['brightness' => 120], $context->getHistory('light.hall', HistoryQuery::lastFor(Duration::minutes(5))->withAttributes())->getLastState()?->attributes);
         self::assertCount(2, $context->historyQueries);
-        self::assertTrue($context->historyQueries->getLast()?->includesAttributes);
+        self::assertSame(HistoryDetail::StateChangesWithAttributes, $context->historyQueries->getLast()?->detail);
+    }
+
+    public function testAttributeOnlyChangesAppearOnlyWhenAsked(): void
+    {
+        $context = new RecordingHaContext();
+        $context->seedState('light.hall', 'on', ['brightness' => 50]);
+        $context->clock->skip(Duration::minutes(1));
+        $context->pushState('light.hall', 'on', ['brightness' => 200]);
+        $context->clock->skip(Duration::minutes(1));
+        $query = HistoryQuery::lastFor(Duration::minutes(5));
+
+        $brightness = static fn(EntityState $state): mixed => $state->getAttribute('brightness');
+
+        self::assertSame([50], $context->getHistory('light.hall', $query->withAttributes())->states->mapToList($brightness));
+        self::assertSame([50, 200], $context->getHistory('light.hall', $query->withAttributeChanges())->states->mapToList($brightness));
+        self::assertSame(0, $context->getHistory('light.hall', $query->withAttributeChanges())->countChanges());
     }
 
     public function testStubbedHistoryFailureIsThrown(): void

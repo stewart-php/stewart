@@ -31,6 +31,7 @@ use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\History\Collection\HistoricalStateCollection;
 use Stewart\Contracts\History\EntityStateHistory;
+use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
@@ -173,10 +174,10 @@ final class HaClient
     }
 
     /** @throws HistoryException */
-    public function fetchHistory(EntityId $entityId, HistoryWindow $window, bool $includeAttributes): EntityStateHistory
+    public function fetchHistory(EntityId $entityId, HistoryWindow $window, HistoryDetail $detail): EntityStateHistory
     {
         try {
-            $result = $this->connection->send(new GetHistoryDuringPeriod($entityId, $window, $includeAttributes));
+            $result = $this->connection->send(new GetHistoryDuringPeriod($entityId, $window, $detail));
         } catch (HaClientException $e) {
             throw $this->toHistoryException($entityId, $e);
         }

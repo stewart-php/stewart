@@ -17,6 +17,7 @@ use Stewart\Client\Tests\Fixtures\FakeHaServer;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\Exception\ServiceCallError;
+use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
@@ -78,7 +79,7 @@ final class HaClientOverWebsocketTest extends TestCase
         $history = $this->connectClient()->fetchHistory(
             new EntityId('light.hall'),
             new HistoryWindow($startsAt, $startsAt->plus(Duration::hours(1))),
-            false,
+            HistoryDetail::StateChanges,
         );
 
         $startState = $history->getStateAtStart();

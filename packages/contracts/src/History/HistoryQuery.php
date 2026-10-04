@@ -14,24 +14,29 @@ final readonly class HistoryQuery
     private function __construct(
         private ?Duration $lookback,
         private ?HistoryWindow $fixedWindow,
-        public bool $includesAttributes,
+        public HistoryDetail $detail,
     ) {}
 
     /** @throws TimeException */
     public static function lastFor(Duration $lookback): self
     {
-        return new self($lookback->requireAtLeastOneMillisecond('a history lookback'), null, false);
+        return new self($lookback->requireAtLeastOneMillisecond('a history lookback'), null, HistoryDetail::StateChanges);
     }
 
     /** @throws HistoryException */
     public static function between(Instant $startsAt, Instant $endsAt): self
     {
-        return new self(null, new HistoryWindow($startsAt, $endsAt), false);
+        return new self(null, new HistoryWindow($startsAt, $endsAt), HistoryDetail::StateChanges);
     }
 
     public function withAttributes(): self
     {
-        return new self($this->lookback, $this->fixedWindow, true);
+        return $this->detail === HistoryDetail::StateChanges ? new self($this->lookback, $this->fixedWindow, HistoryDetail::StateChangesWithAttributes) : $this;
+    }
+
+    public function withAttributeChanges(): self
+    {
+        return new self($this->lookback, $this->fixedWindow, HistoryDetail::AllChanges);
     }
 
     public function resolveWindowAt(Instant $now): HistoryWindow

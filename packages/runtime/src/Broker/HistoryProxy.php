@@ -43,7 +43,7 @@ final readonly class HistoryProxy
                 throw HistoryException::unreachable($request->entityId, 'Home Assistant is disconnected');
             }
 
-            $history = $this->session->fetchHistory($request->entityId, $request->window, $request->includeAttributes);
+            $history = $this->session->fetchHistory($request->entityId, $request->window, $request->detail);
 
             return new HistoryResult($request->correlationId, HistoricalStatesFragment::fromCollection($history->states));
         } catch (HistoryException $e) {
