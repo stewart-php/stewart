@@ -10,6 +10,7 @@ use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
+use Stewart\Contracts\Stream\ComposedStateChangeStream;
 use Stewart\Contracts\Stream\DebounceOperator;
 use Stewart\Contracts\Stream\DistinctUntilChangedOperator;
 use Stewart\Contracts\Stream\StateChanges;
@@ -21,6 +22,7 @@ use Stewart\Testing\Stream\PushSource;
 use Stewart\Testing\Time\ManualTimers;
 
 #[CoversClass(StateChanges::class)]
+#[CoversClass(ComposedStateChangeStream::class)]
 #[CoversClass(DistinctUntilChangedOperator::class)]
 #[CoversClass(DebounceOperator::class)]
 #[CoversClass(ThrottleOperator::class)]
@@ -60,6 +62,38 @@ final class StateChangesTest extends TestCase
         $this->push($this->createChange('off', 'on'));
 
         self::assertSame(['on', 'on'], $this->received);
+    }
+
+    public function testWhenChangedToSkipsUnavailablePrevious(): void
+    {
+        $this->listen($this->stream->whenChangedTo('on'));
+
+        $this->push($this->createChange(EntityState::UNAVAILABLE, 'on'));
+        $this->push($this->createChange(EntityState::UNKNOWN, 'on'));
+        $this->push($this->createChange(null, 'on'));
+
+        self::assertSame([], $this->received);
+    }
+
+    public function testSkippedArrivalDoesNotArmWindow(): void
+    {
+        $this->listen($this->stream->whenChangedTo('on', for: Duration::seconds(3)));
+
+        $this->push($this->createChange(EntityState::UNAVAILABLE, 'on'));
+
+        self::assertSame(0, $this->timers->countPendingTimers());
+    }
+
+    public function testReturnFromUnavailableStaysQuiet(): void
+    {
+        $this->listen($this->stream->whenChangedTo('on', for: Duration::seconds(3)));
+
+        $this->push($this->createChange('off', 'on'));
+        $this->push($this->createChange('on', EntityState::UNAVAILABLE));
+        $this->push($this->createChange(EntityState::UNAVAILABLE, 'on'));
+        $this->timers->delay(Duration::seconds(5));
+
+        self::assertSame([], $this->received);
     }
 
     public function testWhenStableForEmitsAfterWindow(): void

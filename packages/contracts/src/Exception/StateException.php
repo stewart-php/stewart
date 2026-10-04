@@ -18,4 +18,9 @@ final class StateException extends StewartException
     {
         return self::createForReason(StateError::StateChangedViaEvents, ['eventType' => $eventType]);
     }
+
+    public static function transitionAlreadyExtended(): self
+    {
+        return self::createForReason(StateError::TransitionAlreadyExtended);
+    }
 }
