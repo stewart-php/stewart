@@ -15,16 +15,19 @@ use Stewart\Codegen\Service\ServiceModel;
 use Stewart\Contracts\Entity\Entity;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Entity\TypedEntity;
+use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Exception\StateException;
 use Stewart\Contracts\HaContext;
+use Stewart\Contracts\History\EntityStateHistory;
+use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\StateChangeStream;
 
 final readonly class EntityHandleEmitter implements DomainFileEmitter, ReservesMemberNames
 {
-    private const array RESERVED_MEMBER_NAMES = ['id', 'getDomain', 'isGeneratedEntityId', 'getState', 'requireState', 'watchStateChanges', 'listAttributes', 'getEntity', 'toServiceTarget', 'ha'];
+    private const array RESERVED_MEMBER_NAMES = ['id', 'getDomain', 'isGeneratedEntityId', 'getState', 'requireState', 'watchStateChanges', 'getHistory', 'listAttributes', 'getEntity', 'toServiceTarget', 'ha'];
 
     private const string ENTITY_IDS_CONSTANT = 'GENERATED_ENTITY_IDS';
 
@@ -41,8 +44,9 @@ final readonly class EntityHandleEmitter implements DomainFileEmitter, ReservesM
         $declared = $domain->getHandleClass();
         $stateException = $context->importClass($namespace, StateException::class, $declared);
         $identifierException = $context->importClass($namespace, IdentifierException::class, $declared);
+        $historyException = $context->importClass($namespace, HistoryException::class, $declared);
 
-        foreach ([Entity::class, EntityId::class, HaContext::class, StateChangeStream::class, ServiceTarget::class, TypedEntity::class] as $import) {
+        foreach ([Entity::class, EntityId::class, HaContext::class, EntityStateHistory::class, HistoryQuery::class, StateChangeStream::class, ServiceTarget::class, TypedEntity::class] as $import) {
             $context->importClass($namespace, $import, $declared);
         }
 
@@ -94,6 +98,13 @@ final readonly class EntityHandleEmitter implements DomainFileEmitter, ReservesM
         $class->addMethod('watchStateChanges')
             ->setReturnType(StateChangeStream::class)
             ->setBody('return $this->entity->watchStateChanges();');
+
+        $class->addMethod('getHistory')
+            ->setReturnType(EntityStateHistory::class)
+            ->addComment('@throws ' . $historyException)
+            ->setBody('return $this->entity->getHistory($query);')
+            ->addParameter('query')
+            ->setType(HistoryQuery::class);
 
         $class->addMethod('listAttributes')
             ->setReturnType('array')
