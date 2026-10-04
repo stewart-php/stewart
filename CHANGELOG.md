@@ -4,7 +4,18 @@ Every package, the `ghcr.io/stewart-php/runtime` image, the Helm chart and the s
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). On 0.x, a minor release may break; its "Upgrading"
 section says what to change.
 
-## [0.4.0] 2026-10-04
+## [0.4.0] - 2026-10-04
+
+### Added
+
+- `whenChangedTo()->from(...)` and `->fromAnyState()` choose which previous states a transition may come from
+- `getHistory(HistoryQuery)` on `HaContext`, `Entity` and generated entity classes reads one entity's recorded
+  states from Home Assistant: `HistoryQuery::lastFor(Duration::minutes(30))` or `HistoryQuery::between($from, $until)`
+  - `withAttributes()` includes attributes; `withAttributeChanges()` also includes attribute-only changes
+  - `EntityStateHistory` answers `hasBeenIn()`, `getDurationIn()`, `countChanges()` and `getLastChangeTo()`
+  - Failures throw `HistoryException`, with `HistoryError::RecorderUnavailable` when Home Assistant has no history
+- `RecordingHaContext` answers history from seeded and pushed states; `seedHistoricalState()` and
+  `stubHistoryFailure()` set it up, `historyQueries` records every query
 
 ### Changed
 
@@ -12,17 +23,6 @@ section says what to change.
 - Small test adjustment for PHP 8.5
 - CI now runs all newest and lowest dependency test sequentially (Newest and lowest deps still runs parallel)
 - Generated code format 3; regenerate after upgrading
-
-### Added
-
-- `whenChangedTo()->from(...)` and `->fromAnyState()` choose which previous states a transition may come from
-- `getHistory(HistoryQuery)` on `HaContext`, `Entity` and generated entity classes reads one entity's recorded
-  states from Home Assistant: `HistoryQuery::lastFor(Duration::minutes(30))` or `HistoryQuery::between($from, $until)`
-- `withAttributes()` includes attributes; `withAttributeChanges()` also includes attribute-only changes
-- `EntityStateHistory` answers `hasBeenIn()`, `getDurationIn()`, `countChanges()` and `getLastChangeTo()`
-- Failures throw `HistoryException`, with `HistoryError::RecorderUnavailable` when Home Assistant has no history
-- `RecordingHaContext` answers history from seeded and pushed states; `seedHistoricalState()` and
-  `stubHistoryFailure()` set it up, `historyQueries` records every query
 
 ### Upgrading
 

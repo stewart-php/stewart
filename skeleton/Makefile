@@ -38,7 +38,7 @@ update: ## composer update
 	$(RUN) composer update --no-interaction
 
 .PHONY: upgrade
-upgrade: ## Move to another Stewart release line, then pull its images and install it [VERSION=0.3]
+upgrade: ## Move to another Stewart release line, then pull its images and install it [VERSION=0.4]
 	$(RUN) sh bin/upgrade-stewart.sh $(VERSION)
 	$(DEV) pull
 	$(RUN) composer update 'stewart-php/*' --with-all-dependencies --no-interaction
