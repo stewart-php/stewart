@@ -15,6 +15,7 @@ use Stewart\Runtime\Worker\ConnectionStatus;
 use Stewart\Runtime\Worker\Context\DispatchStreams;
 use Stewart\Runtime\Worker\Context\ServiceCaller;
 use Stewart\Runtime\Worker\Context\TopicPublisher;
+use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\PendingCalls;
 use Stewart\Runtime\Worker\WorkerHaContext;
 use Stewart\Testing\Time\ManualTimers;
@@ -29,7 +30,7 @@ final class WorkerHaContextFixture
         ManualTimers $timers = new ManualTimers(),
         StateCache $stateCache = new StateCache(),
         ?LocalDispatcher $dispatcher = null,
-        PendingCalls $pending = new PendingCalls(new WorkerId(0)),
+        PendingCalls $pending = new PendingCalls(new CorrelationIdSequence(new WorkerId(0))),
         ?Duration $callTimeout = null,
         AppActivityCounters $activityCounters = new AppActivityCounters(),
         ConnectionStatus $connection = new ConnectionStatus(),

@@ -60,6 +60,7 @@ use Stewart\Runtime\Tests\Fixtures\Generated\Code\Services as GeneratedServices;
 use Stewart\Runtime\Tests\Fixtures\Generated\GeneratedSet;
 use Stewart\Runtime\Tests\Fixtures\Ipc\NullTransport;
 use Stewart\Runtime\Tests\Fixtures\Worker\AppResourcesFixture;
+use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\PendingCalls;
 use Stewart\Runtime\Worker\WorkerHaContext;
 use Stewart\Runtime\Worker\WorkerLogger;
@@ -209,6 +210,7 @@ final class AppContainerBuilderTest extends TestCase
             StateCache::class,
             LocalDispatcher::class,
             PendingCalls::class,
+            CorrelationIdSequence::class,
             WorkerLogger::class,
             WorkerHaContext::class,
             Stores::class,

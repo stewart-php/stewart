@@ -24,6 +24,7 @@ use Stewart\Runtime\Tests\Fixtures\Worker\AppResourcesFixture;
 use Stewart\Runtime\Worker\AppActivityCounters;
 use Stewart\Runtime\Worker\AppFailureReporter;
 use Stewart\Runtime\Worker\AppLifecycle;
+use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\HandlerFailureSampler;
 use Stewart\Runtime\Worker\PendingCalls;
 use Stewart\Runtime\Worker\StderrFallback;
@@ -61,7 +62,7 @@ final class WorkerShutdownTest extends TestCase
         GatedDisposer::reset();
         $this->timers = new ManualTimers();
         $this->logger = new RecordingLogger();
-        $this->pending = new PendingCalls(new WorkerId(0));
+        $this->pending = new PendingCalls(new CorrelationIdSequence(new WorkerId(0)));
         $this->createShutdownFor(new WorkerApp(id: new AppId('gated'), class: GatedInitializer::class, options: []));
     }
 
