@@ -13,9 +13,12 @@ namespace Stewart\Codegen\Tests\Fixtures\Expected;
 use Stewart\Contracts\Entity\Entity;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Entity\TypedEntity;
+use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Exception\StateException;
 use Stewart\Contracts\HaContext;
+use Stewart\Contracts\History\EntityStateHistory;
+use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\StateChangeStream;
 
@@ -68,6 +71,14 @@ final readonly class SwitchEntity implements TypedEntity
     public function watchStateChanges(): StateChangeStream
     {
         return $this->entity->watchStateChanges();
+    }
+
+    /**
+     * @throws HistoryException
+     */
+    public function getHistory(HistoryQuery $query): EntityStateHistory
+    {
+        return $this->entity->getHistory($query);
     }
 
     /**

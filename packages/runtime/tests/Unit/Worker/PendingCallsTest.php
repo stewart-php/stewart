@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Exception\ServiceCallError;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Runtime\Model\WorkerId;
+use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\PendingCall;
 use Stewart\Runtime\Worker\PendingCalls;
 use Stewart\Testing\Exception\AssertsReason;
@@ -24,7 +25,7 @@ final class PendingCallsTest extends TestCase
 
     public function testFailAllFailsEveryLiveWaiter(): void
     {
-        $pending = new PendingCalls(new WorkerId(0));
+        $pending = new PendingCalls(new CorrelationIdSequence(new WorkerId(0)));
         $calls = [$pending->open('light', 'turn_on'), $pending->open('switch', 'toggle')];
         $waiters = array_map(static fn(PendingCall $call) => async(static fn() => $call->getFuture()->await()), $calls);
         EventLoopTicks::settle();
@@ -38,7 +39,7 @@ final class PendingCallsTest extends TestCase
 
     public function testAnswerAfterFailAllIsIgnored(): void
     {
-        $pending = new PendingCalls(new WorkerId(0));
+        $pending = new PendingCalls(new CorrelationIdSequence(new WorkerId(0)));
         $call = $pending->open('light', 'turn_on');
         $pending->failAll('the broker is gone');
 

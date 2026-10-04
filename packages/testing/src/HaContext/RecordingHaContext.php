@@ -13,9 +13,12 @@ use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventTypeSelector;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\EventStream;
+use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exception\StateException;
 use Stewart\Contracts\HaContext;
+use Stewart\Contracts\History\EntityStateHistory;
+use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Selector\Collection\SelectorCollection;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\Service\ServiceFields;
@@ -27,9 +30,11 @@ use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
 use Stewart\Contracts\Stream\OperatorStream;
 use Stewart\Contracts\Stream\StateChanges;
+use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Topic\Collection\TopicEventCollection;
 use Stewart\Contracts\Topic\TopicEvent;
 use Stewart\Contracts\Topic\TopicPayload;
+use Stewart\Testing\HaContext\Collection\RecordedHistoryQueryCollection;
 use Stewart\Testing\HaContext\Collection\RecordedServiceCallCollection;
 use Stewart\Testing\Stream\PushSource;
 use Stewart\Testing\Time\ManualTimers;
@@ -41,7 +46,14 @@ final class RecordingHaContext implements HaContext
 
     public private(set) TopicEventCollection $published;
 
+    public private(set) RecordedHistoryQueryCollection $historyQueries;
+
     private EntityStateCollection $states;
+
+    private readonly SeededHistory $history;
+
+    /** @var array<string, HistoryException> */
+    private array $historyFailures = [];
 
     /** @var array<string, array<string, mixed>|ServiceCallException> */
     private array $serviceOutcomes = [];
@@ -68,6 +80,8 @@ final class RecordingHaContext implements HaContext
         $this->calls = RecordedServiceCallCollection::empty();
         $this->published = TopicEventCollection::empty();
         $this->states = EntityStateCollection::empty();
+        $this->historyQueries = RecordedHistoryQueryCollection::empty();
+        $this->history = new SeededHistory();
         $this->stateChanges = new PushSource();
         $this->events = new PushSource();
         $this->topics = new PushSource();
@@ -77,7 +91,24 @@ final class RecordingHaContext implements HaContext
     /** @param array<string, mixed> $attributes */
     public function seedState(string $entityId, string $state, array $attributes = []): self
     {
-        $this->states = $this->states->withState(new EntityState(new EntityId($entityId), $state, $attributes));
+        $seeded = new EntityState(new EntityId($entityId), $state, $attributes);
+        $this->states = $this->states->withState($seeded);
+        $this->history->recordState($seeded, $this->clock->getNow());
+
+        return $this;
+    }
+
+    /** @param array<string, mixed> $attributes */
+    public function seedHistoricalState(string $entityId, string $state, Instant $changedAt, array $attributes = []): self
+    {
+        $this->history->recordState(new EntityState(new EntityId($entityId), $state, $attributes, $changedAt, $changedAt), $changedAt);
+
+        return $this;
+    }
+
+    public function stubHistoryFailure(string $entityId, HistoryException $failure): self
+    {
+        $this->historyFailures[new EntityId($entityId)->value] = $failure;
 
         return $this;
     }
@@ -103,6 +134,7 @@ final class RecordingHaContext implements HaContext
             $this->states = $this->states->withoutState($change->entityId);
         } else {
             $this->states = $this->states->withState($change->to);
+            $this->history->recordState($change->to, $this->clock->getNow());
         }
 
         $this->stateChanges->push($change);
@@ -150,6 +182,23 @@ final class RecordingHaContext implements HaContext
         $id = EntityId::fromStringOrId($entityId);
 
         return $this->states->find($id) ?? throw StateException::entityNotFound($id);
+    }
+
+    public function getHistory(EntityId|string $entityId, HistoryQuery $query): EntityStateHistory
+    {
+        $id = EntityId::fromStringOrId($entityId);
+        $window = $query->resolveWindowAt($this->clock->getNow());
+        $this->historyQueries = $this->historyQueries->withRecordedQuery(new RecordedHistoryQuery($id, $window, $query->detail));
+
+        if (!$this->connected) {
+            throw HistoryException::unreachable($id, 'Home Assistant is disconnected');
+        }
+
+        if (isset($this->historyFailures[$id->value])) {
+            throw $this->historyFailures[$id->value];
+        }
+
+        return $this->history->sliceForWindow($id, $window, $query->detail);
     }
 
     public function listStates(string|EntityId|Selector|SelectorCollection|null $selector = null): EntityStateCollection

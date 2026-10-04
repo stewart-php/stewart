@@ -7,8 +7,8 @@
         "bin/stewart"
     ],
     "require": {
-        "php": ">=8.4.1",
-        "amphp/amp": "^3.1",
+        "php": ">=8.5",
+        "amphp/amp": "^3.1.1",
         "amphp/byte-stream": "^2.1",
         "amphp/parallel": "^2.4",
         "amphp/socket": "^2.4",
@@ -38,6 +38,9 @@
         "psr/container": "^2.0",
         "stewart-php/store-redis": "self.version",
         "stewart-php/testing": "self.version"
+    },
+    "conflict": {
+        "amphp/process": "<2.0.3"
     },
     "suggest": {
         "stewart-php/codegen": "Adds the generate command, for development or for generating when a container starts"

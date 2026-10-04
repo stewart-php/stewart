@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Stewart\Contracts\Entity;
 
+use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exception\StateException;
 use Stewart\Contracts\HaContext;
+use Stewart\Contracts\History\EntityStateHistory;
+use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\Service\ServiceTargetSource;
@@ -39,6 +42,12 @@ final readonly class Entity implements ServiceTargetSource
     public function requireState(): EntityState
     {
         return $this->ha->requireState($this->id);
+    }
+
+    /** @throws HistoryException */
+    public function getHistory(HistoryQuery $query): EntityStateHistory
+    {
+        return $this->ha->getHistory($this->id, $query);
     }
 
     public function watchStateChanges(): StateChangeStream

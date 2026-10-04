@@ -14,8 +14,10 @@ use Stewart\Codegen\Tests\Fixtures\Expected\Services;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\IdentifierError;
 use Stewart\Contracts\Generated\GeneratedFormat;
+use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\StateChange;
+use Stewart\Contracts\Time\Duration;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\HaContext\RecordingHaContext;
 
@@ -132,6 +134,17 @@ final class GeneratedCodeBehaviorTest extends TestCase
         $ha->pushState('binary_sensor.hall_motion', 'on');
 
         self::assertSame(['binary_sensor.hall_motion'], $seen);
+    }
+
+    public function testHandleReadsOwnHistory(): void
+    {
+        $ha = new RecordingHaContext()->seedState('light.hall', 'on');
+        $ha->clock->skip(Duration::minutes(1));
+
+        $history = new Entities($ha)->light->getEntity('light.hall')->getHistory(HistoryQuery::lastFor(Duration::minutes(5)));
+
+        self::assertSame('light.hall', $history->entityId->value);
+        self::assertTrue($history->hasBeenIn('on'));
     }
 
     public function testRootServiceTakesTargetOrEntity(): void

@@ -9,8 +9,10 @@ use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Entity\Entity;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\StateError;
+use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\StateChange;
+use Stewart\Contracts\Time\Duration;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\HaContext\RecordingHaContext;
 
@@ -30,6 +32,17 @@ final class EntityTest extends TestCase
         self::assertSame('on', $entity->requireState()->state);
         self::assertSame(180, $entity->getState()?->getAttribute('brightness'));
         self::assertEquals([new EntityId('light.hall')], $entity->toServiceTarget()->entityIds);
+    }
+
+    public function testHistoryIsReadThroughContext(): void
+    {
+        $ha = new RecordingHaContext()->seedState('light.hall', 'on');
+        $ha->clock->skip(Duration::minutes(1));
+
+        $history = $ha->getEntity('light.hall')->getHistory(HistoryQuery::lastFor(Duration::minutes(5)));
+
+        self::assertSame('light.hall', $ha->historyQueries->getLast()?->entityId->value);
+        self::assertTrue($history->hasBeenIn('on'));
     }
 
     public function testUnknownEntityStateIsNullRequireThrows(): void

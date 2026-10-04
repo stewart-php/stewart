@@ -17,10 +17,15 @@ use Stewart\Client\HaClient;
 use Stewart\Client\State\EntityStateDecoder;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\HaEvent;
+use Stewart\Contracts\Exception\HistoryError;
 use Stewart\Contracts\Exception\ServiceCallError;
 use Stewart\Contracts\Exception\ServiceCallException;
+use Stewart\Contracts\History\HistoryDetail;
+use Stewart\Contracts\History\HistoryWindow;
+use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Contracts\Time\Instant;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
@@ -185,6 +190,71 @@ final class HaClientTest extends TestCase
         self::assertCount(2, $registry);
         self::assertFalse($registry->find(new EntityId('light.hall'))?->isDisabled());
         self::assertTrue($registry->find(new EntityId('light.attic'))?->isDisabled());
+    }
+
+    public function testHistoryRowsBecomeEntityStates(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('history/history_during_period', ['type' => 'result', 'success' => true, 'result' => [
+            'light.hall' => [['s' => 'off', 'lu' => 1_790_000_000], ['lu' => 1_790_000_001], ['s' => 'on', 'lu' => 1_790_000_060]],
+        ]]);
+
+        $history = $client->fetchHistory(new EntityId('light.hall'), self::createWindow(), HistoryDetail::StateChanges);
+
+        self::assertSame(['off', 'on'], $history->states->mapToList(static fn(EntityState $state): string => $state->state));
+        self::assertSame('light.hall', $history->entityId->value);
+    }
+
+    public function testEntityWithoutRecordedRowsHasEmptyHistory(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('history/history_during_period', ['type' => 'result', 'success' => true, 'result' => []]);
+
+        self::assertTrue($client->fetchHistory(new EntityId('light.hall'), self::createWindow(), HistoryDetail::StateChanges)->isEmpty());
+    }
+
+    /** @param array<string, mixed>|null $reply */
+    #[DataProvider('provideHistoryFailures')]
+    public function testHistoryFailureMapsReason(?array $reply, HistoryError $reason): void
+    {
+        $timers = new ManualTimers();
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket, Duration::milliseconds(20), $timers);
+
+        if ($reply === null) {
+            async(static fn() => $timers->delay(Duration::milliseconds(20)))->ignore();
+        } else {
+            $socket->replyWhenSent('history/history_during_period', $reply);
+        }
+
+        $this->assertThrowsReason($reason, fn() => $client->fetchHistory(new EntityId('light.hall'), self::createWindow(), HistoryDetail::StateChanges));
+    }
+
+    /** @return iterable<string, array{array<string, mixed>|null, HistoryError}> */
+    public static function provideHistoryFailures(): iterable
+    {
+        $failed = static fn(string $code): array => ['type' => 'result', 'success' => false, 'error' => ['code' => $code, 'message' => 'failed']];
+
+        yield 'no history integration' => [$failed('unknown_command'), HistoryError::RecorderUnavailable];
+        yield 'invalid request' => [$failed('invalid_format'), HistoryError::Rejected];
+        yield 'no answer' => [null, HistoryError::TimedOut];
+    }
+
+    public function testHistoryWithoutConnectionIsUnreachable(): void
+    {
+        $client = self::connect(FakeWebsocketConnector::createAuthenticatedConnection());
+        $client->close();
+
+        $this->assertThrowsReason(HistoryError::Unreachable, fn() => $client->fetchHistory(new EntityId('light.hall'), self::createWindow(), HistoryDetail::StateChanges));
+    }
+
+    private static function createWindow(): HistoryWindow
+    {
+        return new HistoryWindow(Instant::fromEpochMicroseconds(1_789_999_000_000_000), Instant::fromEpochMicroseconds(1_790_001_000_000_000));
     }
 
     private static function connect(FakeWebsocketConnection $socket, ?Duration $commandTimeout = null, ManualTimers $timers = new ManualTimers()): HaClient

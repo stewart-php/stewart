@@ -14,10 +14,14 @@ use Stewart\Client\Exception\HaClientError;
 use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
 use Stewart\Client\Tests\Fixtures\FakeHaServer;
+use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\Exception\ServiceCallError;
+use Stewart\Contracts\History\HistoryDetail;
+use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Contracts\Time\Instant;
 use Stewart\Support\Json\JsonEncoder;
 use Stewart\Support\Time\RevoltTimers;
 use Stewart\Testing\Exception\AssertsReason;
@@ -65,6 +69,23 @@ final class HaClientOverWebsocketTest extends TestCase
 
         self::assertSame(FakeHaServer::HA_VERSION, $client->getHaVersion());
         self::assertSame('Europe/Budapest', $client->getTimeZone()->getName());
+    }
+
+    public function testHistoryRoundTripsOverSocket(): void
+    {
+        $this->server->answerCommand('history/history_during_period', ['light.hall' => [['s' => 'on', 'lu' => 1_790_000_000.5]]]);
+        $startsAt = Instant::fromEpochMicroseconds(1_789_999_000_000_000);
+
+        $history = $this->connectClient()->fetchHistory(
+            new EntityId('light.hall'),
+            new HistoryWindow($startsAt, $startsAt->plus(Duration::hours(1))),
+            HistoryDetail::StateChanges,
+        );
+
+        $startState = $history->getStateAtStart();
+
+        self::assertSame('on', $startState?->state);
+        self::assertSame(1_790_000_000_500_000, $startState->lastChangedAt?->toEpochMicroseconds());
     }
 
     public function testRejectedTokenFailsConnect(): void

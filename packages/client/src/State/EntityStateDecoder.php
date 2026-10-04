@@ -14,6 +14,8 @@ use Stewart\Support\Json\JsonShape;
 
 final class EntityStateDecoder
 {
+    private const int MICROS_PER_SECOND = 1_000_000;
+
     /** @var array<string, true> */
     private array $warnedFields = [];
 
@@ -42,6 +44,29 @@ final class EntityStateDecoder
         );
     }
 
+    /** @param array<array-key, mixed> $raw */
+    public function decodeCompressedHistoryRowOrSkip(EntityId $entityId, array $raw): ?EntityState
+    {
+        $state = $raw['s'] ?? null;
+
+        if (!\is_scalar($state)) {
+            $this->warnOncePerField($entityId->value, 's', $state, 'Home Assistant sent a history row without a state; it is skipped');
+
+            return null;
+        }
+
+        $attributes = $raw['a'] ?? [];
+        $lastUpdatedAt = $this->parseEpochSecondsOrWarn($raw['lu'] ?? null, $entityId->value, 'lu');
+
+        return new EntityState(
+            entityId: $entityId,
+            state: (string) $state,
+            attributes: \is_array($attributes) ? JsonShape::treatKeysAsStrings($attributes) : [],
+            lastChangedAt: $this->parseEpochSecondsOrWarn($raw['lc'] ?? null, $entityId->value, 'lc') ?? $lastUpdatedAt,
+            lastUpdatedAt: $lastUpdatedAt,
+        );
+    }
+
     public function parseEntityIdOrWarn(mixed $raw): ?EntityId
     {
         $entityId = \is_string($raw) ? EntityId::tryFromString($raw) : null;
@@ -66,6 +91,21 @@ final class EntityStateDecoder
         }
 
         return $instant;
+    }
+
+    private function parseEpochSecondsOrWarn(mixed $raw, string $source, string $field): ?Instant
+    {
+        if ($raw === null) {
+            return null;
+        }
+
+        if (!\is_int($raw) && !\is_float($raw)) {
+            $this->warnOncePerField($source, $field, $raw, 'Home Assistant sent a timestamp that is not epoch seconds; it is treated as missing');
+
+            return null;
+        }
+
+        return Instant::fromEpochMicroseconds((int) round($raw * self::MICROS_PER_SECOND));
     }
 
     private function warnOncePerField(string $source, string $field, mixed $raw, string $message): void

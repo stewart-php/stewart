@@ -4,9 +4,9 @@
     "type": "library",
     "license": "MIT",
     "require": {
-        "php": ">=8.4.1",
+        "php": ">=8.5",
         "ext-json": "*",
-        "amphp/amp": "^3.1",
+        "amphp/amp": "^3.1.1",
         "revolt/event-loop": "^1.0.9",
         "stewart-php/contracts": "self.version"
     },

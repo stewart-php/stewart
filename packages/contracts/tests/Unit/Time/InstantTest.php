@@ -105,6 +105,7 @@ final class InstantTest extends TestCase
 
         self::assertSame('2026-09-21T08:30:01.500000Z', (string) $later);
         self::assertSame(1_500_000, $later->elapsedSince($start)->toMicroseconds());
+        self::assertTrue($later->minus(Duration::milliseconds(1_500))->equals($start));
     }
 
     public function testElapsedTimeNeverGoesNegative(): void

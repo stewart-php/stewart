@@ -12,6 +12,7 @@ use Psr\Log\NullLogger;
 use Stewart\Client\Connection\Command\CallService;
 use Stewart\Client\Connection\Command\GetConfig;
 use Stewart\Client\Connection\Command\GetEntityRegistry;
+use Stewart\Client\Connection\Command\GetHistoryDuringPeriod;
 use Stewart\Client\Connection\Command\GetServices;
 use Stewart\Client\Connection\Command\GetStates;
 use Stewart\Client\Connection\Command\SubscribeEvents;
@@ -23,9 +24,15 @@ use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\Registry\Collection\EntityRegistryCollection;
 use Stewart\Client\Registry\EntityRegistryEntry;
 use Stewart\Client\State\EntityStateDecoder;
+use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\HaEvent;
+use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Exception\ServiceCallException;
+use Stewart\Contracts\History\Collection\HistoricalStateCollection;
+use Stewart\Contracts\History\EntityStateHistory;
+use Stewart\Contracts\History\HistoryDetail;
+use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
@@ -35,6 +42,8 @@ use Stewart\Support\Time\Deadlines;
 
 final class HaClient
 {
+    private const string UNKNOWN_COMMAND_CODE = 'unknown_command';
+
     public function __construct(
         private readonly HaConnection $connection,
         private readonly EventDecoder $decoder,
@@ -164,6 +173,29 @@ final class HaClient
         return new ServiceResponse($domain, $service, \is_array($response) ? JsonShape::treatKeysAsStrings($response) : []);
     }
 
+    /** @throws HistoryException */
+    public function fetchHistory(EntityId $entityId, HistoryWindow $window, HistoryDetail $detail): EntityStateHistory
+    {
+        try {
+            $result = $this->connection->send(new GetHistoryDuringPeriod($entityId, $window, $detail));
+        } catch (HaClientException $e) {
+            throw $this->toHistoryException($entityId, $e);
+        }
+
+        $rows = $result[$entityId->value] ?? [];
+        $states = [];
+
+        foreach (\is_array($rows) ? $rows : [] as $row) {
+            $state = \is_array($row) ? $this->states->decodeCompressedHistoryRowOrSkip($entityId, $row) : null;
+
+            if ($state !== null) {
+                $states[] = $state;
+            }
+        }
+
+        return new EntityStateHistory($entityId, $window, HistoricalStateCollection::fromStates($states));
+    }
+
     /**
      * @param Closure(StateChange): void $onStateChange
      * @param Closure(HaEvent): void $onEvent
@@ -205,6 +237,21 @@ final class HaClient
                 ? HaClientException::administratorRequired($e)
                 : $e;
         }
+    }
+
+    private function toHistoryException(EntityId $entityId, HaClientException $e): HistoryException
+    {
+        if ($e->reason === HaClientError::CommandRejected && $e->findErrorCode() === self::UNKNOWN_COMMAND_CODE) {
+            return HistoryException::recorderUnavailable($entityId, $e);
+        }
+
+        return match ($e->reason) {
+            HaClientError::CommandRejected,
+            HaClientError::CommandUnauthorized,
+            HaClientError::CommandUnencodable => HistoryException::rejected($entityId, $e->findDetail() ?? $e->getMessage(), $e->findErrorCode(), $e),
+            HaClientError::CommandTimedOut => HistoryException::timedOut($entityId, $e->getMessage(), $e),
+            default => HistoryException::unreachable($entityId, $e->getMessage(), $e),
+        };
     }
 
     private function toServiceCallException(string $domain, string $service, HaClientException $e): ServiceCallException
