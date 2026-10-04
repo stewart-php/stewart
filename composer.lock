@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2781137af360def4f45d024c204c3264",
+    "content-hash": "0a28290dc7cb917d49c8bfab8cc8da37",
     "packages": [
         {
             "name": "amphp/amp",
@@ -2130,7 +2130,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/client",
-                "reference": "64c91b7c99e99804bd3655ea488cbbe0564598f4"
+                "reference": "1e2a3ed401eec81f50c48b1fd4e9d950e43c506a"
             },
             "require": {
                 "amphp/amp": "^3.1",
@@ -2138,7 +2138,7 @@
                 "amphp/websocket": "^2.0.4",
                 "amphp/websocket-client": "^2.0.2",
                 "ext-json": "*",
-                "php": ">=8.4.1",
+                "php": ">=8.5",
                 "psr/log": "^3.0",
                 "revolt/event-loop": "^1.0.9",
                 "stewart-php/contracts": "self.version",
@@ -2188,11 +2188,11 @@
             "dist": {
                 "type": "path",
                 "url": "packages/contracts",
-                "reference": "4503ba1ae7426ffec161c8d82fb9a5b5d6525e54"
+                "reference": "df9ab09a447f37c77336a8ccf8d51821cc3d85f1"
             },
             "require": {
                 "dragonmantank/cron-expression": "^3.4",
-                "php": ">=8.4.1"
+                "php": ">=8.5"
             },
             "require-dev": {
                 "phpunit/phpunit": "^13.3",
@@ -2229,13 +2229,13 @@
             "dist": {
                 "type": "path",
                 "url": "packages/mqtt",
-                "reference": "b68cc2370958eb8b4d21067634e37f63afb68d72"
+                "reference": "de11e9ec02e12416fa67d2f6c7c255f16f1e968e"
             },
             "require": {
                 "amphp/amp": "^3.1",
                 "amphp/byte-stream": "^2.1",
                 "amphp/socket": "^2.4",
-                "php": ">=8.4.1",
+                "php": ">=8.5",
                 "psr/log": "^3.0",
                 "stewart-php/contracts": "self.version",
                 "stewart-php/runtime": "self.version",
@@ -2277,7 +2277,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/runtime",
-                "reference": "bb81e48e98cc46b8a3cf390915e6fb1873e911c6"
+                "reference": "b7a1c2526c42e8f31ac1a88415a722882ecaf760"
             },
             "require": {
                 "amphp/amp": "^3.1",
@@ -2290,7 +2290,7 @@
                 "ext-json": "*",
                 "ext-pcntl": "*",
                 "monolog/monolog": "^3.12",
-                "php": ">=8.4.1",
+                "php": ">=8.5",
                 "psr/log": "^3.0",
                 "revolt/event-loop": "^1.0.9",
                 "stewart-php/client": "self.version",
@@ -2349,11 +2349,11 @@
             "dist": {
                 "type": "path",
                 "url": "packages/store",
-                "reference": "a9f13365a8759d4f0c1dd3eb7705c0f28fc33f70"
+                "reference": "9e88e11a5080490bc7fc07247ce3df30a0ac47db"
             },
             "require": {
                 "ext-json": "*",
-                "php": ">=8.4.1",
+                "php": ">=8.5",
                 "stewart-php/contracts": "self.version",
                 "stewart-php/support": "self.version"
             },
@@ -2395,12 +2395,12 @@
             "dist": {
                 "type": "path",
                 "url": "packages/store-redis",
-                "reference": "67f264898d4f4089305d31854041b2ef5658d361"
+                "reference": "75f723ae1c9d8929cd2fb39725e45a8cbbc324a1"
             },
             "require": {
                 "amphp/amp": "^3.1",
                 "amphp/redis": "^2.0.4",
-                "php": ">=8.4.1",
+                "php": ">=8.5",
                 "revolt/event-loop": "^1.0.9",
                 "stewart-php/contracts": "self.version",
                 "stewart-php/store": "self.version",
@@ -2446,12 +2446,12 @@
             "dist": {
                 "type": "path",
                 "url": "packages/support",
-                "reference": "c684d557cdb526de0b55a26bd698234521b04c1e"
+                "reference": "a3563ac3e566b458d0a6dc50ce52242e34932eab"
             },
             "require": {
                 "amphp/amp": "^3.1",
                 "ext-json": "*",
-                "php": ">=8.4.1",
+                "php": ">=8.5",
                 "revolt/event-loop": "^1.0.9",
                 "stewart-php/contracts": "self.version"
             },
@@ -7415,13 +7415,13 @@
             "dist": {
                 "type": "path",
                 "url": "packages/codegen",
-                "reference": "2919048fa84ed66f84f8b1d545e4d7ef16c15d07"
+                "reference": "dbb408597aa0e0ac57d5f870fe3c906756d45174"
             },
             "require": {
                 "ext-ctype": "*",
                 "ext-json": "*",
                 "nette/php-generator": "^4.2.2",
-                "php": ">=8.4.1",
+                "php": ">=8.5",
                 "psr/log": "^3.0",
                 "stewart-php/client": "self.version",
                 "stewart-php/contracts": "self.version",
@@ -7466,7 +7466,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/testing",
-                "reference": "49e9d704417f844935e99ece6af5aff9246e1408"
+                "reference": "cc22b06823396e4374e3ff92068995c2e2c5bb55"
             },
             "require": {
                 "amphp/amp": "^3.1",
@@ -7475,7 +7475,7 @@
                 "amphp/socket": "^2.4",
                 "amphp/websocket": "^2.0.4",
                 "amphp/websocket-client": "^2.0.2",
-                "php": ">=8.4.1",
+                "php": ">=8.5",
                 "phpunit/phpunit": "^13.3",
                 "psr/log": "^3.0",
                 "stewart-php/contracts": "self.version",
@@ -8124,7 +8124,7 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=8.4.1"
+        "php": ">=8.5"
     },
     "platform-dev": {},
     "plugin-api-version": "2.9.0"

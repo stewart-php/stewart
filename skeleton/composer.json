@@ -4,7 +4,7 @@
     "type": "project",
     "license": "proprietary",
     "require": {
-        "php": ">=8.4.1",
+        "php": ">=8.5",
         "psr/log": "^3.0",
         "stewart-php/codegen": "^0.3",
         "stewart-php/contracts": "^0.3",

@@ -4,6 +4,14 @@ Every package, the `ghcr.io/stewart-php/runtime` image, the Helm chart and the s
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). On 0.x, a minor release may break; its "Upgrading"
 section says what to change.
 
+## [Unreleased]
+
+### Changed
+
+- Requires PHP 8.5
+- Small test adjustment for PHP 8.5
+- CI now runs all newest and lowest dependency test sequentially (Newest and lowest deps still runs parallel)
+
 ## [0.3.0] - 2026-10-03
 
 ### Added
