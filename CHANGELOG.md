@@ -4,6 +4,17 @@ Every package, the `ghcr.io/stewart-php/runtime` image, the Helm chart and the s
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). On 0.x, a minor release may break; its "Upgrading"
 section says what to change.
 
+## [Unreleased]
+
+### Added
+
+- `whenChangedTo()->from(...)` and `->fromAnyState()` choose which previous states a transition may come from
+
+### Upgrading
+
+- Add `->fromAnyState()` after any `whenChangedTo()` that must also fire when an entity comes back from
+  `unavailable` or `unknown`.
+
 ## [0.3.0] - 2026-10-03
 
 ### Added
