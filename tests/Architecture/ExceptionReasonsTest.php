@@ -18,6 +18,7 @@ use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\ExceptionReason;
 use Stewart\Contracts\Exception\StewartException;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Tests\Architecture\Fixtures\RepositoryFiles;
 use Throwable;
@@ -135,6 +136,7 @@ final class ExceptionReasonsTest extends TestCase
             $type === EntityId::class => new EntityId('light.hall'),
             $type === WorkerId::class => new WorkerId(1),
             $type === Duration::class => Duration::seconds(1),
+            $type === Instant::class => Instant::fromEpochMicroseconds(0),
             default => throw new LogicException(\sprintf('No sample value for %s; add one here.', $type)),
         };
     }
