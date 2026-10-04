@@ -8,20 +8,17 @@ use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Runtime\Ipc\Message\ServiceCallFailed;
 use Stewart\Runtime\Model\CorrelationId;
-use Stewart\Runtime\Model\WorkerId;
 
 final class PendingCalls
 {
     /** @var array<string, PendingCall> */
     private array $pending = [];
 
-    private int $counter = 0;
-
-    public function __construct(private readonly WorkerId $workerId) {}
+    public function __construct(private readonly CorrelationIdSequence $correlationIds) {}
 
     public function open(string $domain, string $service): PendingCall
     {
-        $call = new PendingCall(CorrelationId::fromString($this->workerId->value . ':' . $this->counter++), $domain, $service);
+        $call = new PendingCall($this->correlationIds->issueNext(), $domain, $service);
         $this->pending[$call->correlationId->value] = $call;
 
         return $call;

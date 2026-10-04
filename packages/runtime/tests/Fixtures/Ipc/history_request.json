@@ -1,0 +1,13 @@
+{
+    "t": "history_request",
+    "m": {
+        "correlation_id": "w0:3",
+        "scope": "demo",
+        "entity_id": "light.hall",
+        "window": {
+            "starts_at_us": 1758700000123456,
+            "ends_at_us": 1758701800123456
+        },
+        "detail": "all_changes"
+    }
+}

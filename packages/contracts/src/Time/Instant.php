@@ -81,6 +81,11 @@ final readonly class Instant implements Stringable
         return new self($this->epochMicroseconds + $duration->toMicroseconds());
     }
 
+    public function minus(Duration $duration): self
+    {
+        return new self($this->epochMicroseconds - $duration->toMicroseconds());
+    }
+
     public function elapsedSince(self $earlier): Duration
     {
         return Duration::microseconds(max(0, $this->epochMicroseconds - $earlier->epochMicroseconds));

@@ -9,7 +9,11 @@ use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventOrigin;
 use Stewart\Contracts\Event\HaEvent;
+use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\ServiceCallException;
+use Stewart\Contracts\History\Collection\HistoricalStateCollection;
+use Stewart\Contracts\History\HistoryDetail;
+use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Mqtt\MqttMessage;
 use Stewart\Contracts\Mqtt\MqttQos;
 use Stewart\Contracts\Selector\Selector;
@@ -29,6 +33,9 @@ use Stewart\Runtime\Ipc\Message\AppFailed;
 use Stewart\Runtime\Ipc\Message\Bootstrap;
 use Stewart\Runtime\Ipc\Message\EventFired;
 use Stewart\Runtime\Ipc\Message\HaConnectionLost;
+use Stewart\Runtime\Ipc\Message\HistoryFailed;
+use Stewart\Runtime\Ipc\Message\HistoryRequest;
+use Stewart\Runtime\Ipc\Message\HistoryResult;
 use Stewart\Runtime\Ipc\Message\LogRecord;
 use Stewart\Runtime\Ipc\Message\MqttMessageDelivery;
 use Stewart\Runtime\Ipc\Message\MqttPublish;
@@ -50,6 +57,7 @@ use Stewart\Runtime\Ipc\Message\WorkerReady;
 use Stewart\Runtime\Ipc\StoreSettings;
 use Stewart\Runtime\Ipc\Wire\AppIdsFragment;
 use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
+use Stewart\Runtime\Ipc\Wire\HistoricalStatesFragment;
 use Stewart\Runtime\Ipc\Wire\IpcCodec;
 use Stewart\Runtime\Ipc\Wire\StateChangesFragment;
 use Stewart\Runtime\Ipc\Wire\WorkerAppsFragment;
@@ -95,6 +103,9 @@ final class IpcMessageSamples
             'worker_ready' => IpcMessageSample::createRoundTrip(new WorkerReady(self::createAppIds('demo'), self::createAppIds('broken'), 12_345_678)),
             'subscribe' => IpcMessageSample::createRoundTrip(new Subscribe(new SubscriptionId('w0:1'), $demo, SubscriptionKind::Topic, Selector::anyOf(Selector::exact('a.b'), Selector::glob('demo.*'), Selector::regex('/^x/'), Selector::mqttFilter('home/+/#'), Selector::any()))),
             'unsubscribe' => IpcMessageSample::createRoundTrip(new Unsubscribe(new SubscriptionId('w0:1'))),
+            'history_request' => IpcMessageSample::createRoundTrip(new HistoryRequest(new CorrelationId('w0:3'), $demo, new EntityId('light.hall'), new HistoryWindow($at, $at->plus(Duration::minutes(30))), HistoryDetail::AllChanges)),
+            'history_result' => new IpcMessageSample(self::createHistoryResult($at), self::createHistoryResult($at)),
+            'history_error' => IpcMessageSample::createRoundTrip(HistoryFailed::fromException(new CorrelationId('w0:3'), HistoryException::recorderUnavailable(new EntityId('light.hall')))),
             'service_call_request' => IpcMessageSample::createRoundTrip(new ServiceCallRequest(new CorrelationId('w0:2'), $demo, 'light', 'turn_on', ['transition' => 1.5], new ServiceTarget(entityIds: [new EntityId('light.hall')], areaIds: ['hall']), false)),
             'publish' => IpcMessageSample::createRoundTrip(new Publish('demo.triggered', ['state' => 'on', 'nested' => [1.0, null]], $demo, $at)),
             'log_record' => IpcMessageSample::createRoundTrip(new LogRecord($demo, LogLevel::Warning, 'Something odd', ['to' => 'on', 'count' => 3], null)),
@@ -103,6 +114,14 @@ final class IpcMessageSamples
             'mqtt_message' => IpcMessageSample::createRoundTrip(new MqttMessageDelivery(new MqttMessage('home/hall/temp', '{"t":21.5}'), [new SubscriptionId('w0:3')])),
             'pong' => IpcMessageSample::createRoundTrip(new Pong(42, Duration::microseconds(1_250), 12_345_678, [new AppActivityReport($demo, AppState::Running, 2, 1, 30, 1, 4, 2, 3)], new StoreHealth(false, 'timed out', Instant::fromEpochMicroseconds(1_700_000_000_000_000)))),
         ];
+    }
+
+    private static function createHistoryResult(Instant $at): HistoryResult
+    {
+        return new HistoryResult(new CorrelationId('w0:3'), HistoricalStatesFragment::fromCollection(HistoricalStateCollection::fromStates([
+            new EntityState(new EntityId('light.hall'), 'off', lastChangedAt: $at, lastUpdatedAt: $at),
+            new EntityState(new EntityId('light.hall'), 'on', ['brightness' => 254], $at->plus(Duration::minutes(5)), $at->plus(Duration::minutes(5))),
+        ])));
     }
 
     public static function createBootstrap(): Bootstrap

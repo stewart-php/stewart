@@ -1,0 +1,26 @@
+{
+    "t": "history_result",
+    "m": {
+        "correlation_id": "w0:3",
+        "states": [
+            {
+                "entity_id": "light.hall",
+                "state": "off",
+                "attributes": {},
+                "last_changed_at_us": 1758700000123456,
+                "last_updated_at_us": 1758700000123456,
+                "context": null
+            },
+            {
+                "entity_id": "light.hall",
+                "state": "on",
+                "attributes": {
+                    "brightness": 254
+                },
+                "last_changed_at_us": 1758700300123456,
+                "last_updated_at_us": 1758700300123456,
+                "context": null
+            }
+        ]
+    }
+}

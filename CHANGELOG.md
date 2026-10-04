@@ -11,15 +11,24 @@ section says what to change.
 - Requires PHP 8.5
 - Small test adjustment for PHP 8.5
 - CI now runs all newest and lowest dependency test sequentially (Newest and lowest deps still runs parallel)
+- Generated code format 3; regenerate after upgrading
 
 ### Added
 
 - `whenChangedTo()->from(...)` and `->fromAnyState()` choose which previous states a transition may come from
+- `getHistory(HistoryQuery)` on `HaContext`, `Entity` and generated entity classes reads one entity's recorded
+  states from Home Assistant: `HistoryQuery::lastFor(Duration::minutes(30))` or `HistoryQuery::between($from, $until)`
+- `withAttributes()` includes attributes; `withAttributeChanges()` also includes attribute-only changes
+- `EntityStateHistory` answers `hasBeenIn()`, `getDurationIn()`, `countChanges()` and `getLastChangeTo()`
+- Failures throw `HistoryException`, with `HistoryError::RecorderUnavailable` when Home Assistant has no history
+- `RecordingHaContext` answers history from seeded and pushed states; `seedHistoricalState()` and
+  `stubHistoryFailure()` set it up, `historyQueries` records every query
 
 ### Upgrading
 
 - Add `->fromAnyState()` after any `whenChangedTo()` that must also fire when an entity comes back from
   `unavailable` or `unknown`.
+- Run `make generate`.
 
 ## [0.3.0] - 2026-10-03
 

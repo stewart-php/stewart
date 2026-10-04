@@ -9,6 +9,10 @@ use Amp\Future;
 use Closure;
 use DateTimeZone;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\History\Collection\HistoricalStateCollection;
+use Stewart\Contracts\History\EntityStateHistory;
+use Stewart\Contracts\History\HistoryDetail;
+use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
@@ -39,6 +43,11 @@ final class FakeHaSession implements HaSession
 
     /** @var list<string> */
     public array $entityIds = ['light.hall'];
+
+    public ?Throwable $historyFailure = null;
+
+    /** @var list<EntityState> */
+    public array $historicalStates = [];
 
     private bool $open = false;
 
@@ -142,5 +151,14 @@ final class FakeHaSession implements HaSession
         $latch?->waitUntilOpen();
 
         return new ServiceResponse($domain, $service);
+    }
+
+    public function fetchHistory(EntityId $entityId, HistoryWindow $window, HistoryDetail $detail): EntityStateHistory
+    {
+        if ($this->historyFailure !== null) {
+            throw $this->historyFailure;
+        }
+
+        return new EntityStateHistory($entityId, $window, HistoricalStateCollection::fromStates($this->historicalStates));
     }
 }
