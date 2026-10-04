@@ -7,6 +7,7 @@ namespace Stewart\Client\Tests\Unit\State;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Client\State\EntityStateDecoder;
+use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Testing\Logging\RecordingLogger;
 
@@ -49,5 +50,47 @@ final class EntityStateDecoderTest extends TestCase
 
         self::assertNull(new EntityStateDecoder($logger)->decodeEntityStateOrSkip(['entity_id' => 'Not An Id', 'state' => 'on']));
         self::assertSame(['Home Assistant sent an entity without a valid entity id; it is skipped'], $logger->listMessagesAt('warning'));
+    }
+
+    public function testCompressedHistoryRowFallsBackToUpdatedAt(): void
+    {
+        $state = new EntityStateDecoder()->decodeCompressedHistoryRowOrSkip(new EntityId('light.hall'), [
+            's' => 'on',
+            'a' => ['brightness' => 120],
+            'lu' => 1_790_000_000.25,
+        ]);
+
+        self::assertNotNull($state);
+        self::assertSame('on', $state->state);
+        self::assertSame(['brightness' => 120], $state->attributes);
+        self::assertSame(1_790_000_000_250_000, $state->lastUpdatedAt?->toEpochMicroseconds());
+        self::assertSame(1_790_000_000_250_000, $state->lastChangedAt?->toEpochMicroseconds());
+    }
+
+    public function testCompressedHistoryRowKeepsChangedAt(): void
+    {
+        $state = new EntityStateDecoder()->decodeCompressedHistoryRowOrSkip(new EntityId('light.hall'), ['s' => 'on', 'lu' => 20, 'lc' => 10]);
+
+        self::assertNotNull($state);
+        self::assertSame(10_000_000, $state->lastChangedAt?->toEpochMicroseconds());
+        self::assertSame(20_000_000, $state->lastUpdatedAt?->toEpochMicroseconds());
+    }
+
+    public function testHistoryRowWithoutStateIsSkippedOnce(): void
+    {
+        $logger = new RecordingLogger();
+        $decoder = new EntityStateDecoder($logger);
+
+        self::assertNull($decoder->decodeCompressedHistoryRowOrSkip(new EntityId('light.hall'), ['lu' => 1]));
+        self::assertNull($decoder->decodeCompressedHistoryRowOrSkip(new EntityId('light.hall'), ['a' => []]));
+        self::assertCount(1, $logger->listMessagesAt('warning'));
+    }
+
+    public function testNonNumericHistoryTimestampIsMissing(): void
+    {
+        $state = new EntityStateDecoder()->decodeCompressedHistoryRowOrSkip(new EntityId('light.hall'), ['s' => 'on', 'lu' => 'yesterday']);
+
+        self::assertNull($state?->lastUpdatedAt);
+        self::assertNull($state?->lastChangedAt);
     }
 }
