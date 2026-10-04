@@ -10,6 +10,7 @@ use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
+use Stewart\Contracts\Stream\ComposedStateChangeStream;
 use Stewart\Contracts\Stream\DebounceOperator;
 use Stewart\Contracts\Stream\DistinctUntilChangedOperator;
 use Stewart\Contracts\Stream\StateChanges;
@@ -21,6 +22,7 @@ use Stewart\Testing\Stream\PushSource;
 use Stewart\Testing\Time\ManualTimers;
 
 #[CoversClass(StateChanges::class)]
+#[CoversClass(ComposedStateChangeStream::class)]
 #[CoversClass(DistinctUntilChangedOperator::class)]
 #[CoversClass(DebounceOperator::class)]
 #[CoversClass(ThrottleOperator::class)]

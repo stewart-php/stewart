@@ -31,6 +31,11 @@ final readonly class WhenChangedToOperator implements StreamSource
         $window?->requireAtLeastOneMillisecond('whenChangedTo');
     }
 
+    public function withPreviousStateRule(PreviousStateRule $previousStateRule): self
+    {
+        return new self($this->timers, $this->source, $this->state, $this->window, $previousStateRule);
+    }
+
     public function attach(SubscriptionScope $scope, Closure $downstream): Subscription
     {
         $state = $this->state;
