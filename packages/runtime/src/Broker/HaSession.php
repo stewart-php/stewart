@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker;
 
 use DateTimeZone;
+use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\ServiceCallException;
+use Stewart\Contracts\History\EntityStateHistory;
+use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
 use Throwable;
@@ -41,4 +45,7 @@ interface HaSession
         ?ServiceTarget $target = null,
         bool $returnResponse = false,
     ): ServiceResponse;
+
+    /** @throws HistoryException */
+    public function fetchHistory(EntityId $entityId, HistoryWindow $window, bool $includeAttributes): EntityStateHistory;
 }

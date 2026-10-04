@@ -1,0 +1,14 @@
+{
+    "t": "history_error",
+    "m": {
+        "correlation_id": "w0:3",
+        "message": "History of light.hall is unavailable because Home Assistant has no history integration loaded.",
+        "details": {
+            "class": "Stewart\\Contracts\\Exception\\HistoryException",
+            "reason": "recorder_unavailable",
+            "context": {
+                "entityId": "light.hall"
+            }
+        }
+    }
+}
