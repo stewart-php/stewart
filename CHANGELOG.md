@@ -4,6 +4,26 @@ Every package, the `ghcr.io/stewart-php/runtime` image, the Helm chart and the s
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). On 0.x, a minor release may break; its "Upgrading"
 section says what to change.
 
+## [Unreleased]
+
+### Added
+
+- `HaContext::watchTrigger()` streams Home Assistant triggers (`subscribe_trigger`) as `TriggerEvent`s: sun, time,
+  time pattern, template, zone, calendar, device and any other trigger platform
+  - `HaTrigger` builders: `onSunrise()`, `onSunset()` with a `SunOffset`, `atTime()`, `onTimePattern()`,
+    `whenTemplateTrue()`, `onZoneTransition()`; `HaTrigger::fromArray()` takes any trigger config
+  - An `HaTriggerCollection` or a list of configs fires on any of them; `variables` feed template triggers
+  - Apps watching the same trigger share one Home Assistant subscription, re-issued after every reconnect
+  - A trigger Home Assistant rejects is logged and its subscription ends (`isActive()` is false)
+- `RecordingHaContext::pushTrigger()` and `listWatchedTriggers()`
+- `Duration::formatAsClock()`
+
+### Changed
+
+- A subscription the broker refuses is cancelled in the worker, not just logged
+- IPC protocol 16; broker and workers must run the same version
+- Builder triggers use the `trigger:` key, which needs Home Assistant 2024.10 or newer
+
 ## [0.4.0] - 2026-10-04
 
 ### Added

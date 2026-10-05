@@ -14,6 +14,7 @@ use Stewart\Contracts\Exception\SelectorException;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exception\StateException;
 use Stewart\Contracts\Exception\TopicException;
+use Stewart\Contracts\Exception\TriggerException;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Selector\Collection\SelectorCollection;
@@ -23,6 +24,9 @@ use Stewart\Contracts\Service\ServiceTargetSource;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\Topic\TopicEvent;
+use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
+use Stewart\Contracts\Trigger\HaTrigger;
+use Stewart\Contracts\Trigger\TriggerEvent;
 
 interface HaContext
 {
@@ -47,6 +51,14 @@ interface HaContext
      * @throws StateException|SelectorException
      */
     public function watchEvents(string|Selector|SelectorCollection $eventType): EventStream;
+
+    /**
+     * @param HaTrigger|HaTriggerCollection|array<array-key, mixed> $trigger
+     * @param array<array-key, mixed> $variables
+     * @return EventStream<TriggerEvent>
+     * @throws TriggerException
+     */
+    public function watchTrigger(HaTrigger|HaTriggerCollection|array $trigger, array $variables = []): EventStream;
 
     /**
      * @param array<string, mixed> $data

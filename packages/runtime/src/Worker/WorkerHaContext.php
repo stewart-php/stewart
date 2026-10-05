@@ -23,6 +23,9 @@ use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\StateChangeStream;
 use Stewart\Contracts\Topic\TopicPayload;
+use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
+use Stewart\Contracts\Trigger\HaTrigger;
+use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\State\StateCache;
@@ -83,6 +86,11 @@ final readonly class WorkerHaContext implements HaContext
     public function watchEvents(string|Selector|SelectorCollection $eventType): EventStream
     {
         return $this->streams->watchEvents($this->resourceScope, EventTypeSelector::fromSpec($eventType));
+    }
+
+    public function watchTrigger(HaTrigger|HaTriggerCollection|array $trigger, array $variables = []): EventStream
+    {
+        return $this->streams->watchTrigger($this->resourceScope, TriggerSpec::fromSpec($trigger, $variables));
     }
 
     public function callService(string $domain, string $service, array $data = [], ?ServiceTargetSource $target = null): void
