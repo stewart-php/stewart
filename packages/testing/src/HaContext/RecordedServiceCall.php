@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Testing\HaContext;
 
 use Stewart\Contracts\Service\ServiceTarget;
+use Stewart\Contracts\State\EventContext;
 
 final readonly class RecordedServiceCall
 {
@@ -15,6 +16,7 @@ final readonly class RecordedServiceCall
         public array $data,
         public ?ServiceTarget $target,
         public bool $returnsResponse,
+        public EventContext $context,
     ) {}
 
     public function getServiceName(): string

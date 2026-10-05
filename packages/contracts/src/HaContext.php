@@ -23,6 +23,7 @@ use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTargetSource;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
+use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\Topic\TopicEvent;
 use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
 use Stewart\Contracts\Trigger\HaTrigger;
@@ -64,7 +65,7 @@ interface HaContext
      * @param array<string, mixed> $data
      * @throws ServiceCallException
      */
-    public function callService(string $domain, string $service, array $data = [], ?ServiceTargetSource $target = null): void;
+    public function callService(string $domain, string $service, array $data = [], ?ServiceTargetSource $target = null): EventContext;
 
     /**
      * @param array<string, mixed> $data

@@ -58,8 +58,9 @@ final class EntityTest extends TestCase
     {
         $ha = new RecordingHaContext();
 
-        $ha->getEntity('light.hall')->callService('turn_on', ['brightness' => 180]);
+        $context = $ha->getEntity('light.hall')->callService('turn_on', ['brightness' => 180]);
 
+        self::assertSame($ha->getLastCall()->context, $context);
         self::assertSame('light.turn_on', $ha->getLastCall()->getServiceName());
         self::assertSame(['brightness' => 180], $ha->getLastCall()->data);
         self::assertSame(['light.hall'], $ha->getLastCall()->listTargetedEntityIds());

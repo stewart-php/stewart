@@ -17,6 +17,7 @@ use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
+use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Broker\HaSession;
@@ -30,6 +31,8 @@ final class FakeHaSession implements HaSession
 {
     public const string HA_USER_ID = 'stewart-user';
 
+    public const string CALL_CONTEXT_PREFIX = 'call-';
+
     public ?HaSessionListener $listener = null;
 
     public ?Throwable $openFailure = null;
@@ -42,6 +45,9 @@ final class FakeHaSession implements HaSession
     public int $revision = 1;
 
     public int $calls = 0;
+
+    /** @var list<ReceivedServiceCall> */
+    public array $receivedCalls = [];
 
     public bool $connected = true;
 
@@ -160,6 +166,7 @@ final class FakeHaSession implements HaSession
         bool $returnResponse = false,
     ): ServiceResponse {
         ++$this->calls;
+        $this->receivedCalls[] = new ReceivedServiceCall($domain, $service, $data);
 
         $called = $this->nextCall;
         $this->nextCall = null;
@@ -168,7 +175,7 @@ final class FakeHaSession implements HaSession
         $latch = $this->callLatch;
         $latch?->waitUntilOpen();
 
-        return new ServiceResponse($domain, $service);
+        return new ServiceResponse($domain, $service, context: new EventContext(self::CALL_CONTEXT_PREFIX . $this->calls, userId: self::HA_USER_ID));
     }
 
     public function fetchHistory(EntityId $entityId, HistoryWindow $window, HistoryDetail $detail): EntityStateHistory

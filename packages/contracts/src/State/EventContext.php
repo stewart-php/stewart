@@ -12,6 +12,11 @@ final readonly class EventContext
         public ?string $userId = null,
     ) {}
 
+    public static function unknown(): self
+    {
+        return new self('');
+    }
+
     /** @param array<array-key, mixed> $raw */
     public static function fromArray(array $raw): self
     {

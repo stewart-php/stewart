@@ -21,6 +21,7 @@ use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTargetSource;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
+use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\StateChangeStream;
 use Stewart\Contracts\Topic\TopicPayload;
 use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
@@ -93,9 +94,9 @@ final readonly class WorkerHaContext implements HaContext
         return $this->streams->watchTrigger($this->resourceScope, TriggerSpec::fromSpec($trigger, $variables));
     }
 
-    public function callService(string $domain, string $service, array $data = [], ?ServiceTargetSource $target = null): void
+    public function callService(string $domain, string $service, array $data = [], ?ServiceTargetSource $target = null): EventContext
     {
-        $this->serviceCalls->callService($this->resourceScope, $domain, $service, ServiceFields::fromFieldsDroppingNulls($data), $target?->toServiceTarget());
+        return $this->serviceCalls->callService($this->resourceScope, $domain, $service, ServiceFields::fromFieldsDroppingNulls($data), $target?->toServiceTarget());
     }
 
     public function callServiceForResponse(string $domain, string $service, array $data = [], ?ServiceTargetSource $target = null): ServiceResponse
