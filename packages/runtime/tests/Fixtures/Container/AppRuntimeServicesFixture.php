@@ -49,12 +49,13 @@ final class AppRuntimeServicesFixture
     ): AppRuntimeServices {
         $timers = $resources->timers;
         $logger ??= new WorkerLogger($transport, new StderrFallback(new WorkerId(0)), ResourceScope::shared());
+        $sunCalendar ??= new LocatedSunCalendar(new GeoLocation(self::LATITUDE, 19.0402), $timers->clock, new NoaaSolarCalculator());
 
         return new AppRuntimeServices(
             logger: $logger,
             clock: $timers->clock,
             deadlines: $timers,
-            scheduler: new WorkerScheduler($resources->schedules, $logger, ResourceScope::shared()),
+            scheduler: new WorkerScheduler($resources->schedules, $sunCalendar, $logger, ResourceScope::shared()),
             context: WorkerHaContextFixture::createWorkerHaContext(
                 transport: $transport,
                 scope: ResourceScope::shared(),
@@ -72,7 +73,7 @@ final class AppRuntimeServicesFixture
                 ResourceScope::shared(),
             ),
             identity: $identity,
-            sunCalendar: $sunCalendar ?? new LocatedSunCalendar(new GeoLocation(self::LATITUDE, 19.0402), $timers->clock, new NoaaSolarCalculator()),
+            sunCalendar: $sunCalendar,
             generated: $generated,
         );
     }

@@ -15,6 +15,9 @@ section says what to change.
   - `SunEvent`, `SunDay`, `SunPosition`, `GeoLocation`; `SunOffset::applyTo()`
   - Apps get a `SunCalendar` by type, located at Home Assistant's latitude, longitude and elevation as read at
     startup; without a location every query throws `SunException` (`LocationUnknown`)
+- `Scheduler::runAtSunrise()`, `runAtSunset()` and `runAtSunEvent()` with an optional `SunOffset`: a recurring
+  `ScheduledTask` with `getNextRunAt()` and missed-run counts; without a location they throw `ScheduleException`
+  (`SunLocationUnknown`)
 - `HaContext::watchTrigger()` streams Home Assistant triggers (`subscribe_trigger`) as `TriggerEvent`s: sun, time,
   time pattern, template, zone, calendar, device and any other trigger platform
   - `HaTrigger` builders: `onSunrise()`, `onSunset()` with a `SunOffset`, `atTime()`, `onTimePattern()`,

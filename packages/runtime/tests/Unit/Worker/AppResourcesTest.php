@@ -18,6 +18,7 @@ use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Runtime\Schedule\WorkerScheduler;
 use Stewart\Runtime\Tests\Fixtures\Worker\AppResourcesFixture;
 use Stewart\Runtime\Worker\AppResources;
+use Stewart\Sun\UnlocatedSunCalendar;
 
 #[CoversClass(AppResources::class)]
 final class AppResourcesTest extends TestCase
@@ -101,7 +102,7 @@ final class AppResourcesTest extends TestCase
 
     private function scheduleEveryTenSeconds(string $appId): ScheduledTask
     {
-        $scheduler = new WorkerScheduler($this->fixture->schedules, new NullLogger(), ResourceScope::forApp(new AppId($appId)));
+        $scheduler = new WorkerScheduler($this->fixture->schedules, new UnlocatedSunCalendar(), new NullLogger(), ResourceScope::forApp(new AppId($appId)));
 
         return $scheduler->runEvery(Duration::seconds(10), function (): void {
             ++$this->runs;
