@@ -9,6 +9,7 @@ use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\Stream\StreamSource;
 use Stewart\Contracts\Stream\SubscriptionScope;
 use Stewart\Contracts\Subscription;
+use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionKind;
 
@@ -23,10 +24,11 @@ final readonly class DispatchSource implements StreamSource
         private ResourceScope $scope,
         private SubscriptionKind $kind,
         private Selector $selector,
+        private ?TriggerSpec $trigger = null,
     ) {}
 
     public function attach(SubscriptionScope $scope, Closure $downstream): Subscription
     {
-        return $this->dispatcher->register($this->scope, $this->kind, $this->selector, $scope, $downstream);
+        return $this->dispatcher->register($this->scope, $this->kind, $this->selector, $scope, $downstream, $this->trigger);
     }
 }

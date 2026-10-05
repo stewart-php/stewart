@@ -10,8 +10,11 @@ use Psr\Log\NullLogger;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\Stream\SubscriptionScope;
+use Stewart\Contracts\Trigger\HaTrigger;
+use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Dispatch\RegisteredSubscription;
 use Stewart\Runtime\Ipc\Message\Subscribe;
+use Stewart\Runtime\Ipc\Message\SubscribeTrigger;
 use Stewart\Runtime\Ipc\Message\Unsubscribe;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionId;
@@ -36,6 +39,28 @@ final class BrokerSubscriptionsTest extends TestCase
         self::assertInstanceOf(Subscribe::class, $transport->sent[0]);
         self::assertSame('w0:1', $transport->sent[0]->subscriptionId->value);
         self::assertEquals(new Unsubscribe(new SubscriptionId('w0:1')), $transport->sent[1]);
+    }
+
+    public function testTriggerSubscriptionIsAnnouncedWithSpec(): void
+    {
+        $transport = new NullTransport();
+        $subscriptions = new BrokerSubscriptions($transport, new NullLogger());
+        $spec = TriggerSpec::fromSpec(HaTrigger::onSunset());
+        $trigger = new RegisteredSubscription(
+            new SubscriptionId('w0:2'),
+            ResourceScope::forApp(new AppId('app')),
+            SubscriptionKind::Trigger,
+            Selector::exact($spec->getSharingKey()),
+            new SubscriptionScope(),
+            static function (): void {},
+            $spec,
+        );
+
+        $subscriptions->subscriptionRegistered($trigger);
+        $subscriptions->subscriptionCancelled($trigger);
+
+        self::assertEquals(new SubscribeTrigger(new SubscriptionId('w0:2'), ResourceScope::forApp(new AppId('app')), $spec), $transport->sent[0] ?? null);
+        self::assertEquals(new Unsubscribe(new SubscriptionId('w0:2')), $transport->sent[1] ?? null);
     }
 
     public function testStateSubscriptionStaysInTheWorker(): void

@@ -26,8 +26,12 @@ use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
+use Stewart\Contracts\Time\SunOffset;
 use Stewart\Contracts\Topic\TopicEvent;
+use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
+use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Contracts\Trigger\TriggerEvent;
+use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Ipc\Collection\WorkerAppCollection;
 use Stewart\Runtime\Ipc\Message\AppActivityReport;
 use Stewart\Runtime\Ipc\Message\AppFailed;
@@ -51,6 +55,7 @@ use Stewart\Runtime\Ipc\Message\StateChangeBatch;
 use Stewart\Runtime\Ipc\Message\StateResynced;
 use Stewart\Runtime\Ipc\Message\StateSnapshot;
 use Stewart\Runtime\Ipc\Message\Subscribe;
+use Stewart\Runtime\Ipc\Message\SubscribeTrigger;
 use Stewart\Runtime\Ipc\Message\SubscriptionAck;
 use Stewart\Runtime\Ipc\Message\TopicMessage;
 use Stewart\Runtime\Ipc\Message\TriggerFired;
@@ -104,6 +109,13 @@ final class IpcMessageSamples
             'ping' => IpcMessageSample::createRoundTrip(new Ping(42, $at)),
             'shutdown' => IpcMessageSample::createRoundTrip(new Shutdown('stopping', Duration::seconds(5))),
             'worker_ready' => IpcMessageSample::createRoundTrip(new WorkerReady(self::createAppIds('demo'), self::createAppIds('broken'), 12_345_678)),
+            'subscribe_trigger' => IpcMessageSample::createRoundTrip(new SubscribeTrigger(new SubscriptionId('w0:5'), $demo, TriggerSpec::fromSpec(
+                HaTriggerCollection::fromTriggers([
+                    HaTrigger::onSunset(SunOffset::before(Duration::minutes(30)), 'dusk'),
+                    HaTrigger::fromArray(['platform' => 'state', 'entity_id' => ['light.hall'], 'to' => 'on']),
+                ]),
+                ['room' => 'hall'],
+            ))),
             'subscribe' => IpcMessageSample::createRoundTrip(new Subscribe(new SubscriptionId('w0:1'), $demo, SubscriptionKind::Topic, Selector::anyOf(Selector::exact('a.b'), Selector::glob('demo.*'), Selector::regex('/^x/'), Selector::mqttFilter('home/+/#'), Selector::any()))),
             'unsubscribe' => IpcMessageSample::createRoundTrip(new Unsubscribe(new SubscriptionId('w0:1'))),
             'history_request' => IpcMessageSample::createRoundTrip(new HistoryRequest(new CorrelationId('w0:3'), $demo, new EntityId('light.hall'), new HistoryWindow($at, $at->plus(Duration::minutes(30))), HistoryDetail::AllChanges)),

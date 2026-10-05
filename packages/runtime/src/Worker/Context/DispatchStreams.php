@@ -16,6 +16,8 @@ use Stewart\Contracts\Stream\OperatorStream;
 use Stewart\Contracts\Stream\StateChanges;
 use Stewart\Contracts\Time\Timers;
 use Stewart\Contracts\Topic\TopicEvent;
+use Stewart\Contracts\Trigger\TriggerEvent;
+use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Dispatch\DispatchSource;
 use Stewart\Runtime\Dispatch\LocalDispatcher;
 use Stewart\Runtime\Model\ResourceScope;
@@ -60,6 +62,15 @@ final readonly class DispatchStreams
     {
         /** @var DispatchSource<MqttMessage> $source */
         $source = new DispatchSource($this->dispatcher, $scope, SubscriptionKind::Mqtt, $topicFilter);
+
+        return new OperatorStream($source, $this->timers);
+    }
+
+    /** @return EventStream<TriggerEvent> */
+    public function watchTrigger(ResourceScope $scope, TriggerSpec $trigger): EventStream
+    {
+        /** @var DispatchSource<TriggerEvent> $source */
+        $source = new DispatchSource($this->dispatcher, $scope, SubscriptionKind::Trigger, Selector::exact($trigger->getSharingKey()), $trigger);
 
         return new OperatorStream($source, $this->timers);
     }

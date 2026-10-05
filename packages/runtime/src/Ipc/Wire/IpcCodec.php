@@ -44,6 +44,7 @@ final readonly class IpcCodec
             new DurationConverter(),
             new SelectorConverter(),
             new MqttMessageConverter(),
+            new TriggerSpecConverter(),
             new ExceptionDetailsConverter(),
             StringIdentifierConverter::createForEntityIds(),
             StringIdentifierConverter::createForAppIds(),

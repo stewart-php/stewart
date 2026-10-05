@@ -9,6 +9,7 @@ use Stewart\Runtime\Dispatch\RegisteredSubscription;
 use Stewart\Runtime\Dispatch\SubscriptionListener;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\Subscribe;
+use Stewart\Runtime\Ipc\Message\SubscribeTrigger;
 use Stewart\Runtime\Ipc\Message\Unsubscribe;
 use Stewart\Runtime\Ipc\Transport;
 
@@ -22,6 +23,12 @@ final readonly class BrokerSubscriptions implements SubscriptionListener
     public function subscriptionRegistered(RegisteredSubscription $subscription): void
     {
         if (!$subscription->kind->isBrokerRouted()) {
+            return;
+        }
+
+        if ($subscription->trigger !== null) {
+            $this->transport->send(new SubscribeTrigger($subscription->id, $subscription->scope, $subscription->trigger));
+
             return;
         }
 

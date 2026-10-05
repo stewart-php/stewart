@@ -1,0 +1,27 @@
+{
+    "t": "subscribe_trigger",
+    "m": {
+        "subscription_id": "w0:5",
+        "scope": "demo",
+        "trigger": {
+            "triggers": [
+                {
+                    "trigger": "sun",
+                    "event": "sunset",
+                    "offset": "-00:30:00",
+                    "id": "dusk"
+                },
+                {
+                    "platform": "state",
+                    "entity_id": [
+                        "light.hall"
+                    ],
+                    "to": "on"
+                }
+            ],
+            "variables": {
+                "room": "hall"
+            }
+        }
+    }
+}
