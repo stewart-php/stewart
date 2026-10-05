@@ -46,6 +46,8 @@ final class WebsocketHaSessionTest extends TestCase
 
     private const string HA_USER_ID = 'stewart-user';
 
+    private const float LATITUDE = 47.4979;
+
     private const string PORCH = 'light.porch';
 
     private ManualTimers $timers;
@@ -78,6 +80,7 @@ final class WebsocketHaSessionTest extends TestCase
         self::assertTrue($session->isConnected());
         self::assertSame(self::HA_USER_ID, $session->getHaUserId());
         self::assertSame('Europe/Budapest', $session->getTimeZone()->getName());
+        self::assertSame(self::LATITUDE, $session->getLocation()?->latitude);
         self::assertSame([self::HALL, self::PORCH], $session->listEntityIds());
         self::assertSame(2, $session->countEntities());
         self::assertSame(1, $session->snapshotStateCache()->revision);
@@ -394,7 +397,11 @@ final class WebsocketHaSessionTest extends TestCase
 
         $socket->replyWhenSent('subscribe_events', ['type' => 'result', 'success' => true, 'result' => null]);
         $socket->replyWhenSent('subscribe_trigger', $triggerReply);
-        $socket->replyWhenSent('get_config', ['type' => 'result', 'success' => true, 'result' => ['time_zone' => 'Europe/Budapest']]);
+        $socket->replyWhenSent('get_config', ['type' => 'result', 'success' => true, 'result' => [
+            'time_zone' => 'Europe/Budapest',
+            'latitude' => self::LATITUDE,
+            'longitude' => 19.0402,
+        ]]);
         $socket->replyWhenSent('auth/current_user', ['type' => 'result', 'success' => true, 'result' => ['id' => self::HA_USER_ID]]);
 
         foreach ($during as $frame) {

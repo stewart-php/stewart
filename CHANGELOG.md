@@ -8,6 +8,17 @@ section says what to change.
 
 ### Added
 
+- `stewart-php/sun`: sunrise, sunset, solar noon, twilights, golden and blue hour, and sun position, computed locally
+  with the NOAA equations and Astral's refraction, so times agree with Home Assistant's sun integration
+  - `SunCalendar` contract: `findNextEvent()` with an optional `SunOffset`, `getDayOn()`, `getPositionAt()`,
+    `getCurrentPosition()`, `isSunUp()`
+  - `SunEvent`, `SunDay`, `GeoLocation`; `SunOffset::applyTo()`
+  - `SunPosition` with `isHigherThan()` and `isWithinAzimuth()`, a sector that may wrap past north
+  - Apps get a `SunCalendar` by type, located at Home Assistant's latitude, longitude and elevation as read at
+    startup; without a location every query throws `SunException` (`LocationUnknown`)
+- `Scheduler::runAtSunrise()`, `runAtSunset()` and `runAtSunEvent()` with an optional `SunOffset`: a recurring
+  `ScheduledTask` with `getNextRunAt()` and missed-run counts; without a location they throw `ScheduleException`
+  (`SunLocationUnknown`)
 - `HaContext::watchTrigger()` streams Home Assistant triggers (`subscribe_trigger`) as `TriggerEvent`s: sun, time,
   time pattern, template, zone, calendar, device and any other trigger platform
   - `HaTrigger` builders: `onSunrise()`, `onSunset()` with a `SunOffset`, `atTime()`, `onTimePattern()`,
@@ -31,7 +42,7 @@ section says what to change.
 ### Changed
 
 - A subscription the broker refuses is cancelled in the worker, not just logged
-- IPC protocol 18; broker and workers must run the same version
+- IPC protocol 19; broker and workers must run the same version
 - Builder triggers use the `trigger:` key, which needs Home Assistant 2024.10 or newer
 - Generated code format 4; regenerate after upgrading
 

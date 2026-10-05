@@ -9,6 +9,7 @@ use DateTimeZone;
 use Psr\Log\LoggerInterface;
 use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
+use Stewart\Client\HaSiteSettings;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\History\EntityStateHistory;
@@ -17,6 +18,7 @@ use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\StateChange;
+use Stewart\Contracts\Sun\GeoLocation;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\MonotonicTime;
 use Stewart\Contracts\Trigger\TriggerEvent;
@@ -45,7 +47,7 @@ final class WebsocketHaSession implements HaSession
     /** @var array<string, StateChange> */
     private array $pendingChanges = [];
 
-    private ?DateTimeZone $timeZone = null;
+    private ?HaSiteSettings $siteSettings = null;
 
     private ?string $haUserId = null;
 
@@ -117,7 +119,7 @@ final class WebsocketHaSession implements HaSession
 
     public function getTimeZone(): DateTimeZone
     {
-        return $this->timeZone ?? new DateTimeZone('UTC');
+        return $this->siteSettings->timeZone ?? new DateTimeZone('UTC');
     }
 
     public function getHaVersion(): ?string
@@ -128,6 +130,11 @@ final class WebsocketHaSession implements HaSession
     public function getHaUserId(): ?string
     {
         return $this->haUserId;
+    }
+
+    public function getLocation(): ?GeoLocation
+    {
+        return $this->siteSettings?->location;
     }
 
     public function listEntityIds(): array
@@ -171,7 +178,7 @@ final class WebsocketHaSession implements HaSession
         try {
             $this->client->subscribeAllEvents($this->onStateChanged(...), $this->onEventFired(...));
             $this->triggers->resubscribeAll();
-            $this->timeZone ??= $this->client->getTimeZone();
+            $this->siteSettings ??= $this->client->getSiteSettings();
             $this->haUserId ??= $this->client->getCurrentUserId();
             $states = $this->client->getStates();
             $this->client->flushEvents();

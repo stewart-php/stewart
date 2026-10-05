@@ -33,6 +33,7 @@ use Stewart\Runtime\Schedule\WorkerScheduler;
 use Stewart\Runtime\Scope\ScopeLifecycle;
 use Stewart\Runtime\Tests\Fixtures\Worker\InlineHandlerRunner;
 use Stewart\Runtime\Tests\Fixtures\Worker\RecordingScheduleListener;
+use Stewart\Sun\UnlocatedSunCalendar;
 use Stewart\Testing\Logging\RecordingLogger;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
@@ -73,7 +74,7 @@ final class ScheduleRegistryTest extends TestCase
         $this->logger = new RecordingLogger();
         $this->scopes = new ScopeLifecycle();
         $this->registry = new ScheduleRegistry('w0', new ScheduleContext($this->timers, $this->clock, new InlineHandlerRunner(), $this->listener), new TriggerFactory($this->clock), $this->scopes);
-        $this->scheduler = new WorkerScheduler($this->registry, $this->logger, self::createScope('demo'));
+        $this->scheduler = new WorkerScheduler($this->registry, new UnlocatedSunCalendar(), $this->logger, self::createScope('demo'));
         $this->runs = [];
     }
 
@@ -198,7 +199,7 @@ final class ScheduleRegistryTest extends TestCase
         $zone = new DateTimeZone('Europe/Budapest');
         $timers = new ManualTimers(new VirtualClock(new DateTimeImmutable('2026-10-25 01:30:00', $zone)));
         $registry = new ScheduleRegistry('w0', new ScheduleContext($timers, $timers->clock, new InlineHandlerRunner(), $this->listener), new TriggerFactory($timers->clock), $this->scopes);
-        $scheduler = new WorkerScheduler($registry, $this->logger, self::createScope('demo'));
+        $scheduler = new WorkerScheduler($registry, new UnlocatedSunCalendar(), $this->logger, self::createScope('demo'));
 
         $this->goLive('demo', $registry);
         $scheduler->runOnCron('*/5 * * * *', $this->record(...));
@@ -356,7 +357,7 @@ final class ScheduleRegistryTest extends TestCase
     public function testRunInFlightDisplacesNextAndWarnsOnce(): void
     {
         $registry = new ScheduleRegistry('w0', new ScheduleContext($this->timers, $this->clock, new AsyncHandlerRunner(), $this->listener), new TriggerFactory($this->clock), $this->scopes);
-        $scheduler = new WorkerScheduler($registry, $this->logger, self::createScope('demo'));
+        $scheduler = new WorkerScheduler($registry, new UnlocatedSunCalendar(), $this->logger, self::createScope('demo'));
         $gate = new DeferredFuture();
 
         $this->goLive('demo', $registry);

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0a28290dc7cb917d49c8bfab8cc8da37",
+    "content-hash": "c33ab8c7cd732cca18b062a7223b0832",
     "packages": [
         {
             "name": "amphp/amp",
@@ -2130,7 +2130,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/client",
-                "reference": "62fa482c42f90b060b640006ec44f7211d42ec1d"
+                "reference": "b45505bc017c0a1db0df2047b58edc7b2e9fdc6c"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2190,7 +2190,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/contracts",
-                "reference": "df9ab09a447f37c77336a8ccf8d51821cc3d85f1"
+                "reference": "867fb0e5d80f52810701283534c79a5294261378"
             },
             "require": {
                 "dragonmantank/cron-expression": "^3.4",
@@ -2231,7 +2231,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/mqtt",
-                "reference": "7e78cb909ba5d47c05409a1b8cce7824d6f17705"
+                "reference": "882a1b90d559917ae641786f263c8539b91a4031"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2279,7 +2279,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/runtime",
-                "reference": "3f07795220e23fa3c3a3098881c2f1e240e8709b"
+                "reference": "844bfa0fe54fbec7bc8bea0a50e3d73689176c28"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2298,6 +2298,7 @@
                 "stewart-php/client": "self.version",
                 "stewart-php/contracts": "self.version",
                 "stewart-php/store": "self.version",
+                "stewart-php/sun": "self.version",
                 "stewart-php/support": "self.version",
                 "symfony/config": "^7.4 || ^8.0",
                 "symfony/console": "^7.4 || ^8.0",
@@ -2354,7 +2355,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/store",
-                "reference": "9e88e11a5080490bc7fc07247ce3df30a0ac47db"
+                "reference": "0e100e5ff7c0ed1cda2f5ea9101281fa6bdd9ea5"
             },
             "require": {
                 "ext-json": "*",
@@ -2400,7 +2401,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/store-redis",
-                "reference": "afafc6833356b678278d4e87ef97189e37085454"
+                "reference": "4ba8e9b2f6c3e5342f983b57f500432fca0b1a50"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2448,12 +2449,53 @@
             }
         },
         {
+            "name": "stewart-php/sun",
+            "version": "0.x-dev",
+            "dist": {
+                "type": "path",
+                "url": "packages/sun",
+                "reference": "9a671a009ac090b727bdaeabf8704f808f5de067"
+            },
+            "require": {
+                "php": ">=8.5",
+                "stewart-php/contracts": "self.version"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^13.3",
+                "stewart-php/testing": "self.version"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Stewart\\Sun\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Stewart\\Sun\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "Sunrise, sunset, twilight, golden hour and sun position for a location, computed locally",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
             "name": "stewart-php/support",
             "version": "0.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/support",
-                "reference": "63acfe50d2fad9ffcc76ced876ab9f65dd146fa5"
+                "reference": "77d9da84d2e42cb977a712c3f31b6ef154dff775"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -7422,7 +7464,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/codegen",
-                "reference": "dbb408597aa0e0ac57d5f870fe3c906756d45174"
+                "reference": "9021ee412b6edf680900f2cae8960bce262b3703"
             },
             "require": {
                 "ext-ctype": "*",
@@ -7473,7 +7515,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/testing",
-                "reference": "e89b5c9819ce302f545af55e492e05be8a38ad74"
+                "reference": "a6e6457e89dcf7ed71e5f399a5935971c41b0fdf"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -8127,6 +8169,7 @@
         "stewart-php/runtime": 20,
         "stewart-php/store": 20,
         "stewart-php/store-redis": 20,
+        "stewart-php/sun": 20,
         "stewart-php/support": 20,
         "stewart-php/testing": 20
     },

@@ -24,6 +24,7 @@ use Stewart\Contracts\State\Collection\StateChangeCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\State\StateChange;
+use Stewart\Contracts\Sun\GeoLocation;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Time\SunOffset;
@@ -145,6 +146,7 @@ final class IpcMessageSamples
             protocol: IpcCodec::PROTOCOL_VERSION,
             workerId: new WorkerId(1),
             timeZone: 'Europe/Budapest',
+            location: new GeoLocation(47.4979, 19.0402, 96.0),
             apps: WorkerAppsFragment::fromCollection(WorkerAppCollection::fromApps([new WorkerApp(new AppId('demo'), 'Stewart\Runtime\Tests\Fixtures\Apps\Demo', ['watch' => 'input_boolean.hall']), new WorkerApp(new AppId('echo'), 'Stewart\Runtime\Tests\Fixtures\Apps\Relay', [])])),
             settings: new WorkerSettings(LogLevel::Info, Duration::seconds(35), Duration::seconds(5), 100, Duration::seconds(60), '/app/services.php', 'Stewart\Generated', true),
             store: new StoreSettings('redis://:not-a-secret@valkey:6379/0', 'stewart', Duration::seconds(5), Duration::seconds(5)),

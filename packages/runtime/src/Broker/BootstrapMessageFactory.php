@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Broker;
 
-use DateTimeZone;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\Config\PersistenceConfig;
@@ -45,17 +44,18 @@ final readonly class BootstrapMessageFactory
         $this->storeSettings = $config->persistence === null ? null : $this->buildStoreSettings($config->persistence);
     }
 
-    public function createBootstrapMessage(WorkerHandle $handle, DateTimeZone $timeZone, ?string $haUserId): Bootstrap
+    public function createBootstrapMessage(WorkerHandle $handle, HaSession $session): Bootstrap
     {
         return new Bootstrap(
             protocol: IpcCodec::PROTOCOL_VERSION,
             workerId: $handle->id,
-            timeZone: $timeZone->getName(),
+            timeZone: $session->getTimeZone()->getName(),
+            location: $session->getLocation(),
             apps: WorkerAppsFragment::fromCollection($handle->slot->listWorkerApps()),
             settings: $this->workerSettings,
             store: $this->storeSettings,
             knownAppIds: AppIdsFragment::fromCollection($this->apps->knownIds),
-            haUserId: $haUserId,
+            haUserId: $session->getHaUserId(),
         );
     }
 

@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Tests\Fixtures\Ipc;
 
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
+use Stewart\Contracts\Sun\GeoLocation;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Ipc\Collection\WorkerAppCollection;
 use Stewart\Runtime\Ipc\Message\Bootstrap;
@@ -32,11 +33,13 @@ final class TestBootstrap
         ?string $servicesFile = null,
         bool $mqttEnabled = false,
         ?string $haUserId = null,
+        ?GeoLocation $location = null,
     ): Bootstrap {
         return new Bootstrap(
             protocol: IpcCodec::PROTOCOL_VERSION,
             workerId: new WorkerId(0),
             timeZone: $timeZone,
+            location: $location,
             apps: WorkerAppsFragment::fromCollection(WorkerAppCollection::fromApps($apps)),
             settings: self::createSettings($callTimeout ?? Duration::seconds(30), $initializeTimeout, $servicesFile, $mqttEnabled),
             store: $store,

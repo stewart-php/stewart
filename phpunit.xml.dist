@@ -39,6 +39,7 @@
             <directory>packages/store/src</directory>
             <directory>packages/store-redis/src</directory>
             <directory>packages/mqtt/src</directory>
+            <directory>packages/sun/src</directory>
             <directory>packages/runtime/src</directory>
         </include>
     </source>

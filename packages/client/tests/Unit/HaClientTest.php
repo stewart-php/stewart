@@ -42,6 +42,36 @@ final class HaClientTest extends TestCase
 {
     use AssertsReason;
 
+    public function testSiteSettingsCarryTimeZoneAndLocation(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('get_config', ['type' => 'result', 'success' => true, 'result' => [
+            'time_zone' => 'Europe/Budapest',
+            'latitude' => 47.4979,
+            'longitude' => 19.0402,
+            'elevation' => 96,
+        ]]);
+        $settings = $client->getSiteSettings();
+
+        self::assertSame('Europe/Budapest', $settings->timeZone->getName());
+        self::assertSame(47.4979, $settings->location?->latitude);
+        self::assertCount(1, $socket->listSentOfType('get_config'));
+    }
+
+    public function testUnusableTimeZoneFallsBackToUtc(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('get_config', ['type' => 'result', 'success' => true, 'result' => ['time_zone' => 'Mars/Olympus']]);
+        $settings = $client->getSiteSettings();
+
+        self::assertSame('UTC', $settings->timeZone->getName());
+        self::assertNull($settings->location);
+    }
+
     public function testSubscribingToEverythingNamesNoEventType(): void
     {
         $socket = FakeWebsocketConnector::createAuthenticatedConnection();

@@ -13,6 +13,7 @@ use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
+use Stewart\Contracts\Sun\GeoLocation;
 use Stewart\Contracts\Trigger\TriggerSpec;
 use Throwable;
 
@@ -34,6 +35,8 @@ interface HaSession
     public function getHaVersion(): ?string;
 
     public function getHaUserId(): ?string;
+
+    public function getLocation(): ?GeoLocation;
 
     /** @return list<string> */
     public function listEntityIds(): array;

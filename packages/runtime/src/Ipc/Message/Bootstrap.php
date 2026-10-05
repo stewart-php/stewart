@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Ipc\Message;
 
+use Stewart\Contracts\Sun\GeoLocation;
 use Stewart\Runtime\Ipc\StoreSettings;
 use Stewart\Runtime\Ipc\Wire\AppIdsFragment;
 use Stewart\Runtime\Ipc\Wire\WorkerAppsFragment;
@@ -17,6 +18,7 @@ final readonly class Bootstrap implements BrokerMessage
         public int $protocol,
         public WorkerId $workerId,
         public string $timeZone,
+        public ?GeoLocation $location,
         public WorkerAppsFragment $apps,
         public WorkerSettings $settings,
         public ?StoreSettings $store,

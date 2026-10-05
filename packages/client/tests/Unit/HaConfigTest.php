@@ -48,4 +48,29 @@ final class HaConfigTest extends TestCase
         self::assertNull(HaConfig::fromGetConfigResult(['state' => 3])->coreState);
         self::assertNull(HaConfig::fromGetConfigResult([])->coreState);
     }
+
+    public function testLocationIsRead(): void
+    {
+        $location = HaConfig::fromGetConfigResult(['latitude' => 47.4979, 'longitude' => 19.0402, 'elevation' => 96])->location;
+
+        self::assertSame(47.4979, $location?->latitude);
+        self::assertSame(19.0402, $location->longitude);
+        self::assertSame(96.0, $location->elevationMeters);
+    }
+
+    public function testLocationWithoutElevationSitsAtSeaLevel(): void
+    {
+        self::assertSame(0.0, HaConfig::fromGetConfigResult(['latitude' => 0, 'longitude' => 0])->location?->elevationMeters);
+    }
+
+    public function testMissingCoordinateLeavesLocationUnknown(): void
+    {
+        self::assertNull(HaConfig::fromGetConfigResult(['latitude' => 47.4979])->location);
+        self::assertNull(HaConfig::fromGetConfigResult(['latitude' => '47.4979', 'longitude' => 19.0402])->location);
+    }
+
+    public function testOutOfRangeCoordinateLeavesLocationUnknown(): void
+    {
+        self::assertNull(HaConfig::fromGetConfigResult(['latitude' => 91, 'longitude' => 19.0402])->location);
+    }
 }

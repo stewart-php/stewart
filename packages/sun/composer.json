@@ -1,0 +1,33 @@
+{
+    "name": "stewart-php/sun",
+    "description": "Sunrise, sunset, twilight, golden hour and sun position for a location, computed locally",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.5",
+        "stewart-php/contracts": "self.version"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^13.3",
+        "stewart-php/testing": "self.version"
+    },
+    "autoload": {
+        "psr-4": {
+            "Stewart\\Sun\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Stewart\\Sun\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.x-dev"
+        }
+    },
+    "minimum-stability": "stable",
+    "config": {
+        "sort-packages": true
+    }
+}

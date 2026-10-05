@@ -14,6 +14,11 @@ final class ScheduleException extends StewartException
         return self::createForReason(ScheduleError::CronInvalid, ['expression' => $expression], $previous);
     }
 
+    public static function sunLocationUnknown(string $event, Throwable $previous): self
+    {
+        return self::createForReason(ScheduleError::SunLocationUnknown, ['event' => $event], $previous);
+    }
+
     public static function timeOfDayInvalid(string $value): self
     {
         return self::createForReason(ScheduleError::TimeOfDayInvalid, ['value' => $value]);

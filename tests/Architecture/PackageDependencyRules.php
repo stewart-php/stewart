@@ -120,6 +120,20 @@ final class PackageDependencyRules
             ->because('every framework package shares the helpers, so they cannot know any of them');
     }
 
+    public function testSunLeansOnContractsAlone(): Rule
+    {
+        return PHPat::rule()
+            ->classes(Selector::inNamespace('Stewart\Sun'))
+            ->excluding(TestCodeSelector::selectTestCode())
+            ->canOnly()
+            ->dependOn()
+            ->classes(
+                Selector::inNamespace('Stewart\Sun'),
+                Selector::inNamespace('Stewart\Contracts'),
+            )
+            ->because('the sun calendar is pure arithmetic over a location and a clock');
+    }
+
     /** PHPStan reports `@internal` only across root namespaces, so inside `Stewart\*` this rule enforces it. */
     public function testOnlyTheFrameworkReachesSupport(): Rule
     {
@@ -150,6 +164,7 @@ final class PackageDependencyRules
             ->classes(
                 Selector::inNamespace('Stewart\Runtime'),
                 Selector::inNamespace('Stewart\Store'),
+                Selector::inNamespace('Stewart\Sun'),
             )
             ->because('an automation asks for contract types; which scope a Store is, and what holds it, is wiring');
     }
@@ -280,6 +295,7 @@ final class PackageDependencyRules
                 Selector::inNamespace('Stewart\Codegen'),
                 Selector::inNamespace('Stewart\Runtime'),
                 Selector::inNamespace('Stewart\Mqtt'),
+                Selector::inNamespace('Stewart\Sun'),
             )
             ->excluding(TestCodeSelector::selectTestCode())
             ->shouldNot()
