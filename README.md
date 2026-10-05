@@ -62,6 +62,7 @@ and the skeleton (`skeleton/`) share one version; see [RELEASING.md](RELEASING.m
 | `stewart-php/store` | Scoping, encoding and hydration for the key-value store; backend-agnostic |
 | `stewart-php/store-redis` | Non-blocking Redis/Valkey store backend |
 | `stewart-php/mqtt` | Non-blocking MQTT 3.1.1 client the broker uses when `mqtt.url` is set |
+| `stewart-php/sun` | Sunrise, sunset, twilight, golden hour and sun position, computed locally |
 | `stewart-php/codegen` | Generates typed entity and service classes |
 | `stewart-php/support` | Internal helpers shared by the packages; not app-facing |
 | `stewart-php/testing` | Shared test doubles; a development dependency |

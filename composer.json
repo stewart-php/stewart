@@ -11,6 +11,7 @@
         "stewart-php/runtime": "0.x-dev",
         "stewart-php/store": "0.x-dev",
         "stewart-php/store-redis": "0.x-dev",
+        "stewart-php/sun": "0.x-dev",
         "stewart-php/support": "0.x-dev",
         "symfony/console": "^7.4 || ^8.0",
         "symfony/dependency-injection": "^7.4 || ^8.0"
@@ -39,6 +40,7 @@
                     "stewart-php/runtime": "0.x-dev",
                     "stewart-php/store": "0.x-dev",
                     "stewart-php/store-redis": "0.x-dev",
+                    "stewart-php/sun": "0.x-dev",
                     "stewart-php/support": "0.x-dev",
                     "stewart-php/testing": "0.x-dev"
                 }
@@ -54,6 +56,7 @@
             "Stewart\\Store\\Tests\\": "packages/store/tests/",
             "Stewart\\Store\\Redis\\Tests\\": "packages/store-redis/tests/",
             "Stewart\\Mqtt\\Tests\\": "packages/mqtt/tests/",
+            "Stewart\\Sun\\Tests\\": "packages/sun/tests/",
             "Stewart\\Codegen\\Tests\\": "packages/codegen/tests/",
             "Stewart\\Runtime\\Tests\\": "packages/runtime/tests/",
             "Stewart\\Testing\\Tests\\": "packages/testing/tests/"

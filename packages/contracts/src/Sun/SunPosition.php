@@ -13,6 +13,6 @@ final readonly class SunPosition
 
     public function isAboveHorizon(): bool
     {
-        return $this->elevationDegrees > SunEvent::HORIZON_DEGREES;
+        return $this->elevationDegrees > -SunEvent::SUN_RADIUS_DEGREES;
     }
 }

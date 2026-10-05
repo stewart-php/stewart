@@ -8,6 +8,11 @@ section says what to change.
 
 ### Added
 
+- `stewart-php/sun`: sunrise, sunset, solar noon, twilights, golden and blue hour, and sun position, computed locally
+  with the NOAA equations and Astral's refraction, so times agree with Home Assistant's sun integration
+  - `SunCalendar` contract: `findNextEvent()` with an optional `SunOffset`, `getDayOn()`, `getPositionAt()`,
+    `getCurrentPosition()`, `isSunUp()`
+  - `SunEvent`, `SunDay`, `SunPosition`, `GeoLocation`; `SunOffset::applyTo()`
 - `HaContext::watchTrigger()` streams Home Assistant triggers (`subscribe_trigger`) as `TriggerEvent`s: sun, time,
   time pattern, template, zone, calendar, device and any other trigger platform
   - `HaTrigger` builders: `onSunrise()`, `onSunset()` with a `SunOffset`, `atTime()`, `onTimePattern()`,

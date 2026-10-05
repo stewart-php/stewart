@@ -10,6 +10,7 @@ parameters:
         - packages/store/src
         - packages/store-redis/src
         - packages/mqtt/src
+        - packages/sun/src
         - packages/codegen/src
         - packages/runtime/src
         - packages/testing/src
@@ -19,6 +20,7 @@ parameters:
         - packages/store/tests
         - packages/store-redis/tests
         - packages/mqtt/tests
+        - packages/sun/tests
         - packages/codegen/tests
         - packages/runtime/tests
         - packages/testing/tests

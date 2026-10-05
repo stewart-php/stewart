@@ -22,7 +22,7 @@ final class SunEventTest extends TestCase
         $crossing = SunEvent::Sunrise->findElevationCrossing();
 
         self::assertNotNull($crossing);
-        self::assertSame(SunEvent::HORIZON_DEGREES, $crossing->elevationDegrees);
+        self::assertSame(-SunEvent::SUN_RADIUS_DEGREES, $crossing->elevationDegrees);
         self::assertSame(SunDirection::Rising, $crossing->direction);
     }
 

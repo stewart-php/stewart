@@ -11,13 +11,13 @@ use Stewart\Contracts\Sun\SunPosition;
 #[CoversClass(SunPosition::class)]
 final class SunPositionTest extends TestCase
 {
-    public function testSunJustBelowGeometricHorizonCountsAsUp(): void
+    public function testUpperLimbOnHorizonCountsAsUp(): void
     {
-        self::assertTrue(new SunPosition(90.0, -0.5)->isAboveHorizon());
+        self::assertTrue(new SunPosition(90.0, -0.2)->isAboveHorizon());
     }
 
-    public function testSunBelowRefractedHorizonCountsAsDown(): void
+    public function testSunBelowItsOwnRadiusCountsAsDown(): void
     {
-        self::assertFalse(new SunPosition(270.0, -1.0)->isAboveHorizon());
+        self::assertFalse(new SunPosition(270.0, -0.3)->isAboveHorizon());
     }
 }
