@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Client\Connection\Command\Authenticate;
 use Stewart\Client\Connection\Command\CallService;
+use Stewart\Client\Connection\Command\GetCurrentUser;
 use Stewart\Client\Connection\Command\GetHistoryDuringPeriod;
 use Stewart\Client\Connection\Command\GetStates;
 use Stewart\Client\Connection\Command\SubscribeEvents;
@@ -28,6 +29,7 @@ use Stewart\Contracts\Trigger\HaTrigger;
 #[CoversClass(GetHistoryDuringPeriod::class)]
 #[CoversClass(SubscribeTrigger::class)]
 #[CoversClass(UnsubscribeEvents::class)]
+#[CoversClass(GetCurrentUser::class)]
 final class HaCommandTest extends TestCase
 {
     public function testServiceCallOmitsEmptyParts(): void
@@ -69,6 +71,12 @@ final class HaCommandTest extends TestCase
         $message = new SubscribeTrigger(HaTriggerCollection::fromTriggers([HaTrigger::onSunrise()]), ['room' => 'hall'])->toMessage();
 
         self::assertSame(['room' => 'hall'], $message['variables'] ?? null);
+    }
+
+    public function testCurrentUserIsBareCommand(): void
+    {
+        self::assertSame(['type' => 'auth/current_user'], new GetCurrentUser()->toMessage());
+        self::assertSame('auth/current_user', new GetCurrentUser()->describe());
     }
 
     public function testUnsubscribeNamesSubscription(): void

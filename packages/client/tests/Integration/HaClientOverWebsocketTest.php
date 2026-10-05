@@ -74,6 +74,17 @@ final class HaClientOverWebsocketTest extends TestCase
         self::assertSame('Europe/Budapest', $client->getTimeZone()->getName());
     }
 
+    public function testServiceCallContextAndCurrentUserOverSocket(): void
+    {
+        $this->server->answerCommand('call_service', ['context' => ['id' => 'call-1', 'parent_id' => null, 'user_id' => 'stewart-user']]);
+        $this->server->answerCommand('auth/current_user', ['id' => 'stewart-user', 'name' => 'Stewart']);
+
+        $client = $this->connectClient();
+
+        self::assertSame('call-1', $client->callService('light', 'turn_on')->context?->id);
+        self::assertSame('stewart-user', $client->getCurrentUserId());
+    }
+
     public function testHistoryRoundTripsOverSocket(): void
     {
         $this->server->answerCommand('history/history_during_period', ['light.hall' => [['s' => 'on', 'lu' => 1_790_000_000.5]]]);
