@@ -22,7 +22,8 @@ section says what to change.
   - `StateChange::wasCausedBy($context)` and `EntityState::wasLastChangedBy($context)` match the call or anything it
     started (its child contexts)
   - `StewartIdentity`, injectable in apps, answers `wasCausedByStewart($change)` from the token's Home Assistant user;
-    it also recognises the first change of a call, which arrives before `callService()` returns
+    it also recognises the first change of a call, which arrives before `callService()` returns. It needs a Home
+    Assistant user for Stewart alone: with a token from a person's account, that person's changes count as Stewart's
   - Under `service_calls.dry_run` the context id starts with `dry-run:`
 - `RecordingHaContext` gives each call a context for `RecordingHaContext::STEWART_USER_ID`, records it on
   `RecordedServiceCall::$context`, and `pushState()` takes a causing context
