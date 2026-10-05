@@ -25,4 +25,9 @@ final readonly class EventContext
             userId: \is_string($userId) ? $userId : null,
         );
     }
+
+    public function isSameOrParentOf(self $other): bool
+    {
+        return $this->id !== '' && ($other->id === $this->id || $other->parentId === $this->id);
+    }
 }
