@@ -33,6 +33,8 @@ interface HaSession
 
     public function getHaVersion(): ?string;
 
+    public function getHaUserId(): ?string;
+
     /** @return list<string> */
     public function listEntityIds(): array;
 

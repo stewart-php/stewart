@@ -1,7 +1,7 @@
 {
     "t": "bootstrap",
     "m": {
-        "protocol": 17,
+        "protocol": 18,
         "worker_id": 1,
         "time_zone": "Europe/Budapest",
         "apps": [
@@ -24,6 +24,7 @@
             "timeout_us": 5000000,
             "recovery_interval_us": 5000000
         },
-        "known_app_ids": ["demo", "echo"]
+        "known_app_ids": ["demo", "echo"],
+        "ha_user_id": "stewart-user"
     }
 }

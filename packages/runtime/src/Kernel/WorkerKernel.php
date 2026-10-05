@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Kernel;
 
 use DateTimeZone;
+use Stewart\Contracts\Identity\StewartIdentity;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\Bootstrap;
@@ -50,7 +51,8 @@ final readonly class WorkerKernel
             ->withService(Transport::class, $transport)
             ->withService(Bootstrap::class, $bootstrap)
             ->withService(WorkerId::class, $bootstrap->workerId)
-            ->withService(Clock::class, $clock);
+            ->withService(Clock::class, $clock)
+            ->withService(StewartIdentity::class, new StewartIdentity($bootstrap->haUserId));
     }
 
     private function buildNamedArgumentsFor(Bootstrap $bootstrap): NamedArguments

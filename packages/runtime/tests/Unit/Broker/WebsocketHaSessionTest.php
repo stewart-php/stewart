@@ -44,6 +44,8 @@ final class WebsocketHaSessionTest extends TestCase
 
     private const string HALL = 'light.hall';
 
+    private const string HA_USER_ID = 'stewart-user';
+
     private const string PORCH = 'light.porch';
 
     private ManualTimers $timers;
@@ -72,8 +74,9 @@ final class WebsocketHaSessionTest extends TestCase
         $socket = self::createHaSocket(['hall' => 'off', 'porch' => 'on']);
         $session = $this->open($socket);
 
-        self::assertSame(['auth', 'subscribe_events', 'get_config', 'get_states'], array_column($socket->sent, 'type'));
+        self::assertSame(['auth', 'subscribe_events', 'get_config', 'auth/current_user', 'get_states'], array_column($socket->sent, 'type'));
         self::assertTrue($session->isConnected());
+        self::assertSame(self::HA_USER_ID, $session->getHaUserId());
         self::assertSame('Europe/Budapest', $session->getTimeZone()->getName());
         self::assertSame([self::HALL, self::PORCH], $session->listEntityIds());
         self::assertSame(2, $session->countEntities());
@@ -132,7 +135,7 @@ final class WebsocketHaSessionTest extends TestCase
         EventLoopTicks::settleUntil(static fn(): bool => $session->isConnected());
 
         self::assertTrue($session->isConnected());
-        self::assertSame(['auth', 'subscribe_events', 'get_states'], array_column($second->sent, 'type'), 'The time zone is asked for once.');
+        self::assertSame(['auth', 'subscribe_events', 'get_states'], array_column($second->sent, 'type'), 'The time zone and user are asked for once.');
         self::assertEquals([Duration::seconds(1)], $this->listener->outages, 'One failed attempt, then one backoff.');
         self::assertSame(2, $session->snapshotStateCache()->revision);
     }
@@ -223,7 +226,7 @@ final class WebsocketHaSessionTest extends TestCase
 
         self::assertTrue($session->isConnected());
         self::assertSame([], $this->listener->lost);
-        self::assertSame(['auth', 'subscribe_events', 'get_states'], array_column($second->sent, 'type'));
+        self::assertSame(['auth', 'subscribe_events', 'auth/current_user', 'get_states'], array_column($second->sent, 'type'), 'The user was never answered, so it is asked again.');
         self::assertSame(1, $session->snapshotStateCache()->revision);
     }
 
@@ -250,7 +253,7 @@ final class WebsocketHaSessionTest extends TestCase
         $session->subscribeTrigger(self::createSunsetSpec());
         $session->open($this->listener);
 
-        self::assertSame(['auth', 'subscribe_events', 'subscribe_trigger', 'get_config', 'get_states'], array_column($socket->sent, 'type'));
+        self::assertSame(['auth', 'subscribe_events', 'subscribe_trigger', 'get_config', 'auth/current_user', 'get_states'], array_column($socket->sent, 'type'));
     }
 
     public function testTriggersAreReissuedAfterReconnect(): void
@@ -392,6 +395,7 @@ final class WebsocketHaSessionTest extends TestCase
         $socket->replyWhenSent('subscribe_events', ['type' => 'result', 'success' => true, 'result' => null]);
         $socket->replyWhenSent('subscribe_trigger', $triggerReply);
         $socket->replyWhenSent('get_config', ['type' => 'result', 'success' => true, 'result' => ['time_zone' => 'Europe/Budapest']]);
+        $socket->replyWhenSent('auth/current_user', ['type' => 'result', 'success' => true, 'result' => ['id' => self::HA_USER_ID]]);
 
         foreach ($during as $frame) {
             $socket->replyWhenSent('get_states', $frame);

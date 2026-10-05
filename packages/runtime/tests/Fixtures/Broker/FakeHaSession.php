@@ -28,6 +28,8 @@ use Throwable;
 
 final class FakeHaSession implements HaSession
 {
+    public const string HA_USER_ID = 'stewart-user';
+
     public ?HaSessionListener $listener = null;
 
     public ?Throwable $openFailure = null;
@@ -127,6 +129,11 @@ final class FakeHaSession implements HaSession
     public function getHaVersion(): ?string
     {
         return $this->open ? '2026.8.1' : null;
+    }
+
+    public function getHaUserId(): ?string
+    {
+        return $this->open ? self::HA_USER_ID : null;
     }
 
     public function listEntityIds(): array

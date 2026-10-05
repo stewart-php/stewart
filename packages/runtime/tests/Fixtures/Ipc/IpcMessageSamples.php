@@ -149,6 +149,7 @@ final class IpcMessageSamples
             settings: new WorkerSettings(LogLevel::Info, Duration::seconds(35), Duration::seconds(5), 100, Duration::seconds(60), '/app/services.php', 'Stewart\Generated', true),
             store: new StoreSettings('redis://:not-a-secret@valkey:6379/0', 'stewart', Duration::seconds(5), Duration::seconds(5)),
             knownAppIds: self::createAppIds('demo', 'echo'),
+            haUserId: 'stewart-user',
         );
     }
 

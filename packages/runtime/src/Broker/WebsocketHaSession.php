@@ -47,6 +47,8 @@ final class WebsocketHaSession implements HaSession
 
     private ?DateTimeZone $timeZone = null;
 
+    private ?string $haUserId = null;
+
     private ?StateCacheSnapshot $stateCacheSnapshot = null;
 
     public function __construct(
@@ -123,6 +125,11 @@ final class WebsocketHaSession implements HaSession
         return $this->client->getHaVersion();
     }
 
+    public function getHaUserId(): ?string
+    {
+        return $this->haUserId;
+    }
+
     public function listEntityIds(): array
     {
         return $this->states->listEntityIds()->toStrings();
@@ -165,6 +172,7 @@ final class WebsocketHaSession implements HaSession
             $this->client->subscribeAllEvents($this->onStateChanged(...), $this->onEventFired(...));
             $this->triggers->resubscribeAll();
             $this->timeZone ??= $this->client->getTimeZone();
+            $this->haUserId ??= $this->client->getCurrentUserId();
             $states = $this->client->getStates();
             $this->client->flushEvents();
 
