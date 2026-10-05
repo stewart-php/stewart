@@ -23,6 +23,7 @@ use Stewart\Contracts\Subscription;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Topic\TopicEvent;
+use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Runtime\Dispatch\LocalDispatcher;
 use Stewart\Runtime\Dispatch\LocalSubscription;
 use Stewart\Runtime\Dispatch\RegisteredSubscription;
@@ -165,6 +166,24 @@ final class LocalDispatcherTest extends TestCase
         EventLoopTicks::settle();
 
         self::assertSame(['zha_event'], $seen);
+    }
+
+    public function testTriggersReachOnlyTriggerSubscriptions(): void
+    {
+        $dispatcher = $this->createDispatcher();
+        $seen = [];
+
+        $sunset = $this->register($dispatcher, 'app', SubscriptionKind::Trigger, Selector::exact('sunset-key'), static function (TriggerEvent $event) use (&$seen): void {
+            $seen[] = $event->getPlatform();
+        });
+        $events = $this->register($dispatcher, 'app', SubscriptionKind::Event, Selector::any(), static function () use (&$seen): void {
+            $seen[] = 'event';
+        });
+
+        $dispatcher->dispatchTrigger(new TriggerEvent(['platform' => 'sun']), self::listDeliveryTargets($sunset, $events));
+        EventLoopTicks::settle();
+
+        self::assertSame(['sun'], $seen);
     }
 
     public function testReconstructedChangeUsesLivePath(): void

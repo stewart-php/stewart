@@ -9,6 +9,8 @@ use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
+use Stewart\Contracts\Trigger\TriggerEvent;
+use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Broker\HaSessionListener;
 use Throwable;
 
@@ -19,6 +21,12 @@ final class RecordingSessionListener implements HaSessionListener
 
     /** @var list<HaEvent> */
     public array $events = [];
+
+    /** @var list<TriggerEvent> */
+    public array $firedTriggers = [];
+
+    /** @var list<string> */
+    public array $rejectedTriggerReasons = [];
 
     /** @var list<string> */
     public array $lost = [];
@@ -39,6 +47,16 @@ final class RecordingSessionListener implements HaSessionListener
     public function eventFired(HaEvent $event): void
     {
         $this->events[] = $event;
+    }
+
+    public function triggerFired(TriggerSpec $spec, TriggerEvent $event): void
+    {
+        $this->firedTriggers[] = $event;
+    }
+
+    public function triggerRejected(TriggerSpec $spec, string $reason): void
+    {
+        $this->rejectedTriggerReasons[] = $reason;
     }
 
     public function connectionLost(string $reason, Instant $lostAt): void

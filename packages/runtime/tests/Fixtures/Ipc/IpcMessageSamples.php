@@ -27,6 +27,7 @@ use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Topic\TopicEvent;
+use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Runtime\Ipc\Collection\WorkerAppCollection;
 use Stewart\Runtime\Ipc\Message\AppActivityReport;
 use Stewart\Runtime\Ipc\Message\AppFailed;
@@ -52,6 +53,7 @@ use Stewart\Runtime\Ipc\Message\StateSnapshot;
 use Stewart\Runtime\Ipc\Message\Subscribe;
 use Stewart\Runtime\Ipc\Message\SubscriptionAck;
 use Stewart\Runtime\Ipc\Message\TopicMessage;
+use Stewart\Runtime\Ipc\Message\TriggerFired;
 use Stewart\Runtime\Ipc\Message\Unsubscribe;
 use Stewart\Runtime\Ipc\Message\WorkerReady;
 use Stewart\Runtime\Ipc\StoreSettings;
@@ -94,6 +96,7 @@ final class IpcMessageSamples
             'state_resynced' => new IpcMessageSample(new StateResynced(self::createStates($state), 9, Duration::seconds(12.5)), new StateResynced(self::createStates($state), 9, Duration::seconds(12.5))),
             'ha_connection_lost' => IpcMessageSample::createRoundTrip(new HaConnectionLost($at, 'websocket closed')),
             'event_fired' => IpcMessageSample::createRoundTrip(new EventFired(new HaEvent('zha_event', ['args' => [1, 2], 'params' => ['duration' => 0.5]], EventOrigin::Remote, $at, new EventContext('c')), [new SubscriptionId('w0:1')])),
+            'trigger_fired' => IpcMessageSample::createRoundTrip(new TriggerFired(new TriggerEvent(['platform' => 'sun', 'event' => 'sunset', 'offset' => -1800.0, 'id' => 'dusk', 'idx' => '0'], new EventContext('c'), $at), [new SubscriptionId('w0:4')])),
             'topic_message' => IpcMessageSample::createRoundTrip(new TopicMessage(new TopicEvent('presence.home', ['who' => 'resident', 'confidence' => 0.92], new AppId('presence'), $at), [new SubscriptionId('w1:2')])),
             'service_call_result' => IpcMessageSample::createRoundTrip(new ServiceCallResult(new CorrelationId('w0:2'), new ServiceResponse('weather', 'get_forecasts', ['weather.home' => ['forecast' => []]]))),
             'service_call_error' => IpcMessageSample::createRoundTrip(ServiceCallFailed::fromException(new CorrelationId('w0:2'), ServiceCallException::rejected('light', 'turn_on', 'Service not found', 'not_found'))),

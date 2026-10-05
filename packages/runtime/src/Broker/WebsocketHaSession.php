@@ -19,6 +19,9 @@ use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\MonotonicTime;
+use Stewart\Contracts\Trigger\TriggerEvent;
+use Stewart\Contracts\Trigger\TriggerSpec;
+use Stewart\Runtime\Broker\Trigger\HaTriggerLink;
 use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
 use Stewart\Runtime\State\StateCache;
 use Throwable;
@@ -52,6 +55,7 @@ final class WebsocketHaSession implements HaSession
         private readonly LoggerInterface $logger,
         private readonly Clock $clock,
         private readonly StateCache $states,
+        private readonly HaTriggerLink $triggers,
     ) {
         $this->stop = new DeferredCancellation();
     }
@@ -60,6 +64,8 @@ final class WebsocketHaSession implements HaSession
     {
         $this->listener = $listener;
         $this->open = true;
+        $this->triggers->onTriggerFired($this->onTriggerFired(...));
+        $this->triggers->onTriggerRejected($this->onTriggerRejected(...));
 
         $this->reconnector->retryUntilConnected($this->connectSubscribeAndSeed(...), $this->stop->getCancellation());
 
@@ -137,15 +143,27 @@ final class WebsocketHaSession implements HaSession
         return $this->client->fetchHistory($entityId, $window, $detail);
     }
 
+    public function subscribeTrigger(TriggerSpec $spec): void
+    {
+        $this->triggers->subscribeTrigger($spec);
+    }
+
+    public function unsubscribeTrigger(TriggerSpec $spec): void
+    {
+        $this->triggers->unsubscribeTrigger($spec);
+    }
+
     private function connectSubscribeAndSeed(): void
     {
         // Subscribe before seeding and buffer changes in between, so no change is lost.
+        $this->triggers->markLinkLost();
         $this->client->close();
         $this->client->connect();
         $this->establishing = true;
 
         try {
             $this->client->subscribeAllEvents($this->onStateChanged(...), $this->onEventFired(...));
+            $this->triggers->resubscribeAll();
             $this->timeZone ??= $this->client->getTimeZone();
             $states = $this->client->getStates();
             $this->client->flushEvents();
@@ -188,11 +206,29 @@ final class WebsocketHaSession implements HaSession
         $this->listener->eventFired($event);
     }
 
+    private function onTriggerFired(TriggerSpec $spec, TriggerEvent $event): void
+    {
+        if ($this->establishing || $this->reconnecting) {
+            return;
+        }
+
+        $this->listener->triggerFired($spec, $event->firedAt === null ? $event->withFiredAt($this->clock->getNow()) : $event);
+    }
+
+    private function onTriggerRejected(TriggerSpec $spec, string $reason): void
+    {
+        $this->logger->error('Home Assistant rejected a trigger subscription', ['platforms' => $spec->listPlatforms(), 'reason' => $reason]);
+
+        $this->listener->triggerRejected($spec, $reason);
+    }
+
     private function onDisconnected(HaClientException $lost): void
     {
         if (!$this->open || $this->reconnecting) {
             return;
         }
+
+        $this->triggers->markLinkLost();
 
         $this->reconnecting = true;
         $startedAt = $this->clock->getMonotonicTime();

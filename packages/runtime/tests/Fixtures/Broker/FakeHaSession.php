@@ -17,6 +17,8 @@ use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
+use Stewart\Contracts\Trigger\TriggerEvent;
+use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Broker\HaSession;
 use Stewart\Runtime\Broker\HaSessionListener;
 use Stewart\Runtime\Broker\StateCacheSnapshot;
@@ -49,7 +51,16 @@ final class FakeHaSession implements HaSession
     /** @var list<EntityState> */
     public array $historicalStates = [];
 
+    /** @var list<TriggerSpec> */
+    public array $subscribedTriggers = [];
+
+    /** @var list<TriggerSpec> */
+    public array $unsubscribedTriggers = [];
+
     private bool $open = false;
+
+    /** @var DeferredFuture<TriggerSpec>|null */
+    private ?DeferredFuture $nextTriggerSubscribe = null;
 
     private ?Latch $callLatch = null;
 
@@ -160,5 +171,35 @@ final class FakeHaSession implements HaSession
         }
 
         return new EntityStateHistory($entityId, $window, HistoricalStateCollection::fromStates($this->historicalStates));
+    }
+
+    public function subscribeTrigger(TriggerSpec $spec): void
+    {
+        $this->subscribedTriggers[] = $spec;
+
+        $subscribed = $this->nextTriggerSubscribe;
+        $this->nextTriggerSubscribe = null;
+        $subscribed?->complete($spec);
+    }
+
+    public function unsubscribeTrigger(TriggerSpec $spec): void
+    {
+        $this->unsubscribedTriggers[] = $spec;
+    }
+
+    /** @return Future<TriggerSpec> */
+    public function waitForNextTriggerSubscribe(): Future
+    {
+        return ($this->nextTriggerSubscribe ??= new DeferredFuture())->getFuture();
+    }
+
+    public function fireTrigger(TriggerSpec $spec, TriggerEvent $event): void
+    {
+        $this->listener?->triggerFired($spec, $event);
+    }
+
+    public function rejectTrigger(TriggerSpec $spec, string $reason): void
+    {
+        $this->listener?->triggerRejected($spec, $reason);
     }
 }

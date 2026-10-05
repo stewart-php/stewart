@@ -8,6 +8,8 @@ use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
+use Stewart\Contracts\Trigger\TriggerEvent;
+use Stewart\Contracts\Trigger\TriggerSpec;
 use Throwable;
 
 interface HaSessionListener
@@ -15,6 +17,10 @@ interface HaSessionListener
     public function stateChanged(StateChange $change): void;
 
     public function eventFired(HaEvent $event): void;
+
+    public function triggerFired(TriggerSpec $spec, TriggerEvent $event): void;
+
+    public function triggerRejected(TriggerSpec $spec, string $reason): void;
 
     public function connectionLost(string $reason, Instant $lostAt): void;
 

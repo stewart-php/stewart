@@ -17,7 +17,10 @@ use Stewart\Client\HaClient;
 use Stewart\Client\State\EntityStateDecoder;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Contracts\Trigger\HaTrigger;
+use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Broker\Reconnector;
+use Stewart\Runtime\Broker\Trigger\HaTriggerLink;
 use Stewart\Runtime\Broker\WebsocketHaSession;
 use Stewart\Runtime\Config\BackoffPolicy;
 use Stewart\Runtime\State\StateCache;
@@ -32,6 +35,7 @@ use Stewart\Testing\Websocket\FakeWebsocketConnector;
 use function Amp\async;
 
 #[CoversClass(WebsocketHaSession::class)]
+#[CoversClass(HaTriggerLink::class)]
 final class WebsocketHaSessionTest extends TestCase
 {
     use AssertsReason;
@@ -223,6 +227,111 @@ final class WebsocketHaSessionTest extends TestCase
         self::assertSame(1, $session->snapshotStateCache()->revision);
     }
 
+    public function testTriggerSubscribedWhileConnectedIsSentAndFires(): void
+    {
+        $socket = self::createHaSocket(['hall' => 'off']);
+        $session = $this->open($socket);
+
+        $session->subscribeTrigger(self::createSunsetSpec());
+        EventLoopTicks::settleUntil(static fn(): bool => $socket->listSentOfType('subscribe_trigger') !== []);
+        $socket->queueFrame(self::createTriggerFrame(self::findTriggerSubscriptionId($socket)));
+        EventLoopTicks::settleUntil(fn(): bool => $this->listener->firedTriggers !== []);
+
+        self::assertSame([['trigger' => 'sun', 'event' => 'sunset']], $socket->listSentOfType('subscribe_trigger')[0]['trigger'] ?? null);
+        self::assertCount(1, $this->listener->firedTriggers);
+        self::assertNotNull($this->listener->firedTriggers[0]->firedAt, 'Home Assistant sends no fire time, so the broker stamps one.');
+    }
+
+    public function testTriggerSubscribedBeforeOpenIsSentOnConnect(): void
+    {
+        $socket = self::createHaSocket(['hall' => 'off']);
+        $session = $this->createSession($socket);
+
+        $session->subscribeTrigger(self::createSunsetSpec());
+        $session->open($this->listener);
+
+        self::assertSame(['auth', 'subscribe_events', 'subscribe_trigger', 'get_config', 'get_states'], array_column($socket->sent, 'type'));
+    }
+
+    public function testTriggersAreReissuedAfterReconnect(): void
+    {
+        $first = self::createHaSocket(['hall' => 'off']);
+        $second = self::createHaSocket(['hall' => 'on']);
+        $session = $this->createSession($first, $second);
+        $session->subscribeTrigger(self::createSunsetSpec());
+        $session->open($this->listener);
+
+        $first->close(1001, 'restarting');
+        EventLoopTicks::settleUntil(static fn(): bool => $session->isConnected() && $second->listSentOfType('get_states') !== []);
+        $second->queueFrame(self::createTriggerFrame(self::findTriggerSubscriptionId($second)));
+        EventLoopTicks::settleUntil(fn(): bool => $this->listener->firedTriggers !== []);
+
+        self::assertSame(['auth', 'subscribe_events', 'subscribe_trigger', 'get_states'], array_column($second->sent, 'type'));
+        self::assertCount(1, $this->listener->firedTriggers);
+    }
+
+    public function testRefusedTriggerDoesNotFailTheConnect(): void
+    {
+        $socket = self::createHaSocket(['hall' => 'off'], triggerReply: [
+            'type' => 'result',
+            'success' => false,
+            'error' => ['code' => 'unauthorized', 'message' => 'Unauthorized'],
+        ]);
+        $session = $this->createSession($socket);
+        $session->subscribeTrigger(self::createSunsetSpec());
+
+        $session->open($this->listener);
+
+        self::assertTrue($session->isConnected());
+        self::assertCount(1, $this->listener->rejectedTriggerReasons);
+        self::assertSame([], $this->listener->failures);
+        self::assertSame(['Home Assistant rejected a trigger subscription'], $this->logger->listMessagesAt('error'));
+    }
+
+    public function testTriggerFiredDuringEstablishIsDropped(): void
+    {
+        $socket = self::createHaSocket(['hall' => 'off'], during: [self::createTriggerFrame(2)]);
+        $session = $this->createSession($socket);
+        $session->subscribeTrigger(self::createSunsetSpec());
+
+        $session->open($this->listener);
+        EventLoopTicks::settle();
+
+        self::assertSame(2, self::findTriggerSubscriptionId($socket));
+        self::assertSame([], $this->listener->firedTriggers);
+    }
+
+    public function testUnsubscribeBeforeAnswerReleasesLateId(): void
+    {
+        $socket = self::createHaSocket(['hall' => 'off']);
+        $socket->replyWhenSent('unsubscribe_events', ['type' => 'result', 'success' => true, 'result' => null]);
+        $session = $this->open($socket);
+
+        $session->subscribeTrigger(self::createSunsetSpec());
+        $session->unsubscribeTrigger(self::createSunsetSpec());
+        EventLoopTicks::settleUntil(static fn(): bool => $socket->listSentOfType('unsubscribe_events') !== []);
+
+        self::assertSame(self::findTriggerSubscriptionId($socket), $socket->listSentOfType('unsubscribe_events')[0]['subscription'] ?? null);
+    }
+
+    public function testUnsubscribeDuringOutageSendsNothingStale(): void
+    {
+        $first = self::createHaSocket(['hall' => 'off']);
+        $second = self::createHaSocket(['hall' => 'on'], authenticated: false);
+        $session = $this->createSession($first, $second);
+        $session->subscribeTrigger(self::createSunsetSpec());
+        $session->open($this->listener);
+
+        $first->close(1001, 'restarting');
+        EventLoopTicks::settleUntil(fn(): bool => \count($this->listener->lost) === 1);
+        $session->unsubscribeTrigger(self::createSunsetSpec());
+        self::authenticate($second);
+        EventLoopTicks::settleUntil(static fn(): bool => $session->isConnected());
+
+        self::assertSame(['auth', 'subscribe_events', 'get_states'], array_column($second->sent, 'type'));
+        self::assertSame([], $first->listSentOfType('unsubscribe_events'));
+    }
+
     private function open(FakeWebsocketConnection ...$sockets): WebsocketHaSession
     {
         $session = $this->createSession(...$sockets);
@@ -246,8 +355,10 @@ final class WebsocketHaSessionTest extends TestCase
             new FakeWebsocketConnector(...$sockets),
         );
 
+        $client = new HaClient($connection, new EventDecoder(new EntityStateDecoder()), new EntityStateDecoder(), new NullLogger());
+
         return $this->session = new WebsocketHaSession(
-            new HaClient($connection, new EventDecoder(new EntityStateDecoder()), new EntityStateDecoder(), new NullLogger()),
+            $client,
             new Reconnector(
                 reconnectBackoff: new BackoffPolicy(Duration::seconds(1), Duration::seconds(4)),
                 logger: new NullLogger(),
@@ -256,15 +367,21 @@ final class WebsocketHaSessionTest extends TestCase
             $this->logger,
             $this->timers->clock,
             new StateCache(),
+            new HaTriggerLink($client, new NullLogger()),
         );
     }
 
     /**
      * @param array<string, string> $lights
      * @param list<array<string, mixed>> $during
+     * @param array<string, mixed> $triggerReply
      */
-    private static function createHaSocket(array $lights, array $during = [], bool $authenticated = true): FakeWebsocketConnection
-    {
+    private static function createHaSocket(
+        array $lights,
+        array $during = [],
+        bool $authenticated = true,
+        array $triggerReply = ['type' => 'result', 'success' => true, 'result' => null],
+    ): FakeWebsocketConnection {
         $socket = $authenticated ? FakeWebsocketConnector::createAuthenticatedConnection() : new FakeWebsocketConnection();
         $states = [];
 
@@ -273,6 +390,7 @@ final class WebsocketHaSessionTest extends TestCase
         }
 
         $socket->replyWhenSent('subscribe_events', ['type' => 'result', 'success' => true, 'result' => null]);
+        $socket->replyWhenSent('subscribe_trigger', $triggerReply);
         $socket->replyWhenSent('get_config', ['type' => 'result', 'success' => true, 'result' => ['time_zone' => 'Europe/Budapest']]);
 
         foreach ($during as $frame) {
@@ -303,5 +421,26 @@ final class WebsocketHaSessionTest extends TestCase
     private static function createEventFiredFrame(string $eventType): array
     {
         return ['id' => self::FIRST_SUBSCRIPTION, 'type' => 'event', 'event' => ['event_type' => $eventType, 'data' => []]];
+    }
+
+    private static function createSunsetSpec(): TriggerSpec
+    {
+        return TriggerSpec::fromSpec(HaTrigger::onSunset());
+    }
+
+    private static function findTriggerSubscriptionId(FakeWebsocketConnection $socket): int
+    {
+        $id = $socket->listSentOfType('subscribe_trigger')[0]['id'] ?? null;
+        self::assertIsInt($id);
+
+        return $id;
+    }
+
+    /** @return array<string, mixed> */
+    private static function createTriggerFrame(int $subscriptionId): array
+    {
+        return ['id' => $subscriptionId, 'type' => 'event', 'event' => [
+            'variables' => ['trigger' => ['platform' => 'sun', 'event' => 'sunset']],
+        ]];
     }
 }

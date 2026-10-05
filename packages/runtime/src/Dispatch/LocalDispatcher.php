@@ -13,6 +13,7 @@ use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Stream\SubscriptionScope;
 use Stewart\Contracts\Subscription;
 use Stewart\Contracts\Topic\TopicEvent;
+use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Runtime\Model\Collection\SubscriptionIdCollection;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionId;
@@ -112,6 +113,11 @@ final class LocalDispatcher
     public function dispatchMqttMessage(MqttMessage $message, SubscriptionIdCollection $deliverTo): void
     {
         $this->deliver(SubscriptionKind::Mqtt, $message, $deliverTo);
+    }
+
+    public function dispatchTrigger(TriggerEvent $event, SubscriptionIdCollection $deliverTo): void
+    {
+        $this->deliver(SubscriptionKind::Trigger, $event, $deliverTo);
     }
 
     public function dispatchConnection(ConnectionEvent $event): void
