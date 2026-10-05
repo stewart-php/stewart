@@ -12,6 +12,7 @@ namespace Stewart\Codegen\Tests\Fixtures\Expected;
 
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\Service\ServiceTargetSource;
+use Stewart\Contracts\State\EventContext;
 
 /**
  * The `light` services.
@@ -29,9 +30,9 @@ final readonly class LightServices
      *
      * @param string|int|float $value Value. The state to write
      */
-    public function state(ServiceTargetSource $target, string|int|float $value): void
+    public function state(ServiceTargetSource $target, string|int|float $value): EventContext
     {
-        $this->ha->callService('light', 'state', [
+        return $this->ha->callService('light', 'state', [
             'value' => $value,
         ], $target);
     }
@@ -43,9 +44,9 @@ final readonly class LightServices
      *
      * @param int|float|null $transition Transition. Duration it takes to get to the next state. 0 to 300 seconds
      */
-    public function turnOff(ServiceTargetSource $target, int|float|null $transition = null): void
+    public function turnOff(ServiceTargetSource $target, int|float|null $transition = null): EventContext
     {
-        $this->ha->callService('light', 'turn_off', [
+        return $this->ha->callService('light', 'turn_off', [
             'transition' => $transition,
         ], $target);
     }
@@ -74,8 +75,8 @@ final readonly class LightServices
         ?array $rgbColor = null,
         int|float|null $transition = null,
         ?bool $white = null,
-    ): void {
-        $this->ha->callService('light', 'turn_on', [
+    ): EventContext {
+        return $this->ha->callService('light', 'turn_on', [
             'brightness_pct' => $brightnessPct,
             'color_temp_kelvin' => $colorTempKelvin,
             'effect' => $effect,

@@ -20,6 +20,7 @@ use Stewart\Contracts\HaContext;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Service\ServiceTarget;
+use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\StateChangeStream;
 
 /**
@@ -108,9 +109,9 @@ final readonly class LightEntity implements TypedEntity
      *
      * @param int|float|null $transition Transition. Duration it takes to get to the next state. 0 to 300 seconds
      */
-    public function turnOff(int|float|null $transition = null): void
+    public function turnOff(int|float|null $transition = null): EventContext
     {
-        $this->entity->callService('turn_off', [
+        return $this->entity->callService('turn_off', [
             'transition' => $transition,
         ]);
     }
@@ -122,9 +123,9 @@ final readonly class LightEntity implements TypedEntity
      *
      * @param int|float|null $brightnessPct Brightness. Percentage of full brightness. 0 to 100 %
      */
-    public function turnOn(int|float|null $brightnessPct = null): void
+    public function turnOn(int|float|null $brightnessPct = null): EventContext
     {
-        $this->entity->callService('turn_on', [
+        return $this->entity->callService('turn_on', [
             'brightness_pct' => $brightnessPct,
         ]);
     }

@@ -20,6 +20,7 @@ use Stewart\Contracts\HaContext;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Service\ServiceTarget;
+use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\StateChangeStream;
 
 /**
@@ -113,9 +114,9 @@ final readonly class LightEntity implements TypedEntity
      *
      * @param string|int|float $value Value. The state to write
      */
-    public function state(string|int|float $value): void
+    public function state(string|int|float $value): EventContext
     {
-        $this->entity->callService('state', [
+        return $this->entity->callService('state', [
             'value' => $value,
         ]);
     }
@@ -127,9 +128,9 @@ final readonly class LightEntity implements TypedEntity
      *
      * @param int|float|null $transition Transition. Duration it takes to get to the next state. 0 to 300 seconds
      */
-    public function turnOff(int|float|null $transition = null): void
+    public function turnOff(int|float|null $transition = null): EventContext
     {
-        $this->entity->callService('turn_off', [
+        return $this->entity->callService('turn_off', [
             'transition' => $transition,
         ]);
     }
@@ -157,8 +158,8 @@ final readonly class LightEntity implements TypedEntity
         ?array $rgbColor = null,
         int|float|null $transition = null,
         ?bool $white = null,
-    ): void {
-        $this->entity->callService('turn_on', [
+    ): EventContext {
+        return $this->entity->callService('turn_on', [
             'brightness_pct' => $brightnessPct,
             'color_temp_kelvin' => $colorTempKelvin,
             'effect' => $effect,

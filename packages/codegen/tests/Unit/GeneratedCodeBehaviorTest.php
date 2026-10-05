@@ -37,6 +37,17 @@ final class GeneratedCodeBehaviorTest extends TestCase
         self::assertSame(['light.hall'], $ha->getLastCall()->listTargetedEntityIds());
     }
 
+    public function testServiceMethodsReturnCallContext(): void
+    {
+        $ha = new RecordingHaContext();
+
+        $fromHandle = new Entities($ha)->light->getEntity('light.hall')->turnOn();
+        $fromServices = new Services($ha)->light->turnOff(ServiceTarget::forAreas('kitchen'));
+
+        self::assertSame($ha->calls->getFirst()?->context, $fromHandle);
+        self::assertSame($ha->getLastCall()->context, $fromServices);
+    }
+
     public function testUnsetFieldsNeverReachHomeAssistant(): void
     {
         $ha = new RecordingHaContext();

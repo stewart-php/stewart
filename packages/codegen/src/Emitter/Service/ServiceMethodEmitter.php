@@ -11,6 +11,7 @@ use Stewart\Codegen\Php\ReservesMemberNames;
 use Stewart\Codegen\Service\ServiceModel;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTargetSource;
+use Stewart\Contracts\State\EventContext;
 
 final readonly class ServiceMethodEmitter implements ReservesMemberNames
 {
@@ -26,8 +27,7 @@ final readonly class ServiceMethodEmitter implements ReservesMemberNames
         $this->addFieldParameters($method, $service);
 
         $method->setBody(\sprintf(
-            '%s$this->entity->%s(%s%s);',
-            $service->definition->returnsResponse ? 'return ' : '',
+            'return $this->entity->%s(%s%s);',
             $service->definition->returnsResponse ? 'callServiceForResponse' : 'callService',
             var_export($service->definition->name, true),
             $service->fields->isEmpty() ? '' : ', ' . $this->buildPayload($service),
@@ -45,8 +45,7 @@ final readonly class ServiceMethodEmitter implements ReservesMemberNames
         $this->addFieldParameters($method, $service);
 
         $method->setBody(\sprintf(
-            '%s$this->ha->%s(%s, %s, %s%s);',
-            $service->definition->returnsResponse ? 'return ' : '',
+            'return $this->ha->%s(%s, %s, %s%s);',
             $service->definition->returnsResponse ? 'callServiceForResponse' : 'callService',
             var_export($service->definition->domain, true),
             var_export($service->definition->name, true),
@@ -58,7 +57,7 @@ final readonly class ServiceMethodEmitter implements ReservesMemberNames
     private function declareMethod(ClassType $class, ServiceModel $service): Method
     {
         $method = $class->addMethod($service->method)
-            ->setReturnType($service->definition->returnsResponse ? ServiceResponse::class : 'void');
+            ->setReturnType($service->definition->returnsResponse ? ServiceResponse::class : EventContext::class);
 
         foreach ($this->buildDocblock($service) as $line) {
             $method->addComment($line);

@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace Stewart\Codegen\Tests\Fixtures\Expected;
 
 use Stewart\Contracts\HaContext;
+use Stewart\Contracts\State\EventContext;
 
 /**
  * The `notify` services.
@@ -36,8 +37,8 @@ final readonly class NotifyServices
         ?array $data = null,
         ?array $target = null,
         string|int|float|null $title = null,
-    ): void {
-        $this->ha->callService('notify', 'mobile_app_phone', [
+    ): EventContext {
+        return $this->ha->callService('notify', 'mobile_app_phone', [
             'message' => $message,
             'data' => $data,
             'target' => $target,
