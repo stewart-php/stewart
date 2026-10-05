@@ -22,4 +22,14 @@ final class HaClientErrorTest extends TestCase
         self::assertFalse(HaClientException::connectionDropped('Home Assistant closed the connection.')->reason->isFatal());
         self::assertFalse(HaClientException::connectFailed('ws://ha:8123', new RuntimeException('refused'))->reason->isFatal());
     }
+
+    public function testOnlyAnsweredRefusalsCountAsCommandRefusal(): void
+    {
+        self::assertTrue(HaClientException::commandRejected('subscribe_trigger', 'Invalid', 'invalid_format')->reason->isCommandRefusal());
+        self::assertTrue(HaClientException::commandUnauthorized('subscribe_trigger', 'Unauthorized', 'unauthorized')->reason->isCommandRefusal());
+        self::assertTrue(HaClientException::administratorRequired(HaClientException::commandUnauthorized('subscribe_trigger', 'Unauthorized', 'unauthorized'))->reason->isCommandRefusal());
+
+        self::assertFalse(HaClientException::connectionDropped('closed')->reason->isCommandRefusal());
+        self::assertFalse(HaClientException::notConnected()->reason->isCommandRefusal());
+    }
 }

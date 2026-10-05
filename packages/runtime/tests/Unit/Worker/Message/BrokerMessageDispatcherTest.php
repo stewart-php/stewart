@@ -11,6 +11,7 @@ use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Ipc\Message\Shutdown;
 use Stewart\Runtime\Ipc\Message\SubscriptionAck;
 use Stewart\Runtime\Model\SubscriptionId;
+use Stewart\Runtime\Tests\Fixtures\Worker\RecordingDispatchListener;
 use Stewart\Runtime\Worker\Message\BrokerMessageDispatcher;
 use Stewart\Runtime\Worker\Message\SubscriptionAckHandler;
 use Stewart\Testing\Logging\RecordingLogger;
@@ -23,7 +24,7 @@ final class BrokerMessageDispatcherTest extends TestCase
     {
         $logger = new RecordingLogger();
 
-        new BrokerMessageDispatcher([new SubscriptionAckHandler($logger)], new NullLogger())
+        new BrokerMessageDispatcher([new SubscriptionAckHandler($logger, RecordingDispatchListener::createDispatcher('w0', 10))], new NullLogger())
             ->dispatch(new SubscriptionAck(new SubscriptionId('w0:1'), false, 'worker-local'));
 
         self::assertSame(['Broker rejected a subscription'], $logger->listMessagesAt('error'));
@@ -34,7 +35,7 @@ final class BrokerMessageDispatcherTest extends TestCase
     {
         $logger = new RecordingLogger();
 
-        new BrokerMessageDispatcher([new SubscriptionAckHandler($logger)], new NullLogger())
+        new BrokerMessageDispatcher([new SubscriptionAckHandler($logger, RecordingDispatchListener::createDispatcher('w0', 10))], new NullLogger())
             ->dispatch(new SubscriptionAck(new SubscriptionId('w0:1'), true, null));
 
         self::assertTrue($logger->records->isEmpty());

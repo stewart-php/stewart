@@ -1,0 +1,23 @@
+{
+    "t": "trigger_fired",
+    "m": {
+        "event": {
+            "trigger": {
+                "platform": "sun",
+                "event": "sunset",
+                "offset": -1800.0,
+                "id": "dusk",
+                "idx": "0"
+            },
+            "context": {
+                "id": "c",
+                "parent_id": null,
+                "user_id": null
+            },
+            "fired_at_us": 1758700000123456
+        },
+        "deliver_to": [
+            "w0:4"
+        ]
+    }
+}

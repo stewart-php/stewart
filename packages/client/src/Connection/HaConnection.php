@@ -23,7 +23,8 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Stewart\Client\Connection\Command\Authenticate;
 use Stewart\Client\Connection\Command\HaCommand;
-use Stewart\Client\Connection\Command\SubscribeEvents;
+use Stewart\Client\Connection\Command\SubscriptionCommand;
+use Stewart\Client\Connection\Command\UnsubscribeEvents;
 use Stewart\Client\Exception\HaClientException;
 use Stewart\Support\Json\JsonDecoder;
 use Stewart\Support\Json\JsonEncoder;
@@ -124,7 +125,7 @@ final class HaConnection
     }
 
     /** @param Closure(array<string, mixed>): void $handler */
-    public function subscribeEvents(SubscribeEvents $command, Closure $handler): int
+    public function subscribeEvents(SubscriptionCommand $command, Closure $handler): int
     {
         $id = $this->correlator->nextId();
         $this->eventHandlers[$id] = $handler;
@@ -137,9 +138,17 @@ final class HaConnection
             throw $e;
         }
 
-        $this->logger->debug('Subscribed to Home Assistant events', ['event_type' => $command->eventType ?? '*', 'id' => $id]);
+        $this->logger->debug('Subscribed to Home Assistant events', ['command' => $command->describe(), 'id' => $id]);
 
         return $id;
+    }
+
+    public function unsubscribeEvents(int $subscriptionId): void
+    {
+        unset($this->eventHandlers[$subscriptionId]);
+
+        $command = new UnsubscribeEvents($subscriptionId);
+        self::assertSuccess($this->sendAndAwaitResponse($this->correlator->nextId(), $command), $command);
     }
 
     /** @param Closure(HaClientException): void $handler */

@@ -135,6 +135,14 @@ final class DurationTest extends TestCase
         self::assertTrue(Duration::parse((string) $duration)->equals($duration));
     }
 
+    public function testClockFormatPadsAndKeepsFraction(): void
+    {
+        self::assertSame('00:00:00', Duration::zero()->formatAsClock());
+        self::assertSame('01:02:03', Duration::parse('1h 2m 3s')->formatAsClock());
+        self::assertSame('00:00:01.25', Duration::milliseconds(1_250)->formatAsClock());
+        self::assertSame('26:00:00', Duration::hours(26)->formatAsClock());
+    }
+
     #[DataProvider('provideUnreadableDurations')]
     public function testAnythingElseIsRefused(string $text): void
     {

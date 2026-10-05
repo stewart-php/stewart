@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Dispatch;
 
 use Closure;
+use LogicException;
 use Stewart\Contracts\Connection\ConnectionEvent;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\Mqtt\MqttMessage;
@@ -13,6 +14,8 @@ use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Stream\SubscriptionScope;
 use Stewart\Contracts\Subscription;
 use Stewart\Contracts\Topic\TopicEvent;
+use Stewart\Contracts\Trigger\TriggerEvent;
+use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Model\Collection\SubscriptionIdCollection;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionId;
@@ -45,7 +48,12 @@ final class LocalDispatcher
         Selector $selector,
         SubscriptionScope $subscriptionScope,
         Closure $handler,
+        ?TriggerSpec $trigger = null,
     ): Subscription {
+        if ($kind->needsTriggerSpec() !== ($trigger !== null)) {
+            throw new LogicException(\sprintf('A %s subscription %s a trigger spec.', $kind->value, $trigger === null ? 'needs' : 'takes no'));
+        }
+
         $id = SubscriptionId::fromString($this->subscriptionIdPrefix . ':' . $this->counter++);
 
         if ($this->scopes->isClosed($scope)) {
@@ -59,6 +67,7 @@ final class LocalDispatcher
             $selector,
             $subscriptionScope,
             $handler,
+            $trigger,
         );
 
         $queue = new SubscriptionQueue($subscription, $this->subscriptionQueueLimit, $this->listener, $this->scopes->isLive($scope));
@@ -112,6 +121,11 @@ final class LocalDispatcher
     public function dispatchMqttMessage(MqttMessage $message, SubscriptionIdCollection $deliverTo): void
     {
         $this->deliver(SubscriptionKind::Mqtt, $message, $deliverTo);
+    }
+
+    public function dispatchTrigger(TriggerEvent $event, SubscriptionIdCollection $deliverTo): void
+    {
+        $this->deliver(SubscriptionKind::Trigger, $event, $deliverTo);
     }
 
     public function dispatchConnection(ConnectionEvent $event): void

@@ -64,6 +64,14 @@ final class SubscribeHandlerTest extends TestCase
         self::assertCount(0, $this->registry->listSubscriptions());
     }
 
+    public function testTriggerKindIsRefused(): void
+    {
+        $ack = $this->subscribe(SubscriptionKind::Trigger, Selector::exact('sunset-key'));
+
+        self::assertFalse($ack->accepted);
+        self::assertCount(0, $this->registry->listSubscriptions());
+    }
+
     private function subscribe(SubscriptionKind $kind, Selector $selector): SubscriptionAck
     {
         $handle = new WorkerHandle(

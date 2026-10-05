@@ -10,12 +10,15 @@ use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\Mqtt\MqttMessage;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Topic\TopicEvent;
+use Stewart\Contracts\Trigger\TriggerEvent;
+use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Broker\Mqtt\MqttMessageRouter;
 use Stewart\Runtime\Ipc\Message\BrokerMessage;
 use Stewart\Runtime\Ipc\Message\EventFired;
 use Stewart\Runtime\Ipc\Message\MqttMessageDelivery;
 use Stewart\Runtime\Ipc\Message\Publish;
 use Stewart\Runtime\Ipc\Message\TopicMessage;
+use Stewart\Runtime\Ipc\Message\TriggerFired;
 use Stewart\Runtime\Ipc\Wire\EncodedStateChange;
 use Stewart\Runtime\Model\Collection\SubscriptionIdCollection;
 use Stewart\Runtime\Model\SubscriptionKind;
@@ -90,6 +93,21 @@ final readonly class EventRouter implements MqttMessageRouter
 
         $this->logger->debug('MQTT message routed', [
             'topic' => $message->topic,
+            'workers' => $routes->listWorkerIds()->toInts(),
+        ]);
+    }
+
+    public function routeTrigger(TriggerSpec $spec, TriggerEvent $event): void
+    {
+        $routes = $this->registry->findRoutes(SubscriptionKind::Trigger, $spec->getSharingKey());
+
+        $this->deliverToMatched(
+            $routes,
+            static fn(SubscriptionIdCollection $deliverTo): BrokerMessage => new TriggerFired($event, $deliverTo->listValues()),
+        );
+
+        $this->logger->debug('Home Assistant trigger routed', [
+            'platform' => $event->getPlatform(),
             'workers' => $routes->listWorkerIds()->toInts(),
         ]);
     }

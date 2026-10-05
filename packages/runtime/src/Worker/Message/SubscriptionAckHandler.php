@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Worker\Message;
 
 use Psr\Log\LoggerInterface;
+use Stewart\Runtime\Dispatch\LocalDispatcher;
 use Stewart\Runtime\Ipc\Message\BrokerMessage;
 use Stewart\Runtime\Ipc\Message\SubscriptionAck;
 
 /** @implements BrokerMessageHandler<SubscriptionAck> */
 final readonly class SubscriptionAckHandler implements BrokerMessageHandler
 {
-    public function __construct(private LoggerInterface $logger) {}
+    public function __construct(
+        private LoggerInterface $logger,
+        private LocalDispatcher $dispatcher,
+    ) {}
 
     public function handledMessageClass(): string
     {
@@ -29,5 +33,7 @@ final readonly class SubscriptionAckHandler implements BrokerMessageHandler
             'subscription' => $message->subscriptionId->value,
             'reason' => $message->reason ?? 'unknown',
         ]);
+
+        $this->dispatcher->cancel($message->subscriptionId);
     }
 }

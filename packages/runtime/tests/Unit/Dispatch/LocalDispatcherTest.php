@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Tests\Unit\Dispatch;
 
 use Closure;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -23,6 +24,9 @@ use Stewart\Contracts\Subscription;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Topic\TopicEvent;
+use Stewart\Contracts\Trigger\HaTrigger;
+use Stewart\Contracts\Trigger\TriggerEvent;
+use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Dispatch\LocalDispatcher;
 use Stewart\Runtime\Dispatch\LocalSubscription;
 use Stewart\Runtime\Dispatch\RegisteredSubscription;
@@ -165,6 +169,42 @@ final class LocalDispatcherTest extends TestCase
         EventLoopTicks::settle();
 
         self::assertSame(['zha_event'], $seen);
+    }
+
+    public function testTriggersReachOnlyTriggerSubscriptions(): void
+    {
+        $dispatcher = $this->createDispatcher();
+        $seen = [];
+
+        $scope = new SubscriptionScope();
+        $sunset = $dispatcher->register(self::createScope('app'), SubscriptionKind::Trigger, Selector::exact('sunset-key'), $scope, static function (TriggerEvent $event) use (&$seen): void {
+            $seen[] = $event->getPlatform();
+        }, TriggerSpec::fromSpec(HaTrigger::onSunset()));
+        $scope->attachedTo($sunset);
+        $events = $this->register($dispatcher, 'app', SubscriptionKind::Event, Selector::any(), static function () use (&$seen): void {
+            $seen[] = 'event';
+        });
+
+        $dispatcher->dispatchTrigger(new TriggerEvent(['platform' => 'sun']), self::listDeliveryTargets($sunset, $events));
+        EventLoopTicks::settle();
+
+        self::assertSame(['sun'], $seen);
+    }
+
+    public function testTriggerKindAndSpecMustComeTogether(): void
+    {
+        $dispatcher = $this->createDispatcher();
+        $spec = TriggerSpec::fromSpec(HaTrigger::onSunset());
+
+        try {
+            $dispatcher->register(self::createScope('app'), SubscriptionKind::Trigger, Selector::any(), new SubscriptionScope(), static function (): void {});
+            self::fail('A trigger subscription without a spec was accepted.');
+        } catch (LogicException) {
+        }
+
+        $this->expectException(LogicException::class);
+
+        $dispatcher->register(self::createScope('app'), SubscriptionKind::Event, Selector::any(), new SubscriptionScope(), static function (): void {}, $spec);
     }
 
     public function testReconstructedChangeUsesLivePath(): void

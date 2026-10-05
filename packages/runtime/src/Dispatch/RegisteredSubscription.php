@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Dispatch;
 use Closure;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\Stream\SubscriptionScope;
+use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionId;
 use Stewart\Runtime\Model\SubscriptionKind;
@@ -20,5 +21,6 @@ final readonly class RegisteredSubscription
         public Selector $selector,
         public SubscriptionScope $subscriptionScope,
         public Closure $handler,
+        public ?TriggerSpec $trigger = null,
     ) {}
 }

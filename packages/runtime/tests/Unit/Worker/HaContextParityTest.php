@@ -14,9 +14,11 @@ use Stewart\Contracts\Exception\ExceptionReason;
 use Stewart\Contracts\Exception\IdentifierError;
 use Stewart\Contracts\Exception\StateError;
 use Stewart\Contracts\Exception\TopicError;
+use Stewart\Contracts\Exception\TriggerError;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Tests\Fixtures\Ipc\NullTransport;
 use Stewart\Runtime\Tests\Fixtures\Worker\WorkerHaContextFixture;
@@ -39,6 +41,9 @@ final class HaContextParityTest extends TestCase
         yield 'history of a malformed id' => [static fn(HaContext $ha) => $ha->getHistory('Not An Id', HistoryQuery::lastFor(Duration::minutes(5))), IdentifierError::EntityIdInvalid];
         yield 'required state that is unknown' => [static fn(HaContext $ha) => $ha->requireState('light.missing'), StateError::EntityNotFound];
         yield 'state changes through events' => [static fn(HaContext $ha) => $ha->watchEvents('state_changed'), StateError::StateChangedViaEvents];
+        yield 'empty trigger list' => [static fn(HaContext $ha) => $ha->watchTrigger([]), TriggerError::ListEmpty];
+        yield 'trigger without platform' => [static fn(HaContext $ha) => $ha->watchTrigger(['entity_id' => 'light.hall']), TriggerError::ConfigInvalid];
+        yield 'trigger variables as list' => [static fn(HaContext $ha) => $ha->watchTrigger(HaTrigger::onSunset(), ['hall']), TriggerError::VariablesNotMap];
         yield 'non-finite payload' => [static fn(HaContext $ha) => $ha->publish('hall.motion', ['level' => NAN]), TopicError::PayloadInvalid];
         yield 'object payload' => [static fn(HaContext $ha) => $ha->publish('hall.motion', ['level' => [new stdClass()]]), TopicError::PayloadInvalid];
     }

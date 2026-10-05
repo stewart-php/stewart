@@ -34,6 +34,12 @@ final readonly class SubscribeHandler implements WorkerMessageHandler
             return;
         }
 
+        if ($message->kind->needsTriggerSpec()) {
+            $this->refuseSubscription($handle, $message, \sprintf('%s subscriptions are announced with subscribe_trigger.', $message->kind->value));
+
+            return;
+        }
+
         if (!$message->kind->acceptsSelector($message->selector)) {
             $this->refuseSubscription($handle, $message, \sprintf('%s subscriptions do not accept %s selectors.', $message->kind->value, $message->selector->getKind()->value));
 

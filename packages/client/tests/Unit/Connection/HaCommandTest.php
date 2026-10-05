@@ -11,17 +11,23 @@ use Stewart\Client\Connection\Command\CallService;
 use Stewart\Client\Connection\Command\GetHistoryDuringPeriod;
 use Stewart\Client\Connection\Command\GetStates;
 use Stewart\Client\Connection\Command\SubscribeEvents;
+use Stewart\Client\Connection\Command\SubscribeTrigger;
+use Stewart\Client\Connection\Command\UnsubscribeEvents;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\Time\Instant;
+use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
+use Stewart\Contracts\Trigger\HaTrigger;
 
 #[CoversClass(CallService::class)]
 #[CoversClass(SubscribeEvents::class)]
 #[CoversClass(Authenticate::class)]
 #[CoversClass(GetStates::class)]
 #[CoversClass(GetHistoryDuringPeriod::class)]
+#[CoversClass(SubscribeTrigger::class)]
+#[CoversClass(UnsubscribeEvents::class)]
 final class HaCommandTest extends TestCase
 {
     public function testServiceCallOmitsEmptyParts(): void
@@ -45,6 +51,32 @@ final class HaCommandTest extends TestCase
             ],
             new CallService('light', 'turn_on', ['brightness' => 100], ServiceTarget::forEntities('light.hall'), true)->toMessage(),
         );
+    }
+
+    public function testTriggerSubscriptionOmitsEmptyVariables(): void
+    {
+        $command = new SubscribeTrigger(HaTriggerCollection::fromTriggers([HaTrigger::onSunset(), HaTrigger::atTime('07:00')]));
+
+        self::assertSame(
+            ['type' => 'subscribe_trigger', 'trigger' => [['trigger' => 'sun', 'event' => 'sunset'], ['trigger' => 'time', 'at' => '07:00']]],
+            $command->toMessage(),
+        );
+        self::assertSame('subscribe_trigger "sun,time"', $command->describe());
+    }
+
+    public function testTriggerSubscriptionCarriesVariables(): void
+    {
+        $message = new SubscribeTrigger(HaTriggerCollection::fromTriggers([HaTrigger::onSunrise()]), ['room' => 'hall'])->toMessage();
+
+        self::assertSame(['room' => 'hall'], $message['variables'] ?? null);
+    }
+
+    public function testUnsubscribeNamesSubscription(): void
+    {
+        $command = new UnsubscribeEvents(12);
+
+        self::assertSame(['type' => 'unsubscribe_events', 'subscription' => 12], $command->toMessage());
+        self::assertSame('unsubscribe_events 12', $command->describe());
     }
 
     public function testServiceCallDescribesDomainAndService(): void

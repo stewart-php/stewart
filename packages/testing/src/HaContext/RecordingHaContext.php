@@ -34,6 +34,11 @@ use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Topic\Collection\TopicEventCollection;
 use Stewart\Contracts\Topic\TopicEvent;
 use Stewart\Contracts\Topic\TopicPayload;
+use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
+use Stewart\Contracts\Trigger\Collection\TriggerSpecCollection;
+use Stewart\Contracts\Trigger\HaTrigger;
+use Stewart\Contracts\Trigger\TriggerEvent;
+use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Testing\HaContext\Collection\RecordedHistoryQueryCollection;
 use Stewart\Testing\HaContext\Collection\RecordedServiceCallCollection;
 use Stewart\Testing\Stream\PushSource;
@@ -70,6 +75,11 @@ final class RecordingHaContext implements HaContext
     /** @var PushSource<ConnectionEvent> */
     private readonly PushSource $connectionEvents;
 
+    /** @var PushSource<PushedTrigger> */
+    private readonly PushSource $triggers;
+
+    private TriggerSpecCollection $watchedTriggers;
+
     public private(set) bool $connected = true;
 
     public readonly VirtualClock $clock;
@@ -86,6 +96,8 @@ final class RecordingHaContext implements HaContext
         $this->events = new PushSource();
         $this->topics = new PushSource();
         $this->connectionEvents = new PushSource();
+        $this->triggers = new PushSource();
+        $this->watchedTriggers = TriggerSpecCollection::empty();
     }
 
     /** @param array<string, mixed> $attributes */
@@ -155,6 +167,16 @@ final class RecordingHaContext implements HaContext
         $this->events->push($event);
     }
 
+    public function pushTrigger(HaTrigger|HaTriggerCollection $trigger, TriggerEvent $event): void
+    {
+        $this->triggers->push(new PushedTrigger(TriggerSpec::fromSpec($trigger), $event));
+    }
+
+    public function listWatchedTriggers(): TriggerSpecCollection
+    {
+        return $this->watchedTriggers;
+    }
+
     public function pushConnection(ConnectionEvent $event): void
     {
         $this->connected = !$event instanceof ConnectionLost;
@@ -220,6 +242,16 @@ final class RecordingHaContext implements HaContext
 
         return new OperatorStream($this->events, $this->timers)
             ->filter(static fn(HaEvent $event): bool => $matcher->matches($event->type));
+    }
+
+    public function watchTrigger(HaTrigger|HaTriggerCollection|array $trigger, array $variables = []): EventStream
+    {
+        $spec = TriggerSpec::fromSpec($trigger, $variables);
+        $this->watchedTriggers = $this->watchedTriggers->withTriggerSpec($spec);
+
+        return new OperatorStream($this->triggers, $this->timers)
+            ->filter(static fn(PushedTrigger $pushed): bool => $pushed->spec->hasSameTriggersAs($spec))
+            ->map(static fn(PushedTrigger $pushed): TriggerEvent => $pushed->event);
     }
 
     public function callService(string $domain, string $service, array $data = [], ?ServiceTargetSource $target = null): void

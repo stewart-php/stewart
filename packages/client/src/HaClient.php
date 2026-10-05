@@ -16,6 +16,8 @@ use Stewart\Client\Connection\Command\GetHistoryDuringPeriod;
 use Stewart\Client\Connection\Command\GetServices;
 use Stewart\Client\Connection\Command\GetStates;
 use Stewart\Client\Connection\Command\SubscribeEvents;
+use Stewart\Client\Connection\Command\SubscribeTrigger;
+use Stewart\Client\Connection\Command\SubscriptionCommand;
 use Stewart\Client\Connection\ConnectionConfig;
 use Stewart\Client\Connection\HaConnection;
 use Stewart\Client\Event\EventDecoder;
@@ -37,6 +39,8 @@ use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\StateChange;
+use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
+use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Support\Json\JsonShape;
 use Stewart\Support\Time\Deadlines;
 
@@ -205,7 +209,7 @@ final class HaClient
     {
         $decoder = $this->decoder;
 
-        return $this->subscribe(null, static function (array $event) use ($decoder, $onStateChange, $onEvent): void {
+        return $this->subscribe(new SubscribeEvents(), static function (array $event) use ($decoder, $onStateChange, $onEvent): void {
             if (($event['event_type'] ?? null) === HaEvent::STATE_CHANGED) {
                 $change = $decoder->decodeStateChange($event);
 
@@ -225,13 +229,42 @@ final class HaClient
     }
 
     /**
+     * @param array<string, mixed> $variables
+     * @param Closure(TriggerEvent): void $onTrigger
+     * @throws HaClientException
+     */
+    public function subscribeTrigger(HaTriggerCollection $triggers, array $variables, Closure $onTrigger): int
+    {
+        $decoder = $this->decoder;
+        $logger = $this->logger;
+
+        return $this->subscribe(new SubscribeTrigger($triggers, $variables), static function (array $event) use ($decoder, $logger, $onTrigger): void {
+            $decoded = $decoder->decodeTriggerEvent($event);
+
+            if ($decoded === null) {
+                $logger->warning('Skipped a trigger event without variables.trigger');
+
+                return;
+            }
+
+            $onTrigger($decoded);
+        });
+    }
+
+    /** @throws HaClientException */
+    public function unsubscribeEvents(int $subscriptionId): void
+    {
+        $this->connection->unsubscribeEvents($subscriptionId);
+    }
+
+    /**
      * @param Closure(array<string, mixed>): void $handler
      * @throws HaClientException
      */
-    private function subscribe(?string $eventType, Closure $handler): int
+    private function subscribe(SubscriptionCommand $command, Closure $handler): int
     {
         try {
-            return $this->connection->subscribeEvents(new SubscribeEvents($eventType), $handler);
+            return $this->connection->subscribeEvents($command, $handler);
         } catch (HaClientException $e) {
             throw $e->reason === HaClientError::CommandUnauthorized
                 ? HaClientException::administratorRequired($e)

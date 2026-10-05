@@ -114,6 +114,15 @@ final readonly class Duration implements Stringable
         return $this->microseconds === $other->microseconds;
     }
 
+    public function formatAsClock(): string
+    {
+        $seconds = intdiv($this->microseconds, self::UNITS['s']);
+        $fraction = $this->microseconds % self::UNITS['s'];
+        $clock = \sprintf('%02d:%02d:%02d', intdiv($seconds, 3_600), intdiv($seconds % 3_600, 60), $seconds % 60);
+
+        return $fraction === 0 ? $clock : $clock . '.' . rtrim(\sprintf('%06d', $fraction), '0');
+    }
+
     public function __toString(): string
     {
         if ($this->microseconds === 0) {

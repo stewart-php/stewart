@@ -16,6 +16,8 @@ use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Contracts\Trigger\HaTrigger;
+use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\HaContext\RecordingHaContext;
 use Stewart\Testing\HaContext\SeededHistory;
@@ -25,6 +27,34 @@ use Stewart\Testing\HaContext\SeededHistory;
 final class RecordingHaContextTest extends TestCase
 {
     use AssertsReason;
+
+    public function testPushedTriggerReachesOnlyEqualSpec(): void
+    {
+        $ha = new RecordingHaContext();
+        $sunsets = [];
+        $sunrises = [];
+        $ha->watchTrigger(HaTrigger::onSunset(), ['room' => 'hall'])->subscribe(static function (TriggerEvent $event) use (&$sunsets): void {
+            $sunsets[] = $event->getTriggerId();
+        });
+        $ha->watchTrigger(['trigger' => 'sun', 'event' => 'sunrise'])->subscribe(static function (TriggerEvent $event) use (&$sunrises): void {
+            $sunrises[] = $event->getTriggerId();
+        });
+
+        $ha->pushTrigger(HaTrigger::onSunset(), new TriggerEvent(['platform' => 'sun', 'id' => 'dusk']));
+
+        self::assertSame(['dusk'], $sunsets);
+        self::assertSame([], $sunrises);
+    }
+
+    public function testWatchedTriggersAreRecorded(): void
+    {
+        $ha = new RecordingHaContext();
+
+        $ha->watchTrigger(HaTrigger::atTime('07:30'));
+
+        self::assertCount(1, $ha->listWatchedTriggers());
+        self::assertSame([['trigger' => 'time', 'at' => '07:30']], $ha->listWatchedTriggers()->getFirst()?->listTriggerConfigs());
+    }
 
     public function testPublishRejectsNonFinitePayload(): void
     {

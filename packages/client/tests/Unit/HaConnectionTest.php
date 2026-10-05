@@ -339,6 +339,37 @@ final class HaConnectionTest extends TestCase
         self::assertArrayNotHasKey('event_type', $socket->listSentOfType('subscribe_events')[0]);
     }
 
+    public function testUnsubscribeDropsHandlerBeforeReply(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $connection = self::connect($socket);
+        $handled = 0;
+        self::subscribe($socket, $connection, static function () use (&$handled): void {
+            ++$handled;
+        });
+        $subscriptionId = $socket->listSentOfType('subscribe_events')[0]['id'];
+        self::assertIsInt($subscriptionId);
+
+        $socket->replyWhenSent('unsubscribe_events', ['type' => 'result', 'success' => true, 'result' => null]);
+        $connection->unsubscribeEvents($subscriptionId);
+        $socket->queueFrame(self::createEventFrame($subscriptionId));
+        EventLoopTicks::settle();
+        $connection->flushEvents();
+
+        self::assertSame(0, $handled);
+        self::assertSame($subscriptionId, $socket->listSentOfType('unsubscribe_events')[0]['subscription'] ?? null);
+    }
+
+    public function testRefusedUnsubscribeThrows(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $connection = self::connect($socket);
+
+        $socket->replyWhenSent('unsubscribe_events', ['type' => 'result', 'success' => false, 'error' => ['code' => 'not_found', 'message' => 'Subscription not found.']]);
+
+        $this->assertThrowsReason(HaClientError::CommandRejected, static fn() => $connection->unsubscribeEvents(7));
+    }
+
     public function testCloseFailsPendingCommand(): void
     {
         $connection = self::connect(FakeWebsocketConnector::createAuthenticatedConnection());

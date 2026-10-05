@@ -13,6 +13,7 @@ use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
+use Stewart\Contracts\Trigger\TriggerSpec;
 use Throwable;
 
 interface HaSession
@@ -49,4 +50,8 @@ interface HaSession
 
     /** @throws HistoryException */
     public function fetchHistory(EntityId $entityId, HistoryWindow $window, HistoryDetail $detail): EntityStateHistory;
+
+    public function subscribeTrigger(TriggerSpec $spec): void;
+
+    public function unsubscribeTrigger(TriggerSpec $spec): void;
 }

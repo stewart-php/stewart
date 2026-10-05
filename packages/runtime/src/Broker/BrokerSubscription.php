@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker;
 
 use Stewart\Contracts\Selector\Selector;
+use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionId;
 use Stewart\Runtime\Model\SubscriptionKind;
@@ -18,5 +19,6 @@ final readonly class BrokerSubscription
         public ResourceScope $scope,
         public SubscriptionKind $kind,
         public Selector $selector,
+        public ?TriggerSpec $trigger = null,
     ) {}
 }
