@@ -41,6 +41,11 @@ final readonly class SunOffset
         return $this->magnitude;
     }
 
+    public function applyTo(Instant $eventTime): Instant
+    {
+        return $this->beforeEvent ? $eventTime->minus($this->magnitude) : $eventTime->plus($this->magnitude);
+    }
+
     public function formatAsHaOffset(): string
     {
         return ($this->isBeforeEvent() ? '-' : '') . $this->magnitude->formatAsClock();
