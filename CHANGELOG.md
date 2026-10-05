@@ -12,7 +12,8 @@ section says what to change.
   with the NOAA equations and Astral's refraction, so times agree with Home Assistant's sun integration
   - `SunCalendar` contract: `findNextEvent()` with an optional `SunOffset`, `getDayOn()`, `getPositionAt()`,
     `getCurrentPosition()`, `isSunUp()`
-  - `SunEvent`, `SunDay`, `SunPosition`, `GeoLocation`; `SunOffset::applyTo()`
+  - `SunEvent`, `SunDay`, `GeoLocation`; `SunOffset::applyTo()`
+  - `SunPosition` with `isHigherThan()` and `isWithinAzimuth()`, a sector that may wrap past north
   - Apps get a `SunCalendar` by type, located at Home Assistant's latitude, longitude and elevation as read at
     startup; without a location every query throws `SunException` (`LocationUnknown`)
 - `Scheduler::runAtSunrise()`, `runAtSunset()` and `runAtSunEvent()` with an optional `SunOffset`: a recurring
