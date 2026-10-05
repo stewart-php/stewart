@@ -15,6 +15,7 @@ use Stewart\Contracts\Mqtt\Mqtt;
 use Stewart\Contracts\Schedule\Scheduler;
 use Stewart\Contracts\Store\ReadableStore;
 use Stewart\Contracts\Store\Store;
+use Stewart\Contracts\Sun\SunCalendar;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Timers;
 use Stewart\Runtime\App\GeneratedRoots;
@@ -171,6 +172,7 @@ final readonly class AppContainerBuilder
         $synthetics = [
             Clock::class => $runtime->clock,
             StewartIdentity::class => $runtime->identity,
+            SunCalendar::class => $runtime->sunCalendar,
             self::LOGGER => $runtime->logger,
             self::CONTEXT => $runtime->context,
             self::SCHEDULER => $runtime->scheduler,

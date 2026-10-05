@@ -23,6 +23,7 @@
         "stewart-php/client": "self.version",
         "stewart-php/contracts": "self.version",
         "stewart-php/store": "self.version",
+        "stewart-php/sun": "self.version",
         "stewart-php/support": "self.version",
         "symfony/config": "^7.4 || ^8.0",
         "symfony/console": "^7.4 || ^8.0",

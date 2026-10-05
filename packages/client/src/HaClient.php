@@ -148,6 +148,11 @@ final class HaClient
 
     public function getTimeZone(): DateTimeZone
     {
+        return $this->getSiteSettings()->timeZone;
+    }
+
+    public function getSiteSettings(): HaSiteSettings
+    {
         $config = $this->getConfig();
 
         if ($config->timeZone === null && $config->timeZoneName !== null) {
@@ -156,7 +161,7 @@ final class HaClient
             ]);
         }
 
-        return $config->timeZone ?? new DateTimeZone('UTC');
+        return new HaSiteSettings($config->timeZone ?? new DateTimeZone('UTC'), $config->location);
     }
 
     /** @return array<string, mixed> */

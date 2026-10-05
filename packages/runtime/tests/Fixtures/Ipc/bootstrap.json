@@ -1,9 +1,14 @@
 {
     "t": "bootstrap",
     "m": {
-        "protocol": 18,
+        "protocol": 19,
         "worker_id": 1,
         "time_zone": "Europe/Budapest",
+        "location": {
+            "latitude": 47.4979,
+            "longitude": 19.0402,
+            "elevation_meters": 96.0
+        },
         "apps": [
             {"id": "demo", "class": "Stewart\\Runtime\\Tests\\Fixtures\\Apps\\Demo", "options": {"watch": "input_boolean.hall"}},
             {"id": "echo", "class": "Stewart\\Runtime\\Tests\\Fixtures\\Apps\\Relay", "options": {}}

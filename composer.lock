@@ -2279,7 +2279,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/runtime",
-                "reference": "ec8dc550fa2d63df9c0d2827eb1a3b72cfa8fcec"
+                "reference": "844bfa0fe54fbec7bc8bea0a50e3d73689176c28"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2298,6 +2298,7 @@
                 "stewart-php/client": "self.version",
                 "stewart-php/contracts": "self.version",
                 "stewart-php/store": "self.version",
+                "stewart-php/sun": "self.version",
                 "stewart-php/support": "self.version",
                 "symfony/config": "^7.4 || ^8.0",
                 "symfony/console": "^7.4 || ^8.0",

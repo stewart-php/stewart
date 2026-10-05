@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Psr\Log\LoggerInterface;
+use Stewart\Contracts\Sun\SunCalendar;
 use Stewart\Runtime\App\GeneratedRoots;
 use Stewart\Runtime\Dispatch\DispatchListener;
 use Stewart\Runtime\Dispatch\SubscriptionListener;
@@ -23,10 +24,12 @@ use Stewart\Runtime\Worker\WorkerLogger;
 use Stewart\Runtime\Worker\WorkerMqtt;
 use Stewart\Runtime\Worker\WorkerSession;
 use Stewart\Runtime\Worker\WorkerStoresFactory;
+use Stewart\Runtime\Worker\WorkerSunCalendarFactory;
 use Stewart\Store\GuardedStoreBackend;
 use Stewart\Store\StoreBackend;
 use Stewart\Store\Stores;
 use Stewart\Store\StoreValueCodec;
+use Stewart\Sun\NoaaSolarCalculator;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\inline_service;
@@ -66,4 +69,7 @@ return static function (ContainerConfigurator $container): void {
     $services->set(GuardedStoreBackend::class)->factory([service(StoreBackendOpener::class), 'openForStoreSettings']);
     $services->alias(StoreBackend::class, GuardedStoreBackend::class);
     $services->set(Stores::class)->factory([service(WorkerStoresFactory::class), 'createStores']);
+
+    $services->set(NoaaSolarCalculator::class);
+    $services->set(SunCalendar::class)->factory([service(WorkerSunCalendarFactory::class), 'createSunCalendar']);
 };

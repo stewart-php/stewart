@@ -49,6 +49,7 @@ use Stewart\Runtime\Tests\Fixtures\Container\NeedsNullableScalar;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsScalar;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsStewartIdentity;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsStores;
+use Stewart\Runtime\Tests\Fixtures\Container\NeedsSunCalendar;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsUnknownPeer;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsUnregisteredService;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsWritablePeer;
@@ -374,6 +375,13 @@ final class AppContainerBuilderTest extends TestCase
         $services = $this->buildContainer([new WorkerApp(id: new AppId('demo'), class: NeedsStewartIdentity::class, options: [])]);
 
         self::assertSame(AppRuntimeServicesFixture::STEWART_USER_ID, $this->getApp($services, 'demo', NeedsStewartIdentity::class)->identity->haUserId);
+    }
+
+    public function testAppCanAutowireSunCalendar(): void
+    {
+        $services = $this->buildContainer([new WorkerApp(id: new AppId('demo'), class: NeedsSunCalendar::class, options: [])]);
+
+        self::assertSame(AppRuntimeServicesFixture::LATITUDE, $this->getApp($services, 'demo', NeedsSunCalendar::class)->sunCalendar->getLocation()->latitude);
     }
 
     public function testAppTimersBelongToTheAppsScope(): void

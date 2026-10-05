@@ -13,6 +13,8 @@ section says what to change.
   - `SunCalendar` contract: `findNextEvent()` with an optional `SunOffset`, `getDayOn()`, `getPositionAt()`,
     `getCurrentPosition()`, `isSunUp()`
   - `SunEvent`, `SunDay`, `SunPosition`, `GeoLocation`; `SunOffset::applyTo()`
+  - Apps get a `SunCalendar` by type, located at Home Assistant's latitude, longitude and elevation as read at
+    startup; without a location every query throws `SunException` (`LocationUnknown`)
 - `HaContext::watchTrigger()` streams Home Assistant triggers (`subscribe_trigger`) as `TriggerEvent`s: sun, time,
   time pattern, template, zone, calendar, device and any other trigger platform
   - `HaTrigger` builders: `onSunrise()`, `onSunset()` with a `SunOffset`, `atTime()`, `onTimePattern()`,
@@ -36,7 +38,7 @@ section says what to change.
 ### Changed
 
 - A subscription the broker refuses is cancelled in the worker, not just logged
-- IPC protocol 18; broker and workers must run the same version
+- IPC protocol 19; broker and workers must run the same version
 - Builder triggers use the `trigger:` key, which needs Home Assistant 2024.10 or newer
 - Generated code format 4; regenerate after upgrading
 

@@ -18,6 +18,7 @@ use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
+use Stewart\Contracts\Sun\GeoLocation;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Broker\HaSession;
@@ -140,6 +141,11 @@ final class FakeHaSession implements HaSession
     public function getHaUserId(): ?string
     {
         return $this->open ? self::HA_USER_ID : null;
+    }
+
+    public function getLocation(): ?GeoLocation
+    {
+        return $this->open ? new GeoLocation(47.4979, 19.0402) : null;
     }
 
     public function listEntityIds(): array

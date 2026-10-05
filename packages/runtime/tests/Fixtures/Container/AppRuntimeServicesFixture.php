@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Tests\Fixtures\Container;
 
 use Stewart\Contracts\Identity\StewartIdentity;
+use Stewart\Contracts\Sun\GeoLocation;
+use Stewart\Contracts\Sun\SunCalendar;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\App\GeneratedRoots;
 use Stewart\Runtime\Container\AppRuntimeServices;
@@ -23,10 +25,14 @@ use Stewart\Runtime\Worker\WorkerLogger;
 use Stewart\Runtime\Worker\WorkerMqtt;
 use Stewart\Store\DisabledStores;
 use Stewart\Store\Stores;
+use Stewart\Sun\LocatedSunCalendar;
+use Stewart\Sun\NoaaSolarCalculator;
 
 final class AppRuntimeServicesFixture
 {
     public const string STEWART_USER_ID = 'stewart-user';
+
+    public const float LATITUDE = 47.4979;
 
     private function __construct() {}
 
@@ -39,6 +45,7 @@ final class AppRuntimeServicesFixture
         ?WorkerLogger $logger = null,
         bool $mqttEnabled = false,
         StewartIdentity $identity = new StewartIdentity(self::STEWART_USER_ID),
+        ?SunCalendar $sunCalendar = null,
     ): AppRuntimeServices {
         $timers = $resources->timers;
         $logger ??= new WorkerLogger($transport, new StderrFallback(new WorkerId(0)), ResourceScope::shared());
@@ -65,6 +72,7 @@ final class AppRuntimeServicesFixture
                 ResourceScope::shared(),
             ),
             identity: $identity,
+            sunCalendar: $sunCalendar ?? new LocatedSunCalendar(new GeoLocation(self::LATITUDE, 19.0402), $timers->clock, new NoaaSolarCalculator()),
             generated: $generated,
         );
     }

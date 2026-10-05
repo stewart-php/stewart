@@ -25,7 +25,7 @@ final readonly class BrokerWorkerEvents implements WorkerPoolListener
     {
         $snapshot = $this->session->snapshotStateCache();
 
-        $handle->send($this->bootstrapMessageFactory->createBootstrapMessage($handle, $this->session->getTimeZone(), $this->session->getHaUserId()));
+        $handle->send($this->bootstrapMessageFactory->createBootstrapMessage($handle, $this->session));
         $handle->send(new StateSnapshot($snapshot->states, $snapshot->revision));
 
         if ($this->connection->lastLoss !== null) {
