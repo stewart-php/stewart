@@ -26,6 +26,9 @@ use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
+use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
+use Stewart\Contracts\Trigger\HaTrigger;
+use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
@@ -100,6 +103,46 @@ final class HaClientTest extends TestCase
         ]);
 
         $this->assertThrowsReason(HaClientError::AdministratorRequired, fn() => $client->subscribeAllEvents(static function (): void {}, static function (): void {}));
+    }
+
+    public function testTriggerSubscriptionSkipsEventsWithoutTrigger(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+        $platforms = [];
+
+        $socket->replyWhenSent('subscribe_trigger', ['type' => 'result', 'success' => true, 'result' => null]);
+        $id = $client->subscribeTrigger(
+            HaTriggerCollection::fromTriggers([HaTrigger::onSunset()]),
+            [],
+            static function (TriggerEvent $event) use (&$platforms): void {
+                $platforms[] = $event->getPlatform();
+            },
+        );
+
+        $socket->queueFrame(['id' => $id, 'type' => 'event', 'event' => ['variables' => ['trigger' => ['platform' => 'sun']]]]);
+        $socket->queueFrame(['id' => $id, 'type' => 'event', 'event' => ['variables' => []]]);
+        EventLoopTicks::settle();
+        $client->flushEvents();
+
+        self::assertSame(['sun'], $platforms);
+    }
+
+    public function testNonAdminTriggerSubscriptionIsReported(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('subscribe_trigger', [
+            'type' => 'result',
+            'success' => false,
+            'error' => ['code' => 'unauthorized', 'message' => 'Unauthorized'],
+        ]);
+
+        $this->assertThrowsReason(
+            HaClientError::AdministratorRequired,
+            fn() => $client->subscribeTrigger(HaTriggerCollection::fromTriggers([HaTrigger::onSunset()]), [], static function (): void {}),
+        );
     }
 
     /** @param array<string, mixed>|null $reply */

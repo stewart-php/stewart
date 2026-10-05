@@ -59,4 +59,12 @@ enum HaClientError: string implements ExceptionReason
             default => false,
         };
     }
+
+    public function isCommandRefusal(): bool
+    {
+        return match ($this) {
+            self::CommandRejected, self::CommandUnauthorized, self::CommandUnencodable, self::AdministratorRequired => true,
+            default => false,
+        };
+    }
 }

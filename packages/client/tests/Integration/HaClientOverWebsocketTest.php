@@ -22,6 +22,9 @@ use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
+use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
+use Stewart\Contracts\Trigger\HaTrigger;
+use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Support\Json\JsonEncoder;
 use Stewart\Support\Time\RevoltTimers;
 use Stewart\Testing\Exception\AssertsReason;
@@ -113,6 +116,71 @@ final class HaClientOverWebsocketTest extends TestCase
 
         self::assertSame('stewart_demo', $event->type);
         self::assertSame(['source' => 'test'], $event->data);
+    }
+
+    public function testTriggerSubscriptionDeliversTriggerEvent(): void
+    {
+        $client = $this->connectClient();
+        /** @var DeferredFuture<TriggerEvent> $received */
+        $received = new DeferredFuture();
+
+        $subscriptionId = $client->subscribeTrigger(
+            HaTriggerCollection::fromTriggers([HaTrigger::onSunset(id: 'dusk')]),
+            ['room' => 'hall'],
+            static function (TriggerEvent $event) use ($received): void {
+                $received->complete($event);
+            },
+        );
+        $this->server->pushEvent($subscriptionId, [
+            'variables' => ['trigger' => ['platform' => 'sun', 'event' => 'sunset', 'id' => 'dusk', 'idx' => '0']],
+            'context' => ['id' => 'ctx-1'],
+        ]);
+
+        $event = $received->getFuture()->await(new TimeoutCancellation(self::WAIT_SECONDS));
+
+        self::assertSame('dusk', $event->getTriggerId());
+        self::assertSame('ctx-1', $event->context?->id);
+        self::assertSame(
+            [['trigger' => 'sun', 'event' => 'sunset', 'id' => 'dusk']],
+            $this->server->listReceivedCommands('subscribe_trigger')[0]['trigger'] ?? null,
+        );
+        self::assertSame(['room' => 'hall'], $this->server->listReceivedCommands('subscribe_trigger')[0]['variables'] ?? null);
+    }
+
+    public function testRejectedTriggerSubscriptionThrows(): void
+    {
+        $this->server->rejectCommand('subscribe_trigger', 'invalid_format', 'Unknown trigger');
+        $client = $this->connectClient();
+
+        $this->assertThrowsReason(
+            HaClientError::CommandRejected,
+            static fn() => $client->subscribeTrigger(
+                HaTriggerCollection::fromTriggers([HaTrigger::fromArray(['trigger' => 'nonsense'])]),
+                [],
+                static function (TriggerEvent $event): void {},
+            ),
+        );
+    }
+
+    public function testUnsubscribedTriggerStopsDelivery(): void
+    {
+        $client = $this->connectClient();
+        $delivered = [];
+
+        $subscriptionId = $client->subscribeTrigger(
+            HaTriggerCollection::fromTriggers([HaTrigger::onSunrise()]),
+            [],
+            static function (TriggerEvent $event) use (&$delivered): void {
+                $delivered[] = $event;
+            },
+        );
+        $client->unsubscribeEvents($subscriptionId);
+        $this->server->pushEvent($subscriptionId, ['variables' => ['trigger' => ['platform' => 'sun']]]);
+        EventLoopTicks::settle();
+        $client->flushEvents();
+
+        self::assertSame([], $delivered);
+        self::assertSame($subscriptionId, $this->server->listReceivedCommands('unsubscribe_events')[0]['subscription'] ?? null);
     }
 
     public function testAbruptDropFailsPendingCommand(): void

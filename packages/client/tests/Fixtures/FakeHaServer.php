@@ -23,11 +23,16 @@ final class FakeHaServer implements WebsocketClientHandler
 {
     public const string HA_VERSION = '2026.9.0';
 
+    private const array SUBSCRIPTION_COMMAND_TYPES = ['subscribe_events' => true, 'subscribe_trigger' => true, 'unsubscribe_events' => true];
+
     /** @var array<string, array<string, mixed>> */
     private array $replies = [];
 
     /** @var array<string, true> */
     private array $heldTypes = [];
+
+    /** @var array<string, list<array<array-key, mixed>>> */
+    private array $receivedCommands = [];
 
     private ?string $tokenRejection = null;
 
@@ -82,6 +87,12 @@ final class FakeHaServer implements WebsocketClientHandler
     public function holdCommand(string $type): void
     {
         $this->heldTypes[$type] = true;
+    }
+
+    /** @return list<array<array-key, mixed>> */
+    public function listReceivedCommands(string $type): array
+    {
+        return $this->receivedCommands[$type] ?? [];
     }
 
     public function rejectToken(string $message): void
@@ -160,13 +171,17 @@ final class FakeHaServer implements WebsocketClientHandler
         $type = \is_array($command) && \is_string($command['type'] ?? null) ? $command['type'] : '';
         $id = \is_array($command) ? $command['id'] ?? null : null;
 
+        if (\is_array($command)) {
+            $this->receivedCommands[$type][] = $command;
+        }
+
         if (isset($this->heldTypes[$type]) || !\is_int($id)) {
             return;
         }
 
-        $reply = $type === 'subscribe_events'
+        $reply = $this->replies[$type] ?? (isset(self::SUBSCRIPTION_COMMAND_TYPES[$type])
             ? ['type' => 'result', 'success' => true, 'result' => null]
-            : $this->replies[$type] ?? ['type' => 'result', 'success' => false, 'error' => ['code' => 'unknown_command', 'message' => 'Unknown command.']];
+            : ['type' => 'result', 'success' => false, 'error' => ['code' => 'unknown_command', 'message' => 'Unknown command.']]);
 
         $client->sendText(JsonEncoder::encodeToJson(['id' => $id, ...$reply]));
     }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Client\Connection\Command;
 
-final readonly class SubscribeEvents implements HaCommand
+final readonly class SubscribeEvents implements SubscriptionCommand
 {
     public function __construct(public ?string $eventType = null) {}
 

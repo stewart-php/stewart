@@ -47,6 +47,26 @@ final class EventDecoderTest extends TestCase
         self::assertSame('ctx1', $event->context?->id);
     }
 
+    public function testDecodesTriggerEvent(): void
+    {
+        $event = $this->decoder->decodeTriggerEvent([
+            'variables' => ['trigger' => ['platform' => 'sun', 'event' => 'sunset', 'idx' => '0']],
+            'context' => ['id' => 'ctx1'],
+        ]);
+
+        self::assertNotNull($event);
+        self::assertSame('sun', $event->getPlatform());
+        self::assertSame('0', $event->getTriggerId());
+        self::assertSame('ctx1', $event->context?->id);
+        self::assertNull($event->firedAt);
+    }
+
+    public function testRejectsTriggerEventWithoutTriggerVariables(): void
+    {
+        self::assertNull($this->decoder->decodeTriggerEvent(['context' => ['id' => 'ctx1']]));
+        self::assertNull($this->decoder->decodeTriggerEvent(['variables' => ['trigger' => 'sun']]));
+    }
+
     public function testRejectsEventWithoutType(): void
     {
         self::assertNull($this->decoder->decodeEvent(['data' => ['a' => 1]]));
