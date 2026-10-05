@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Broker;
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Service\ServiceResponse;
+use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\MonotonicTime;
 use Stewart\Runtime\Config\ServiceCallPolicy;
@@ -22,6 +23,8 @@ use function Amp\async;
 
 final class ServiceCallProxy
 {
+    private const string DRY_RUN_CONTEXT_PREFIX = 'dry-run:';
+
     /** @var WeakMap<WorkerHandle, int> */
     private WeakMap $perWorker;
 
@@ -86,7 +89,10 @@ final class ServiceCallProxy
                 'data' => $request->data,
             ]);
 
-            return new ServiceCallResult($request->correlationId, new ServiceResponse($request->domain, $request->service));
+            return new ServiceCallResult(
+                $request->correlationId,
+                new ServiceResponse($request->domain, $request->service, context: new EventContext(self::DRY_RUN_CONTEXT_PREFIX . $request->correlationId->value)),
+            );
         }
 
         try {

@@ -103,7 +103,7 @@ final class IpcMessageSamples
             'event_fired' => IpcMessageSample::createRoundTrip(new EventFired(new HaEvent('zha_event', ['args' => [1, 2], 'params' => ['duration' => 0.5]], EventOrigin::Remote, $at, new EventContext('c')), [new SubscriptionId('w0:1')])),
             'trigger_fired' => IpcMessageSample::createRoundTrip(new TriggerFired(new TriggerEvent(['platform' => 'sun', 'event' => 'sunset', 'offset' => -1800.0, 'id' => 'dusk', 'idx' => '0'], new EventContext('c'), $at), [new SubscriptionId('w0:4')])),
             'topic_message' => IpcMessageSample::createRoundTrip(new TopicMessage(new TopicEvent('presence.home', ['who' => 'resident', 'confidence' => 0.92], new AppId('presence'), $at), [new SubscriptionId('w1:2')])),
-            'service_call_result' => IpcMessageSample::createRoundTrip(new ServiceCallResult(new CorrelationId('w0:2'), new ServiceResponse('weather', 'get_forecasts', ['weather.home' => ['forecast' => []]]))),
+            'service_call_result' => IpcMessageSample::createRoundTrip(new ServiceCallResult(new CorrelationId('w0:2'), new ServiceResponse('weather', 'get_forecasts', ['weather.home' => ['forecast' => []]], new EventContext('call-1', null, 'stewart-user')))),
             'service_call_error' => IpcMessageSample::createRoundTrip(ServiceCallFailed::fromException(new CorrelationId('w0:2'), ServiceCallException::rejected('light', 'turn_on', 'Service not found', 'not_found'))),
             'subscription_ack' => IpcMessageSample::createRoundTrip(new SubscriptionAck(new SubscriptionId('w0:1'), false, 'refused')),
             'ping' => IpcMessageSample::createRoundTrip(new Ping(42, $at)),
@@ -149,6 +149,7 @@ final class IpcMessageSamples
             settings: new WorkerSettings(LogLevel::Info, Duration::seconds(35), Duration::seconds(5), 100, Duration::seconds(60), '/app/services.php', 'Stewart\Generated', true),
             store: new StoreSettings('redis://:not-a-secret@valkey:6379/0', 'stewart', Duration::seconds(5), Duration::seconds(5)),
             knownAppIds: self::createAppIds('demo', 'echo'),
+            haUserId: 'stewart-user',
         );
     }
 

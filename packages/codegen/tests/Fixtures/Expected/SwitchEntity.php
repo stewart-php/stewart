@@ -20,6 +20,7 @@ use Stewart\Contracts\HaContext;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Service\ServiceTarget;
+use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\StateChangeStream;
 
 /**
@@ -106,8 +107,8 @@ final readonly class SwitchEntity implements TypedEntity
      *
      * Turns a switch on.
      */
-    public function turnOn(): void
+    public function turnOn(): EventContext
     {
-        $this->entity->callService('turn_on');
+        return $this->entity->callService('turn_on');
     }
 }

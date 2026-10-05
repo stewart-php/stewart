@@ -219,6 +219,7 @@ final class ServiceCallProxyTest extends TestCase
         EventLoopTicks::settleUntil(static fn(): bool => self::listSentResultsFor($worker) !== []);
 
         self::assertSame('turn_on', self::listSentResultsFor($worker)[0]->result->service);
+        self::assertStringStartsWith('dry-run:', (string) self::listSentResultsFor($worker)[0]->result->context?->id);
         self::assertSame(0, $this->session->calls);
         self::assertSame(0, $proxy->inFlight);
         self::assertSame(['Service call not sent: service_calls.dry_run is on'], $logger->listMessagesAt(LogLevel::INFO));

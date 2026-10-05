@@ -9,6 +9,7 @@ use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Service\ServiceFields;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
+use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
@@ -31,9 +32,9 @@ final readonly class ServiceCaller
     ) {}
 
     /** @throws ServiceCallException */
-    public function callService(ResourceScope $scope, string $domain, string $service, ServiceFields $data, ?ServiceTarget $target): void
+    public function callService(ResourceScope $scope, string $domain, string $service, ServiceFields $data, ?ServiceTarget $target): EventContext
     {
-        $this->sendRequestAndAwait($scope, $domain, $service, $data, $target, returnResponse: false);
+        return $this->sendRequestAndAwait($scope, $domain, $service, $data, $target, returnResponse: false)->context ?? EventContext::unknown();
     }
 
     /** @throws ServiceCallException */

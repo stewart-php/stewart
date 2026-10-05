@@ -45,7 +45,7 @@ final readonly class BootstrapMessageFactory
         $this->storeSettings = $config->persistence === null ? null : $this->buildStoreSettings($config->persistence);
     }
 
-    public function createBootstrapMessage(WorkerHandle $handle, DateTimeZone $timeZone): Bootstrap
+    public function createBootstrapMessage(WorkerHandle $handle, DateTimeZone $timeZone, ?string $haUserId): Bootstrap
     {
         return new Bootstrap(
             protocol: IpcCodec::PROTOCOL_VERSION,
@@ -55,6 +55,7 @@ final readonly class BootstrapMessageFactory
             settings: $this->workerSettings,
             store: $this->storeSettings,
             knownAppIds: AppIdsFragment::fromCollection($this->apps->knownIds),
+            haUserId: $haUserId,
         );
     }
 

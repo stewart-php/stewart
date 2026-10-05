@@ -14,6 +14,7 @@ use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\Service\ServiceTargetSource;
 use Stewart\Contracts\State\EntityState;
+use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\StateChangeStream;
 
 final readonly class Entity implements ServiceTargetSource
@@ -64,9 +65,9 @@ final readonly class Entity implements ServiceTargetSource
      * @param array<string, mixed> $data
      * @throws ServiceCallException
      */
-    public function callService(string $service, array $data = []): void
+    public function callService(string $service, array $data = []): EventContext
     {
-        $this->ha->callService($this->getDomain(), $service, $data, $this);
+        return $this->ha->callService($this->getDomain(), $service, $data, $this);
     }
 
     /**

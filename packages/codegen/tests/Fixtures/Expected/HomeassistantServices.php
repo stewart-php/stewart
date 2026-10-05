@@ -12,6 +12,7 @@ namespace Stewart\Codegen\Tests\Fixtures\Expected;
 
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\Service\ServiceTargetSource;
+use Stewart\Contracts\State\EventContext;
 
 /**
  * The `homeassistant` services.
@@ -31,9 +32,12 @@ final readonly class HomeassistantServices
      * @param int|float $longitude Longitude. Longitude of your location. -180 to 180
      * @param int|float|null $elevation Elevation. Elevation of your location above sea level
      */
-    public function setLocation(int|float $latitude, int|float $longitude, int|float|null $elevation = null): void
-    {
-        $this->ha->callService('homeassistant', 'set_location', [
+    public function setLocation(
+        int|float $latitude,
+        int|float $longitude,
+        int|float|null $elevation = null,
+    ): EventContext {
+        return $this->ha->callService('homeassistant', 'set_location', [
             'latitude' => $latitude,
             'longitude' => $longitude,
             'elevation' => $elevation,
@@ -45,8 +49,8 @@ final readonly class HomeassistantServices
      *
      * Generic service to turn devices on under any domain.
      */
-    public function turnOn(ServiceTargetSource $target): void
+    public function turnOn(ServiceTargetSource $target): EventContext
     {
-        $this->ha->callService('homeassistant', 'turn_on', [], $target);
+        return $this->ha->callService('homeassistant', 'turn_on', [], $target);
     }
 }

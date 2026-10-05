@@ -26,6 +26,7 @@ use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTargetSource;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
+use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
 use Stewart\Contracts\Stream\OperatorStream;
@@ -47,6 +48,10 @@ use Stewart\Testing\Time\VirtualClock;
 
 final class RecordingHaContext implements HaContext
 {
+    public const string STEWART_USER_ID = 'stewart-user';
+
+    private const string CONTEXT_ID_PREFIX = 'recorded-';
+
     public private(set) RecordedServiceCallCollection $calls;
 
     public private(set) TopicEventCollection $published;
@@ -153,12 +158,13 @@ final class RecordingHaContext implements HaContext
     }
 
     /** @param array<string, mixed> $attributes */
-    public function pushState(string $entityId, string $state, array $attributes = []): void
+    public function pushState(string $entityId, string $state, array $attributes = [], ?EventContext $context = null): void
     {
         $this->pushStateChange(new StateChange(
             new EntityId($entityId),
             $this->states->find(new EntityId($entityId)),
-            new EntityState(new EntityId($entityId), $state, $attributes),
+            new EntityState(new EntityId($entityId), $state, $attributes, context: $context),
+            context: $context,
         ));
     }
 
@@ -254,14 +260,14 @@ final class RecordingHaContext implements HaContext
             ->map(static fn(PushedTrigger $pushed): TriggerEvent => $pushed->event);
     }
 
-    public function callService(string $domain, string $service, array $data = [], ?ServiceTargetSource $target = null): void
+    public function callService(string $domain, string $service, array $data = [], ?ServiceTargetSource $target = null): EventContext
     {
-        $this->callStubbedService($domain, $service, $data, $target, false);
+        return $this->callStubbedService($domain, $service, $data, $target, false)->context ?? EventContext::unknown();
     }
 
     public function callServiceForResponse(string $domain, string $service, array $data = [], ?ServiceTargetSource $target = null): ServiceResponse
     {
-        return new ServiceResponse($domain, $service, $this->callStubbedService($domain, $service, $data, $target, true));
+        return $this->callStubbedService($domain, $service, $data, $target, true);
     }
 
     public function publish(string $topic, bool|int|float|string|array|null $payload = null): void
@@ -292,10 +298,9 @@ final class RecordingHaContext implements HaContext
 
     /**
      * @param array<string, mixed> $data
-     * @return array<string, mixed>
      * @throws ServiceCallException
      */
-    private function callStubbedService(string $domain, string $service, array $data, ?ServiceTargetSource $target, bool $returnsResponse): array
+    private function callStubbedService(string $domain, string $service, array $data, ?ServiceTargetSource $target, bool $returnsResponse): ServiceResponse
     {
         $call = new RecordedServiceCall(
             $domain,
@@ -303,6 +308,7 @@ final class RecordingHaContext implements HaContext
             ServiceFields::fromFieldsDroppingNulls($data)->fields,
             $target?->toServiceTarget(),
             $returnsResponse,
+            new EventContext(self::CONTEXT_ID_PREFIX . ($this->calls->count() + 1), userId: self::STEWART_USER_ID),
         );
 
         if (!$this->connected) {
@@ -312,6 +318,6 @@ final class RecordingHaContext implements HaContext
         $this->calls = $this->calls->withRecordedCall($call);
         $outcome = $this->serviceOutcomes[$call->getServiceName()] ?? [];
 
-        return $outcome instanceof ServiceCallException ? throw $outcome : $outcome;
+        return $outcome instanceof ServiceCallException ? throw $outcome : new ServiceResponse($domain, $service, $outcome, $call->context);
     }
 }

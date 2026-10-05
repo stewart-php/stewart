@@ -9,6 +9,11 @@
                 "weather.home": {
                     "forecast": []
                 }
+            },
+            "context": {
+                "id": "call-1",
+                "parent_id": null,
+                "user_id": "stewart-user"
             }
         }
     }

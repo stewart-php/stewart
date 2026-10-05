@@ -145,6 +145,51 @@ final class HaClientTest extends TestCase
         );
     }
 
+    public function testServiceCallReturnsHaContext(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('call_service', ['type' => 'result', 'success' => true, 'result' => [
+            'context' => ['id' => 'call-1', 'parent_id' => null, 'user_id' => 'stewart-user'],
+        ]]);
+
+        $response = $client->callService('light', 'turn_on');
+
+        self::assertSame('call-1', $response->context?->id);
+        self::assertSame('stewart-user', $response->context->userId);
+    }
+
+    public function testServiceCallWithoutContextLeavesItNull(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('call_service', ['type' => 'result', 'success' => true, 'result' => []]);
+
+        self::assertNull($client->callService('light', 'turn_on')->context);
+    }
+
+    public function testCurrentUserIdIsRead(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('auth/current_user', ['type' => 'result', 'success' => true, 'result' => ['id' => 'stewart-user', 'name' => 'Stewart', 'is_admin' => true]]);
+
+        self::assertSame('stewart-user', $client->getCurrentUserId());
+    }
+
+    public function testCurrentUserWithoutIdIsProtocolViolation(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('auth/current_user', ['type' => 'result', 'success' => true, 'result' => ['name' => 'Stewart']]);
+
+        $this->assertThrowsReason(HaClientError::ProtocolViolation, static fn() => $client->getCurrentUserId());
+    }
+
     /** @param array<string, mixed>|null $reply */
     #[DataProvider('provideServiceCallFailures')]
     public function testServiceCallFailureMapsReason(

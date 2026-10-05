@@ -21,6 +21,7 @@ final readonly class Bootstrap implements BrokerMessage
         public WorkerSettings $settings,
         public ?StoreSettings $store,
         public AppIdsFragment $knownAppIds,
+        public ?string $haUserId,
     ) {}
 
     public function getOutboxDelivery(): OutboxDelivery

@@ -10,9 +10,11 @@ use Stewart\Codegen\Model\DomainModel;
 use Stewart\Codegen\Output\GeneratedFile;
 use Stewart\Codegen\Php\MemberScope;
 use Stewart\Codegen\Php\ReservesMemberNames;
+use Stewart\Codegen\Service\ServiceModel;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTargetSource;
+use Stewart\Contracts\State\EventContext;
 
 final readonly class DomainServicesEmitter implements DomainFileEmitter, ReservesMemberNames
 {
@@ -32,6 +34,10 @@ final readonly class DomainServicesEmitter implements DomainFileEmitter, Reserve
 
         if ($this->anyReturnsResponse($domain)) {
             $context->importClass($namespace, ServiceResponse::class, $domain->getServicesClass());
+        }
+
+        if ($domain->services->containsWhere(static fn(ServiceModel $service): bool => !$service->definition->returnsResponse)) {
+            $context->importClass($namespace, EventContext::class, $domain->getServicesClass());
         }
 
         if ($this->anyTargetable($domain)) {

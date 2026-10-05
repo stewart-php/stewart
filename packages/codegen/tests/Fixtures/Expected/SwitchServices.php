@@ -12,6 +12,7 @@ namespace Stewart\Codegen\Tests\Fixtures\Expected;
 
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\Service\ServiceTargetSource;
+use Stewart\Contracts\State\EventContext;
 
 /**
  * The `switch` services.
@@ -27,8 +28,8 @@ final readonly class SwitchServices
      *
      * Turns a switch on.
      */
-    public function turnOn(ServiceTargetSource $target): void
+    public function turnOn(ServiceTargetSource $target): EventContext
     {
-        $this->ha->callService('switch', 'turn_on', [], $target);
+        return $this->ha->callService('switch', 'turn_on', [], $target);
     }
 }

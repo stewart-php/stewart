@@ -48,6 +48,18 @@ final readonly class StateChange
         return $this->from?->state === $state && $this->to?->state !== $state;
     }
 
+    public function findCausingContext(): ?EventContext
+    {
+        return $this->context ?? $this->to?->context;
+    }
+
+    public function wasCausedBy(EventContext $context): bool
+    {
+        $causing = $this->findCausingContext();
+
+        return $causing !== null && $context->isSameOrParentOf($causing);
+    }
+
     public function getDomain(): string
     {
         return $this->entityId->domain;

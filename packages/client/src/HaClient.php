@@ -11,6 +11,7 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Stewart\Client\Connection\Command\CallService;
 use Stewart\Client\Connection\Command\GetConfig;
+use Stewart\Client\Connection\Command\GetCurrentUser;
 use Stewart\Client\Connection\Command\GetEntityRegistry;
 use Stewart\Client\Connection\Command\GetHistoryDuringPeriod;
 use Stewart\Client\Connection\Command\GetServices;
@@ -38,6 +39,7 @@ use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
+use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
 use Stewart\Contracts\Trigger\TriggerEvent;
@@ -131,6 +133,14 @@ final class HaClient
         return EntityRegistryCollection::keyedByEntityId($entries);
     }
 
+    /** @throws HaClientException */
+    public function getCurrentUserId(): string
+    {
+        $id = $this->connection->send(new GetCurrentUser())['id'] ?? null;
+
+        return \is_string($id) && $id !== '' ? $id : throw HaClientException::protocolViolation('a current user without an id');
+    }
+
     public function getConfig(): HaConfig
     {
         return HaConfig::fromGetConfigResult($this->connection->send(new GetConfig()));
@@ -173,8 +183,14 @@ final class HaClient
         }
 
         $response = $result['response'] ?? null;
+        $context = $result['context'] ?? null;
 
-        return new ServiceResponse($domain, $service, \is_array($response) ? JsonShape::treatKeysAsStrings($response) : []);
+        return new ServiceResponse(
+            $domain,
+            $service,
+            \is_array($response) ? JsonShape::treatKeysAsStrings($response) : [],
+            \is_array($context) ? EventContext::fromArray($context) : null,
+        );
     }
 
     /** @throws HistoryException */

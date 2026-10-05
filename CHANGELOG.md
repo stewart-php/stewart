@@ -17,12 +17,27 @@ section says what to change.
   - A trigger Home Assistant rejects is logged and its subscription ends (`isActive()` is false)
 - `RecordingHaContext::pushTrigger()` and `listWatchedTriggers()`
 - `Duration::formatAsClock()`
+- `callService()` on `HaContext`, `Entity` and generated classes returns the call's `EventContext`;
+  `ServiceResponse::$context` carries it for `callServiceForResponse()`
+  - `StateChange::wasCausedBy($context)` and `EntityState::wasLastChangedBy($context)` match the call or anything it
+    started (its child contexts)
+  - `StewartIdentity`, injectable in apps, answers `wasCausedByStewart($change)` from the token's Home Assistant user;
+    it also recognises the first change of a call, which arrives before `callService()` returns. It needs a Home
+    Assistant user for Stewart alone: with a token from a person's account, that person's changes count as Stewart's
+  - Under `service_calls.dry_run` the context id starts with `dry-run:`
+- `RecordingHaContext` gives each call a context for `RecordingHaContext::STEWART_USER_ID`, records it on
+  `RecordedServiceCall::$context`, and `pushState()` takes a causing context
 
 ### Changed
 
 - A subscription the broker refuses is cancelled in the worker, not just logged
-- IPC protocol 16; broker and workers must run the same version
+- IPC protocol 18; broker and workers must run the same version
 - Builder triggers use the `trigger:` key, which needs Home Assistant 2024.10 or newer
+- Generated code format 4; regenerate after upgrading
+
+### Upgrading
+
+- Run `make generate`.
 
 ## [0.4.0] - 2026-10-04
 

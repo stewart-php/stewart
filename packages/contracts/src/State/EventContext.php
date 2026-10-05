@@ -12,6 +12,11 @@ final readonly class EventContext
         public ?string $userId = null,
     ) {}
 
+    public static function unknown(): self
+    {
+        return new self('');
+    }
+
     /** @param array<array-key, mixed> $raw */
     public static function fromArray(array $raw): self
     {
@@ -24,5 +29,10 @@ final readonly class EventContext
             parentId: \is_string($parentId) ? $parentId : null,
             userId: \is_string($userId) ? $userId : null,
         );
+    }
+
+    public function isSameOrParentOf(self $other): bool
+    {
+        return $this->id !== '' && ($other->id === $this->id || $other->parentId === $this->id);
     }
 }

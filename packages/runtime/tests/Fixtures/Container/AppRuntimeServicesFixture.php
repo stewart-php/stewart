@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Tests\Fixtures\Container;
 
+use Stewart\Contracts\Identity\StewartIdentity;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\App\GeneratedRoots;
 use Stewart\Runtime\Container\AppRuntimeServices;
@@ -25,6 +26,8 @@ use Stewart\Store\Stores;
 
 final class AppRuntimeServicesFixture
 {
+    public const string STEWART_USER_ID = 'stewart-user';
+
     private function __construct() {}
 
     public static function createAppRuntimeServices(
@@ -35,6 +38,7 @@ final class AppRuntimeServicesFixture
         ?GeneratedRoots $generated = null,
         ?WorkerLogger $logger = null,
         bool $mqttEnabled = false,
+        StewartIdentity $identity = new StewartIdentity(self::STEWART_USER_ID),
     ): AppRuntimeServices {
         $timers = $resources->timers;
         $logger ??= new WorkerLogger($transport, new StderrFallback(new WorkerId(0)), ResourceScope::shared());
@@ -60,6 +64,7 @@ final class AppRuntimeServicesFixture
                 $mqttEnabled,
                 ResourceScope::shared(),
             ),
+            identity: $identity,
             generated: $generated,
         );
     }

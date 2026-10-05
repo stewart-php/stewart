@@ -23,6 +23,7 @@ use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
+use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\StateChangeStream;
 
 final readonly class EntityHandleEmitter implements DomainFileEmitter, ReservesMemberNames
@@ -52,6 +53,10 @@ final readonly class EntityHandleEmitter implements DomainFileEmitter, ReservesM
 
         if ($domain->handleServices->containsWhere(static fn(ServiceModel $service): bool => $service->definition->returnsResponse)) {
             $context->importClass($namespace, ServiceResponse::class, $declared);
+        }
+
+        if ($domain->handleServices->containsWhere(static fn(ServiceModel $service): bool => !$service->definition->returnsResponse)) {
+            $context->importClass($namespace, EventContext::class, $declared);
         }
 
         $class = $namespace->addClass($declared)

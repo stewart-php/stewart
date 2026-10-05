@@ -14,7 +14,10 @@ use Stewart\Contracts\Exception\IdentifierError;
 use Stewart\Contracts\Exception\TopicError;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryQuery;
+use Stewart\Contracts\Identity\StewartIdentity;
 use Stewart\Contracts\State\EntityState;
+use Stewart\Contracts\State\EventContext;
+use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Contracts\Trigger\TriggerEvent;
@@ -54,6 +57,39 @@ final class RecordingHaContextTest extends TestCase
 
         self::assertCount(1, $ha->listWatchedTriggers());
         self::assertSame([['trigger' => 'time', 'at' => '07:30']], $ha->listWatchedTriggers()->getFirst()?->listTriggerConfigs());
+    }
+
+    public function testEachCallGetsItsOwnStewartContext(): void
+    {
+        $ha = new RecordingHaContext();
+
+        $first = $ha->callService('light', 'turn_on');
+        $second = $ha->callServiceForResponse('weather', 'get_forecasts')->context;
+
+        self::assertSame('recorded-1', $first->id);
+        self::assertSame('recorded-2', $second?->id);
+        self::assertSame(RecordingHaContext::STEWART_USER_ID, $first->userId);
+        self::assertSame($first, $ha->calls->getFirst()?->context);
+    }
+
+    public function testPushedStateCarriesCausingContext(): void
+    {
+        $ha = new RecordingHaContext();
+        $identity = new StewartIdentity(RecordingHaContext::STEWART_USER_ID);
+        $changes = [];
+        $ha->watchStateChanges('light.hall')->subscribe(static function (StateChange $change) use (&$changes): void {
+            $changes[] = $change;
+        });
+        $call = $ha->callService('light', 'turn_on');
+
+        $ha->pushState('light.hall', 'on', context: $call);
+        $ha->pushState('light.hall', 'off', context: new EventContext('manual', userId: 'resident'));
+
+        self::assertTrue($changes[0]->wasCausedBy($call));
+        self::assertTrue($identity->wasCausedByStewart($changes[0]));
+        self::assertFalse($changes[1]->wasCausedBy($call));
+        self::assertFalse($identity->wasCausedByStewart($changes[1]));
+        self::assertTrue($ha->requireState('light.hall')->wasLastChangedBy(new EventContext('manual')));
     }
 
     public function testPublishRejectsNonFinitePayload(): void

@@ -38,6 +38,11 @@ final readonly class EntityState
         return $this->state === self::UNAVAILABLE || $this->state === self::UNKNOWN;
     }
 
+    public function wasLastChangedBy(EventContext $context): bool
+    {
+        return $this->context !== null && $context->isSameOrParentOf($this->context);
+    }
+
     public function getAttribute(string $name): mixed
     {
         return $this->attributes[$name] ?? null;
