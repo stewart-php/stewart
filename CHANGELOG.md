@@ -4,7 +4,26 @@ Every package, the `ghcr.io/stewart-php/runtime` image, the Helm chart and the s
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). On 0.x, a minor release may break; its "Upgrading"
 section says what to change.
 
-## [Unreleased]
+## [0.5.0] - 2026-10-06
+
+Apps now know where things are and who did what. They can schedule around the sun, react to any Home Assistant
+trigger, tell their own changes apart from a person's, fire events, and target entities by area, floor or label.
+
+### Highlights
+
+- **Sun-relative scheduling.** `$scheduler->runAtSunset(fn () => …, SunOffset::before(Duration::minutes(30)))`.
+  The new `stewart-php/sun` package computes sunrise, sunset, twilights, golden hour and sun position locally, and
+  its times match Home Assistant's sun integration. Apps can inject `SunCalendar`, which uses Home Assistant's
+  location.
+- **Home Assistant triggers.** `HaContext::watchTrigger()` streams any trigger platform (time, time pattern,
+  template, zone, calendar, device and more), built with `HaTrigger::atTime()`, `whenTemplateTrue()` or a raw config.
+- **Who changed it.** `callService()` returns the call's `EventContext`, and `StewartIdentity::wasCausedByStewart()`
+  tells Stewart's own changes from a person's. An app can then skip its own echoes or tell a manual override from
+  an automation.
+- **Firing events.** `HaContext::fireEvent()` puts custom events on Home Assistant's bus.
+- **Areas, floors and labels.** `HaContext::getRegistry()` reads areas, floors, labels and devices, and `EntityFilter`
+  selects entities through them: `watchStateChanges(EntityFilter::inArea('kitchen')->withDomain('light'))`.
+  `ServiceTarget` targets them too, and PhpStorm completes their ids after `stewart generate`.
 
 ### Added
 
@@ -67,13 +86,15 @@ section says what to change.
 - Refused-call warnings and reasons speak of calls to Home Assistant, covering service calls and fired events
 - `RecordingHaContext` numbers contexts across service calls and fired events
 - IPC protocol 21; broker and workers must run the same version
-- `HaContext` gains `getRegistry()`; a custom implementation must add it
+- `HaContext` gains `watchTrigger()`, `fireEvent()` and `getRegistry()`, and `callService()` returns `EventContext`
+  instead of `void`; a custom implementation must follow
 - Builder triggers use the `trigger:` key, which needs Home Assistant 2024.10 or newer
 - Generated code format 5; regenerate after upgrading
 
 ### Upgrading
 
-- Run `make generate`.
+1. Run `make upgrade VERSION=0.5`. Broker and workers must both run 0.5 (IPC protocol 21).
+2. Run `make generate`.
 
 ## [0.4.0] - 2026-10-04
 
