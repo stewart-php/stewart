@@ -13,6 +13,6 @@ final readonly class PausedAppsChanged implements BrokerMessage
 
     public function getOutboxDelivery(): OutboxDelivery
     {
-        return OutboxDelivery::LatestOnly;
+        return OutboxDelivery::Plain;
     }
 }
