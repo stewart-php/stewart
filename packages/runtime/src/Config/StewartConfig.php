@@ -31,6 +31,7 @@ final readonly class StewartConfig
         public ?PersistenceConfig $persistence,
         public ?MqttConfig $mqtt,
         public ControlConfig $control,
+        public HttpConfig $http,
         public CodegenConfig $codegen,
         public AppOverrideCollection $apps,
     ) {}
@@ -58,6 +59,7 @@ final readonly class StewartConfig
             persistence: PersistenceConfig::fromSection($config->readSection('persistence')),
             mqtt: MqttConfig::fromSection($config->readSection('mqtt')),
             control: ControlConfig::fromSection($config->readSection('control')),
+            http: HttpConfig::fromSection($config->readSection('http')),
             codegen: CodegenConfig::fromSection($config->readSection('codegen')),
             apps: AppOverrideCollection::keyedByAppId($config->readSection('apps')->mapSubsections(AppOverride::fromSection(...))),
         );

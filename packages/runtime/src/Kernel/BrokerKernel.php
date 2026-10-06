@@ -12,6 +12,7 @@ use Stewart\Runtime\Broker\BrokerLifecycle;
 use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Config\CodegenConfig;
 use Stewart\Runtime\Config\ControlConfig;
+use Stewart\Runtime\Config\HttpConfig;
 use Stewart\Runtime\Config\ProjectRoot;
 use Stewart\Runtime\Config\ServiceCallPolicy;
 use Stewart\Runtime\Config\StewartConfig;
@@ -51,6 +52,7 @@ final readonly class BrokerKernel
             ->withService(SupervisionConfig::class, $config->supervision)
             ->withService(ServiceCallPolicy::class, $config->serviceCalls)
             ->withService(ControlConfig::class, $config->control)
+            ->withService(HttpConfig::class, $config->http)
             ->withService(ProjectRoot::class, $this->projectRoot)
             ->withService(CodegenConfig::class, $config->codegen)
             ->withService(OutboxLimits::class, new OutboxLimits($config->workerEventBuffer, $config->workerStateBatch));

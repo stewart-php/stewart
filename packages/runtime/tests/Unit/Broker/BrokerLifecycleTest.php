@@ -38,6 +38,7 @@ use Stewart\Runtime\Broker\ControlPlane;
 use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\EventFireProxy;
 use Stewart\Runtime\Broker\EventRouter;
+use Stewart\Runtime\Broker\Http\ProbeListener;
 use Stewart\Runtime\Broker\LoopErrorLogger;
 use Stewart\Runtime\Broker\ManifestCheck;
 use Stewart\Runtime\Broker\Message\AppFailedHandler;
@@ -87,6 +88,7 @@ use Stewart\Runtime\Tests\Fixtures\Broker\BootedBroker;
 use Stewart\Runtime\Tests\Fixtures\Broker\BrokerKernelFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerSpawner;
+use Stewart\Runtime\Tests\Fixtures\Broker\Http\RecordingProbeListener;
 use Stewart\Runtime\Tests\Fixtures\Broker\ReceivedEventFire;
 use Stewart\Runtime\Tests\Fixtures\Broker\RecordingControlPlane;
 use Stewart\Runtime\Tests\Fixtures\Broker\UnversionedManifest;
@@ -145,6 +147,8 @@ final class BrokerLifecycleTest extends TestCase
     private ?SupervisionConfig $supervision = null;
 
     private ?RecordingControlPlane $control = null;
+
+    private ?RecordingProbeListener $probes = null;
 
     private RecordingLogger $logger;
 
@@ -575,6 +579,23 @@ final class BrokerLifecycleTest extends TestCase
         self::assertTrue($control->stopped);
     }
 
+    public function testProbeListenerRunsForTheWholeRun(): void
+    {
+        $probes = new RecordingProbeListener();
+        $this->probes = $probes;
+        $this->broker = $this->createBroker();
+        $this->startBroker();
+
+        self::assertTrue($probes->started);
+        self::assertFalse($probes->stopped);
+
+        $this->broker->run->stop('test');
+        $this->running?->await();
+        $this->running = null;
+
+        self::assertTrue($probes->stopped);
+    }
+
     public function testStrayFailedFutureIsLoggedAndRunGoesOn(): void
     {
         $this->startBroker();
@@ -765,6 +786,10 @@ final class BrokerLifecycleTest extends TestCase
 
         if ($this->control !== null) {
             $overrides = $overrides->withService(ControlPlane::class, $this->control);
+        }
+
+        if ($this->probes !== null) {
+            $overrides = $overrides->withService(ProbeListener::class, $this->probes);
         }
 
         return BrokerKernelFixture::boot(

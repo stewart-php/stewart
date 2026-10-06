@@ -43,6 +43,7 @@ final class StewartConfigSchema implements ConfigurationInterface
         $this->addPersistenceSection($root);
         $this->addMqttSection($root);
         $this->addControlSection($root);
+        $this->addHttpSection($root);
         $this->addCodegenSection($root);
         $this->addAppsSection($root);
 
@@ -270,6 +271,20 @@ final class StewartConfigSchema implements ConfigurationInterface
                             ->info('Shared secret every client presents. Required while listen is set: the daemon refuses to start without one.')
                             ->defaultNull()
                         ->end()
+                    ->end()
+                ->end()
+            ->end();
+    }
+
+    private function addHttpSection(ArrayNodeDefinition $root): void
+    {
+        $root
+            ->children()
+                ->arrayNode('http')
+                    ->info('The read-only HTTP port that answers /healthz and /readyz, for Kubernetes probes.')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->append($this->createScalarNode('listen', 'tcp://ip:port, such as tcp://0.0.0.0:8080 or tcp://[::]:8080. "off" disables the port.', self::OFF))
                     ->end()
                 ->end()
             ->end();
