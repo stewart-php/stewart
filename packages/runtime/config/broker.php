@@ -35,6 +35,8 @@ use Stewart\Runtime\Health\SnapshotProbeReporter;
 use Stewart\Runtime\Http\Admin\AdminApiCodec;
 use Stewart\Runtime\Http\HttpListenerFactory;
 use Stewart\Runtime\Json\WireMapper;
+use Stewart\Runtime\Metrics\RuntimeMetricsCollector;
+use Stewart\Runtime\Metrics\RuntimeMetricSource;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Store\GuardedStoreBackend;
@@ -52,6 +54,7 @@ return static function (ContainerConfigurator $container): void {
     $services->instanceof(WorkerMessageHandler::class)->tag('stewart.worker_message_handler');
     $services->instanceof(ControlRequestHandler::class)->tag('stewart.control_request_handler');
     $services->instanceof(BrokerSubscriptionListener::class)->tag('stewart.broker_subscription_listener');
+    $services->instanceof(RuntimeMetricSource::class)->tag('stewart.runtime_metric_source');
 
     $services->load('Stewart\\Runtime\\Broker\\', '../src/Broker/');
     $services->set(StateCache::class);
@@ -85,6 +88,8 @@ return static function (ContainerConfigurator $container): void {
 
     $services->load('Stewart\\Runtime\\Health\\', '../src/Health/');
     $services->load('Stewart\\Runtime\\Http\\', '../src/Http/')->exclude('../src/Http/Admin/Response');
+    $services->load('Stewart\\Runtime\\Metrics\\', '../src/Metrics/')->exclude('../src/Metrics/Exposition');
+    $services->set(RuntimeMetricsCollector::class)->arg('$runtimeMetricSources', tagged_iterator('stewart.runtime_metric_source'));
     $services->set(HttpListenerCollection::class)->factory([service(HttpListenerFactory::class), 'createHttpListeners']);
     $services->alias(ProbeReporter::class, SnapshotProbeReporter::class);
     $services->set(ProbeReportCodec::class)->arg('$probeReportWireMapper', inline_service(WireMapper::class)->factory([ProbeReportCodec::class, 'createProbeReportWireMapper']));

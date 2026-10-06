@@ -52,7 +52,9 @@
                     "state_batches_sent": 90,
                     "largest_state_batch": 12
                 },
-                "in_flight_service_calls": 0
+                "in_flight_service_calls": 0,
+                "restarts": 3,
+                "quarantines": 1
             }
         ],
         "apps": [

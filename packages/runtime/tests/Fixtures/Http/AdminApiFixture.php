@@ -17,14 +17,28 @@ use Stewart\Runtime\Broker\AppPauseOverrideStore;
 use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\AppPauseService;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
+use Stewart\Runtime\Broker\ConnectionTracker;
 use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Broker\WorkerSlotRegistry;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
+use Stewart\Runtime\Control\Assembler\BrokerStatsBuilder;
+use Stewart\Runtime\Control\Assembler\DaemonInfoBuilder;
+use Stewart\Runtime\Control\Assembler\RegistrationInfoBuilder;
+use Stewart\Runtime\Control\Assembler\StoreHealthBuilder;
+use Stewart\Runtime\Control\Assembler\WorkerStatusBuilder;
+use Stewart\Runtime\Control\SnapshotAssembler;
 use Stewart\Runtime\Http\Admin\AdminApiCodec;
 use Stewart\Runtime\Http\Admin\AppsAdminApi;
+use Stewart\Runtime\Metrics\PrometheusTextEncoder;
+use Stewart\Runtime\Metrics\RuntimeMetricsCollector;
+use Stewart\Runtime\Metrics\RuntimeMetricsExporter;
+use Stewart\Runtime\Metrics\Source\AppMetricSource;
+use Stewart\Runtime\Metrics\Source\DaemonMetricSource;
+use Stewart\Runtime\Metrics\Source\WorkerMetricSource;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
+use Stewart\Runtime\Tests\Fixtures\Control\BrokerStateFixture;
 use Stewart\Testing\Time\VirtualClock;
 
 final readonly class AdminApiFixture
@@ -38,6 +52,10 @@ final readonly class AdminApiFixture
     public AppsAdminApi $api;
 
     public AdminApiCodec $codec;
+
+    public RuntimeMetricsExporter $metricsExporter;
+
+    private BrokerStateFixture $broker;
 
     public function __construct()
     {
@@ -61,5 +79,30 @@ final readonly class AdminApiFixture
         $metrics = new AppMetrics(WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), $apps)]), $this->clock);
         $this->api = new AppsAdminApi(new AppStatusBuilder($metrics, $this->registry), $this->pauses, new AppPauseOutcomeMessages());
         $this->codec = new AdminApiCodec(AdminApiCodec::createAdminApiWireMapper());
+        $this->broker = new BrokerStateFixture();
+        $this->metricsExporter = $this->createMetricsExporter($startTime, $metrics);
+    }
+
+    public function stopEverything(): void
+    {
+        $this->broker->stopEverything();
+    }
+
+    private function createMetricsExporter(DaemonStartTime $startTime, AppMetrics $metrics): RuntimeMetricsExporter
+    {
+        $broker = $this->broker;
+        $snapshots = new SnapshotAssembler(
+            daemonInfo: new DaemonInfoBuilder($broker->session, '0.1.0-test', $startTime),
+            brokerStats: new BrokerStatsBuilder($broker->pools->slots, $broker->callSlots, $broker->registry),
+            workerStatuses: new WorkerStatusBuilder($broker->pools->slots, $broker->pools->watchdog, $broker->pools->restartPolicy, $broker->callSlots),
+            registrationInfos: new RegistrationInfoBuilder($broker->registry),
+            storeHealth: new StoreHealthBuilder($broker->pools->slots, storeConfigured: false),
+            appStatuses: new AppStatusBuilder($metrics, $this->registry),
+            connection: new ConnectionTracker($this->clock),
+            clock: $this->clock,
+        );
+        $collector = new RuntimeMetricsCollector([new DaemonMetricSource(), new WorkerMetricSource(), new AppMetricSource()]);
+
+        return new RuntimeMetricsExporter($snapshots, $collector, new PrometheusTextEncoder());
     }
 }

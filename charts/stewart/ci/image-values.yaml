@@ -14,3 +14,9 @@ config:
 workers: 2
 adminApi:
   enabled: true
+  host: 0.0.0.0
+  podMonitor:
+    enabled: true
+    interval: 30s
+    labels:
+      release: kube-prometheus-stack

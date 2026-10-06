@@ -8,6 +8,7 @@ use Amp\Http\HttpStatus;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler;
 use Amp\Http\Server\Response;
+use LogicException;
 use Psr\Log\LoggerInterface;
 use SensitiveParameter;
 use Stewart\Contracts\App\AppId;
@@ -19,6 +20,8 @@ use Stewart\Runtime\Http\Admin\Response\AdminAppList;
 use Stewart\Runtime\Http\Admin\Response\AdminAppView;
 use Stewart\Runtime\Http\Admin\Response\AdminCommandResult;
 use Stewart\Runtime\Http\Admin\Response\AdminFailure;
+use Stewart\Runtime\Metrics\PrometheusTextEncoder;
+use Stewart\Runtime\Metrics\RuntimeMetricsExporter;
 use Throwable;
 
 final readonly class AdminRequestHandler implements RequestHandler
@@ -27,9 +30,12 @@ final readonly class AdminRequestHandler implements RequestHandler
 
     private const array JSON_HEADERS = ['content-type' => 'application/json', 'cache-control' => 'no-store'];
 
+    private const array METRICS_HEADERS = ['content-type' => PrometheusTextEncoder::CONTENT_TYPE, 'cache-control' => 'no-store'];
+
     public function __construct(
         private AppsAdminApi $apps,
         private AdminApiCodec $codec,
+        private RuntimeMetricsExporter $metrics,
         private LoggerInterface $logger,
         #[SensitiveParameter]
         private string $adminApiToken,
@@ -57,7 +63,9 @@ final readonly class AdminRequestHandler implements RequestHandler
         }
 
         try {
-            return $this->respond(HttpStatus::OK, $this->answerRoute($route));
+            return $route->action === AdminAction::ShowMetrics
+                ? new Response(HttpStatus::OK, self::METRICS_HEADERS, $this->metrics->exportMetrics())
+                : $this->respond(HttpStatus::OK, $this->answerRoute($route));
         } catch (StewartException $e) {
             return $this->respondWithFailure($this->selectFailureStatus($e->reason), new AdminFailure((string) $e->reason->value, $e->getMessage()));
         } catch (Throwable $e) {
@@ -76,6 +84,7 @@ final readonly class AdminRequestHandler implements RequestHandler
             AdminAction::PauseApp => $this->apps->pauseApp(new AppId((string) $route->appId)),
             AdminAction::ResumeApp => $this->apps->resumeApp(new AppId((string) $route->appId)),
             AdminAction::ResetApp => $this->apps->resetApp(new AppId((string) $route->appId)),
+            AdminAction::ShowMetrics => throw new LogicException('Metrics are answered before the JSON routes.'),
         };
     }
 

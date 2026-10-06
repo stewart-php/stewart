@@ -58,6 +58,8 @@ classes are rewritten inside the image.
 | `adminApi.enabled` | `false` | Start the HTTP admin API (`http.admin`) that lists, pauses and resumes apps |
 | `adminApi.host`, `.port` | `127.0.0.1`, `8081` | Where it binds; loopback is reachable through `kubectl port-forward`, `0.0.0.0` from other pods |
 | `adminApi.existingSecret`, `.existingSecretKey` | `""`, `token` | Secret with the admin bearer token; name one when rendering with `helm template`, or the generated token changes on every render |
+| `adminApi.podMonitor.enabled` | `false` | Create a Prometheus Operator `PodMonitor` that scrapes `/metrics` with the admin token; needs `adminApi.host: 0.0.0.0` |
+| `adminApi.podMonitor.interval`, `.scrapeTimeout`, `.labels` | `""`, `""`, `{}` | Scrape settings, and labels your Prometheus selects PodMonitors by (`release: …` for kube-prometheus-stack) |
 | `config` | `{}` | `stewart.yaml` content; when set it replaces the project's file |
 | `logLevel`, `logFormat` | `info`, `json` | |
 | `workers` | `0` | Worker processes; `0` is min(4, CPUs), and a CPU limit counts |
@@ -89,4 +91,9 @@ kubectl port-forward deployment/home-stewart 8081:8081 &
 TOKEN=$(kubectl get secret home-stewart -o jsonpath='{.data.admin-token}' | base64 -d)
 curl -H "Authorization: Bearer $TOKEN" localhost:8081/api/apps
 curl -X POST -H "Authorization: Bearer $TOKEN" localhost:8081/api/apps/porch/pause   # resume, reset
+curl -H "Authorization: Bearer $TOKEN" localhost:8081/metrics                        # Prometheus text format
 ```
+
+For Prometheus Operator, `adminApi.podMonitor.enabled: true` with `adminApi.host: 0.0.0.0` scrapes `/metrics`
+using the same token. Binding `0.0.0.0` makes the pause endpoints reachable from other pods too, still behind
+the token; the chart refuses to render a PodMonitor against a loopback host.

@@ -49,7 +49,7 @@ final class StatusRendererTest extends TestCase
             broker: new BrokerStats(2, 1, 1, 0, new RoutingStats(2, 1, 40, 100, 7)),
             workers: [
                 new WorkerStatus(0, WorkerPhase::Live, ['demo'], 4242, true, 0, Duration::microseconds(1_500), 4_194_304, self::createInstantAt($now - 7.0), 0, null, new OutboxStatus(2, 4, 5, 40, 9), 1),
-                new WorkerStatus(1, WorkerPhase::RestartScheduled, ['echo'], null, false, 0, null, null, null, 2, self::createInstantAt($now + 4.0), null, 0),
+                new WorkerStatus(1, WorkerPhase::RestartScheduled, ['echo'], null, false, 0, null, null, null, 2, self::createInstantAt($now + 4.0), null, 0, restarts: 5, quarantines: 1),
             ],
             apps: [
                 new AppStatus(

@@ -61,6 +61,12 @@ adminApi:
   port: 8081
   existingSecret: ""
   existingSecretKey: token
+  # Prometheus Operator PodMonitor scraping /metrics with the admin token; needs host 0.0.0.0.
+  podMonitor:
+    enabled: false
+    interval: ""
+    scrapeTimeout: ""
+    labels: {}
 
 # stewart.yaml content; when set it replaces the project's own file, so repeat the app options it holds.
 config: {}

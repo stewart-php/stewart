@@ -11,6 +11,7 @@ use Stewart\Runtime\Exception\ConfigurationException;
 use Stewart\Runtime\Http\Admin\AdminApiCodec;
 use Stewart\Runtime\Http\Admin\AdminRequestHandler;
 use Stewart\Runtime\Http\Admin\AppsAdminApi;
+use Stewart\Runtime\Metrics\RuntimeMetricsExporter;
 
 final readonly class HttpListenerFactory
 {
@@ -19,6 +20,7 @@ final readonly class HttpListenerFactory
         private ProbeRequestHandler $probeRequests,
         private AppsAdminApi $adminApps,
         private AdminApiCodec $adminCodec,
+        private RuntimeMetricsExporter $metricsExporter,
         private LoggerInterface $logger,
     ) {}
 
@@ -34,7 +36,7 @@ final readonly class HttpListenerFactory
         $admin = $this->http->admin;
 
         if ($admin->listen !== null) {
-            $requests = new AdminRequestHandler($this->adminApps, $this->adminCodec, $this->logger, $admin->token ?? throw ConfigurationException::adminTokenMissing());
+            $requests = new AdminRequestHandler($this->adminApps, $this->adminCodec, $this->metricsExporter, $this->logger, $admin->token ?? throw ConfigurationException::adminTokenMissing());
             $listeners[] = new AmpHttpListener($admin->listen, $requests, HttpListenerRole::Admin, $this->logger);
         }
 
