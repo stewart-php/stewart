@@ -83,16 +83,17 @@ final readonly class StatusRenderer
         $this->renderTable(
             $output,
             'Apps',
-            ['app', 'worker', 'state', 'reported', 'subs', 'schedules', 'delivered', 'dropped', 'runs', 'publishes', 'calls ok/failed', 'p95', 'failures'],
+            ['app', 'worker', 'state', 'reported', 'subs', 'schedules', 'delivered', 'dropped', 'suppressed', 'runs', 'publishes', 'calls ok/failed', 'p95', 'failures'],
             array_map(fn(AppStatus $app): array => [
                 $app->id,
                 $app->workerId === null ? '-' : (string) $app->workerId,
-                $app->state === null ? 'unknown' : $app->state->value,
+                $this->formatAppState($app),
                 $this->formatter->formatTimeAgo($app->reportedAt, $now),
                 (string) $app->subscriptions,
                 (string) $app->schedules,
                 (string) $app->counters->delivered,
                 (string) $app->counters->subscriptionDropped,
+                (string) $app->counters->suppressed,
                 (string) $app->counters->scheduleRuns,
                 (string) $app->counters->publishes,
                 $this->formatCalls($app),
@@ -100,6 +101,13 @@ final readonly class StatusRenderer
                 (string) $app->counters->failures,
             ], $snapshot->apps),
         );
+    }
+
+    private function formatAppState(AppStatus $app): string
+    {
+        $state = $app->state === null ? 'unknown' : $app->state->value;
+
+        return $app->paused ? $state . ' (paused)' : $state;
     }
 
     private function renderFailureTable(OutputInterface $output, RuntimeSnapshot $snapshot, Instant $now): void

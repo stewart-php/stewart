@@ -13,6 +13,7 @@ use Stewart\Contracts\Exception\EventFireError;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppMetrics;
+use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\EventFireProxy;
 use Stewart\Runtime\Broker\HaCallSlots;
@@ -126,7 +127,7 @@ final class EventFireProxyTest extends TestCase
         $proxy->forward($worker, self::createRequest('b'));
         $this->finishCalls();
 
-        $calls = new AppStatusBuilder($this->metrics)->buildAppStatuses()->listValues()[0]->serviceCalls;
+        $calls = new AppStatusBuilder($this->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([])))->buildAppStatuses()->listValues()[0]->serviceCalls;
         self::assertSame(
             [ServiceCallOutcome::Refused, ServiceCallOutcome::Succeeded],
             array_map(static fn(ServiceCallStats $stats): ServiceCallOutcome => $stats->outcome, $calls),

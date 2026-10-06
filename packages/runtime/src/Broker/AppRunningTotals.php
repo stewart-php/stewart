@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Broker;
 
+use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\Control\Protocol\Status\AppCounters;
@@ -36,6 +37,8 @@ final class AppRunningTotals
 
     private int $failures = 0;
 
+    private int $suppressed = 0;
+
     private ?FailureReport $lastFailure = null;
 
     /** @var array<string, ServiceCallStatsRecorder> */
@@ -43,18 +46,19 @@ final class AppRunningTotals
 
     private function __construct(
         private readonly string $id,
+        private readonly ?AppId $appId,
         private readonly string $class,
         private readonly ?WorkerId $workerId,
     ) {}
 
-    public static function forApp(string $id, string $class, ?WorkerId $workerId): self
+    public static function forApp(AppId $appId, string $class, ?WorkerId $workerId): self
     {
-        return new self($id, $class, $workerId);
+        return new self($appId->value, $appId, $class, $workerId);
     }
 
     public static function forScope(ResourceScope $scope, WorkerId $workerId): self
     {
-        return new self($scope->wireValue(), '', $workerId);
+        return new self($scope->wireValue(), $scope->appId, '', $workerId);
     }
 
     // The shared services.php scope exists once per worker, so its totals are kept per worker.
@@ -74,6 +78,7 @@ final class AppRunningTotals
         $this->scheduleRuns += max(0, $report->scheduleRuns - ($previous->scheduleRuns ?? 0));
         $this->publishes += max(0, $report->publishes - ($previous->publishes ?? 0));
         $this->failures += max(0, $report->failures - ($previous->failures ?? 0));
+        $this->suppressed += max(0, $report->suppressed - ($previous->suppressed ?? 0));
     }
 
     public function recordCall(ServiceCallOutcome $outcome, ?Duration $latency): void
@@ -86,7 +91,7 @@ final class AppRunningTotals
         $this->lastFailure = $failure;
     }
 
-    public function buildAppStatus(): AppStatus
+    public function buildAppStatus(AppPauseRegistry $pausedApps): AppStatus
     {
         $calls = $this->calls;
         ksort($calls);
@@ -96,6 +101,7 @@ final class AppRunningTotals
             class: $this->class,
             workerId: $this->workerId?->value,
             state: $this->state,
+            paused: $this->appId !== null && $pausedApps->isPaused($this->appId),
             reportedAt: $this->reportedAt,
             subscriptions: $this->subscriptions,
             schedules: $this->schedules,
@@ -105,6 +111,7 @@ final class AppRunningTotals
                 scheduleRuns: $this->scheduleRuns,
                 publishes: $this->publishes,
                 failures: $this->failures,
+                suppressed: $this->suppressed,
             ),
             serviceCalls: array_values(array_map(static fn(ServiceCallStatsRecorder $recorder): ServiceCallStats => $recorder->buildServiceCallStats(), $calls)),
             lastFailure: $this->lastFailure,

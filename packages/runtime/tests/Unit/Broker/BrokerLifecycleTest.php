@@ -635,7 +635,7 @@ final class BrokerLifecycleTest extends TestCase
 
     private function readAppStatusAt(int $index): AppStatus
     {
-        return new AppStatusBuilder($this->metrics)->buildAppStatuses()->listValues()[$index];
+        return new AppStatusBuilder($this->metrics, $this->pausedApps)->buildAppStatuses()->listValues()[$index];
     }
 
     private function startBroker(): void

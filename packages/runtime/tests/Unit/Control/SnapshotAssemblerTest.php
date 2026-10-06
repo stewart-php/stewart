@@ -9,6 +9,8 @@ use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Runtime\App\Collection\AppDefinitionCollection;
+use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\BrokerSubscription;
 use Stewart\Runtime\Broker\ConnectionTracker;
 use Stewart\Runtime\Broker\DaemonStartTime;
@@ -118,7 +120,7 @@ final class SnapshotAssemblerTest extends TestCase
             workerStatuses: new WorkerStatusBuilder($broker->pools->slots, $broker->pools->watchdog, $broker->pools->restartPolicy, $broker->callSlots),
             registrationInfos: new RegistrationInfoBuilder($broker->registry),
             storeHealth: new StoreHealthBuilder($broker->pools->slots, storeConfigured: false),
-            appStatuses: new AppStatusBuilder($broker->metrics),
+            appStatuses: new AppStatusBuilder($broker->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]))),
             connection: $connection,
             clock: $broker->timers->clock,
         );

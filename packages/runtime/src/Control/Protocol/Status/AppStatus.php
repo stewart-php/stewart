@@ -16,6 +16,7 @@ final readonly class AppStatus
         public string $class,
         public ?int $workerId,
         public ?AppState $state,
+        public bool $paused,
         public ?Instant $reportedAt,
         public int $subscriptions,
         public int $schedules,

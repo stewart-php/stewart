@@ -15,6 +15,7 @@ use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppMetrics;
+use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\HaCallSlots;
 use Stewart\Runtime\Broker\OutboxLimits;
@@ -106,7 +107,7 @@ final class ServiceCallProxyTest extends TestCase
         $this->timers->delay(Duration::milliseconds(30));
         $this->finishCalls();
 
-        $calls = new AppStatusBuilder($this->metrics)->buildAppStatuses()->listValues()[0]->serviceCalls;
+        $calls = new AppStatusBuilder($this->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([])))->buildAppStatuses()->listValues()[0]->serviceCalls;
         self::assertSame(
             [ServiceCallOutcome::Refused, ServiceCallOutcome::Succeeded],
             array_map(static fn(ServiceCallStats $stats): ServiceCallOutcome => $stats->outcome, $calls),
