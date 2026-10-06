@@ -38,10 +38,18 @@ section says what to change.
   - Under `service_calls.dry_run` the context id starts with `dry-run:`
 - `RecordingHaContext` gives each call a context for `RecordingHaContext::STEWART_USER_ID`, records it on
   `RecordedServiceCall::$context`, and `pushState()` takes a causing context
+- `HaContext::fireEvent()` fires an event on Home Assistant's bus and returns its `EventContext`
+  - Event data must be keyed and transportable; nulls are kept; bad input throws `EventFireException` before sending
+  - Fired events share the `service_calls` in-flight limits, per-app call counts and `dry_run` with service calls
+  - Needs an administrator token, like the rest of Stewart
+- `RecordingHaContext::fireEvent()` records to `firedEvents`, echoes the event to `watchEvents()`, and
+  `stubEventFireFailure()` makes it throw
 
 ### Changed
 
 - A subscription the broker refuses is cancelled in the worker, not just logged
+- Refused-call warnings and reasons speak of calls to Home Assistant, covering service calls and fired events
+- `RecordingHaContext` numbers contexts across service calls and fired events
 - IPC protocol 20; broker and workers must run the same version
 - Builder triggers use the `trigger:` key, which needs Home Assistant 2024.10 or newer
 - Generated code format 4; regenerate after upgrading
