@@ -32,6 +32,7 @@ use Stewart\Runtime\Control\Request\ControlRequestHandler;
 use Stewart\Runtime\Health\ProbeReportCodec;
 use Stewart\Runtime\Health\ProbeReporter;
 use Stewart\Runtime\Health\SnapshotProbeReporter;
+use Stewart\Runtime\Http\Admin\AdminApiCodec;
 use Stewart\Runtime\Http\HttpListenerFactory;
 use Stewart\Runtime\Json\WireMapper;
 use Stewart\Runtime\Registry\RegistryCache;
@@ -83,8 +84,9 @@ return static function (ContainerConfigurator $container): void {
     $services->set(ControlPlane::class)->factory([service(ControlPlaneFactory::class), 'createControlPlane']);
 
     $services->load('Stewart\\Runtime\\Health\\', '../src/Health/');
-    $services->load('Stewart\\Runtime\\Http\\', '../src/Http/');
+    $services->load('Stewart\\Runtime\\Http\\', '../src/Http/')->exclude('../src/Http/Admin/Response');
     $services->set(HttpListenerCollection::class)->factory([service(HttpListenerFactory::class), 'createHttpListeners']);
     $services->alias(ProbeReporter::class, SnapshotProbeReporter::class);
     $services->set(ProbeReportCodec::class)->arg('$probeReportWireMapper', inline_service(WireMapper::class)->factory([ProbeReportCodec::class, 'createProbeReportWireMapper']));
+    $services->set(AdminApiCodec::class)->arg('$adminApiWireMapper', inline_service(WireMapper::class)->factory([AdminApiCodec::class, 'createAdminApiWireMapper']));
 };
