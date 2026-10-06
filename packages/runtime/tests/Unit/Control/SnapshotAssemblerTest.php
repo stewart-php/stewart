@@ -121,7 +121,7 @@ final class SnapshotAssemblerTest extends TestCase
             workerStatuses: new WorkerStatusBuilder($broker->pools->slots, $broker->pools->watchdog, $broker->pools->restartPolicy, $broker->callSlots),
             registrationInfos: new RegistrationInfoBuilder($broker->registry),
             storeHealth: new StoreHealthBuilder($broker->pools->slots, storeConfigured: false),
-            appStatuses: new AppStatusBuilder($broker->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new VirtualClock())),
+            appStatuses: new AppStatusBuilder($broker->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock()))),
             connection: $connection,
             clock: $broker->timers->clock,
         );

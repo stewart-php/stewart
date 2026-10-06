@@ -14,6 +14,7 @@ use Stewart\Runtime\App\AppPause;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\AppPauseService;
+use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\WorkerSlotRegistry;
 use Stewart\Runtime\Exception\AppError;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
@@ -30,7 +31,7 @@ final class AppPauseServiceTest extends TestCase
     public function testChangesAreLoggedOnce(): void
     {
         $logger = new RecordingLogger();
-        $registry = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new VirtualClock());
+        $registry = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock()));
         $service = new AppPauseService(self::createCatalog(), $registry, new WorkerSlotRegistry(), new VirtualClock(), $logger);
 
         $service->pauseApp(new AppId('demo'), AppPauseSource::Control);
@@ -45,7 +46,7 @@ final class AppPauseServiceTest extends TestCase
     public function testPauseRecordsSourceAndTime(): void
     {
         $clock = new VirtualClock();
-        $registry = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), $clock);
+        $registry = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime($clock));
         $service = new AppPauseService(self::createCatalog(), $registry, new WorkerSlotRegistry(), $clock, new RecordingLogger());
 
         $service->pauseApp(new AppId('demo'), AppPauseSource::Control);
@@ -55,7 +56,7 @@ final class AppPauseServiceTest extends TestCase
 
     public function testUnknownAppIsRefused(): void
     {
-        $service = new AppPauseService(self::createCatalog(), new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new VirtualClock()), new WorkerSlotRegistry(), new VirtualClock(), new RecordingLogger());
+        $service = new AppPauseService(self::createCatalog(), new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock())), new WorkerSlotRegistry(), new VirtualClock(), new RecordingLogger());
 
         $this->assertThrowsReason(AppError::Unknown, fn() => $service->pauseApp(new AppId('ghost'), AppPauseSource::Control));
         $this->assertThrowsReason(AppError::Unknown, fn() => $service->resumeApp(new AppId('ghost'), AppPauseSource::Control));
@@ -63,7 +64,7 @@ final class AppPauseServiceTest extends TestCase
 
     public function testDisabledAppIsRefusedAndStaysUnpaused(): void
     {
-        $registry = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new VirtualClock());
+        $registry = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock()));
         $service = new AppPauseService(self::createCatalog(), $registry, new WorkerSlotRegistry(), new VirtualClock(), new RecordingLogger());
 
         $this->assertThrowsReason(AppError::Disabled, fn() => $service->pauseApp(new AppId('dormant'), AppPauseSource::Control));

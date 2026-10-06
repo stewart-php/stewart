@@ -8,6 +8,7 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\Control\Protocol\Status\AppCounters;
+use Stewart\Runtime\Control\Protocol\Status\AppPauseStatus;
 use Stewart\Runtime\Control\Protocol\Status\AppStatus;
 use Stewart\Runtime\Control\Protocol\Status\FailureReport;
 use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
@@ -102,9 +103,7 @@ final class AppRunningTotals
             class: $this->class,
             workerId: $this->workerId?->value,
             state: $this->state,
-            paused: $pause !== null,
-            pausedSince: $pause?->since,
-            pauseSource: $pause?->source,
+            pause: $pause === null ? null : new AppPauseStatus($pause->since, $pause->source),
             reportedAt: $this->reportedAt,
             subscriptions: $this->subscriptions,
             schedules: $this->schedules,

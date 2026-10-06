@@ -19,6 +19,7 @@ use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\AppPauseService;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
+use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Ipc\Wire\IpcCodec;
@@ -45,7 +46,7 @@ final class AppPauseRoundTripTest extends TestCase
     {
         $session = new FakeHaSession();
         $logger = new RecordingLogger();
-        $pausedApps = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new VirtualClock());
+        $pausedApps = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock()));
         $pools = WorkerPoolFixture::createWorkerPool(new InMemoryWorkerSpawner(IpcCodec::createForWorkerBootstrap()), logger: $logger, outboxLimits: new OutboxLimits(100, 256));
         $appId = new AppId('serial-handler');
         $apps = AppDefinitionCollection::keyedByAppId([new AppDefinition($appId, SerialHandler::class)]);

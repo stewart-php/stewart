@@ -14,6 +14,7 @@ use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\AppPauseService;
+use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\WorkerSlotRegistry;
 use Stewart\Runtime\Control\Protocol\Frame\CommandResult;
 use Stewart\Runtime\Control\Protocol\Frame\PauseAppRequest;
@@ -45,7 +46,7 @@ final class AppPauseRequestHandlersTest extends TestCase
     {
         $clock = new VirtualClock();
         $apps = AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)]);
-        $this->registry = new AppPauseRegistry($apps, $clock);
+        $this->registry = new AppPauseRegistry($apps, new DaemonStartTime($clock));
         $service = new AppPauseService(
             new AppCatalog($apps, AppIdCollection::fromIds([new AppId('demo')]), AppIdCollection::fromIds([])),
             $this->registry,

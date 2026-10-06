@@ -6,7 +6,6 @@ namespace Stewart\Runtime\Control\Protocol\Status;
 
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Wire\ListOf;
-use Stewart\Runtime\Lifecycle\AppPauseSource;
 use Stewart\Runtime\Lifecycle\AppState;
 
 final readonly class AppStatus
@@ -17,9 +16,7 @@ final readonly class AppStatus
         public string $class,
         public ?int $workerId,
         public ?AppState $state,
-        public bool $paused,
-        public ?Instant $pausedSince,
-        public ?AppPauseSource $pauseSource,
+        public ?AppPauseStatus $pause,
         public ?Instant $reportedAt,
         public int $subscriptions,
         public int $schedules,

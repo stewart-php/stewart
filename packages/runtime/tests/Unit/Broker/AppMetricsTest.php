@@ -17,11 +17,13 @@ use Stewart\Runtime\Broker\AppMetrics;
 use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\AppRunningTotals;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
+use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Broker\ServiceCallStatsRecorder;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
+use Stewart\Runtime\Control\Protocol\Status\AppPauseStatus;
 use Stewart\Runtime\Control\Protocol\Status\AppStatus;
 use Stewart\Runtime\Ipc\Message\AppActivityReport;
 use Stewart\Runtime\Ipc\Message\AppFailed;
@@ -53,7 +55,7 @@ final class AppMetricsTest extends TestCase
             WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)])), new WorkerSlot(new WorkerId(1), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('echo'), Demo::class)]))]),
             SystemClock::inUtc(),
         );
-        $this->pausedApps = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new VirtualClock());
+        $this->pausedApps = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock()));
     }
 
     public function testEveryPlacedAppIsListedBeforeItReportsActivity(): void
@@ -96,8 +98,9 @@ final class AppMetricsTest extends TestCase
 
         [$demo, $echo] = $this->listAppStatuses();
 
-        self::assertSame([true, 7], [$demo->paused, $demo->counters->suppressed]);
-        self::assertFalse($echo->paused);
+        self::assertEquals(new AppPauseStatus(Instant::fromEpochMicroseconds(0), AppPauseSource::Control), $demo->pause);
+        self::assertSame(7, $demo->counters->suppressed);
+        self::assertNull($echo->pause);
     }
 
     public function testLatencyOnABoundCountsInThatBucket(): void

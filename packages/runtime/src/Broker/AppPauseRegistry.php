@@ -6,7 +6,6 @@ namespace Stewart\Runtime\Broker;
 
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
-use Stewart\Contracts\Time\Clock;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\AppPause;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
@@ -14,13 +13,18 @@ use Stewart\Runtime\Lifecycle\AppPauseSource;
 
 final class AppPauseRegistry
 {
+    /** @var array<string, AppId> */
+    private array $configPausedAppIds = [];
+
     /** @var array<string, AppPause> */
     private array $pauses = [];
 
-    public function __construct(AppDefinitionCollection $enabledApps, Clock $clock)
-    {
+    public function __construct(
+        AppDefinitionCollection $enabledApps,
+        private readonly DaemonStartTime $startTime,
+    ) {
         foreach ($enabledApps->filter(static fn(AppDefinition $app): bool => $app->startsPaused) as $app) {
-            $this->pauses[$app->id->value] = new AppPause($app->id, $clock->getNow(), AppPauseSource::Config);
+            $this->configPausedAppIds[$app->id->value] = $app->id;
         }
     }
 
@@ -41,23 +45,31 @@ final class AppPauseRegistry
             return false;
         }
 
-        unset($this->pauses[$appId->value]);
+        unset($this->configPausedAppIds[$appId->value], $this->pauses[$appId->value]);
 
         return true;
     }
 
     public function isPaused(AppId $appId): bool
     {
-        return isset($this->pauses[$appId->value]);
+        return isset($this->configPausedAppIds[$appId->value]) || isset($this->pauses[$appId->value]);
     }
 
     public function findPause(AppId $appId): ?AppPause
     {
+        if (isset($this->configPausedAppIds[$appId->value])) {
+            // A config pause holds from daemon start, which is recorded after this registry is built.
+            return new AppPause($appId, $this->startTime->getStartedAt(), AppPauseSource::Config);
+        }
+
         return $this->pauses[$appId->value] ?? null;
     }
 
     public function listPausedAppIds(): AppIdCollection
     {
-        return AppIdCollection::fromIds(array_map(static fn(AppPause $pause): AppId => $pause->appId, array_values($this->pauses)));
+        return AppIdCollection::fromIds([
+            ...array_values($this->configPausedAppIds),
+            ...array_map(static fn(AppPause $pause): AppId => $pause->appId, array_values($this->pauses)),
+        ]);
     }
 }
