@@ -7,6 +7,9 @@ namespace Stewart\Codegen\Model;
 use Stewart\Codegen\Model\Collection\DomainModelCollection;
 use Stewart\Codegen\Model\Collection\GenerationWarningCollection;
 use Stewart\Contracts\Entity\Collection\EntityIdCollection;
+use Stewart\Contracts\Registry\Collection\AreaIdCollection;
+use Stewart\Contracts\Registry\Collection\FloorIdCollection;
+use Stewart\Contracts\Registry\Collection\LabelIdCollection;
 
 final readonly class GenerationModel
 {
@@ -15,6 +18,9 @@ final readonly class GenerationModel
         public EntityIdCollection $entityIds,
         public EntityIdCollection $ignoredEntityIds,
         public GenerationWarningCollection $warnings,
+        public AreaIdCollection $areaIds,
+        public FloorIdCollection $floorIds,
+        public LabelIdCollection $labelIds,
     ) {}
 
     public function listEntityDomains(): DomainModelCollection

@@ -63,6 +63,19 @@ final class SnapshotCodecTest extends TestCase
         self::assertSame(20.0, $again->states->find(new EntityId('sensor.temp'))?->getAttribute('apparent'));
     }
 
+    public function testOlderSnapshotHasNoAreasFloorsOrLabels(): void
+    {
+        $snapshot = new SnapshotCodec(new EntityStateDecoder())->decodeSnapshot(json_encode([
+            'ha_version' => '2026.9.1',
+            'states' => [['entity_id' => 'light.hall', 'state' => 'on']],
+            'areas' => [['area_id' => 'kitchen', 'name' => 'Kitchen'], ['name' => 'No id']],
+        ], \JSON_THROW_ON_ERROR), 'memory');
+
+        self::assertSame(['kitchen'], array_keys(iterator_to_array($snapshot->areas)));
+        self::assertTrue($snapshot->floors->isEmpty());
+        self::assertTrue($snapshot->labels->isEmpty());
+    }
+
     public function testSkipsEntriesWithInvalidEntityIds(): void
     {
         $logger = new RecordingLogger();

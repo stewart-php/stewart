@@ -27,6 +27,15 @@ use Stewart\Codegen\Service\ServiceCatalogParser;
 use Stewart\Codegen\Service\ServiceDefinition;
 use Stewart\Codegen\Service\ServiceModel;
 use Stewart\Codegen\Snapshot\Snapshot;
+use Stewart\Contracts\Registry\Area;
+use Stewart\Contracts\Registry\AreaId;
+use Stewart\Contracts\Registry\Collection\AreaIdCollection;
+use Stewart\Contracts\Registry\Collection\FloorIdCollection;
+use Stewart\Contracts\Registry\Collection\LabelIdCollection;
+use Stewart\Contracts\Registry\Floor;
+use Stewart\Contracts\Registry\FloorId;
+use Stewart\Contracts\Registry\Label;
+use Stewart\Contracts\Registry\LabelId;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 
@@ -80,6 +89,9 @@ final readonly class GenerationModelFactory
                 ),
                 ...$unseenAttributes,
             ]),
+            areaIds: AreaIdCollection::fromIds($snapshot->areas->mapToList(static fn(Area $area): AreaId => $area->areaId)),
+            floorIds: FloorIdCollection::fromIds($snapshot->floors->mapToList(static fn(Floor $floor): FloorId => $floor->floorId)),
+            labelIds: LabelIdCollection::fromIds($snapshot->labels->mapToList(static fn(Label $label): LabelId => $label->labelId)),
         );
     }
 

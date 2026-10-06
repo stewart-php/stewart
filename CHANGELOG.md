@@ -58,6 +58,8 @@ section says what to change.
   - A running watch picks up registry changes with the next state change
 - `ServiceTarget::forAreas()`, `forFloors()`, `forLabels()` and `forDevices()` take the typed ids
 - `RecordingHaContext::$registry` (`InMemoryRegistry`) seeds areas, floors, labels, devices and entities for tests
+- `stewart generate` stores areas, floors and labels in the snapshot and completes their ids in PhpStorm for
+  `EntityFilter`, `Registry` lookups, `ServiceTarget` and the id constructors
 
 ### Changed
 
@@ -67,7 +69,7 @@ section says what to change.
 - IPC protocol 21; broker and workers must run the same version
 - `HaContext` gains `getRegistry()`; a custom implementation must add it
 - Builder triggers use the `trigger:` key, which needs Home Assistant 2024.10 or newer
-- Generated code format 4; regenerate after upgrading
+- Generated code format 5; regenerate after upgrading
 
 ### Upgrading
 

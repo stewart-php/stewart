@@ -6,7 +6,7 @@ namespace Stewart\Contracts\Generated;
 
 final class GeneratedFormat
 {
-    public const int VERSION = 4;
+    public const int VERSION = 5;
 
     public const string MANIFEST_CONSTANT = 'FORMAT_VERSION';
 
