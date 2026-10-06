@@ -57,7 +57,7 @@ classes are rewritten inside the image.
 | `control.existingSecret`, `.existingSecretKey` | `""`, `token` | Secret with the control token; name one when rendering with `helm template`, or the generated token changes on every render |
 | `adminApi.enabled` | `false` | Start the HTTP admin API (`http.admin`) that lists, pauses and resumes apps |
 | `adminApi.host`, `.port` | `127.0.0.1`, `8081` | Where it binds; loopback is reachable through `kubectl port-forward`, `0.0.0.0` from other pods |
-| `adminApi.existingSecret`, `.existingSecretKey` | `""`, `token` | Secret with the admin bearer token; otherwise one is generated once per release |
+| `adminApi.existingSecret`, `.existingSecretKey` | `""`, `token` | Secret with the admin bearer token; name one when rendering with `helm template`, or the generated token changes on every render |
 | `config` | `{}` | `stewart.yaml` content; when set it replaces the project's file |
 | `logLevel`, `logFormat` | `info`, `json` | |
 | `workers` | `0` | Worker processes; `0` is min(4, CPUs), and a CPU limit counts |

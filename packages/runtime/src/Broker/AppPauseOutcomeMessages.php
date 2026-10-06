@@ -22,6 +22,11 @@ final readonly class AppPauseOutcomeMessages
         return \sprintf($outcome->changed ? 'App %s resumed.' : 'App %s was not paused.', $appId);
     }
 
+    public function findChangeWarning(AppPauseOutcome $outcome): ?string
+    {
+        return $outcome->persistence->findWarning();
+    }
+
     public function describeResetOutcome(AppId $appId, AppPauseResetOutcome $outcome): string
     {
         if (!$outcome->overrideRemoved) {

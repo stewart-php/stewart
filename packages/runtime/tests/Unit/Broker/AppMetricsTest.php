@@ -76,6 +76,23 @@ final class AppMetricsTest extends TestCase
         self::assertSame([[0, 2], [1, 5]], array_map(static fn(AppStatus $app): array => [$app->workerId, $app->counters->delivered], $shared));
     }
 
+    public function testHostedStatusesLeaveOutSharedScope(): void
+    {
+        $this->metrics->recordActivityReports(self::createHandle(0), new Pong(1, Duration::zero(), 0, [new AppActivityReport(ResourceScope::shared(), AppState::Running, 1, 0, 2, 0, 0, 0, 0, 0)]));
+
+        $statuses = new AppStatusBuilder($this->metrics, $this->pausedApps)->buildHostedAppStatuses();
+
+        self::assertSame(['demo', 'echo'], $statuses->mapToList(static fn(AppStatus $app): string => $app->id));
+    }
+
+    public function testAppStatusIsFoundById(): void
+    {
+        $builder = new AppStatusBuilder($this->metrics, $this->pausedApps);
+
+        self::assertSame(1, $builder->findAppStatus(new AppId('echo'))?->workerId);
+        self::assertNull($builder->findAppStatus(new AppId('ghost')));
+    }
+
     public function testFailureCountComesFromActivityReports(): void
     {
         $handle = self::createHandle(0);

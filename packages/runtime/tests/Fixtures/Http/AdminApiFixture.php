@@ -59,7 +59,7 @@ final readonly class AdminApiFixture
             new NullLogger(),
         );
         $metrics = new AppMetrics(WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), $apps)]), $this->clock);
-        $this->api = new AppsAdminApi(new AppStatusBuilder($metrics, $this->registry), $this->pauses, $catalog, new AppPauseOutcomeMessages());
+        $this->api = new AppsAdminApi(new AppStatusBuilder($metrics, $this->registry), $this->pauses, new AppPauseOutcomeMessages());
         $this->codec = new AdminApiCodec(AdminApiCodec::createAdminApiWireMapper());
     }
 }

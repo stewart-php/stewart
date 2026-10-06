@@ -63,7 +63,7 @@ final readonly class AdminRequestHandler implements RequestHandler
         } catch (Throwable $e) {
             $this->logger->error('Could not answer the admin request', ['path' => $path, 'exception' => $e]);
 
-            return new Response(HttpStatus::INTERNAL_SERVER_ERROR);
+            return $this->respondWithFailure(HttpStatus::INTERNAL_SERVER_ERROR, new AdminFailure('internal_error', 'The admin request failed; the daemon log has the cause.'));
         }
     }
 

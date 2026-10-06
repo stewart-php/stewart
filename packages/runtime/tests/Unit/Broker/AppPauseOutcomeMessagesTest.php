@@ -38,6 +38,15 @@ final class AppPauseOutcomeMessagesTest extends TestCase
         self::assertSame('App lights was not paused.', $this->messages->describeResumeOutcome($this->appId, $this->createOutcome(false)));
     }
 
+    public function testChangeWarnsOnlyWhenNotStored(): void
+    {
+        self::assertNull($this->messages->findChangeWarning($this->createOutcome(true)));
+        self::assertSame(
+            AppPauseOverridePersistence::Failed->findWarning(),
+            $this->messages->findChangeWarning(new AppPauseOutcome(false, AppPauseOverridePersistence::Failed)),
+        );
+    }
+
     public function testResetDescribesEveryStateAfter(): void
     {
         self::assertSame('App lights pause override removed; config keeps it paused.', $this->describeReset(true, AppStateAfterReset::PausedByConfig));

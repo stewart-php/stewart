@@ -32,7 +32,7 @@ abstract readonly class AppPauseChangeHandler implements ControlRequestHandler
         $appId = new AppId($request->appId);
         $outcome = $this->changePause($appId);
 
-        return new CommandResult($outcome->changed, $this->describeOutcome($appId, $outcome), $outcome->persistence->findWarning());
+        return new CommandResult($outcome->changed, $this->describeOutcome($appId, $outcome), $this->messages->findChangeWarning($outcome));
     }
 
     /** @throws StewartException */
