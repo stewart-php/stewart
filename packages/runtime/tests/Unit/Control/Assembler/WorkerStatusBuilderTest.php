@@ -159,7 +159,7 @@ final class WorkerStatusBuilderTest extends TestCase
     {
         $broker = $this->broker;
 
-        return new WorkerStatusBuilder($broker->pools->slots, $broker->pools->watchdog, $broker->pools->restartPolicy, $broker->serviceCalls);
+        return new WorkerStatusBuilder($broker->pools->slots, $broker->pools->watchdog, $broker->pools->restartPolicy, $broker->callSlots);
     }
 
     private function buildStatusOf(int $workerId): WorkerStatus
