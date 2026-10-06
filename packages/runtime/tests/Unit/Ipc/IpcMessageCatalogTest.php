@@ -34,7 +34,7 @@ final class IpcMessageCatalogTest extends TestCase
         $sorted = $tags;
         sort($sorted);
 
-        self::assertCount(27, $tags);
+        self::assertCount(30, $tags);
         self::assertSame($sorted, $tags);
     }
 

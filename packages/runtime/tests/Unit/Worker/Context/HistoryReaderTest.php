@@ -26,7 +26,7 @@ use Stewart\Runtime\Tests\Fixtures\Ipc\NullTransport;
 use Stewart\Runtime\Worker\ConnectionStatus;
 use Stewart\Runtime\Worker\Context\HistoryReader;
 use Stewart\Runtime\Worker\CorrelationIdSequence;
-use Stewart\Runtime\Worker\PendingHistoryQueries;
+use Stewart\Runtime\Worker\PendingRequests;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
@@ -41,14 +41,14 @@ final class HistoryReaderTest extends TestCase
 
     private ManualTimers $timers;
 
-    private PendingHistoryQueries $pending;
+    private PendingRequests $pending;
 
     private ConnectionStatus $connection;
 
     protected function setUp(): void
     {
         $this->timers = new ManualTimers();
-        $this->pending = new PendingHistoryQueries(new CorrelationIdSequence(new WorkerId(0)));
+        $this->pending = new PendingRequests(new CorrelationIdSequence(new WorkerId(0)));
         $this->connection = new ConnectionStatus();
     }
 
@@ -71,6 +71,8 @@ final class HistoryReaderTest extends TestCase
         $history = $fetch->await();
         self::assertInstanceOf(EntityStateHistory::class, $history);
         self::assertTrue($history->isEmpty());
+        self::assertSame('light.hall', $history->entityId->value);
+        self::assertSame($request->window, $history->window);
     }
 
     public function testDisconnectedFailsWithoutSending(): void

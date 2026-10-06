@@ -6,12 +6,12 @@ namespace Stewart\Runtime\Worker\Message;
 
 use Stewart\Runtime\Ipc\Message\BrokerMessage;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
-use Stewart\Runtime\Worker\PendingCalls;
+use Stewart\Runtime\Worker\PendingRequests;
 
 /** @implements BrokerMessageHandler<ServiceCallResult> */
 final readonly class ServiceCallResultHandler implements BrokerMessageHandler
 {
-    public function __construct(private PendingCalls $pending) {}
+    public function __construct(private PendingRequests $pending) {}
 
     public function handledMessageClass(): string
     {

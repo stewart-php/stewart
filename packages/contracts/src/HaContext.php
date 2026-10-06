@@ -8,6 +8,7 @@ use Stewart\Contracts\Connection\ConnectionEvent;
 use Stewart\Contracts\Entity\Entity;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\HaEvent;
+use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Exception\SelectorException;
@@ -72,6 +73,12 @@ interface HaContext
      * @throws ServiceCallException
      */
     public function callServiceForResponse(string $domain, string $service, array $data = [], ?ServiceTargetSource $target = null): ServiceResponse;
+
+    /**
+     * @param array<string, mixed> $data
+     * @throws EventFireException
+     */
+    public function fireEvent(string $eventType, array $data = []): EventContext;
 
     /**
      * @param array<array-key, mixed>|scalar|null $payload

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Control\Assembler;
 
-use Stewart\Runtime\Broker\ServiceCallProxy;
+use Stewart\Runtime\Broker\HaCallSlots;
 use Stewart\Runtime\Broker\WorkerRestartPolicy;
 use Stewart\Runtime\Broker\WorkerSlotRegistry;
 use Stewart\Runtime\Broker\WorkerSlotState;
@@ -19,7 +19,7 @@ final readonly class WorkerStatusBuilder
         private WorkerSlotRegistry $slots,
         private WorkerWatchdog $watchdog,
         private WorkerRestartPolicy $restartPolicy,
-        private ServiceCallProxy $serviceCalls,
+        private HaCallSlots $callSlots,
     ) {}
 
     public function buildWorkerStatuses(): WorkerStatusCollection
@@ -46,7 +46,7 @@ final readonly class WorkerStatusBuilder
             restartsInWindow: $this->restartPolicy->countRestartsInWindow($workerId),
             restartDueAt: $state->restartDueAt,
             outbox: $state->getOutboxStatus(),
-            inFlightServiceCalls: $live === null ? 0 : $this->serviceCalls->countInFlightCallsFor($live),
+            inFlightServiceCalls: $live === null ? 0 : $this->callSlots->countInFlightCallsFor($live),
         );
     }
 }

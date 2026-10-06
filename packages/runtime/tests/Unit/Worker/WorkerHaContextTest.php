@@ -9,23 +9,32 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Stewart\Contracts\App\AppId;
+use Stewart\Contracts\Exception\EventFireError;
 use Stewart\Contracts\Exception\ServiceCallError;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exception\StateError;
 use Stewart\Contracts\Exception\TopicError;
 use Stewart\Contracts\Exception\TopicException;
 use Stewart\Contracts\Selector\Collection\SelectorCollection;
+use Stewart\Contracts\State\EventContext;
 use Stewart\Runtime\Exception\TransportException;
+use Stewart\Runtime\Ipc\Message\EventFireRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Model\ResourceScope;
+use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Ipc\FailingTransport;
 use Stewart\Runtime\Tests\Fixtures\Ipc\NullTransport;
 use Stewart\Runtime\Tests\Fixtures\Worker\WorkerHaContextFixture;
 use Stewart\Runtime\Worker\ConnectionStatus;
+use Stewart\Runtime\Worker\CorrelationIdSequence;
+use Stewart\Runtime\Worker\PendingRequests;
 use Stewart\Runtime\Worker\WorkerHaContext;
 use Stewart\Testing\Exception\AssertsReason;
+use Stewart\Testing\Time\EventLoopTicks;
 use Throwable;
+
+use function Amp\async;
 
 #[CoversClass(WorkerHaContext::class)]
 final class WorkerHaContextTest extends TestCase
@@ -83,6 +92,35 @@ final class WorkerHaContextTest extends TestCase
             self::assertStringContainsString('Home Assistant is disconnected', $e->getMessage());
         }
 
+        self::assertSame([], $transport->sent);
+    }
+
+    public function testFiredEventIsScopedToTheApp(): void
+    {
+        $transport = new NullTransport();
+        $pending = new PendingRequests(new CorrelationIdSequence(new WorkerId(0)));
+        $context = WorkerHaContextFixture::createWorkerHaContext(transport: $transport, scope: ResourceScope::forApp(new AppId('demo')), pending: $pending);
+
+        $fire = async(static fn() => $context->fireEvent('doorbell_pressed', ['button' => 'front']));
+        EventLoopTicks::settle();
+
+        $request = $transport->sent[0] ?? null;
+        self::assertInstanceOf(EventFireRequest::class, $request);
+        self::assertSame('demo', $request->scope->wireValue());
+        self::assertSame(['button' => 'front'], $request->data);
+
+        $pending->resolve($request->correlationId, new EventContext('fire-1'));
+        $fired = $fire->await();
+        self::assertInstanceOf(EventContext::class, $fired);
+        self::assertSame('fire-1', $fired->id);
+    }
+
+    public function testInvalidEventDataFailsBeforeSending(): void
+    {
+        $transport = new NullTransport();
+
+        /** @phpstan-ignore argument.type (a list is the invalid input under test) */
+        $this->assertThrowsReason(EventFireError::DataNotKeyed, static fn() => self::createContext($transport)->fireEvent('doorbell_pressed', ['front']));
         self::assertSame([], $transport->sent);
     }
 

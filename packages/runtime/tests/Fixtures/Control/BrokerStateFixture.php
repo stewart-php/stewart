@@ -12,6 +12,7 @@ use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppMetrics;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
+use Stewart\Runtime\Broker\HaCallSlots;
 use Stewart\Runtime\Broker\ServiceCallProxy;
 use Stewart\Runtime\Broker\SubscriptionRegistry;
 use Stewart\Runtime\Broker\WorkerHandle;
@@ -44,6 +45,8 @@ final readonly class BrokerStateFixture
 
     public AppMetrics $metrics;
 
+    public HaCallSlots $callSlots;
+
     public ServiceCallProxy $serviceCalls;
 
     public WorkerPoolFixture $pools;
@@ -57,7 +60,9 @@ final readonly class BrokerStateFixture
         $this->heldServiceCalls = $this->session->holdCalls();
         $this->registry = new SubscriptionRegistry();
         $this->metrics = new AppMetrics(WorkerSlotCollection::fromWorkerSlots([self::createSlot(0), self::createSlot(1)]), $this->timers->clock);
-        $this->serviceCalls = new ServiceCallProxy($this->session, $this->metrics, ConfigFixture::createServiceCallPolicy(), $this->timers->clock, new NullLogger());
+        $policy = ConfigFixture::createServiceCallPolicy();
+        $this->callSlots = new HaCallSlots($policy, new NullLogger());
+        $this->serviceCalls = new ServiceCallProxy($this->session, $this->callSlots, $this->metrics, $policy, $this->timers->clock, new NullLogger());
         $this->listener = new RecordingPoolListener();
         $this->pools = WorkerPoolFixture::createWorkerPool(
             spawner: $spawner,

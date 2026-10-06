@@ -6,6 +6,8 @@ namespace Stewart\Runtime\Broker;
 
 use DateTimeZone;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Event\EventPayload;
+use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\History\EntityStateHistory;
@@ -13,6 +15,7 @@ use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
+use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\Sun\GeoLocation;
 use Stewart\Contracts\Trigger\TriggerSpec;
 use Throwable;
@@ -52,6 +55,9 @@ interface HaSession
         ?ServiceTarget $target = null,
         bool $returnResponse = false,
     ): ServiceResponse;
+
+    /** @throws EventFireException */
+    public function fireEvent(EventPayload $payload): EventContext;
 
     /** @throws HistoryException */
     public function fetchHistory(EntityId $entityId, HistoryWindow $window, HistoryDetail $detail): EntityStateHistory;

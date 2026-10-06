@@ -114,8 +114,8 @@ final class SnapshotAssemblerTest extends TestCase
 
         return new SnapshotAssembler(
             daemonInfo: new DaemonInfoBuilder($broker->session, '0.1.0-test', $this->startTime),
-            brokerStats: new BrokerStatsBuilder($broker->pools->slots, $broker->serviceCalls, $broker->registry),
-            workerStatuses: new WorkerStatusBuilder($broker->pools->slots, $broker->pools->watchdog, $broker->pools->restartPolicy, $broker->serviceCalls),
+            brokerStats: new BrokerStatsBuilder($broker->pools->slots, $broker->callSlots, $broker->registry),
+            workerStatuses: new WorkerStatusBuilder($broker->pools->slots, $broker->pools->watchdog, $broker->pools->restartPolicy, $broker->callSlots),
             registrationInfos: new RegistrationInfoBuilder($broker->registry),
             storeHealth: new StoreHealthBuilder($broker->pools->slots, storeConfigured: false),
             appStatuses: new AppStatusBuilder($broker->metrics),

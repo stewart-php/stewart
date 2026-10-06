@@ -64,6 +64,7 @@ final readonly class WorkerKernel
             ->withArgument('subscriptionQueueLimit', $bootstrap->settings->subscriptionBuffer)
             ->withArgument('workerCallTimeout', $bootstrap->settings->callTimeout)
             ->withArgument('historyQueryTimeout', $bootstrap->settings->callTimeout)
+            ->withArgument('eventFireTimeout', $bootstrap->settings->callTimeout)
             ->withArgument('workerShutdownGrace', $bootstrap->settings->shutdownGrace)
             ->withArgument('generatedNamespace', $bootstrap->settings->generatedNamespace)
             ->withArgument('workerStoreSettings', $bootstrap->store)

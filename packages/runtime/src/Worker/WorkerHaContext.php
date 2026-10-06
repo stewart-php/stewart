@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Worker;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\Entity;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\Event\EventTypeSelector;
 use Stewart\Contracts\EventStream;
 use Stewart\Contracts\Exception\StateException;
@@ -31,6 +32,7 @@ use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Worker\Context\DispatchStreams;
+use Stewart\Runtime\Worker\Context\EventFirer;
 use Stewart\Runtime\Worker\Context\HistoryReader;
 use Stewart\Runtime\Worker\Context\ServiceCaller;
 use Stewart\Runtime\Worker\Context\TopicPublisher;
@@ -42,6 +44,7 @@ final readonly class WorkerHaContext implements HaContext
         private ConnectionStatus $connection,
         private ServiceCaller $serviceCalls,
         private HistoryReader $history,
+        private EventFirer $eventFires,
         private DispatchStreams $streams,
         private TopicPublisher $topics,
         private ResourceScope $resourceScope,
@@ -49,7 +52,7 @@ final readonly class WorkerHaContext implements HaContext
 
     public function forApp(AppId $appId): self
     {
-        return new self($this->states, $this->connection, $this->serviceCalls, $this->history, $this->streams, $this->topics, ResourceScope::forApp($appId));
+        return new self($this->states, $this->connection, $this->serviceCalls, $this->history, $this->eventFires, $this->streams, $this->topics, ResourceScope::forApp($appId));
     }
 
     public function getState(EntityId|string $entityId): ?EntityState
@@ -102,6 +105,11 @@ final readonly class WorkerHaContext implements HaContext
     public function callServiceForResponse(string $domain, string $service, array $data = [], ?ServiceTargetSource $target = null): ServiceResponse
     {
         return $this->serviceCalls->callServiceForResponse($this->resourceScope, $domain, $service, ServiceFields::fromFieldsDroppingNulls($data), $target?->toServiceTarget());
+    }
+
+    public function fireEvent(string $eventType, array $data = []): EventContext
+    {
+        return $this->eventFires->fireEvent($this->resourceScope, new EventPayload($eventType, $data));
     }
 
     public function publish(string $topic, bool|int|float|string|array|null $payload = null): void

@@ -11,12 +11,14 @@ use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
 use Stewart\Client\HaSiteSettings;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
+use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Sun\GeoLocation;
 use Stewart\Contracts\Time\Clock;
@@ -150,6 +152,11 @@ final class WebsocketHaSession implements HaSession
         bool $returnResponse = false,
     ): ServiceResponse {
         return $this->client->callService($domain, $service, $data, $target, $returnResponse);
+    }
+
+    public function fireEvent(EventPayload $payload): EventContext
+    {
+        return $this->client->fireEvent($payload);
     }
 
     public function fetchHistory(EntityId $entityId, HistoryWindow $window, HistoryDetail $detail): EntityStateHistory

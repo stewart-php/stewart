@@ -13,12 +13,12 @@ use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Worker\AppActivityCounters;
 use Stewart\Runtime\Worker\ConnectionStatus;
 use Stewart\Runtime\Worker\Context\DispatchStreams;
+use Stewart\Runtime\Worker\Context\EventFirer;
 use Stewart\Runtime\Worker\Context\HistoryReader;
 use Stewart\Runtime\Worker\Context\ServiceCaller;
 use Stewart\Runtime\Worker\Context\TopicPublisher;
 use Stewart\Runtime\Worker\CorrelationIdSequence;
-use Stewart\Runtime\Worker\PendingCalls;
-use Stewart\Runtime\Worker\PendingHistoryQueries;
+use Stewart\Runtime\Worker\PendingRequests;
 use Stewart\Runtime\Worker\WorkerHaContext;
 use Stewart\Testing\Time\ManualTimers;
 
@@ -32,8 +32,7 @@ final class WorkerHaContextFixture
         ManualTimers $timers = new ManualTimers(),
         StateCache $stateCache = new StateCache(),
         ?LocalDispatcher $dispatcher = null,
-        PendingCalls $pending = new PendingCalls(new CorrelationIdSequence(new WorkerId(0))),
-        PendingHistoryQueries $pendingHistory = new PendingHistoryQueries(new CorrelationIdSequence(new WorkerId(0))),
+        PendingRequests $pending = new PendingRequests(new CorrelationIdSequence(new WorkerId(0))),
         ?Duration $callTimeout = null,
         AppActivityCounters $activityCounters = new AppActivityCounters(),
         ConnectionStatus $connection = new ConnectionStatus(),
@@ -42,7 +41,8 @@ final class WorkerHaContextFixture
             $stateCache,
             $connection,
             new ServiceCaller($transport, $pending, $connection, $timers, $callTimeout ?? Duration::seconds(1)),
-            new HistoryReader($transport, $pendingHistory, $connection, $timers, $timers->clock, $callTimeout ?? Duration::seconds(1)),
+            new HistoryReader($transport, $pending, $connection, $timers, $timers->clock, $callTimeout ?? Duration::seconds(1)),
+            new EventFirer($transport, $pending, $connection, $timers, $callTimeout ?? Duration::seconds(1)),
             new DispatchStreams($dispatcher ?? RecordingDispatchListener::createDispatcher('w0', 10), $timers),
             new TopicPublisher($transport, $timers->clock, $activityCounters),
             $scope,

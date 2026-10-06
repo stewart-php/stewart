@@ -12,7 +12,6 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\HistoryError;
 use Stewart\Contracts\Exception\ServiceCallError;
-use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Container\AppContainerBuilder;
 use Stewart\Runtime\Container\AppOptionResolver;
@@ -29,9 +28,10 @@ use Stewart\Runtime\Worker\AppFailureReporter;
 use Stewart\Runtime\Worker\AppLifecycle;
 use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\HandlerFailureSampler;
-use Stewart\Runtime\Worker\PendingCalls;
-use Stewart\Runtime\Worker\PendingHistoryQueries;
+use Stewart\Runtime\Worker\PendingRequests;
 use Stewart\Runtime\Worker\StderrFallback;
+use Stewart\Runtime\Worker\Subject\HistoryQuerySubject;
+use Stewart\Runtime\Worker\Subject\ServiceCallSubject;
 use Stewart\Runtime\Worker\WorkerShutdown;
 use Stewart\Support\Text\ClosestNameFinder;
 use Stewart\Testing\Exception\AssertsReason;
@@ -51,9 +51,7 @@ final class WorkerShutdownTest extends TestCase
 
     private RecordingLogger $logger;
 
-    private PendingCalls $pending;
-
-    private PendingHistoryQueries $pendingHistory;
+    private PendingRequests $pending;
 
     private AppLifecycle $apps;
 
@@ -68,9 +66,7 @@ final class WorkerShutdownTest extends TestCase
         GatedDisposer::reset();
         $this->timers = new ManualTimers();
         $this->logger = new RecordingLogger();
-        $correlationIds = new CorrelationIdSequence(new WorkerId(0));
-        $this->pending = new PendingCalls($correlationIds);
-        $this->pendingHistory = new PendingHistoryQueries($correlationIds);
+        $this->pending = new PendingRequests(new CorrelationIdSequence(new WorkerId(0)));
         $this->createShutdownFor(new WorkerApp(id: new AppId('gated'), class: GatedInitializer::class, options: []));
     }
 
@@ -177,7 +173,7 @@ final class WorkerShutdownTest extends TestCase
 
     public function testBrokerLossFailsPendingHistoryQueries(): void
     {
-        $query = $this->pendingHistory->open(new EntityId('light.hall'), HistoryQuery::lastFor(Duration::minutes(5))->resolveWindowAt($this->timers->clock->getNow()));
+        $query = $this->pending->open(new HistoryQuerySubject(new EntityId('light.hall')));
         $waiter = async(static fn() => $query->getFuture()->await());
         EventLoopTicks::settle();
 
@@ -237,7 +233,7 @@ final class WorkerShutdownTest extends TestCase
             new AppContainerBuilder(new AppOptionResolver(new ClosestNameFinder())),
         );
 
-        $this->shutdown = new WorkerShutdown($this->apps, $resources->resources, $this->pending, $this->pendingHistory, $this->timers, $this->logger, Duration::seconds(5));
+        $this->shutdown = new WorkerShutdown($this->apps, $resources->resources, $this->pending, $this->timers, $this->logger, Duration::seconds(5));
         $this->stopped = async($this->shutdown->awaitStopped(...));
     }
 
@@ -251,7 +247,7 @@ final class WorkerShutdownTest extends TestCase
     /** @return Future<mixed> */
     private function awaitPendingCall(): Future
     {
-        $call = $this->pending->open('light', 'turn_on');
+        $call = $this->pending->open(new ServiceCallSubject('light', 'turn_on'));
         $waiter = async(static fn() => $call->getFuture()->await());
         EventLoopTicks::settle();
 

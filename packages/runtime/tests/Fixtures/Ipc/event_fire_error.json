@@ -1,0 +1,16 @@
+{
+    "t": "event_fire_error",
+    "m": {
+        "correlation_id": "w0:6",
+        "message": "Event doorbell_pressed was rejected by Home Assistant: Unauthorized (unauthorized)",
+        "details": {
+            "class": "Stewart\\Contracts\\Exception\\EventFireException",
+            "reason": "rejected",
+            "context": {
+                "eventType": "doorbell_pressed",
+                "detail": "Unauthorized",
+                "errorCode": "unauthorized"
+            }
+        }
+    }
+}

@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Client\Connection\Command\Authenticate;
 use Stewart\Client\Connection\Command\CallService;
+use Stewart\Client\Connection\Command\FireEvent;
 use Stewart\Client\Connection\Command\GetCurrentUser;
 use Stewart\Client\Connection\Command\GetHistoryDuringPeriod;
 use Stewart\Client\Connection\Command\GetStates;
@@ -15,6 +16,7 @@ use Stewart\Client\Connection\Command\SubscribeEvents;
 use Stewart\Client\Connection\Command\SubscribeTrigger;
 use Stewart\Client\Connection\Command\UnsubscribeEvents;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Service\ServiceTarget;
@@ -30,6 +32,7 @@ use Stewart\Contracts\Trigger\HaTrigger;
 #[CoversClass(SubscribeTrigger::class)]
 #[CoversClass(UnsubscribeEvents::class)]
 #[CoversClass(GetCurrentUser::class)]
+#[CoversClass(FireEvent::class)]
 final class HaCommandTest extends TestCase
 {
     public function testServiceCallOmitsEmptyParts(): void
@@ -90,6 +93,27 @@ final class HaCommandTest extends TestCase
     public function testServiceCallDescribesDomainAndService(): void
     {
         self::assertSame('call_service light.turn_on', new CallService('light', 'turn_on')->describe());
+    }
+
+    public function testEventFireOmitsEmptyData(): void
+    {
+        self::assertSame(
+            ['type' => 'fire_event', 'event_type' => 'doorbell_pressed'],
+            new FireEvent(new EventPayload('doorbell_pressed'))->toMessage(),
+        );
+    }
+
+    public function testEventFireCarriesDataWithNulls(): void
+    {
+        self::assertSame(
+            ['type' => 'fire_event', 'event_type' => 'doorbell_pressed', 'event_data' => ['button' => 'front', 'note' => null]],
+            new FireEvent(new EventPayload('doorbell_pressed', ['button' => 'front', 'note' => null]))->toMessage(),
+        );
+    }
+
+    public function testEventFireDescribesEventType(): void
+    {
+        self::assertSame('fire_event doorbell_pressed', new FireEvent(new EventPayload('doorbell_pressed'))->describe());
     }
 
     public function testHistoryWithoutAttributesAsksMinimalRows(): void

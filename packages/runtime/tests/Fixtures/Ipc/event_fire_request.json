@@ -1,0 +1,13 @@
+{
+    "t": "event_fire_request",
+    "m": {
+        "correlation_id": "w0:6",
+        "scope": "demo",
+        "event_type": "doorbell_pressed",
+        "data": {
+            "button": "front",
+            "pressure": 0.8,
+            "note": null
+        }
+    }
+}

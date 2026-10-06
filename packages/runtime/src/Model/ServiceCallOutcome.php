@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Model;
 
+use Stewart\Contracts\Exception\EventFireError;
 use Stewart\Contracts\Exception\ServiceCallError;
 
 enum ServiceCallOutcome: string
@@ -14,13 +15,13 @@ enum ServiceCallOutcome: string
     case TimedOut = 'timed_out';
     case Refused = 'refused';
 
-    public static function failedWith(ServiceCallError $reason): self
+    public static function failedWith(ServiceCallError|EventFireError $reason): self
     {
         return match ($reason) {
-            ServiceCallError::Rejected => self::Rejected,
-            ServiceCallError::Unreachable => self::Unreachable,
-            ServiceCallError::TimedOut => self::TimedOut,
-            ServiceCallError::Overloaded => self::Refused,
+            ServiceCallError::Rejected, EventFireError::Rejected, EventFireError::TypeInvalid, EventFireError::DataInvalid, EventFireError::DataNotKeyed => self::Rejected,
+            ServiceCallError::Unreachable, EventFireError::Unreachable => self::Unreachable,
+            ServiceCallError::TimedOut, EventFireError::TimedOut => self::TimedOut,
+            ServiceCallError::Overloaded, EventFireError::Overloaded => self::Refused,
         };
     }
 

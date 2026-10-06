@@ -8,6 +8,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Connection\ConnectionLost;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Event\EventOrigin;
+use Stewart\Contracts\Event\HaEvent;
+use Stewart\Contracts\Exception\EventFireError;
+use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\Exception\HistoryError;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\IdentifierError;
@@ -187,5 +191,60 @@ final class RecordingHaContextTest extends TestCase
         $context->pushConnection(new ConnectionLost($context->clock->getNow(), 'gone'));
 
         $this->assertThrowsReason(HistoryError::Unreachable, static fn() => $context->getHistory('light.hall', HistoryQuery::lastFor(Duration::minutes(5))));
+    }
+
+    public function testFiredEventIsRecordedAndEchoed(): void
+    {
+        $ha = new RecordingHaContext();
+        $echoes = [];
+        $ha->watchEvents('doorbell_pressed')->subscribe(static function (HaEvent $event) use (&$echoes): void {
+            $echoes[] = $event;
+        });
+
+        $context = $ha->fireEvent('doorbell_pressed', ['button' => 'front', 'note' => null]);
+
+        self::assertSame(RecordingHaContext::STEWART_USER_ID, $context->userId);
+        self::assertSame(['button' => 'front', 'note' => null], $ha->firedEvents->getFirst()?->data);
+        self::assertCount(1, $echoes);
+        self::assertSame(EventOrigin::Remote, $echoes[0]->origin);
+        self::assertTrue($context->isSameOrParentOf($echoes[0]->context ?? EventContext::unknown()));
+        self::assertTrue(new StewartIdentity(RecordingHaContext::STEWART_USER_ID)->wasCausedByStewart($echoes[0]));
+    }
+
+    public function testCallsAndFiresGetDistinctContexts(): void
+    {
+        $ha = new RecordingHaContext();
+
+        $call = $ha->callService('light', 'turn_on');
+        $fire = $ha->fireEvent('doorbell_pressed');
+
+        self::assertSame(['recorded-1', 'recorded-2'], [$call->id, $fire->id]);
+    }
+
+    public function testStubbedEventFireFailureIsRecordedNotEchoed(): void
+    {
+        $ha = new RecordingHaContext()->stubEventFireFailure('doorbell_pressed', EventFireException::rejected('doorbell_pressed', 'Unauthorized', 'unauthorized'));
+        $echoes = 0;
+        $ha->watchEvents('doorbell_pressed')->subscribe(static function () use (&$echoes): void {
+            ++$echoes;
+        });
+
+        $this->assertThrowsReason(EventFireError::Rejected, static fn() => $ha->fireEvent('doorbell_pressed'));
+        self::assertCount(1, $ha->firedEvents);
+        self::assertSame(0, $echoes);
+    }
+
+    public function testEventFireWhileDisconnectedIsUnreachable(): void
+    {
+        $ha = new RecordingHaContext();
+        $ha->pushConnection(new ConnectionLost($ha->clock->getNow(), 'gone'));
+
+        $this->assertThrowsReason(EventFireError::Unreachable, static fn() => $ha->fireEvent('doorbell_pressed'));
+        self::assertCount(0, $ha->firedEvents);
+    }
+
+    public function testEventFireValidatesData(): void
+    {
+        $this->assertThrowsReason(EventFireError::DataInvalid, static fn() => new RecordingHaContext()->fireEvent('doorbell_pressed', ['ratio' => \NAN]));
     }
 }

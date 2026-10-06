@@ -34,6 +34,7 @@ use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\ConnectionTracker;
 use Stewart\Runtime\Broker\ControlPlane;
 use Stewart\Runtime\Broker\DaemonStartTime;
+use Stewart\Runtime\Broker\EventFireProxy;
 use Stewart\Runtime\Broker\EventRouter;
 use Stewart\Runtime\Broker\LoopErrorLogger;
 use Stewart\Runtime\Broker\ManifestCheck;
@@ -54,6 +55,8 @@ use Stewart\Runtime\Ipc\Message\AppActivityReport;
 use Stewart\Runtime\Ipc\Message\AppFailed;
 use Stewart\Runtime\Ipc\Message\Bootstrap;
 use Stewart\Runtime\Ipc\Message\EventFired;
+use Stewart\Runtime\Ipc\Message\EventFireRequest;
+use Stewart\Runtime\Ipc\Message\EventFireResult;
 use Stewart\Runtime\Ipc\Message\HaConnectionLost;
 use Stewart\Runtime\Ipc\Message\Pong;
 use Stewart\Runtime\Ipc\Message\ServiceCallFailed;
@@ -80,6 +83,7 @@ use Stewart\Runtime\Tests\Fixtures\Broker\BootedBroker;
 use Stewart\Runtime\Tests\Fixtures\Broker\BrokerKernelFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerSpawner;
+use Stewart\Runtime\Tests\Fixtures\Broker\ReceivedEventFire;
 use Stewart\Runtime\Tests\Fixtures\Broker\RecordingControlPlane;
 use Stewart\Runtime\Tests\Fixtures\Broker\UnversionedManifest;
 use Stewart\Runtime\Tests\Fixtures\Broker\WorkerPoolFixture;
@@ -108,6 +112,7 @@ use function Amp\async;
 #[CoversClass(PongHandler::class)]
 #[CoversClass(EventRouter::class)]
 #[CoversClass(ServiceCallProxy::class)]
+#[CoversClass(EventFireProxy::class)]
 #[CoversClass(ManifestCheck::class)]
 #[CoversClass(AppMetrics::class)]
 #[CoversClass(AppStatusBuilder::class)]
@@ -272,6 +277,22 @@ final class BrokerLifecycleTest extends TestCase
         self::assertCount(1, $results);
         self::assertSame('1:0', $results[0]->correlationId->value);
         self::assertSame([], $this->listSentToWorker(0, ServiceCallResult::class));
+    }
+
+    public function testEventFireIsAnsweredOnTheWorkerThatAsked(): void
+    {
+        $this->startBroker();
+
+        $this->spawner->getLatestProcess(1)->channel->deliver(new EventFireRequest(new CorrelationId('1:0'), self::createScope('echo'), 'doorbell_pressed', ['button' => 'front']));
+        EventLoopTicks::settleUntil(fn(): bool => \count($this->listSentToWorker(1, EventFireResult::class)) === 1);
+
+        $results = $this->listSentToWorker(1, EventFireResult::class);
+
+        self::assertCount(1, $results);
+        self::assertSame('1:0', $results[0]->correlationId->value);
+        self::assertSame(FakeHaSession::FIRE_CONTEXT_PREFIX . '1', $results[0]->context->id);
+        self::assertEquals([new ReceivedEventFire('doorbell_pressed', ['button' => 'front'])], $this->session->receivedEventFires);
+        self::assertSame([], $this->listSentToWorker(0, EventFireResult::class));
     }
 
     public function testReconnectBroadcastsTheRebuiltState(): void
