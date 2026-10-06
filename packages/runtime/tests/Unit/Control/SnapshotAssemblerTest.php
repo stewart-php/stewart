@@ -36,6 +36,7 @@ use Stewart\Runtime\Model\SubscriptionId;
 use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Control\BrokerStateFixture;
+use Stewart\Testing\Time\VirtualClock;
 
 #[CoversClass(SnapshotAssembler::class)]
 #[CoversClass(DaemonInfoBuilder::class)]
@@ -120,7 +121,7 @@ final class SnapshotAssemblerTest extends TestCase
             workerStatuses: new WorkerStatusBuilder($broker->pools->slots, $broker->pools->watchdog, $broker->pools->restartPolicy, $broker->callSlots),
             registrationInfos: new RegistrationInfoBuilder($broker->registry),
             storeHealth: new StoreHealthBuilder($broker->pools->slots, storeConfigured: false),
-            appStatuses: new AppStatusBuilder($broker->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]))),
+            appStatuses: new AppStatusBuilder($broker->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new VirtualClock())),
             connection: $connection,
             clock: $broker->timers->clock,
         );

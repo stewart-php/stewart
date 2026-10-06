@@ -15,6 +15,7 @@ use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\App\AppDefinition;
+use Stewart\Runtime\App\AppPauseSource;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\AppPauseService;
@@ -31,6 +32,7 @@ use Stewart\Runtime\Tests\Fixtures\Broker\WorkerPoolFixture;
 use Stewart\Runtime\Tests\Fixtures\Protocol\SerialHandler;
 use Stewart\Runtime\Tests\Fixtures\Worker\InMemoryWorkerSpawner;
 use Stewart\Testing\Logging\RecordingLogger;
+use Stewart\Testing\Time\VirtualClock;
 
 use function Amp\async;
 
@@ -43,7 +45,7 @@ final class AppPauseRoundTripTest extends TestCase
     {
         $session = new FakeHaSession();
         $logger = new RecordingLogger();
-        $pausedApps = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]));
+        $pausedApps = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new VirtualClock());
         $pools = WorkerPoolFixture::createWorkerPool(new InMemoryWorkerSpawner(IpcCodec::createForWorkerBootstrap()), logger: $logger, outboxLimits: new OutboxLimits(100, 256));
         $appId = new AppId('serial-handler');
         $apps = AppDefinitionCollection::keyedByAppId([new AppDefinition($appId, SerialHandler::class)]);
@@ -56,18 +58,18 @@ final class AppPauseRoundTripTest extends TestCase
             ['shutdown_grace' => '1s'],
             new SyntheticServices()->withService(AppPauseRegistry::class, $pausedApps),
         );
-        $service = new AppPauseService(new AppCatalog($apps, AppIdCollection::fromIds([$appId]), AppIdCollection::fromIds([])), $pausedApps, $pools->slots, $logger);
+        $service = new AppPauseService(new AppCatalog($apps, AppIdCollection::fromIds([$appId]), AppIdCollection::fromIds([])), $pausedApps, $pools->slots, new VirtualClock(), $logger);
         $ready = $logger->waitForMessage('Worker ready');
 
         /** @var Future<null> $running */
         $running = async($broker->lifecycle->run(...));
         $ready->await(new TimeoutCancellation(self::WAIT_SECONDS));
 
-        self::assertTrue($service->pauseApp($appId));
-        self::assertFalse($service->pauseApp($appId), 'Pausing a paused app changes nothing.');
+        self::assertTrue($service->pauseApp($appId, AppPauseSource::Control));
+        self::assertFalse($service->pauseApp($appId, AppPauseSource::Control), 'Pausing a paused app changes nothing.');
         $this->changeSerial($session, '1', '2');
 
-        self::assertTrue($service->resumeApp($appId));
+        self::assertTrue($service->resumeApp($appId, AppPauseSource::Control));
         $called = $session->waitForNextCall();
         $this->changeSerial($session, '2', '3');
         $called->await(new TimeoutCancellation(self::WAIT_SECONDS));

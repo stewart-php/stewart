@@ -9,7 +9,10 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\App\AppDefinition;
+use Stewart\Runtime\App\AppPause;
+use Stewart\Runtime\App\AppPauseSource;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppMetrics;
 use Stewart\Runtime\Broker\AppPauseRegistry;
@@ -32,6 +35,7 @@ use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerProcess;
 use Stewart\Runtime\Time\SystemClock;
+use Stewart\Testing\Time\VirtualClock;
 
 #[CoversClass(AppMetrics::class)]
 #[CoversClass(AppStatusBuilder::class)]
@@ -49,7 +53,7 @@ final class AppMetricsTest extends TestCase
             WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)])), new WorkerSlot(new WorkerId(1), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('echo'), Demo::class)]))]),
             SystemClock::inUtc(),
         );
-        $this->pausedApps = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]));
+        $this->pausedApps = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new VirtualClock());
     }
 
     public function testEveryPlacedAppIsListedBeforeItReportsActivity(): void
@@ -86,7 +90,7 @@ final class AppMetricsTest extends TestCase
     public function testPausedAppReportsSuppressedDelta(): void
     {
         $handle = self::createHandle(0);
-        $this->pausedApps->pauseApp(new AppId('demo'));
+        $this->pausedApps->pauseApp(new AppPause(new AppId('demo'), Instant::fromEpochMicroseconds(0), AppPauseSource::Control));
         $this->metrics->recordActivityReports($handle, new Pong(1, Duration::zero(), 0, [new AppActivityReport(ResourceScope::forApp(new AppId('demo')), AppState::Running, 1, 0, 0, 0, 0, 0, 0, 3)]));
         $this->metrics->recordActivityReports($handle, new Pong(2, Duration::zero(), 0, [new AppActivityReport(ResourceScope::forApp(new AppId('demo')), AppState::Running, 1, 0, 0, 0, 0, 0, 0, 7)]));
 

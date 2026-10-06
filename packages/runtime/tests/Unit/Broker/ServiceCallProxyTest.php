@@ -40,6 +40,7 @@ use Stewart\Testing\Async\Latch;
 use Stewart\Testing\Logging\RecordingLogger;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
+use Stewart\Testing\Time\VirtualClock;
 
 #[CoversClass(ServiceCallProxy::class)]
 #[CoversClass(ServiceCallPolicy::class)]
@@ -107,7 +108,7 @@ final class ServiceCallProxyTest extends TestCase
         $this->timers->delay(Duration::milliseconds(30));
         $this->finishCalls();
 
-        $calls = new AppStatusBuilder($this->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([])))->buildAppStatuses()->listValues()[0]->serviceCalls;
+        $calls = new AppStatusBuilder($this->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new VirtualClock()))->buildAppStatuses()->listValues()[0]->serviceCalls;
         self::assertSame(
             [ServiceCallOutcome::Refused, ServiceCallOutcome::Succeeded],
             array_map(static fn(ServiceCallStats $stats): ServiceCallOutcome => $stats->outcome, $calls),
