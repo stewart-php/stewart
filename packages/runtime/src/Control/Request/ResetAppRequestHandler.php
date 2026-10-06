@@ -11,6 +11,7 @@ use Stewart\Runtime\Control\Protocol\Frame\ClientFrame;
 use Stewart\Runtime\Control\Protocol\Frame\CommandResult;
 use Stewart\Runtime\Control\Protocol\Frame\ResetAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\ServerFrame;
+use Stewart\Runtime\Lifecycle\AppPauseOverridePersistence;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
 use Stewart\Runtime\Lifecycle\AppStateAfterReset;
 
@@ -30,7 +31,12 @@ final readonly class ResetAppRequestHandler implements ControlRequestHandler
         $appId = new AppId($request->appId);
         $outcome = $this->pauses->resetApp($appId, AppPauseSource::Control);
 
-        return new CommandResult($outcome->overrideRemoved, $this->describeOutcome($appId, $outcome), $outcome->persistence->findWarning());
+        return new CommandResult($outcome->overrideRemoved, $this->describeOutcome($appId, $outcome), $this->findWarning($outcome));
+    }
+
+    private function findWarning(AppPauseResetOutcome $outcome): ?string
+    {
+        return $outcome->overrideRemoved || $outcome->persistence !== AppPauseOverridePersistence::NotConfigured ? $outcome->persistence->findWarning() : null;
     }
 
     private function describeOutcome(AppId $appId, AppPauseResetOutcome $outcome): string

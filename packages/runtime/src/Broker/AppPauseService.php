@@ -64,7 +64,6 @@ final readonly class AppPauseService
 
         $wasPaused = $this->pausedApps->isPaused($appId);
         $removed = $this->pausedApps->forgetOverride($appId);
-        $persistence = $this->overrides->removeOverride($appId);
         $paused = $this->pausedApps->isPaused($appId);
 
         if ($paused !== $wasPaused) {
@@ -74,6 +73,8 @@ final readonly class AppPauseService
         if ($removed) {
             $this->logger->info('App pause override removed', ['app' => $appId->value, 'source' => $source->value, 'paused' => $paused]);
         }
+
+        $persistence = $this->overrides->removeOverride($appId);
 
         return new AppPauseResetOutcome($removed, $paused ? AppStateAfterReset::PausedByConfig : AppStateAfterReset::Running, $persistence);
     }
@@ -95,17 +96,33 @@ final readonly class AppPauseService
     private function overridePause(AppId $appId, bool $paused, AppPauseSource $source): AppPauseOutcome
     {
         $this->assertAppLoaded($appId);
-        $existing = $this->pausedApps->findOverride($appId);
-        $override = $existing?->paused === $paused ? $existing : new AppPauseOverride($appId, $paused, $this->clock->getNow(), $source);
+        $override = $this->createOverride($appId, $paused, $source);
         $changed = $this->pausedApps->recordOverride($override);
-        $persistence = $this->overrides->saveOverride($override);
 
         if ($changed) {
             $this->broadcastPausedApps();
             $this->logger->info($paused ? 'App paused' : 'App resumed', ['app' => $appId->value, 'source' => $source->value]);
         }
 
+        $persistence = $this->overrides->saveOverride($override);
+
         return new AppPauseOutcome($changed, $persistence);
+    }
+
+    private function createOverride(AppId $appId, bool $paused, AppPauseSource $source): AppPauseOverride
+    {
+        $existing = $this->pausedApps->findOverride($appId);
+
+        if ($existing?->paused === $paused) {
+            return $existing;
+        }
+
+        // Pinning a config pause keeps its start and source, so status still says why the app is paused.
+        $configPause = $existing === null && $paused ? $this->pausedApps->findPause($appId) : null;
+
+        return $configPause === null
+            ? new AppPauseOverride($appId, $paused, $this->clock->getNow(), $source)
+            : new AppPauseOverride($appId, true, $configPause->since, $configPause->source);
     }
 
     /** @throws AppException */

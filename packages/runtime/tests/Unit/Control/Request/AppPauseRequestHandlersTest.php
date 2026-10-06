@@ -91,7 +91,7 @@ final class AppPauseRequestHandlersTest extends TestCase
         $this->resume->answerRequest(new ResumeAppRequest('porch'));
 
         self::assertEquals(new CommandResult(true, 'App demo pause override removed; it is running.', self::NOT_SAVED), $this->reset->answerRequest(new ResetAppRequest('demo')));
-        self::assertEquals(new CommandResult(false, 'App demo had no pause override.', self::NOT_SAVED), $this->reset->answerRequest(new ResetAppRequest('demo')));
+        self::assertEquals(new CommandResult(false, 'App demo had no pause override.', null), $this->reset->answerRequest(new ResetAppRequest('demo')));
         self::assertEquals(new CommandResult(true, 'App porch pause override removed; config keeps it paused.', self::NOT_SAVED), $this->reset->answerRequest(new ResetAppRequest('porch')));
         self::assertTrue($this->registry->isPaused(new AppId('porch')));
     }

@@ -95,12 +95,17 @@ final class AppPauseServiceTest extends TestCase
         self::assertStringContainsString('"paused":false', (string) $this->backend->read(self::OVERRIDE_KEY));
     }
 
-    public function testPauseOnConfigPausedAppPinsIt(): void
+    public function testPinnedConfigPauseKeepsItsStartAndSource(): void
     {
-        $service = $this->createService($this->createRegistry(startsPaused: true));
+        $startTime = new DaemonStartTime($this->clock);
+        $registry = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class, startsPaused: true)]), $startTime);
+        $startTime->recordStart();
+        $this->clock->skip(Duration::minutes(5));
 
-        self::assertFalse($service->pauseApp(new AppId('demo'), AppPauseSource::Control)->changed);
+        self::assertFalse($this->createService($registry)->pauseApp(new AppId('demo'), AppPauseSource::Control)->changed);
+        self::assertEquals(new AppPause(new AppId('demo'), $startTime->getStartedAt(), AppPauseSource::Config), $registry->findPause(new AppId('demo')));
         self::assertStringContainsString('"paused":true', (string) $this->backend->read(self::OVERRIDE_KEY));
+        self::assertStringContainsString('"source":"config"', (string) $this->backend->read(self::OVERRIDE_KEY));
     }
 
     public function testFailedWriteStillAppliesChange(): void
