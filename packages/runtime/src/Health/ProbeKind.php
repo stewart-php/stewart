@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Runtime\Console;
+namespace Stewart\Runtime\Health;
 
 use Stewart\Runtime\Exception\ConfigurationException;
 

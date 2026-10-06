@@ -29,6 +29,7 @@ return static function (ContainerConfigurator $container, ContainerBuilder $buil
     $services->load('Stewart\\Runtime\\Console\\', '../src/Console/');
     $services->load('Stewart\\Runtime\\Config\\', '../src/Config/');
     $services->load('Stewart\\Runtime\\Control\\Client\\', '../src/Control/Client/');
+    $services->load('Stewart\\Runtime\\Health\\', '../src/Health/');
 
     $services->set(ClosestNameFinder::class);
     $services->set(EnvironmentVariables::class)->factory([EnvironmentVariables::class, 'fromGlobals']);
