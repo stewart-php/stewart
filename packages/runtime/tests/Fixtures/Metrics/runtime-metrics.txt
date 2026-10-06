@@ -1,0 +1,157 @@
+# HELP stewart_build_info Stewart and Home Assistant versions; always 1.
+# TYPE stewart_build_info gauge
+stewart_build_info{version="stub",ha_version="2026.9.1"} 1
+# HELP stewart_start_time_seconds Unix time the daemon started.
+# TYPE stewart_start_time_seconds gauge
+stewart_start_time_seconds 1790416800
+# HELP stewart_broker_memory_bytes Memory the broker process holds.
+# TYPE stewart_broker_memory_bytes gauge
+stewart_broker_memory_bytes 52428800
+# HELP stewart_ha_entities Entities in the Home Assistant state cache.
+# TYPE stewart_ha_entities gauge
+stewart_ha_entities 120
+# HELP stewart_ha_connection_phase Home Assistant connection phase; 1 for the current one.
+# TYPE stewart_ha_connection_phase gauge
+stewart_ha_connection_phase{phase="connecting"} 0
+stewart_ha_connection_phase{phase="connected"} 1
+stewart_ha_connection_phase{phase="reconnecting"} 0
+# HELP stewart_ha_reconnects_total Home Assistant reconnects since the daemon started.
+# TYPE stewart_ha_reconnects_total counter
+stewart_ha_reconnects_total 1
+# HELP stewart_ha_last_outage_seconds Length of the last Home Assistant outage.
+# TYPE stewart_ha_last_outage_seconds gauge
+stewart_ha_last_outage_seconds 4
+# HELP stewart_workers Worker slots the broker supervises.
+# TYPE stewart_workers gauge
+stewart_workers 1
+# HELP stewart_workers_live Worker processes currently running.
+# TYPE stewart_workers_live gauge
+stewart_workers_live 1
+# HELP stewart_service_calls_in_flight Home Assistant calls awaiting an answer.
+# TYPE stewart_service_calls_in_flight gauge
+stewart_service_calls_in_flight 0
+# HELP stewart_service_calls_refused_total Home Assistant calls refused for lack of a free slot.
+# TYPE stewart_service_calls_refused_total counter
+stewart_service_calls_refused_total 2
+# HELP stewart_routing_subscriptions Subscriptions in the broker routing index.
+# TYPE stewart_routing_subscriptions gauge
+stewart_routing_subscriptions 3
+# HELP stewart_routing_patterns Wildcard patterns in the broker routing index.
+# TYPE stewart_routing_patterns gauge
+stewart_routing_patterns 1
+# HELP stewart_routing_cached_keys Routing keys with a cached match.
+# TYPE stewart_routing_cached_keys gauge
+stewart_routing_cached_keys 5
+# HELP stewart_routing_cache_hits_total Routing lookups answered from the cache.
+# TYPE stewart_routing_cache_hits_total counter
+stewart_routing_cache_hits_total 40
+# HELP stewart_routing_cache_misses_total Routing lookups that missed the cache.
+# TYPE stewart_routing_cache_misses_total counter
+stewart_routing_cache_misses_total 5
+# HELP stewart_worker_phase Worker lifecycle phase; 1 for the current one.
+# TYPE stewart_worker_phase gauge
+stewart_worker_phase{worker="0",phase="live"} 1
+stewart_worker_phase{worker="0",phase="spawning"} 0
+stewart_worker_phase{worker="0",phase="restart_scheduled"} 0
+stewart_worker_phase{worker="0",phase="quarantined"} 0
+stewart_worker_phase{worker="0",phase="stopped"} 0
+# HELP stewart_worker_ready Whether the worker finished booting its apps; 1 or 0.
+# TYPE stewart_worker_ready gauge
+stewart_worker_ready{worker="0"} 1
+# HELP stewart_worker_missed_probes Liveness probes the worker has not answered in a row.
+# TYPE stewart_worker_missed_probes gauge
+stewart_worker_missed_probes{worker="0"} 0
+# HELP stewart_worker_loop_lag_seconds Event loop lag the worker last reported.
+# TYPE stewart_worker_loop_lag_seconds gauge
+stewart_worker_loop_lag_seconds{worker="0"} 0.003
+# HELP stewart_worker_memory_bytes Memory the worker process last reported.
+# TYPE stewart_worker_memory_bytes gauge
+stewart_worker_memory_bytes{worker="0"} 20971520
+# HELP stewart_worker_last_pong_timestamp_seconds Unix time of the last liveness answer.
+# TYPE stewart_worker_last_pong_timestamp_seconds gauge
+stewart_worker_last_pong_timestamp_seconds{worker="0"} 1790420395
+# HELP stewart_worker_restarts_in_window Restarts inside the current restart budget window.
+# TYPE stewart_worker_restarts_in_window gauge
+stewart_worker_restarts_in_window{worker="0"} 0
+# HELP stewart_worker_service_calls_in_flight Home Assistant calls of this worker awaiting an answer.
+# TYPE stewart_worker_service_calls_in_flight gauge
+stewart_worker_service_calls_in_flight{worker="0"} 0
+# HELP stewart_worker_outbox_queued Messages waiting in the outbox to the worker.
+# TYPE stewart_worker_outbox_queued gauge
+stewart_worker_outbox_queued{worker="0"} 0
+# HELP stewart_worker_outbox_largest_state_batch Largest state change batch sent to the worker.
+# TYPE stewart_worker_outbox_largest_state_batch gauge
+stewart_worker_outbox_largest_state_batch{worker="0"} 12
+# HELP stewart_worker_outbox_dropped_total Messages dropped because the worker outbox was full.
+# TYPE stewart_worker_outbox_dropped_total counter
+stewart_worker_outbox_dropped_total{worker="0"} 0
+# HELP stewart_worker_outbox_coalesced_state_changes_total State changes merged into a newer one before delivery.
+# TYPE stewart_worker_outbox_coalesced_state_changes_total counter
+stewart_worker_outbox_coalesced_state_changes_total{worker="0"} 7
+# HELP stewart_worker_outbox_state_batches_sent_total State change batches sent to the worker.
+# TYPE stewart_worker_outbox_state_batches_sent_total counter
+stewart_worker_outbox_state_batches_sent_total{worker="0"} 90
+# HELP stewart_app_info App class per app; always 1.
+# TYPE stewart_app_info gauge
+stewart_app_info{app="porch",worker="0",class="App\\Porch"} 1
+# HELP stewart_app_state App lifecycle state; 1 for the current one.
+# TYPE stewart_app_state gauge
+stewart_app_state{app="porch",worker="0",state="declared"} 0
+stewart_app_state{app="porch",worker="0",state="constructing"} 0
+stewart_app_state{app="porch",worker="0",state="constructed"} 0
+stewart_app_state{app="porch",worker="0",state="initializing"} 0
+stewart_app_state{app="porch",worker="0",state="initialized"} 0
+stewart_app_state{app="porch",worker="0",state="running"} 1
+stewart_app_state{app="porch",worker="0",state="disposing"} 0
+stewart_app_state{app="porch",worker="0",state="failed"} 0
+stewart_app_state{app="porch",worker="0",state="skipped"} 0
+stewart_app_state{app="porch",worker="0",state="disposed"} 0
+stewart_app_state{app="porch",worker="0",state="abandoned"} 0
+# HELP stewart_app_paused Whether the app is paused; 1 or 0.
+# TYPE stewart_app_paused gauge
+stewart_app_paused{app="porch",worker="0"} 1
+# HELP stewart_app_subscriptions Subscriptions the app holds.
+# TYPE stewart_app_subscriptions gauge
+stewart_app_subscriptions{app="porch",worker="0"} 2
+# HELP stewart_app_schedules Schedules the app holds.
+# TYPE stewart_app_schedules gauge
+stewart_app_schedules{app="porch",worker="0"} 1
+# HELP stewart_app_events_delivered_total Events delivered to the app handlers.
+# TYPE stewart_app_events_delivered_total counter
+stewart_app_events_delivered_total{app="porch",worker="0"} 30
+# HELP stewart_app_subscription_dropped_total Events dropped because a subscription queue was full.
+# TYPE stewart_app_subscription_dropped_total counter
+stewart_app_subscription_dropped_total{app="porch",worker="0"} 1
+# HELP stewart_app_schedule_runs_total Scheduled handler runs.
+# TYPE stewart_app_schedule_runs_total counter
+stewart_app_schedule_runs_total{app="porch",worker="0"} 4
+# HELP stewart_app_publishes_total Messages the app published.
+# TYPE stewart_app_publishes_total counter
+stewart_app_publishes_total{app="porch",worker="0"} 2
+# HELP stewart_app_failures_total Handler failures of the app.
+# TYPE stewart_app_failures_total counter
+stewart_app_failures_total{app="porch",worker="0"} 1
+# HELP stewart_app_suppressed_total Work skipped while the app was paused.
+# TYPE stewart_app_suppressed_total counter
+stewart_app_suppressed_total{app="porch",worker="0"} 6
+# HELP stewart_app_last_failure_timestamp_seconds Unix time of the last app failure.
+# TYPE stewart_app_last_failure_timestamp_seconds gauge
+stewart_app_last_failure_timestamp_seconds{app="porch",worker="0"} 1790418600
+# HELP stewart_app_service_calls_total Home Assistant calls of the app by outcome.
+# TYPE stewart_app_service_calls_total counter
+stewart_app_service_calls_total{app="porch",worker="0",outcome="succeeded"} 10
+stewart_app_service_calls_total{app="porch",worker="0",outcome="refused"} 2
+# HELP stewart_app_service_call_duration_seconds Home Assistant call latency of the app by outcome.
+# TYPE stewart_app_service_call_duration_seconds histogram
+stewart_app_service_call_duration_seconds_bucket{app="porch",worker="0",outcome="succeeded",le="0.005"} 2
+stewart_app_service_call_duration_seconds_bucket{app="porch",worker="0",outcome="succeeded",le="0.01"} 9
+stewart_app_service_call_duration_seconds_bucket{app="porch",worker="0",outcome="succeeded",le="0.025"} 10
+stewart_app_service_call_duration_seconds_bucket{app="porch",worker="0",outcome="succeeded",le="+Inf"} 10
+stewart_app_service_call_duration_seconds_sum{app="porch",worker="0",outcome="succeeded"} 0.08
+stewart_app_service_call_duration_seconds_count{app="porch",worker="0",outcome="succeeded"} 10
+# HELP stewart_store_available Whether workers reach the store; 1 or 0.
+# TYPE stewart_store_available gauge
+stewart_store_available 1
+# HELP stewart_store_last_failure_timestamp_seconds Unix time of the last store failure.
+# TYPE stewart_store_last_failure_timestamp_seconds gauge
+stewart_store_last_failure_timestamp_seconds 1790419500
