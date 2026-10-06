@@ -14,13 +14,14 @@ helm install home oci://ghcr.io/stewart-php/charts/stewart \
 ## What it runs
 
 - **One pod, always.** Two daemons would both run every automation, so the Deployment has one replica and the
-  `Recreate` strategy: an upgrade stops the old pod before starting the new one. There is no Service; nothing
-  connects to Stewart.
-- **Probes** run `stewart status` inside the pod. Liveness (and startup) checks that the daemon answers. Readiness
-  also needs a live Home Assistant connection and no quarantined worker, so `kubectl get pods` shows when automations
-  are not running.
+  `Recreate` strategy: an upgrade stops the old pod before starting the new one. There is no Service; only the
+  kubelet's probes connect to Stewart.
+- **Probes** call the daemon's HTTP port (`/healthz`, `/readyz` on `probes.port`), which answers in-process without
+  starting PHP. Liveness (and startup) checks that the daemon answers. Readiness also needs a live Home Assistant
+  connection and no quarantined worker, so `kubectl get pods` shows when automations are not running.
+  `probes.mode: exec` runs `stewart status --probe` inside the pod instead.
 - **Secrets** are mounted as files and read through `STEWART_*_FILE` variables; none is passed as a plain environment
-  value. The control token, used only by the probes inside the pod, is generated once per release.
+  value. The control token, used by `stewart status` and `exec` probes inside the pod, is generated once per release.
 - **Locked down**: non-root (uid 10001), read-only root filesystem, no capabilities, no service account token,
   `enableServiceLinks: false`.
 
@@ -61,6 +62,8 @@ classes are rewritten inside the image.
 | `resources` | 50m / 128Mi request, 512Mi limit | |
 | `podSecurityContext`, `securityContext` | non-root, read-only root, no capabilities | |
 | `terminationGracePeriodSeconds` | `30` | Must exceed `shutdown_grace` (5s) plus a second |
+| `probes.mode` | `http` | `http` probes the daemon's port; `exec` runs `stewart status --probe` |
+| `probes.port` | `8080` | Container port of the probe listener (`http.listen`), never exposed by a Service |
 | `probes.{startup,liveness,readiness}` | see `values.yaml` | Periods, timeouts and thresholds |
 | `valkey.enabled` | `true` | Run a single Valkey next to Stewart, reachable only inside the cluster |
 | `valkey.storage.enabled`, `.size`, `.storageClass` | `true`, `1Gi`, `""` | Keep Valkey's append-only file on a PVC |

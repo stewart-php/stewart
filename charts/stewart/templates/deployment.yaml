@@ -128,9 +128,19 @@ spec:
             - name: STEWART_BOOT_GENERATE
               value: {{ ternary "1" "0" (and .Values.code.generateOnStart (ne $mode "git")) | quote }}
             {{- include "stewart.env" (dict "root" . "homeAssistantToken" $homeAssistantToken "persistenceUrl" $persistenceUrl "controlToken" $controlToken) | nindent 12 }}
+            {{- if eq .Values.probes.mode "http" }}
+            - name: STEWART_HTTP__LISTEN
+              value: {{ printf "tcp://0.0.0.0:%d" (int .Values.probes.port) | quote }}
+            {{- end }}
             {{- with .Values.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+          {{- if eq .Values.probes.mode "http" }}
+          ports:
+            - name: probe
+              containerPort: {{ .Values.probes.port }}
+              protocol: TCP
+          {{- end }}
           securityContext:
             {{- toYaml $containerSecurity | nindent 12 }}
           resources:

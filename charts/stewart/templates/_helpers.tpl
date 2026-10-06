@@ -70,6 +70,11 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{- define "stewart.probe" -}}
+{{- if eq .root.Values.probes.mode "http" -}}
+httpGet:
+  path: {{ ternary "/readyz" "/healthz" (eq .kind "readiness") }}
+  port: probe
+{{- else -}}
 exec:
   command:
     - stewart
@@ -79,6 +84,7 @@ exec:
     {{- if .root.Values.config }}
     - --config=/etc/stewart/stewart.yaml
     {{- end }}
+{{- end }}
 periodSeconds: {{ .settings.periodSeconds }}
 timeoutSeconds: {{ .settings.timeoutSeconds }}
 failureThreshold: {{ .settings.failureThreshold }}

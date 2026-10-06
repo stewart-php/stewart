@@ -85,6 +85,13 @@
         "workers": {"type": "integer", "minimum": 0},
         "env": {"type": "array"},
         "terminationGracePeriodSeconds": {"type": "integer", "minimum": 7},
+        "probes": {
+            "type": "object",
+            "properties": {
+                "mode": {"enum": ["http", "exec"]},
+                "port": {"type": "integer", "minimum": 1, "maximum": 65535}
+            }
+        },
         "valkey": {
             "type": "object",
             "properties": {
