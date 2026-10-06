@@ -31,6 +31,12 @@ final class AdminRouteTest extends TestCase
         self::assertEquals(new AdminRoute(AdminAction::ResetApp, 'demo'), AdminRoute::fromPath('/api/apps/demo/reset'));
     }
 
+    public function testMetricsPathShowsMetrics(): void
+    {
+        self::assertEquals(new AdminRoute(AdminAction::ShowMetrics, null), AdminRoute::fromPath('/metrics'));
+        self::assertSame(['GET', 'HEAD'], AdminAction::ShowMetrics->listAllowedMethods());
+    }
+
     public function testEncodedAppIdIsDecoded(): void
     {
         self::assertSame('a b', AdminRoute::fromPath('/api/apps/a%20b')?->appId);
@@ -46,6 +52,8 @@ final class AdminRouteTest extends TestCase
         yield 'other resource' => ['/api/workers'];
         yield 'action trailing slash' => ['/api/apps/demo/pause/'];
         yield 'action on list' => ['/api/apps/pause/now'];
+        yield 'metrics trailing slash' => ['/metrics/'];
+        yield 'metrics nested' => ['/metrics/apps'];
     }
 
     #[DataProvider('unknownPaths')]

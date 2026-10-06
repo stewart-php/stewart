@@ -57,6 +57,6 @@ final class HttpListenerFactoryTest extends TestCase
         $codec = new ProbeReportCodec(ProbeReportCodec::createProbeReportWireMapper());
         $admin = new AdminApiFixture();
 
-        return new HttpListenerFactory($http, new ProbeRequestHandler(new StubProbeReporter(), $codec, $logger), $admin->api, $admin->codec, $logger);
+        return new HttpListenerFactory($http, new ProbeRequestHandler(new StubProbeReporter(), $codec, $logger), $admin->api, $admin->codec, $admin->metricsExporter, $logger);
     }
 }

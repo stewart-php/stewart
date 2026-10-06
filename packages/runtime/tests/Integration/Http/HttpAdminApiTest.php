@@ -16,6 +16,7 @@ use Stewart\Runtime\Http\Admin\Response\AdminAppView;
 use Stewart\Runtime\Http\AmpHttpListener;
 use Stewart\Runtime\Http\HttpListenerRole;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
+use Stewart\Runtime\Metrics\RuntimeMetricsExporter;
 use Stewart\Runtime\Tests\Fixtures\Http\AdminApiFixture;
 use Stewart\Testing\Logging\RecordingLogger;
 
@@ -27,6 +28,7 @@ use function Amp\Socket\listen;
 #[CoversClass(AppsAdminApi::class)]
 #[CoversClass(AdminApiCodec::class)]
 #[CoversClass(AdminAppView::class)]
+#[CoversClass(RuntimeMetricsExporter::class)]
 final class HttpAdminApiTest extends TestCase
 {
     private const string TOKEN = 'admin-secret';
@@ -52,7 +54,7 @@ final class HttpAdminApiTest extends TestCase
         $this->port = self::findFreePort();
         $this->server = new AmpHttpListener(
             new HttpListenAddress('127.0.0.1', $this->port),
-            new AdminRequestHandler($fixture->api, $fixture->codec, $logger, self::TOKEN),
+            new AdminRequestHandler($fixture->api, $fixture->codec, $fixture->metricsExporter, $logger, self::TOKEN),
             HttpListenerRole::Admin,
             $logger,
         );
@@ -62,6 +64,27 @@ final class HttpAdminApiTest extends TestCase
     protected function tearDown(): void
     {
         $this->server->stop();
+        $this->fixture->stopEverything();
+    }
+
+    public function testMetricsAnswerInPrometheusTextFormat(): void
+    {
+        $response = $this->sendRequest('GET', '/metrics', self::TOKEN);
+
+        self::assertStringStartsWith('HTTP/1.1 200', $response);
+        self::assertStringContainsStringIgnoringCase('content-type: text/plain; version=0.0.4; charset=utf-8', $response);
+        self::assertStringContainsString('stewart_build_info{version="0.1.0-test",ha_version="', self::extractBody($response));
+        self::assertStringContainsString('stewart_app_paused{app="porch",worker="0"} 1', self::extractBody($response));
+    }
+
+    public function testMetricsNeedToken(): void
+    {
+        self::assertStringStartsWith('HTTP/1.1 401', $this->sendRequest('GET', '/metrics', null));
+    }
+
+    public function testMetricsRefusePost(): void
+    {
+        self::assertStringStartsWith('HTTP/1.1 405', $this->sendRequest('POST', '/metrics', self::TOKEN));
     }
 
     public function testMissingTokenIsUnauthorized(): void
