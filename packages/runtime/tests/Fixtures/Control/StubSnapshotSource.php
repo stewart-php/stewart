@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Tests\Fixtures\Control;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\Control\Protocol\Status\AppCounters;
+use Stewart\Runtime\Control\Protocol\Status\AppPauseStatus;
 use Stewart\Runtime\Control\Protocol\Status\AppStatus;
 use Stewart\Runtime\Control\Protocol\Status\BrokerStats;
 use Stewart\Runtime\Control\Protocol\Status\ConnectionState;
@@ -19,6 +20,7 @@ use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
 use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
 use Stewart\Runtime\Control\Protocol\Status\WorkerStatus;
 use Stewart\Runtime\Lifecycle\AppFailurePhase;
+use Stewart\Runtime\Lifecycle\AppPauseSource;
 use Stewart\Runtime\Lifecycle\AppState;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
@@ -64,7 +66,7 @@ final class StubSnapshotSource
                 class: 'App\\Porch',
                 workerId: 0,
                 state: AppState::Running,
-                paused: true,
+                pause: new AppPauseStatus(Instant::fromIso('2026-09-26T10:58:00Z'), AppPauseSource::Control),
                 reportedAt: Instant::fromIso('2026-09-26T10:59:55Z'),
                 subscriptions: 2,
                 schedules: 1,

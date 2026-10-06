@@ -87,7 +87,7 @@ final readonly class StatusRenderer
             array_map(fn(AppStatus $app): array => [
                 $app->id,
                 $app->workerId === null ? '-' : (string) $app->workerId,
-                $this->formatAppState($app),
+                $this->formatAppState($app, $now),
                 $this->formatter->formatTimeAgo($app->reportedAt, $now),
                 (string) $app->subscriptions,
                 (string) $app->schedules,
@@ -103,11 +103,15 @@ final readonly class StatusRenderer
         );
     }
 
-    private function formatAppState(AppStatus $app): string
+    private function formatAppState(AppStatus $app, Instant $now): string
     {
         $state = $app->state === null ? 'unknown' : $app->state->value;
 
-        return $app->paused ? $state . ' (paused)' : $state;
+        if ($app->pause === null) {
+            return $state;
+        }
+
+        return \sprintf('%s (paused by %s %s)', $state, $app->pause->source->value, $this->formatter->formatTimeAgo($app->pause->since, $now));
     }
 
     private function renderFailureTable(OutputInterface $output, RuntimeSnapshot $snapshot, Instant $now): void

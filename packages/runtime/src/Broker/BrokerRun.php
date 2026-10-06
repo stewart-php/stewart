@@ -24,7 +24,6 @@ final class BrokerRun
         private readonly WorkerPool $pool,
         private readonly WorkerWatchdog $watchdog,
         private readonly HaSession $session,
-        private readonly ControlPlane $control,
         private readonly MqttLink $mqtt,
         private readonly LoggerInterface $logger,
         private readonly Duration $brokerShutdownGrace,
@@ -104,9 +103,8 @@ final class BrokerRun
         });
         $sessionFailure = $this->attemptStopStep('Could not close the Home Assistant session while shutting down', $this->session->close(...));
         $mqttFailure = $this->attemptStopStep('Could not close the MQTT connection while shutting down', $this->mqtt->close(...));
-        $controlFailure = $this->attemptStopStep('Could not stop the control plane while shutting down', $this->control->stop(...));
 
-        return $workersFailure ?? $sessionFailure ?? $mqttFailure ?? $controlFailure;
+        return $workersFailure ?? $sessionFailure ?? $mqttFailure;
     }
 
     private function moveTo(BrokerRunPhase $next): void

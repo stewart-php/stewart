@@ -9,22 +9,27 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\App\AppDefinition;
+use Stewart\Runtime\App\AppPause;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppMetrics;
 use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\AppRunningTotals;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
+use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Broker\ServiceCallStatsRecorder;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
+use Stewart\Runtime\Control\Protocol\Status\AppPauseStatus;
 use Stewart\Runtime\Control\Protocol\Status\AppStatus;
 use Stewart\Runtime\Ipc\Message\AppActivityReport;
 use Stewart\Runtime\Ipc\Message\AppFailed;
 use Stewart\Runtime\Ipc\Message\Pong;
 use Stewart\Runtime\Lifecycle\AppFailurePhase;
+use Stewart\Runtime\Lifecycle\AppPauseSource;
 use Stewart\Runtime\Lifecycle\AppState;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\ServiceCallOutcome;
@@ -32,6 +37,7 @@ use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerProcess;
 use Stewart\Runtime\Time\SystemClock;
+use Stewart\Testing\Time\VirtualClock;
 
 #[CoversClass(AppMetrics::class)]
 #[CoversClass(AppStatusBuilder::class)]
@@ -49,7 +55,7 @@ final class AppMetricsTest extends TestCase
             WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)])), new WorkerSlot(new WorkerId(1), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('echo'), Demo::class)]))]),
             SystemClock::inUtc(),
         );
-        $this->pausedApps = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]));
+        $this->pausedApps = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock()));
     }
 
     public function testEveryPlacedAppIsListedBeforeItReportsActivity(): void
@@ -86,14 +92,15 @@ final class AppMetricsTest extends TestCase
     public function testPausedAppReportsSuppressedDelta(): void
     {
         $handle = self::createHandle(0);
-        $this->pausedApps->pauseApp(new AppId('demo'));
+        $this->pausedApps->pauseApp(new AppPause(new AppId('demo'), Instant::fromEpochMicroseconds(0), AppPauseSource::Control));
         $this->metrics->recordActivityReports($handle, new Pong(1, Duration::zero(), 0, [new AppActivityReport(ResourceScope::forApp(new AppId('demo')), AppState::Running, 1, 0, 0, 0, 0, 0, 0, 3)]));
         $this->metrics->recordActivityReports($handle, new Pong(2, Duration::zero(), 0, [new AppActivityReport(ResourceScope::forApp(new AppId('demo')), AppState::Running, 1, 0, 0, 0, 0, 0, 0, 7)]));
 
         [$demo, $echo] = $this->listAppStatuses();
 
-        self::assertSame([true, 7], [$demo->paused, $demo->counters->suppressed]);
-        self::assertFalse($echo->paused);
+        self::assertEquals(new AppPauseStatus(Instant::fromEpochMicroseconds(0), AppPauseSource::Control), $demo->pause);
+        self::assertSame(7, $demo->counters->suppressed);
+        self::assertNull($echo->pause);
     }
 
     public function testLatencyOnABoundCountsInThatBucket(): void

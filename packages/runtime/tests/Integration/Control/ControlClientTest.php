@@ -24,14 +24,17 @@ use Stewart\Runtime\Control\Protocol\Codec\FrameCodec;
 use Stewart\Runtime\Control\Protocol\ControlProtocol;
 use Stewart\Runtime\Control\Protocol\Frame\Bye;
 use Stewart\Runtime\Control\Protocol\Frame\Rejected;
+use Stewart\Runtime\Control\Protocol\Frame\RequestFailed;
 use Stewart\Runtime\Control\Protocol\Frame\ServerFrame;
 use Stewart\Runtime\Control\Protocol\Frame\SnapshotFrame;
 use Stewart\Runtime\Control\Protocol\Frame\Welcome;
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
+use Stewart\Runtime\Control\Request\ControlRequestDispatcher;
 use Stewart\Runtime\Control\Server\ControlServer;
 use Stewart\Runtime\Control\Server\UnixSocketFile;
 use Stewart\Runtime\Exception\ControlError;
 use Stewart\Runtime\Exception\ControlException;
+use Stewart\Runtime\Tests\Fixtures\Control\StubSnapshotRequestHandler;
 use Stewart\Runtime\Tests\Fixtures\Control\StubSnapshotSource;
 use Stewart\Support\Time\RevoltTimers;
 use Stewart\Testing\Exception\AssertsReason;
@@ -116,13 +119,26 @@ final class ControlClientTest extends TestCase
         }
     }
 
+    public function testRequestFailedIsThrownWithItsReason(): void
+    {
+        $listener = $this->answerOnceWith([new Welcome(ControlProtocol::VERSION), new RequestFailed('unknown', 'No automation with ID "ghost".')]);
+
+        try {
+            $e = $this->assertThrowsReason(ControlError::RequestFailed, fn() => self::createClient()->fetchSnapshot($this->createControlTarget(), Duration::seconds(2)));
+            self::assertInstanceOf(ControlException::class, $e);
+            self::assertSame('unknown', $e->findBrokerReason());
+        } finally {
+            $listener->close();
+        }
+    }
+
     public function testOtherFrameInPlaceOfByeIsUnexpectedFrame(): void
     {
         $listener = $this->answerOnceWith([new Welcome(ControlProtocol::VERSION), new SnapshotFrame($this->snapshots->takeSnapshot()), new Rejected('changed my mind')]);
 
         try {
             $e = $this->assertThrowsReason(ControlError::UnexpectedFrame, fn() => self::createClient()->fetchSnapshot($this->createControlTarget(), Duration::seconds(2)));
-            self::assertSame('a bye', $e->context['expectedFrame'] ?? null);
+            self::assertSame(Bye::class, $e->context['expectedFrameClass'] ?? null);
         } finally {
             $listener->close();
         }
@@ -132,7 +148,7 @@ final class ControlClientTest extends TestCase
     {
         $byeAllowed = new DeferredFuture();
         $snapshotSent = new DeferredFuture();
-        $listener = $this->answerOnceWith([new Welcome(ControlProtocol::VERSION), new SnapshotFrame($this->snapshots->takeSnapshot()), new Bye('snapshot sent')], $byeAllowed->getFuture(), $snapshotSent);
+        $listener = $this->answerOnceWith([new Welcome(ControlProtocol::VERSION), new SnapshotFrame($this->snapshots->takeSnapshot()), new Bye('request answered')], $byeAllowed->getFuture(), $snapshotSent);
 
         try {
             /** @var Future<RuntimeSnapshot> $fetch */
@@ -160,7 +176,7 @@ final class ControlClientTest extends TestCase
     }
 
     /**
-     * @param non-empty-list<ServerFrame> $frames
+     * @param non-empty-list<ServerFrame> $frames the greeting first; the request is read after it
      * @param Future<mixed>|null $lastFrameAllowed
      * @param DeferredFuture<mixed>|null $leadingFramesSent
      */
@@ -173,10 +189,15 @@ final class ControlClientTest extends TestCase
         async(static function () use ($listener, $codec, $frames, $last, $lastFrameAllowed, $leadingFramesSent): void {
             $client = $listener->accept();
             \assert($client !== null);
-            new BufferedReader($client)->readUntil("\n");
+            $reader = new BufferedReader($client);
+            $reader->readUntil("\n");
 
-            foreach ($frames as $frame) {
+            foreach ($frames as $index => $frame) {
                 $client->write($codec->encodeFrame($frame));
+
+                if ($index === 0) {
+                    $reader->readUntil("\n");
+                }
             }
 
             $leadingFramesSent?->complete();
@@ -193,7 +214,7 @@ final class ControlClientTest extends TestCase
         $this->server = new ControlServer(
             address: new UnixControlAddress($this->path),
             token: self::TOKEN,
-            snapshot: $this->snapshots->takeSnapshot(...),
+            requests: new ControlRequestDispatcher([new StubSnapshotRequestHandler($this->snapshots)]),
             deadlines: new RevoltTimers(),
             codec: new FrameCodec(FrameCodec::createControlWireMapper()),
             logger: new NullLogger(),

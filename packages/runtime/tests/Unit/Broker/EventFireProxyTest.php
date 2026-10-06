@@ -15,6 +15,7 @@ use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppMetrics;
 use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
+use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\EventFireProxy;
 use Stewart\Runtime\Broker\HaCallSlots;
 use Stewart\Runtime\Broker\OutboxLimits;
@@ -41,6 +42,7 @@ use Stewart\Testing\Async\Latch;
 use Stewart\Testing\Logging\RecordingLogger;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
+use Stewart\Testing\Time\VirtualClock;
 
 #[CoversClass(EventFireProxy::class)]
 #[CoversClass(ServiceCallOutcome::class)]
@@ -127,7 +129,7 @@ final class EventFireProxyTest extends TestCase
         $proxy->forward($worker, self::createRequest('b'));
         $this->finishCalls();
 
-        $calls = new AppStatusBuilder($this->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([])))->buildAppStatuses()->listValues()[0]->serviceCalls;
+        $calls = new AppStatusBuilder($this->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock())))->buildAppStatuses()->listValues()[0]->serviceCalls;
         self::assertSame(
             [ServiceCallOutcome::Refused, ServiceCallOutcome::Succeeded],
             array_map(static fn(ServiceCallStats $stats): ServiceCallOutcome => $stats->outcome, $calls),

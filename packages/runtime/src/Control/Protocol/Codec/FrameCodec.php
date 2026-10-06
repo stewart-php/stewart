@@ -9,10 +9,15 @@ use Stewart\Contracts\Exception\JsonShapeException;
 use Stewart\Contracts\Exception\StewartException;
 use Stewart\Runtime\Control\Protocol\Frame\Bye;
 use Stewart\Runtime\Control\Protocol\Frame\ClientFrame;
+use Stewart\Runtime\Control\Protocol\Frame\CommandResult;
 use Stewart\Runtime\Control\Protocol\Frame\Hello;
+use Stewart\Runtime\Control\Protocol\Frame\PauseAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\Rejected;
+use Stewart\Runtime\Control\Protocol\Frame\RequestFailed;
+use Stewart\Runtime\Control\Protocol\Frame\ResumeAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\ServerFrame;
 use Stewart\Runtime\Control\Protocol\Frame\SnapshotFrame;
+use Stewart\Runtime\Control\Protocol\Frame\SnapshotRequest;
 use Stewart\Runtime\Control\Protocol\Frame\Welcome;
 use Stewart\Runtime\Exception\ControlException;
 use Stewart\Runtime\Json\ClassShapeReader;
@@ -29,12 +34,19 @@ final readonly class FrameCodec
 {
     private const int DEPTH = 32;
 
-    private const array CLIENT_FRAMES = ['hello' => Hello::class];
+    private const array CLIENT_FRAMES = [
+        'hello' => Hello::class,
+        'snapshot_request' => SnapshotRequest::class,
+        'pause_app' => PauseAppRequest::class,
+        'resume_app' => ResumeAppRequest::class,
+    ];
 
     private const array SERVER_FRAMES = [
         'welcome' => Welcome::class,
         'snapshot' => SnapshotFrame::class,
         'rejected' => Rejected::class,
+        'command_result' => CommandResult::class,
+        'request_failed' => RequestFailed::class,
         'bye' => Bye::class,
     ];
 

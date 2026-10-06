@@ -11,6 +11,7 @@ use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\Console\StatusFormatter;
 use Stewart\Runtime\Console\StatusRenderer;
 use Stewart\Runtime\Control\Protocol\Status\AppCounters;
+use Stewart\Runtime\Control\Protocol\Status\AppPauseStatus;
 use Stewart\Runtime\Control\Protocol\Status\AppStatus;
 use Stewart\Runtime\Control\Protocol\Status\BrokerStats;
 use Stewart\Runtime\Control\Protocol\Status\ConnectionState;
@@ -22,6 +23,7 @@ use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
 use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
 use Stewart\Runtime\Control\Protocol\Status\WorkerStatus;
 use Stewart\Runtime\Lifecycle\AppFailurePhase;
+use Stewart\Runtime\Lifecycle\AppPauseSource;
 use Stewart\Runtime\Lifecycle\AppState;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
@@ -55,7 +57,7 @@ final class StatusRendererTest extends TestCase
                     class: 'Demo',
                     workerId: 0,
                     state: AppState::Running,
-                    paused: true,
+                    pause: new AppPauseStatus(self::createInstantAt($now - 125.0), AppPauseSource::Control),
                     reportedAt: self::createInstantAt($now - 7.0),
                     subscriptions: 1,
                     schedules: 1,
@@ -66,7 +68,7 @@ final class StatusRendererTest extends TestCase
                     ],
                     lastFailure: new FailureReport(AppFailurePhase::Handler, 'RuntimeException', 'lamp offline', null, 'unreachable', self::createInstantAt($now - 60.0)),
                 ),
-                new AppStatus('echo', 'Echo', 1, null, false, null, 0, 0, new AppCounters(), [], null),
+                new AppStatus('echo', 'Echo', 1, null, null, null, 0, 0, new AppCounters(), [], null),
             ],
             subscriptions: [],
             store: new StoreHealth(false, 'connection refused', self::createInstantAt($now - 20.0)),

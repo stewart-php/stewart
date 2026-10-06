@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Broker;
 
+use Psr\Log\LoggerInterface;
 use Stewart\Runtime\Broker\Mqtt\MqttLink;
 use Stewart\Runtime\Broker\Mqtt\MqttMessageRouter;
 use Stewart\Runtime\Time\ProcessTimeZone;
@@ -25,6 +26,7 @@ final readonly class BrokerLifecycle
         private ControlPlane $control,
         private MqttLink $mqtt,
         private MqttMessageRouter $mqttRouter,
+        private LoggerInterface $logger,
         private ?StoreBackend $store = null,
     ) {}
 
@@ -62,8 +64,18 @@ final readonly class BrokerLifecycle
 
             throw $e;
         } finally {
+            $this->stopControlPlane();
             $this->signals->removeAll();
             $this->loopErrors->restorePrevious();
+        }
+    }
+
+    private function stopControlPlane(): void
+    {
+        try {
+            $this->control->stop();
+        } catch (Throwable $e) {
+            $this->logger->error('Could not stop the control plane while shutting down', ['exception' => $e]);
         }
     }
 }

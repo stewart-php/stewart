@@ -91,13 +91,35 @@ final class ControlException extends StewartException
         return self::createForReason(ControlError::BrokerHungUp);
     }
 
-    public static function unexpectedFrame(string $frameClass, string $expectedFrame): self
+    public static function unexpectedFrame(string $frameClass, string $expectedFrameClass): self
     {
-        return self::createForReason(ControlError::UnexpectedFrame, ['frameClass' => $frameClass, 'expectedFrame' => $expectedFrame]);
+        return self::createForReason(ControlError::UnexpectedFrame, ['frameClass' => $frameClass, 'expectedFrameClass' => $expectedFrameClass]);
     }
 
-    public static function snapshotTimedOut(Duration $timeout, Throwable $previous): self
+    public static function requestTimedOut(Duration $timeout, Throwable $previous): self
     {
-        return self::createForReason(ControlError::SnapshotTimedOut, ['timeout' => (string) $timeout], $previous);
+        return self::createForReason(ControlError::RequestTimedOut, ['timeout' => (string) $timeout], $previous);
+    }
+
+    public static function requestUnexpected(string $frameClass): self
+    {
+        return self::createForReason(ControlError::RequestUnexpected, ['frameClass' => $frameClass]);
+    }
+
+    public static function requestFailed(string $reason, string $message): self
+    {
+        return self::createForReason(ControlError::RequestFailed, ['reason' => $reason, 'message' => $message]);
+    }
+
+    public static function requestUnanswerable(Throwable $previous): self
+    {
+        return self::createForReason(ControlError::RequestUnanswerable, [], $previous);
+    }
+
+    public function findBrokerReason(): ?string
+    {
+        $brokerReason = $this->context['reason'] ?? null;
+
+        return $this->reason === ControlError::RequestFailed && \is_string($brokerReason) ? $brokerReason : null;
     }
 }

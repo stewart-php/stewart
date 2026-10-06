@@ -7,27 +7,34 @@ namespace Stewart\Runtime\Broker;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Runtime\App\AppDefinition;
+use Stewart\Runtime\App\AppPause;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
+use Stewart\Runtime\Lifecycle\AppPauseSource;
 
 final class AppPauseRegistry
 {
     /** @var array<string, AppId> */
-    private array $pausedApps = [];
+    private array $configPausedAppIds = [];
 
-    public function __construct(AppDefinitionCollection $enabledApps)
-    {
+    /** @var array<string, AppPause> */
+    private array $pauses = [];
+
+    public function __construct(
+        AppDefinitionCollection $enabledApps,
+        private readonly DaemonStartTime $startTime,
+    ) {
         foreach ($enabledApps->filter(static fn(AppDefinition $app): bool => $app->startsPaused) as $app) {
-            $this->pausedApps[$app->id->value] = $app->id;
+            $this->configPausedAppIds[$app->id->value] = $app->id;
         }
     }
 
-    public function pauseApp(AppId $appId): bool
+    public function pauseApp(AppPause $pause): bool
     {
-        if ($this->isPaused($appId)) {
+        if ($this->isPaused($pause->appId)) {
             return false;
         }
 
-        $this->pausedApps[$appId->value] = $appId;
+        $this->pauses[$pause->appId->value] = $pause;
 
         return true;
     }
@@ -38,18 +45,31 @@ final class AppPauseRegistry
             return false;
         }
 
-        unset($this->pausedApps[$appId->value]);
+        unset($this->configPausedAppIds[$appId->value], $this->pauses[$appId->value]);
 
         return true;
     }
 
     public function isPaused(AppId $appId): bool
     {
-        return isset($this->pausedApps[$appId->value]);
+        return isset($this->configPausedAppIds[$appId->value]) || isset($this->pauses[$appId->value]);
+    }
+
+    public function findPause(AppId $appId): ?AppPause
+    {
+        if (isset($this->configPausedAppIds[$appId->value])) {
+            // A config pause holds from daemon start, which is recorded after this registry is built.
+            return new AppPause($appId, $this->startTime->getStartedAt(), AppPauseSource::Config);
+        }
+
+        return $this->pauses[$appId->value] ?? null;
     }
 
     public function listPausedAppIds(): AppIdCollection
     {
-        return AppIdCollection::fromIds(array_values($this->pausedApps));
+        return AppIdCollection::fromIds([
+            ...array_values($this->configPausedAppIds),
+            ...array_map(static fn(AppPause $pause): AppId => $pause->appId, array_values($this->pauses)),
+        ]);
     }
 }

@@ -8,9 +8,9 @@ use Amp\Socket;
 use Amp\Socket\ResourceServerSocket;
 use Amp\Socket\SocketAddress;
 use Amp\Socket\UnixAddress;
-use Closure;
 use Psr\Log\LoggerInterface;
 use SensitiveParameter;
+use Stewart\Contracts\Exception\StewartException;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Broker\ControlPlane;
 use Stewart\Runtime\Config\ControlAddress;
@@ -21,9 +21,10 @@ use Stewart\Runtime\Control\Protocol\ControlProtocol;
 use Stewart\Runtime\Control\Protocol\Frame\Bye;
 use Stewart\Runtime\Control\Protocol\Frame\Hello;
 use Stewart\Runtime\Control\Protocol\Frame\Rejected;
-use Stewart\Runtime\Control\Protocol\Frame\SnapshotFrame;
+use Stewart\Runtime\Control\Protocol\Frame\RequestFailed;
+use Stewart\Runtime\Control\Protocol\Frame\ServerFrame;
 use Stewart\Runtime\Control\Protocol\Frame\Welcome;
-use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
+use Stewart\Runtime\Control\Request\ControlRequestDispatcher;
 use Stewart\Runtime\Exception\ConfigurationException;
 use Stewart\Runtime\Exception\ControlException;
 use Stewart\Support\Time\Deadlines;
@@ -48,12 +49,11 @@ final class ControlServer implements ControlPlane
 
     private readonly Duration $sessionTimeout;
 
-    /** @param Closure(): RuntimeSnapshot $snapshot */
     public function __construct(
         private readonly ControlAddress $address,
         #[SensitiveParameter]
         private readonly string $token,
-        private readonly Closure $snapshot,
+        private readonly ControlRequestDispatcher $requests,
         private readonly Deadlines $deadlines,
         private readonly FrameCodec $codec,
         private readonly LoggerInterface $logger,
@@ -88,7 +88,7 @@ final class ControlServer implements ControlPlane
         $this->logger->info('Control socket listening', ['address' => (string) $this->address]);
 
         if (!$this->address->isLoopback()) {
-            $this->logger->warning('The control socket accepts connections from other hosts; anyone with the token can read the runtime snapshot', [
+            $this->logger->warning('The control socket accepts connections from other hosts; anyone with the token can read the runtime snapshot and pause apps', [
                 'address' => (string) $this->address,
             ]);
         }
@@ -150,8 +150,8 @@ final class ControlServer implements ControlPlane
             }
 
             $session->send(new Welcome(ControlProtocol::VERSION));
-            $session->send(new SnapshotFrame(($this->snapshot)()));
-            $session->send(new Bye('snapshot sent'));
+            $session->send($this->answerRequest($session));
+            $session->send(new Bye('request answered'));
             $this->logger->debug('Answered a control client', ['client' => $hello->client, 'peer' => $session->describePeer()]);
         } catch (Throwable $e) {
             if ($session->hasExpired()) {
@@ -194,6 +194,24 @@ final class ControlServer implements ControlPlane
         }
 
         return $frame;
+    }
+
+    private function answerRequest(ClientSession $session): ServerFrame
+    {
+        $line = $session->readLine(self::LINE_LIMIT);
+
+        try {
+            return $this->requests->answerRequest($this->codec->decodeClientFrame($line));
+        } catch (StewartException $e) {
+            $this->logger->info('Refused a control request', ['peer' => $session->describePeer(), 'reason' => $e->reason->value]);
+
+            return new RequestFailed((string) $e->reason->value, $e->getMessage());
+        } catch (Throwable $e) {
+            $this->logger->warning('Could not answer a control request', ['peer' => $session->describePeer(), 'exception' => $e]);
+            $unanswerable = ControlException::requestUnanswerable($e);
+
+            return new RequestFailed($unanswerable->reason->value, $unanswerable->getMessage());
+        }
     }
 
     /** @throws ControlException|ConfigurationException */

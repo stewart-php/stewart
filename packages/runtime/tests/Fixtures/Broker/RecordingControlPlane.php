@@ -10,10 +10,15 @@ final class RecordingControlPlane implements ControlPlane
 {
     public bool $started = false;
 
+    public bool $stopped = false;
+
     public function start(): void
     {
         $this->started = true;
     }
 
-    public function stop(): void {}
+    public function stop(): void
+    {
+        $this->stopped = true;
+    }
 }

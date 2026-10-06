@@ -10,6 +10,7 @@ use Stewart\Runtime\Broker\DisabledControlPlane;
 use Stewart\Runtime\Config\ControlConfig;
 use Stewart\Runtime\Config\ProjectRoot;
 use Stewart\Runtime\Control\Protocol\Codec\FrameCodec;
+use Stewart\Runtime\Control\Request\ControlRequestDispatcher;
 use Stewart\Runtime\Control\Server\ControlServer;
 use Stewart\Runtime\Control\Server\UnixSocketFile;
 use Stewart\Runtime\Exception\ConfigurationException;
@@ -19,7 +20,7 @@ final readonly class ControlPlaneFactory
 {
     public function __construct(
         private ControlConfig $control,
-        private SnapshotAssembler $snapshots,
+        private ControlRequestDispatcher $requests,
         private Deadlines $deadlines,
         private FrameCodec $codec,
         private LoggerInterface $logger,
@@ -37,7 +38,7 @@ final readonly class ControlPlaneFactory
         return new ControlServer(
             address: $this->control->listen,
             token: $this->control->token ?? throw ConfigurationException::controlTokenMissing(),
-            snapshot: $this->snapshots->assembleSnapshot(...),
+            requests: $this->requests,
             deadlines: $this->deadlines,
             codec: $this->codec,
             logger: $this->logger,

@@ -23,6 +23,7 @@ use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\App\AppDefinition;
+use Stewart\Runtime\App\AppPause;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppMetrics;
 use Stewart\Runtime\Broker\AppPauseRegistry;
@@ -72,6 +73,7 @@ use Stewart\Runtime\Ipc\Message\SubscriptionAck;
 use Stewart\Runtime\Ipc\Wire\IpcCodec;
 use Stewart\Runtime\Kernel\SyntheticServices;
 use Stewart\Runtime\Lifecycle\AppFailurePhase;
+use Stewart\Runtime\Lifecycle\AppPauseSource;
 use Stewart\Runtime\Lifecycle\AppState;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Model\CorrelationId;
@@ -101,6 +103,7 @@ use Stewart\Testing\Logging\RecordingLogger;
 use Stewart\Testing\Store\InMemoryStoreBackend;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
+use Stewart\Testing\Time\VirtualClock;
 
 use function Amp\async;
 
@@ -164,7 +167,7 @@ final class BrokerLifecycleTest extends TestCase
         $this->session = new FakeHaSession();
         $this->spawner = new FakeWorkerSpawner();
         $this->logger = new RecordingLogger();
-        $this->pausedApps = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]));
+        $this->pausedApps = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock()));
         $this->broker = $this->createBroker();
     }
 
@@ -191,7 +194,7 @@ final class BrokerLifecycleTest extends TestCase
         $this->broker = $this->createBroker();
         $this->startBroker();
 
-        $this->pausedApps->pauseApp(new AppId('demo'));
+        $this->pausedApps->pauseApp(new AppPause(new AppId('demo'), Instant::fromEpochMicroseconds(0), AppPauseSource::Control));
         $this->crashAndRestart(0);
 
         $sent = $this->listEverythingSentToWorker(0);
@@ -543,6 +546,20 @@ final class BrokerLifecycleTest extends TestCase
         self::assertFalse($this->control->started);
         self::assertNull($this->session->listener);
         self::assertSame([], $this->spawner->spawned);
+    }
+
+    public function testControlPlaneStopsAfterTheRunEnds(): void
+    {
+        $control = new RecordingControlPlane();
+        $this->control = $control;
+        $this->broker = $this->createBroker();
+        $this->startBroker();
+
+        $this->broker->run->stop('test');
+        $this->running?->await();
+        $this->running = null;
+
+        self::assertTrue($control->stopped);
     }
 
     public function testStrayFailedFutureIsLoggedAndRunGoesOn(): void

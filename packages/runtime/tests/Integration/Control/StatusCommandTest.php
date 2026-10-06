@@ -16,12 +16,14 @@ use Stewart\Runtime\Console\StatusRenderer;
 use Stewart\Runtime\Control\Client\ControlClient;
 use Stewart\Runtime\Control\Protocol\Codec\FrameCodec;
 use Stewart\Runtime\Control\Protocol\Frame\SnapshotFrame;
+use Stewart\Runtime\Control\Request\ControlRequestDispatcher;
 use Stewart\Runtime\Control\Server\ControlServer;
 use Stewart\Runtime\Control\Server\UnixSocketFile;
 use Stewart\Runtime\Kernel\ConsoleKernel;
 use Stewart\Runtime\Kernel\SyntheticServices;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Tests\Fixtures\Config\ConfigLoaderFixture;
+use Stewart\Runtime\Tests\Fixtures\Control\StubSnapshotRequestHandler;
 use Stewart\Runtime\Tests\Fixtures\Control\StubSnapshotSource;
 use Stewart\Support\Time\RevoltTimers;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -181,7 +183,7 @@ final class StatusCommandTest extends TestCase
         $this->server = new ControlServer(
             address: new UnixControlAddress($this->path),
             token: self::TOKEN,
-            snapshot: $snapshots->takeSnapshot(...),
+            requests: new ControlRequestDispatcher([new StubSnapshotRequestHandler($snapshots)]),
             deadlines: new RevoltTimers(),
             codec: new FrameCodec(FrameCodec::createControlWireMapper()),
             logger: new NullLogger(),
