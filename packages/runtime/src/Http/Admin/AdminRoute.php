@@ -6,7 +6,7 @@ namespace Stewart\Runtime\Http\Admin;
 
 final readonly class AdminRoute
 {
-    private const string APPS_PATH = '~\A/api/apps(?:/([^/]+))?\z~';
+    private const string APPS_PATH = '~\A/api/apps(?:/([^/]+)(?:/(pause|resume|reset))?)?\z~';
 
     public function __construct(
         public AdminAction $action,
@@ -21,7 +21,11 @@ final readonly class AdminRoute
 
         $appId = $matches[1] ?? '';
 
-        return $appId === '' ? new self(AdminAction::ListApps, null) : new self(AdminAction::ShowApp, rawurldecode($appId));
+        if ($appId === '') {
+            return new self(AdminAction::ListApps, null);
+        }
+
+        return new self(AdminAction::tryFrom($matches[2] ?? '') ?? AdminAction::ShowApp, rawurldecode($appId));
     }
 
     public function allowsMethod(string $method): bool

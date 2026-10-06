@@ -8,4 +8,5 @@ enum AppPauseSource: string
 {
     case Config = 'config';
     case Control = 'control';
+    case Http = 'http';
 }

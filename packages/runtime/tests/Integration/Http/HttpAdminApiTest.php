@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Tests\Integration\Http;
 use Amp\Socket\InternetAddress;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Stewart\Contracts\App\AppId;
 use Stewart\Runtime\Config\HttpListenAddress;
 use Stewart\Runtime\Http\Admin\AdminApiCodec;
 use Stewart\Runtime\Http\Admin\AdminRequestHandler;
@@ -14,6 +15,7 @@ use Stewart\Runtime\Http\Admin\AppsAdminApi;
 use Stewart\Runtime\Http\Admin\Response\AdminAppView;
 use Stewart\Runtime\Http\AmpHttpListener;
 use Stewart\Runtime\Http\HttpListenerRole;
+use Stewart\Runtime\Lifecycle\AppPauseSource;
 use Stewart\Runtime\Tests\Fixtures\Http\AdminApiFixture;
 use Stewart\Testing\Logging\RecordingLogger;
 
@@ -28,6 +30,8 @@ use function Amp\Socket\listen;
 final class HttpAdminApiTest extends TestCase
 {
     private const string TOKEN = 'admin-secret';
+
+    private const string NOT_SAVED = 'Not saved: persistence.url is not set, so this lasts until the daemon restarts.';
 
     private const string DEMO_JSON = '{"id":"demo","state":null,"paused":false,"pause":null,"config_pause_override":null}';
 
@@ -132,6 +136,62 @@ final class HttpAdminApiTest extends TestCase
 
         self::assertStringStartsWith('HTTP/1.1 405', $response);
         self::assertStringContainsStringIgnoringCase('allow: GET, HEAD', $response);
+    }
+
+    public function testPauseIsReportedAsChangedOnce(): void
+    {
+        $first = $this->sendRequest('POST', '/api/apps/demo/pause');
+        $second = $this->sendRequest('POST', '/api/apps/demo/pause');
+
+        self::assertStringStartsWith('HTTP/1.1 200', $first);
+        self::assertJsonStringEqualsJsonString(\sprintf('{"changed":true,"message":"App demo paused.","warning":"%s"}', self::NOT_SAVED), self::extractBody($first));
+        self::assertJsonStringEqualsJsonString(\sprintf('{"changed":false,"message":"App demo was already paused.","warning":"%s"}', self::NOT_SAVED), self::extractBody($second));
+        self::assertSame(AppPauseSource::Http, $this->fixture->registry->findPause(new AppId('demo'))?->source);
+    }
+
+    public function testResumeLiftsConfigPause(): void
+    {
+        $response = $this->sendRequest('POST', '/api/apps/porch/resume');
+
+        self::assertJsonStringEqualsJsonString(\sprintf('{"changed":true,"message":"App porch resumed.","warning":"%s"}', self::NOT_SAVED), self::extractBody($response));
+        self::assertFalse($this->fixture->registry->isPaused(new AppId('porch')));
+    }
+
+    public function testResetRemovesOverride(): void
+    {
+        $this->sendRequest('POST', '/api/apps/porch/resume');
+
+        $response = $this->sendRequest('POST', '/api/apps/porch/reset');
+
+        self::assertJsonStringEqualsJsonString(
+            \sprintf('{"changed":true,"message":"App porch pause override removed; config keeps it paused.","warning":"%s"}', self::NOT_SAVED),
+            self::extractBody($response),
+        );
+        self::assertTrue($this->fixture->registry->isPaused(new AppId('porch')));
+    }
+
+    public function testPauseOfUnknownAppIsNotFound(): void
+    {
+        self::assertStringStartsWith('HTTP/1.1 404', $this->sendRequest('POST', '/api/apps/ghost/pause'));
+    }
+
+    public function testPauseOfDisabledAppIsConflict(): void
+    {
+        self::assertStringStartsWith('HTTP/1.1 409', $this->sendRequest('POST', '/api/apps/retired/pause'));
+    }
+
+    public function testGetOnActionRouteIsNotAllowed(): void
+    {
+        $response = $this->sendRequest('GET', '/api/apps/demo/pause');
+
+        self::assertStringStartsWith('HTTP/1.1 405', $response);
+        self::assertStringContainsStringIgnoringCase('allow: POST', $response);
+    }
+
+    public function testPauseWithoutTokenChangesNothing(): void
+    {
+        self::assertStringStartsWith('HTTP/1.1 401', $this->sendRequest('POST', '/api/apps/demo/pause', null));
+        self::assertFalse($this->fixture->registry->isPaused(new AppId('demo')));
     }
 
     private function sendRequest(string $method, string $path, ?string $token = self::TOKEN): string

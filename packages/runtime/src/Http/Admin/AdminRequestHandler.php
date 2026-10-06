@@ -17,6 +17,7 @@ use Stewart\Contracts\Exception\StewartException;
 use Stewart\Runtime\Exception\AppError;
 use Stewart\Runtime\Http\Admin\Response\AdminAppList;
 use Stewart\Runtime\Http\Admin\Response\AdminAppView;
+use Stewart\Runtime\Http\Admin\Response\AdminCommandResult;
 use Stewart\Runtime\Http\Admin\Response\AdminFailure;
 use Throwable;
 
@@ -67,11 +68,14 @@ final readonly class AdminRequestHandler implements RequestHandler
     }
 
     /** @throws StewartException */
-    private function answerRoute(AdminRoute $route): AdminAppList|AdminAppView
+    private function answerRoute(AdminRoute $route): AdminAppList|AdminAppView|AdminCommandResult
     {
         return match ($route->action) {
             AdminAction::ListApps => $this->apps->listApps(),
             AdminAction::ShowApp => $this->apps->showApp(new AppId((string) $route->appId)),
+            AdminAction::PauseApp => $this->apps->pauseApp(new AppId((string) $route->appId)),
+            AdminAction::ResumeApp => $this->apps->resumeApp(new AppId((string) $route->appId)),
+            AdminAction::ResetApp => $this->apps->resetApp(new AppId((string) $route->appId)),
         };
     }
 
@@ -109,7 +113,7 @@ final readonly class AdminRequestHandler implements RequestHandler
      * @param array<non-empty-string, string> $headers
      * @throws Throwable
      */
-    private function respond(int $status, AdminAppList|AdminAppView|AdminFailure $body, array $headers = []): Response
+    private function respond(int $status, AdminAppList|AdminAppView|AdminCommandResult|AdminFailure $body, array $headers = []): Response
     {
         return new Response($status, [...self::JSON_HEADERS, ...$headers], $this->codec->encodeResponse($body));
     }

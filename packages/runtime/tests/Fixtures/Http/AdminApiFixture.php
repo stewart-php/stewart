@@ -11,6 +11,7 @@ use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppMetrics;
+use Stewart\Runtime\Broker\AppPauseOutcomeMessages;
 use Stewart\Runtime\Broker\AppPauseOverrideCodec;
 use Stewart\Runtime\Broker\AppPauseOverrideStore;
 use Stewart\Runtime\Broker\AppPauseRegistry;
@@ -58,7 +59,7 @@ final readonly class AdminApiFixture
             new NullLogger(),
         );
         $metrics = new AppMetrics(WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), $apps)]), $this->clock);
-        $this->api = new AppsAdminApi(new AppStatusBuilder($metrics, $this->registry), $this->pauses, $catalog);
+        $this->api = new AppsAdminApi(new AppStatusBuilder($metrics, $this->registry), $this->pauses, $catalog, new AppPauseOutcomeMessages());
         $this->codec = new AdminApiCodec(AdminApiCodec::createAdminApiWireMapper());
     }
 }

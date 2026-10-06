@@ -24,6 +24,13 @@ final class AdminRouteTest extends TestCase
         self::assertEquals(new AdminRoute(AdminAction::ShowApp, 'porch-lights'), AdminRoute::fromPath('/api/apps/porch-lights'));
     }
 
+    public function testActionPathsCarryAction(): void
+    {
+        self::assertEquals(new AdminRoute(AdminAction::PauseApp, 'demo'), AdminRoute::fromPath('/api/apps/demo/pause'));
+        self::assertEquals(new AdminRoute(AdminAction::ResumeApp, 'demo'), AdminRoute::fromPath('/api/apps/demo/resume'));
+        self::assertEquals(new AdminRoute(AdminAction::ResetApp, 'demo'), AdminRoute::fromPath('/api/apps/demo/reset'));
+    }
+
     public function testEncodedAppIdIsDecoded(): void
     {
         self::assertSame('a b', AdminRoute::fromPath('/api/apps/a%20b')?->appId);
@@ -37,6 +44,8 @@ final class AdminRouteTest extends TestCase
         yield 'trailing slash' => ['/api/apps/'];
         yield 'nested unknown' => ['/api/apps/demo/unknown'];
         yield 'other resource' => ['/api/workers'];
+        yield 'action trailing slash' => ['/api/apps/demo/pause/'];
+        yield 'action on list' => ['/api/apps/pause/now'];
     }
 
     #[DataProvider('unknownPaths')]
@@ -52,5 +61,13 @@ final class AdminRouteTest extends TestCase
         self::assertTrue($route->allowsMethod('GET'));
         self::assertTrue($route->allowsMethod('HEAD'));
         self::assertFalse($route->allowsMethod('POST'));
+    }
+
+    public function testActionRoutesAllowOnlyPost(): void
+    {
+        $route = new AdminRoute(AdminAction::PauseApp, 'demo');
+
+        self::assertTrue($route->allowsMethod('POST'));
+        self::assertFalse($route->allowsMethod('GET'));
     }
 }

@@ -8,6 +8,7 @@ use JsonException;
 use Stewart\Contracts\Exception\StewartException;
 use Stewart\Runtime\Http\Admin\Response\AdminAppList;
 use Stewart\Runtime\Http\Admin\Response\AdminAppView;
+use Stewart\Runtime\Http\Admin\Response\AdminCommandResult;
 use Stewart\Runtime\Http\Admin\Response\AdminFailure;
 use Stewart\Runtime\Json\ClassShapeReader;
 use Stewart\Runtime\Json\Collection\ValueConverterCollection;
@@ -24,7 +25,7 @@ final readonly class AdminApiCodec
     }
 
     /** @throws JsonException|StewartException */
-    public function encodeResponse(AdminAppList|AdminAppView|AdminFailure $response): string
+    public function encodeResponse(AdminAppList|AdminAppView|AdminCommandResult|AdminFailure $response): string
     {
         return $this->adminApiWireMapper->encodeObject($response);
     }
