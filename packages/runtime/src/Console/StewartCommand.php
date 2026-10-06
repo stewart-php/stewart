@@ -26,4 +26,11 @@ abstract class StewartCommand extends Command
 
         return \is_string($value) && $value !== '' ? $value : null;
     }
+
+    protected function stringArgument(InputInterface $input, string $name): string
+    {
+        $value = $input->getArgument($name);
+
+        return \is_string($value) ? $value : '';
+    }
 }

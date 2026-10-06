@@ -7,11 +7,8 @@ namespace Stewart\Runtime\Console;
 use Amp\ByteStream\StreamException;
 use Amp\CancelledException;
 use Stewart\Contracts\Exception\StewartException;
-use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Config\ConfigLoader;
-use Stewart\Runtime\Config\ControlConfig;
 use Stewart\Runtime\Control\Client\ControlClient;
-use Stewart\Runtime\Control\Client\ControlTarget;
 use Stewart\Runtime\Control\Client\ControlTargetResolver;
 use Stewart\Runtime\Control\Client\ReadinessCheck;
 use Stewart\Runtime\Control\Protocol\Codec\FrameCodec;
@@ -25,30 +22,25 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(name: self::NAME, description: 'Show what the running daemon is doing, once')]
-final class StatusCommand extends StewartCommand
+final class StatusCommand extends ControlCommand
 {
     public const string NAME = 'status';
 
-    private const string DEFAULT_TIMEOUT = '5s';
-
     public function __construct(
-        private readonly ConfigLoader $config,
+        ConfigLoader $config,
+        ControlTargetResolver $targets,
         private readonly ControlClient $client,
-        private readonly ControlTargetResolver $targets,
         private readonly StatusRenderer $renderer,
         private readonly FrameCodec $codec,
         private readonly ReadinessCheck $readiness,
     ) {
-        parent::__construct();
+        parent::__construct($config, $targets);
     }
 
     protected function configure(): void
     {
         parent::configure();
         $this
-            ->addOption('address', null, InputOption::VALUE_REQUIRED, 'Where the daemon listens, such as unix://var/run/stewart.sock or tcp://host:port; defaults to control.listen')
-            ->addOption('token', null, InputOption::VALUE_REQUIRED, 'The control token; defaults to control.token, usually STEWART_CONTROL__TOKEN')
-            ->addOption('timeout', null, InputOption::VALUE_REQUIRED, 'How long to wait for the daemon, like 5s', self::DEFAULT_TIMEOUT)
             ->addOption('json', null, InputOption::VALUE_NONE, 'Print the snapshot as the wire JSON instead of tables')
             ->addOption('probe', null, InputOption::VALUE_REQUIRED, 'liveness or readiness: print one line and exit 0 or 1, for health checks');
     }
@@ -57,8 +49,7 @@ final class StatusCommand extends StewartCommand
     {
         try {
             $probe = $this->findProbeOption($input);
-            $timeout = Duration::parse($this->nonEmptyStringOption($input, 'timeout') ?? self::DEFAULT_TIMEOUT);
-            $snapshot = $this->client->fetchSnapshot($this->resolveControlTarget($input), $timeout);
+            $snapshot = $this->client->fetchSnapshot($this->resolveControlTarget($input), $this->parseTimeoutOption($input));
         } catch (StewartException|StreamException|CancelledException $e) {
             $output->writeln('<error>' . $e->getMessage() . '</error>');
 
@@ -100,16 +91,5 @@ final class StatusCommand extends StewartCommand
         $probe = $this->nonEmptyStringOption($input, 'probe');
 
         return $probe === null ? null : ProbeKind::parse($probe);
-    }
-
-    private function resolveControlTarget(InputInterface $input): ControlTarget
-    {
-        $path = $this->findConfigOption($input);
-
-        return $this->targets->resolveTarget(
-            $this->nonEmptyStringOption($input, 'address'),
-            $this->nonEmptyStringOption($input, 'token'),
-            fn(): ControlConfig => $this->config->loadConfig($path)->control,
-        );
     }
 }
