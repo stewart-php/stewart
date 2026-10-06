@@ -33,6 +33,18 @@ final class KeyspaceTest extends TestCase
         self::assertSame('stewart:global:', Keyspace::forGlobalScope(new StorePrefix('stewart'))->prefix);
     }
 
+    public function testRuntimeBucketSitsBesideApps(): void
+    {
+        self::assertSame('stewart:runtime:app-pause:heating', Keyspace::forRuntime(new StorePrefix('stewart'))->buildFullKey('app-pause:heating'));
+    }
+
+    public function testAppCalledRuntimeStaysApart(): void
+    {
+        $app = Keyspace::forApp(new StorePrefix('stewart'), new AppId('runtime'));
+
+        self::assertFalse(str_starts_with($app->prefix, Keyspace::forRuntime(new StorePrefix('stewart'))->prefix));
+    }
+
     public function testAppCalledGlobalStaysApart(): void
     {
         $app = Keyspace::forApp(new StorePrefix('stewart'), new AppId('global'));

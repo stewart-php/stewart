@@ -11,6 +11,8 @@ final readonly class AppId implements Stringable
 {
     private const string PATTERN = '/\A[a-z][a-z0-9_-]*\z/';
 
+    private const int MAX_LENGTH_LEAVING_ROOM_IN_STORE_KEYS = 100;
+
     public string $value;
 
     /** @throws IdentifierException */
@@ -18,6 +20,10 @@ final readonly class AppId implements Stringable
     {
         if (preg_match(self::PATTERN, $value) !== 1) {
             throw IdentifierException::appIdInvalid($value);
+        }
+
+        if (\strlen($value) > self::MAX_LENGTH_LEAVING_ROOM_IN_STORE_KEYS) {
+            throw IdentifierException::appIdTooLong($value, self::MAX_LENGTH_LEAVING_ROOM_IN_STORE_KEYS);
         }
 
         $this->value = $value;

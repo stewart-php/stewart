@@ -67,6 +67,7 @@ final class StubSnapshotSource
                 workerId: 0,
                 state: AppState::Running,
                 pause: new AppPauseStatus(Instant::fromIso('2026-09-26T10:58:00Z'), AppPauseSource::Control),
+                configPauseOverride: null,
                 reportedAt: Instant::fromIso('2026-09-26T10:59:55Z'),
                 subscriptions: 2,
                 schedules: 1,

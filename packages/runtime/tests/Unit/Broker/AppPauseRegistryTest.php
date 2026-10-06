@@ -11,6 +11,7 @@ use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\AppPause;
+use Stewart\Runtime\App\AppPauseOverride;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\DaemonStartTime;
@@ -21,15 +22,15 @@ use Stewart\Testing\Time\VirtualClock;
 #[CoversClass(AppPauseRegistry::class)]
 final class AppPauseRegistryTest extends TestCase
 {
-    public function testPauseAndResumeReportOnlyChanges(): void
+    public function testOverrideReportsOnlyEffectiveChanges(): void
     {
-        $registry = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock()));
+        $registry = self::createRegistry();
 
-        self::assertTrue($registry->pauseApp(self::createPause('demo')));
-        self::assertFalse($registry->pauseApp(self::createPause('demo')));
+        self::assertTrue($registry->recordOverride(self::createOverride('demo', true)));
+        self::assertFalse($registry->recordOverride(self::createOverride('demo', true)));
         self::assertTrue($registry->isPaused(new AppId('demo')));
-        self::assertTrue($registry->resumeApp(new AppId('demo')));
-        self::assertFalse($registry->resumeApp(new AppId('demo')));
+        self::assertTrue($registry->recordOverride(self::createOverride('demo', false)));
+        self::assertFalse($registry->recordOverride(self::createOverride('demo', false)));
         self::assertFalse($registry->isPaused(new AppId('demo')));
     }
 
@@ -48,43 +49,75 @@ final class AppPauseRegistryTest extends TestCase
         self::assertEquals(new AppPause(new AppId('demo'), $startTime->getStartedAt(), AppPauseSource::Config), $registry->findPause(new AppId('demo')));
     }
 
-    public function testResumedConfigPauseCanBePausedAgain(): void
+    public function testResumeOverrideBeatsConfigPause(): void
     {
-        $registry = new AppPauseRegistry(
-            AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class, startsPaused: true)]),
-            new DaemonStartTime(new VirtualClock()),
-        );
+        $registry = self::createRegistry(startsPaused: true);
 
-        self::assertTrue($registry->resumeApp(new AppId('demo')));
+        self::assertTrue($registry->recordOverride(self::createOverride('demo', false)));
+        self::assertFalse($registry->isPaused(new AppId('demo')));
+        self::assertNull($registry->findPause(new AppId('demo')));
         self::assertSame([], $registry->listPausedAppIds()->toStrings());
-        self::assertTrue($registry->pauseApp(self::createPause('demo')));
-        self::assertSame(AppPauseSource::Control, $registry->findPause(new AppId('demo'))?->source);
     }
 
-    public function testRepeatedPauseKeepsFirstPause(): void
+    public function testPauseOverrideOnConfigPauseIsNoChange(): void
     {
-        $registry = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock()));
-        $first = new AppPause(new AppId('demo'), Instant::fromEpochMicroseconds(1), AppPauseSource::Control);
-        $registry->pauseApp($first);
-        $registry->pauseApp(new AppPause(new AppId('demo'), Instant::fromEpochMicroseconds(2), AppPauseSource::Config));
+        $registry = self::createRegistry(startsPaused: true);
+        $override = new AppPauseOverride(new AppId('demo'), true, Instant::fromEpochMicroseconds(7), AppPauseSource::Control);
 
-        self::assertSame($first, $registry->findPause(new AppId('demo')));
+        self::assertFalse($registry->recordOverride($override));
+        self::assertEquals(new AppPause(new AppId('demo'), $override->since, AppPauseSource::Control), $registry->findPause(new AppId('demo')));
+        self::assertSame(['demo'], $registry->listPausedAppIds()->toStrings());
+    }
+
+    public function testOnlyResumeOverConfigPauseIsConfigOverride(): void
+    {
+        $configPaused = self::createRegistry(startsPaused: true);
+        $resume = self::createOverride('demo', false);
+        $configPaused->recordOverride($resume);
+        $notConfigPaused = self::createRegistry();
+        $notConfigPaused->recordOverride(self::createOverride('demo', false));
+
+        self::assertSame($resume, $configPaused->findConfigPauseOverride(new AppId('demo')));
+        self::assertNull($notConfigPaused->findConfigPauseOverride(new AppId('demo')));
+        $configPaused->recordOverride(self::createOverride('demo', true));
+        self::assertNull($configPaused->findConfigPauseOverride(new AppId('demo')));
+    }
+
+    public function testForgottenOverrideFallsBackToConfig(): void
+    {
+        $registry = self::createRegistry(startsPaused: true);
+        $registry->recordOverride(self::createOverride('demo', false));
+
+        self::assertTrue($registry->forgetOverride(new AppId('demo')));
+        self::assertFalse($registry->forgetOverride(new AppId('demo')));
+        self::assertTrue($registry->isPaused(new AppId('demo')));
+        self::assertNull($registry->findOverride(new AppId('demo')));
     }
 
     public function testListsPausedAppsInPauseOrder(): void
     {
-        $registry = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock()));
-        $registry->pauseApp(self::createPause('echo'));
-        $registry->pauseApp(self::createPause('demo'));
-        $registry->pauseApp(self::createPause('other'));
-        $registry->resumeApp(new AppId('demo'));
+        $registry = self::createRegistry();
+        $registry->recordOverride(self::createOverride('echo', true));
+        $registry->recordOverride(self::createOverride('demo', true));
+        $registry->recordOverride(self::createOverride('other', true));
+        $registry->recordOverride(self::createOverride('demo', false));
+        $registry->recordOverride(self::createOverride('echo', false));
+        $registry->recordOverride(self::createOverride('echo', true));
 
-        self::assertSame(['echo', 'other'], $registry->listPausedAppIds()->toStrings());
+        self::assertSame(['other', 'echo'], $registry->listPausedAppIds()->toStrings());
         self::assertNull($registry->findPause(new AppId('demo')));
     }
 
-    private static function createPause(string $appId): AppPause
+    private static function createRegistry(bool $startsPaused = false): AppPauseRegistry
     {
-        return new AppPause(new AppId($appId), Instant::fromEpochMicroseconds(0), AppPauseSource::Control);
+        return new AppPauseRegistry(
+            AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class, startsPaused: $startsPaused)]),
+            new DaemonStartTime(new VirtualClock()),
+        );
+    }
+
+    private static function createOverride(string $appId, bool $paused): AppPauseOverride
+    {
+        return new AppPauseOverride(new AppId($appId), $paused, Instant::fromEpochMicroseconds(0), AppPauseSource::Control);
     }
 }

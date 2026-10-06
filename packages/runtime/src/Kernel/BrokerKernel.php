@@ -66,6 +66,7 @@ final readonly class BrokerKernel
             ->withArgument('poolWorkerCount', $config->workers)
             ->withArgument('persistenceConfig', $config->persistence)
             ->withArgument('storeConfigured', $config->persistence !== null)
+            ->withArgument('appPauseOverridePrefix', $config->persistence?->prefix)
             ->withArgument('workerRestartAttempts', $config->supervision->restartAttempts)
             ->withArgument('workerRestartWindow', $config->supervision->restartWindow);
     }

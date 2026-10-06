@@ -24,6 +24,11 @@ final readonly class Keyspace
         return new self($prefix->value . ':global:');
     }
 
+    public static function forRuntime(StorePrefix $prefix): self
+    {
+        return new self($prefix->value . ':runtime:');
+    }
+
     /** @throws StoreException */
     public function buildFullKey(string $key): string
     {

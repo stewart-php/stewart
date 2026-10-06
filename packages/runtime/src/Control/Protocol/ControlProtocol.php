@@ -6,7 +6,7 @@ namespace Stewart\Runtime\Control\Protocol;
 
 final class ControlProtocol
 {
-    public const int VERSION = 18;
+    public const int VERSION = 21;
 
     private function __construct() {}
 }

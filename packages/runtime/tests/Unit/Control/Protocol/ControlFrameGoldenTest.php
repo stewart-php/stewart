@@ -14,6 +14,7 @@ use Stewart\Runtime\Control\Protocol\Frame\Hello;
 use Stewart\Runtime\Control\Protocol\Frame\PauseAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\Rejected;
 use Stewart\Runtime\Control\Protocol\Frame\RequestFailed;
+use Stewart\Runtime\Control\Protocol\Frame\ResetAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\ResumeAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\SnapshotFrame;
 use Stewart\Runtime\Control\Protocol\Frame\SnapshotRequest;
@@ -35,10 +36,11 @@ final class ControlFrameGoldenTest extends TestCase
             new SnapshotRequest(),
             new PauseAppRequest('porch'),
             new ResumeAppRequest('porch'),
+            new ResetAppRequest('porch'),
             new Welcome(ControlProtocol::VERSION),
             new Rejected('the token does not match control.token'),
             new SnapshotFrame(new StubSnapshotSource()->takeSnapshot()),
-            new CommandResult(true, 'App porch paused.'),
+            new CommandResult(true, 'App porch paused.', 'Not saved: persistence.url is not set, so this lasts until the daemon restarts.'),
             new RequestFailed('unknown', 'No automation with ID "ghost".'),
             new Bye('request answered'),
         ] as $frame) {

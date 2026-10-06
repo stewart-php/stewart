@@ -8,7 +8,9 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\AppPause;
+use Stewart\Runtime\App\AppPauseOverride;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
+use Stewart\Runtime\App\Collection\AppPauseOverrideCollection;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
 
 final class AppPauseRegistry
@@ -16,8 +18,8 @@ final class AppPauseRegistry
     /** @var array<string, AppId> */
     private array $configPausedAppIds = [];
 
-    /** @var array<string, AppPause> */
-    private array $pauses = [];
+    /** @var array<string, AppPauseOverride> */
+    private array $overrides = [];
 
     public function __construct(
         AppDefinitionCollection $enabledApps,
@@ -28,48 +30,75 @@ final class AppPauseRegistry
         }
     }
 
-    public function pauseApp(AppPause $pause): bool
+    public function restoreOverrides(AppPauseOverrideCollection $overrides): void
     {
-        if ($this->isPaused($pause->appId)) {
-            return false;
+        foreach ($overrides as $override) {
+            $this->overrides[$override->appId->value] = $override;
         }
-
-        $this->pauses[$pause->appId->value] = $pause;
-
-        return true;
     }
 
-    public function resumeApp(AppId $appId): bool
+    public function recordOverride(AppPauseOverride $override): bool
     {
-        if (!$this->isPaused($appId)) {
-            return false;
+        $changed = $this->isPaused($override->appId) !== $override->paused;
+
+        if ($changed) {
+            unset($this->overrides[$override->appId->value]);
         }
 
-        unset($this->configPausedAppIds[$appId->value], $this->pauses[$appId->value]);
+        $this->overrides[$override->appId->value] = $override;
 
-        return true;
+        return $changed;
+    }
+
+    public function forgetOverride(AppId $appId): bool
+    {
+        $existed = isset($this->overrides[$appId->value]);
+        unset($this->overrides[$appId->value]);
+
+        return $existed;
+    }
+
+    public function findOverride(AppId $appId): ?AppPauseOverride
+    {
+        return $this->overrides[$appId->value] ?? null;
     }
 
     public function isPaused(AppId $appId): bool
     {
-        return isset($this->configPausedAppIds[$appId->value]) || isset($this->pauses[$appId->value]);
+        return $this->findOverride($appId)->paused ?? isset($this->configPausedAppIds[$appId->value]);
     }
 
     public function findPause(AppId $appId): ?AppPause
     {
+        $override = $this->findOverride($appId);
+
+        if ($override !== null) {
+            return $override->paused ? new AppPause($appId, $override->since, $override->source) : null;
+        }
+
         if (isset($this->configPausedAppIds[$appId->value])) {
             // A config pause holds from daemon start, which is recorded after this registry is built.
             return new AppPause($appId, $this->startTime->getStartedAt(), AppPauseSource::Config);
         }
 
-        return $this->pauses[$appId->value] ?? null;
+        return null;
+    }
+
+    public function findConfigPauseOverride(AppId $appId): ?AppPauseOverride
+    {
+        $override = $this->findOverride($appId);
+
+        return $override !== null && !$override->paused && isset($this->configPausedAppIds[$appId->value]) ? $override : null;
     }
 
     public function listPausedAppIds(): AppIdCollection
     {
         return AppIdCollection::fromIds([
-            ...array_values($this->configPausedAppIds),
-            ...array_map(static fn(AppPause $pause): AppId => $pause->appId, array_values($this->pauses)),
+            ...array_values(array_diff_key($this->configPausedAppIds, $this->overrides)),
+            ...array_map(
+                static fn(AppPauseOverride $override): AppId => $override->appId,
+                array_values(array_filter($this->overrides, static fn(AppPauseOverride $override): bool => $override->paused)),
+            ),
         ]);
     }
 }

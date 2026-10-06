@@ -34,4 +34,12 @@ final class AppIdTest extends TestCase
 
         $this->assertThrowsReason(IdentifierError::AppIdInvalid, fn() => new AppId('Demo'));
     }
+
+    public function testRejectsIdOverLengthLimit(): void
+    {
+        self::assertSame(100, \strlen(new AppId(str_repeat('a', 100))->value));
+        self::assertNull(AppId::tryFromString(str_repeat('a', 101)));
+
+        $this->assertThrowsReason(IdentifierError::AppIdTooLong, fn() => new AppId(str_repeat('a', 101)));
+    }
 }

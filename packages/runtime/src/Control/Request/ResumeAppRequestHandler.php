@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Control\Request;
 
 use Stewart\Contracts\App\AppId;
+use Stewart\Runtime\App\AppPauseOutcome;
 use Stewart\Runtime\Control\Protocol\Frame\ResumeAppRequest;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
 
@@ -16,7 +17,7 @@ final readonly class ResumeAppRequestHandler extends AppPauseChangeHandler
         return ResumeAppRequest::class;
     }
 
-    protected function changePause(AppId $appId): bool
+    protected function changePause(AppId $appId): AppPauseOutcome
     {
         return $this->pauses->resumeApp($appId, AppPauseSource::Control);
     }

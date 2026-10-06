@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
+use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
@@ -18,6 +19,7 @@ use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Config\ConfigLoader;
 use Stewart\Runtime\Console\AppPauseCommand;
 use Stewart\Runtime\Console\AppRequestCommand;
+use Stewart\Runtime\Console\AppResetCommand;
 use Stewart\Runtime\Console\AppResumeCommand;
 use Stewart\Runtime\Console\ControlCommand;
 use Stewart\Runtime\Control\Client\ControlClient;
@@ -32,13 +34,18 @@ use Stewart\Runtime\Tests\Fixtures\Broker\WorkerPoolFixture;
 use Stewart\Runtime\Tests\Fixtures\Config\ConfigLoaderFixture;
 use Stewart\Runtime\Tests\Fixtures\Protocol\SerialHandler;
 use Stewart\Runtime\Tests\Fixtures\Worker\InMemoryWorkerSpawner;
+use Stewart\Store\GuardedStoreBackend;
+use Stewart\Store\StoreDsn;
+use Stewart\Store\StoreTiming;
 use Stewart\Testing\Logging\RecordingLogger;
+use Stewart\Testing\Store\InMemoryStoreBackend;
 use Symfony\Component\Console\Tester\CommandTester;
 
 use function Amp\async;
 
 #[CoversClass(AppPauseCommand::class)]
 #[CoversClass(AppResumeCommand::class)]
+#[CoversClass(AppResetCommand::class)]
 #[CoversClass(ControlCommand::class)]
 #[CoversClass(AppRequestCommand::class)]
 #[CoversClass(ControlClient::class)]
@@ -48,9 +55,13 @@ final class AppPauseCommandsTest extends TestCase
 
     private const float WAIT_SECONDS = 5;
 
+    private const string STORE_URL = 'redis://valkey:6379/0';
+
     private string $path;
 
     private BootedBroker $broker;
+
+    private InMemoryStoreBackend $store;
 
     /** @var Future<mixed> */
     private Future $running;
@@ -61,13 +72,15 @@ final class AppPauseCommandsTest extends TestCase
         $logger = new RecordingLogger();
         $pools = WorkerPoolFixture::createWorkerPool(new InMemoryWorkerSpawner(IpcCodec::createForWorkerBootstrap()), logger: $logger, outboxLimits: new OutboxLimits(100, 256));
         $appId = new AppId('serial-handler');
+        $this->store = new InMemoryStoreBackend($pools->clock);
         $this->broker = BrokerKernelFixture::boot(
             new FakeHaSession(),
             $pools,
             WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition($appId, SerialHandler::class)]))]),
             AppIdCollection::fromIds([$appId, new AppId('dormant')]),
             $logger,
-            ['shutdown_grace' => '1s', 'control' => ['listen' => 'unix://' . $this->path, 'token' => self::TOKEN]],
+            ['shutdown_grace' => '1s', 'control' => ['listen' => 'unix://' . $this->path, 'token' => self::TOKEN], 'persistence' => ['url' => self::STORE_URL]],
+            new SyntheticServices()->withService(GuardedStoreBackend::class, new GuardedStoreBackend($this->store, StoreDsn::parse(self::STORE_URL), new StoreTiming(Duration::seconds(2), Duration::seconds(5)), $pools->clock)),
         );
         $ready = $logger->waitForMessage('Worker ready');
         $this->running = async($this->broker->lifecycle->run(...));
@@ -90,6 +103,19 @@ final class AppPauseCommandsTest extends TestCase
         self::assertSame("App serial-handler was already paused.\n", $tester->getDisplay());
     }
 
+    public function testUnsavedPauseStillAppliesWithWarning(): void
+    {
+        $this->store->simulateOutage('valkey:6379 refused the connection');
+        $tester = $this->createTester(AppPauseCommand::NAME);
+
+        self::assertSame(0, $tester->execute($this->createInput('serial-handler'), ['capture_stderr_separately' => true]));
+        self::assertSame("App serial-handler paused.\n", $tester->getDisplay());
+        self::assertStringContainsString('the store did not take the change', $tester->getErrorOutput());
+
+        $tester->execute($this->createInput('serial-handler'), ['capture_stderr_separately' => true]);
+        self::assertSame("App serial-handler was already paused.\n", $tester->getDisplay());
+    }
+
     public function testResumeUnpausesPausedApp(): void
     {
         $this->createTester(AppPauseCommand::NAME)->execute($this->createInput('serial-handler'));
@@ -99,6 +125,27 @@ final class AppPauseCommandsTest extends TestCase
         self::assertSame("App serial-handler resumed.\n", $tester->getDisplay());
         self::assertSame(0, $tester->execute($this->createInput('serial-handler')));
         self::assertSame("App serial-handler was not paused.\n", $tester->getDisplay());
+    }
+
+    public function testResetHandsDecisionBackToConfig(): void
+    {
+        $this->createTester(AppPauseCommand::NAME)->execute($this->createInput('serial-handler'));
+        $tester = $this->createTester(AppResetCommand::NAME);
+
+        self::assertSame(0, $tester->execute($this->createInput('serial-handler')));
+        self::assertSame("App serial-handler pause override removed; it is running.\n", $tester->getDisplay());
+        self::assertSame(0, $tester->execute($this->createInput('serial-handler')));
+        self::assertSame("App serial-handler had no pause override.\n", $tester->getDisplay());
+    }
+
+    public function testResetRemovesOverrideOfRemovedApp(): void
+    {
+        $this->store->write('stewart:runtime:app-pause:ghost', '{"paused":true,"since":"2026-10-06T08:00:00.000000Z","source":"control"}', null);
+        $tester = $this->createTester(AppResetCommand::NAME);
+
+        self::assertSame(0, $tester->execute($this->createInput('ghost')));
+        self::assertSame("App ghost pause override removed.\n", $tester->getDisplay());
+        self::assertNull($this->store->read('stewart:runtime:app-pause:ghost'));
     }
 
     public function testUnknownAppIsOneLineAndExitOne(): void

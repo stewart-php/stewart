@@ -97,6 +97,7 @@ final class AppRunningTotals
         $calls = $this->calls;
         ksort($calls);
         $pause = $this->appId === null ? null : $pausedApps->findPause($this->appId);
+        $configPauseOverride = $this->appId === null ? null : $pausedApps->findConfigPauseOverride($this->appId);
 
         return new AppStatus(
             id: $this->id,
@@ -104,6 +105,7 @@ final class AppRunningTotals
             workerId: $this->workerId?->value,
             state: $this->state,
             pause: $pause === null ? null : new AppPauseStatus($pause->since, $pause->source),
+            configPauseOverride: $configPauseOverride === null ? null : new AppPauseStatus($configPauseOverride->since, $configPauseOverride->source),
             reportedAt: $this->reportedAt,
             subscriptions: $this->subscriptions,
             schedules: $this->schedules,

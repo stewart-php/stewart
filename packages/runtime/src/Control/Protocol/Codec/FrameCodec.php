@@ -14,6 +14,7 @@ use Stewart\Runtime\Control\Protocol\Frame\Hello;
 use Stewart\Runtime\Control\Protocol\Frame\PauseAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\Rejected;
 use Stewart\Runtime\Control\Protocol\Frame\RequestFailed;
+use Stewart\Runtime\Control\Protocol\Frame\ResetAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\ResumeAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\ServerFrame;
 use Stewart\Runtime\Control\Protocol\Frame\SnapshotFrame;
@@ -39,6 +40,7 @@ final readonly class FrameCodec
         'snapshot_request' => SnapshotRequest::class,
         'pause_app' => PauseAppRequest::class,
         'resume_app' => ResumeAppRequest::class,
+        'reset_app' => ResetAppRequest::class,
     ];
 
     private const array SERVER_FRAMES = [

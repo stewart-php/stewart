@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Control\Request;
 
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\StewartException;
+use Stewart\Runtime\App\AppPauseOutcome;
 use Stewart\Runtime\Broker\AppPauseService;
 use Stewart\Runtime\Control\Protocol\Frame\ClientFrame;
 use Stewart\Runtime\Control\Protocol\Frame\CommandResult;
@@ -25,13 +26,13 @@ abstract readonly class AppPauseChangeHandler implements ControlRequestHandler
     public function answerRequest(ClientFrame $request): ServerFrame
     {
         $appId = new AppId($request->appId);
-        $changed = $this->changePause($appId);
+        $outcome = $this->changePause($appId);
 
-        return new CommandResult($changed, $this->describeOutcome($appId, $changed));
+        return new CommandResult($outcome->changed, $this->describeOutcome($appId, $outcome->changed), $outcome->persistence->findWarning());
     }
 
     /** @throws StewartException */
-    abstract protected function changePause(AppId $appId): bool;
+    abstract protected function changePause(AppId $appId): AppPauseOutcome;
 
     abstract protected function describeOutcome(AppId $appId, bool $changed): string;
 }
