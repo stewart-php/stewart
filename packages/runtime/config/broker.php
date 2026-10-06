@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Amp\Parallel\Context\ProcessContextFactory;
 use Amp\Parallel\Ipc\LocalIpcHub;
 use Stewart\Client\HaClient;
+use Stewart\Runtime\Broker\AppPauseOverrideCodec;
 use Stewart\Runtime\Broker\AppPlacement;
 use Stewart\Runtime\Broker\AppPlacementFactory;
 use Stewart\Runtime\Broker\BrokerLifecycle;
@@ -27,6 +28,7 @@ use Stewart\Runtime\Broker\WorkerSpawner;
 use Stewart\Runtime\Control\ControlPlaneFactory;
 use Stewart\Runtime\Control\Request\ControlRequestDispatcher;
 use Stewart\Runtime\Control\Request\ControlRequestHandler;
+use Stewart\Runtime\Json\WireMapper;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Store\GuardedStoreBackend;
@@ -66,6 +68,7 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(GuardedStoreBackend::class)->factory([service(BrokerStoreBackendOpener::class), 'openConfiguredBackend']);
     $services->alias(StoreBackend::class, GuardedStoreBackend::class);
+    $services->set(AppPauseOverrideCodec::class)->arg('$appPauseOverrideWireMapper', inline_service(WireMapper::class)->factory([AppPauseOverrideCodec::class, 'createOverrideWireMapper']));
 
     $services->set(SubscriptionRegistry::class)->arg('$brokerSubscriptionListeners', tagged_iterator('stewart.broker_subscription_listener'));
     $services->set(MqttLink::class)->factory([service(MqttLinkResolver::class), 'resolveMqttLink']);

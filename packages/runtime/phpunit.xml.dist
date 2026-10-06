@@ -20,6 +20,10 @@
         <testsuite name="process">
             <directory>tests/Process</directory>
         </testsuite>
+        <!-- Needs the valkey service, not Home Assistant. -->
+        <testsuite name="persistence">
+            <directory>tests/Persistence</directory>
+        </testsuite>
     </testsuites>
     <source>
         <include>
