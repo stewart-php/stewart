@@ -60,6 +60,8 @@ final class StubSnapshotSource
                 memoryBytes: 20_971_520,
                 lastPongAt: Instant::fromIso('2026-09-26T10:59:55Z'),
                 outbox: new OutboxStatus(0, 0, 7, 90, 12),
+                restarts: 3,
+                quarantines: 1,
             )],
             apps: [new AppStatus(
                 id: 'porch',

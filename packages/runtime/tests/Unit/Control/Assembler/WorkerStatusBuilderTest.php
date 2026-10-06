@@ -57,6 +57,8 @@ final class WorkerStatusBuilderTest extends TestCase
         self::assertNull($before->lastPongAt);
         self::assertSame(0, $before->missedProbes);
         self::assertSame(0, $before->restartsInWindow);
+        self::assertSame(0, $before->restarts);
+        self::assertSame(0, $before->quarantines);
         self::assertNull($before->restartDueAt);
 
         $this->broker->getPool()->markReady($handle);
@@ -104,6 +106,7 @@ final class WorkerStatusBuilderTest extends TestCase
         $status = $this->buildStatusOf(0);
         self::assertSame(WorkerPhase::RestartScheduled, $status->phase);
         self::assertSame(1, $status->restartsInWindow);
+        self::assertSame(1, $status->restarts);
         self::assertEquals($this->broker->timers->clock->getNow()->plus(Duration::seconds(BrokerStateFixture::RESTART_DELAY_SECONDS)), $status->restartDueAt);
         self::assertSame(['demo'], $status->appIds);
         self::assertNull($status->pid);
@@ -128,6 +131,8 @@ final class WorkerStatusBuilderTest extends TestCase
         self::assertSame(['demo'], $status->appIds);
         self::assertNull($status->pid);
         self::assertSame(2, $status->restartsInWindow);
+        self::assertSame(2, $status->restarts);
+        self::assertSame(1, $status->quarantines);
     }
 
     public function testStartThatIsStillSpawningIsShownAsSpawning(): void

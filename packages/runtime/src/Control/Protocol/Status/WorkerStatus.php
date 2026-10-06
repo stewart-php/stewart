@@ -27,5 +27,7 @@ final readonly class WorkerStatus
         public ?Instant $restartDueAt = null,
         public ?OutboxStatus $outbox = null,
         public int $inFlightServiceCalls = 0,
+        public int $restarts = 0,
+        public int $quarantines = 0,
     ) {}
 }

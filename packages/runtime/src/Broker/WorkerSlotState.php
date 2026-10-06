@@ -22,6 +22,10 @@ final class WorkerSlotState
 
     public private(set) ?Instant $restartDueAt = null;
 
+    public private(set) int $restarts = 0;
+
+    public private(set) int $quarantines = 0;
+
     private OutboxStatus $retiredOutboxes;
 
     public function __construct(
@@ -86,11 +90,13 @@ final class WorkerSlotState
         $this->moveTo(WorkerPhase::RestartScheduled);
         $this->restartTimer = $timer;
         $this->restartDueAt = $dueAt;
+        ++$this->restarts;
     }
 
     public function markQuarantined(): void
     {
         $this->moveTo(WorkerPhase::Quarantined);
+        ++$this->quarantines;
     }
 
     public function stop(): void

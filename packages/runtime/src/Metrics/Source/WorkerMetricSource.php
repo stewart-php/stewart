@@ -23,6 +23,8 @@ final readonly class WorkerMetricSource implements RuntimeMetricSource
         $memory = MetricFamily::createGauge('stewart_worker_memory_bytes', 'Memory the worker process last reported.');
         $lastPong = MetricFamily::createGauge('stewart_worker_last_pong_timestamp_seconds', 'Unix time of the last liveness answer.');
         $restartsInWindow = MetricFamily::createGauge('stewart_worker_restarts_in_window', 'Restarts inside the current restart budget window.');
+        $restarts = MetricFamily::createCounter('stewart_worker_restarts_total', 'Restarts scheduled since the daemon started.');
+        $quarantines = MetricFamily::createCounter('stewart_worker_quarantines_total', 'Times the worker was quarantined after using up its restart budget.');
         $restartDue = MetricFamily::createGauge('stewart_worker_restart_due_timestamp_seconds', 'Unix time of the next scheduled restart.');
         $inFlight = MetricFamily::createGauge('stewart_worker_service_calls_in_flight', 'Home Assistant calls of this worker awaiting an answer.');
         $queued = MetricFamily::createGauge('stewart_worker_outbox_queued', 'Messages waiting in the outbox to the worker.');
@@ -41,6 +43,8 @@ final readonly class WorkerMetricSource implements RuntimeMetricSource
             $ready = $ready->withSample($labels, $worker->ready);
             $missedProbes = $missedProbes->withSample($labels, $worker->missedProbes);
             $restartsInWindow = $restartsInWindow->withSample($labels, $worker->restartsInWindow);
+            $restarts = $restarts->withSample($labels, $worker->restarts);
+            $quarantines = $quarantines->withSample($labels, $worker->quarantines);
             $inFlight = $inFlight->withSample($labels, $worker->inFlightServiceCalls);
 
             if ($worker->loopLag !== null) {
@@ -69,7 +73,7 @@ final readonly class WorkerMetricSource implements RuntimeMetricSource
         }
 
         return MetricFamilyCollection::fromFamilies([
-            $phases, $ready, $missedProbes, $loopLag, $memory, $lastPong, $restartsInWindow, $restartDue, $inFlight,
+            $phases, $ready, $missedProbes, $loopLag, $memory, $lastPong, $restartsInWindow, $restarts, $quarantines, $restartDue, $inFlight,
             $queued, $largestBatch, $dropped, $coalesced, $batchesSent,
         ]);
     }

@@ -73,6 +73,12 @@ stewart_worker_last_pong_timestamp_seconds{worker="0"} 1790420395
 # HELP stewart_worker_restarts_in_window Restarts inside the current restart budget window.
 # TYPE stewart_worker_restarts_in_window gauge
 stewart_worker_restarts_in_window{worker="0"} 0
+# HELP stewart_worker_restarts_total Restarts scheduled since the daemon started.
+# TYPE stewart_worker_restarts_total counter
+stewart_worker_restarts_total{worker="0"} 3
+# HELP stewart_worker_quarantines_total Times the worker was quarantined after using up its restart budget.
+# TYPE stewart_worker_quarantines_total counter
+stewart_worker_quarantines_total{worker="0"} 1
 # HELP stewart_worker_service_calls_in_flight Home Assistant calls of this worker awaiting an answer.
 # TYPE stewart_worker_service_calls_in_flight gauge
 stewart_worker_service_calls_in_flight{worker="0"} 0

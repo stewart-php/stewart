@@ -14,9 +14,9 @@ service calls  1 in flight, 0 refused
 routing        2 subscriptions, 1 patterns, cache 100 hits / 7 misses 
 
 Workers
-worker phase                   pid  ready apps lag    memory  pong   missed restarts queued dropped batches          calls 
-0      live                    4242 yes   demo 1.5 ms 4.0 MiB 7s ago 0      0        2      4       40 (5 coalesced) 1     
-1      restart_scheduled in 4s -    no    echo -      -       never  0      2        -      -       -                0     
+worker phase                   pid  ready apps lag    memory  pong   missed restarts    queued dropped batches          calls 
+0      live                    4242 yes   demo 1.5 ms 4.0 MiB 7s ago 0      0           2      4       40 (5 coalesced) 1     
+1      restart_scheduled in 4s -    no    echo -      -       never  0      2 (5 total) -      -       -                0     
 
 Apps
 app  worker state                                               reported subs schedules delivered dropped suppressed runs publishes calls ok/failed p95     failures 

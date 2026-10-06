@@ -69,7 +69,7 @@ final readonly class StatusRenderer
                 $this->formatter->formatBytes($w->memoryBytes),
                 $this->formatter->formatTimeAgo($w->lastPongAt, $now),
                 (string) $w->missedProbes,
-                (string) $w->restartsInWindow,
+                $w->restarts === 0 ? '0' : \sprintf('%d (%d total)', $w->restartsInWindow, $w->restarts),
                 $w->outbox === null ? '-' : (string) $w->outbox->queued,
                 $w->outbox === null ? '-' : (string) $w->outbox->dropped,
                 $w->outbox === null ? '-' : \sprintf('%d (%d coalesced)', $w->outbox->stateBatchesSent, $w->outbox->coalescedStateChanges),

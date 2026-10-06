@@ -47,6 +47,8 @@ final readonly class WorkerStatusBuilder
             restartDueAt: $state->restartDueAt,
             outbox: $state->getOutboxStatus(),
             inFlightServiceCalls: $live === null ? 0 : $this->callSlots->countInFlightCallsFor($live),
+            restarts: $state->restarts,
+            quarantines: $state->quarantines,
         );
     }
 }
