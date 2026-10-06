@@ -42,6 +42,7 @@ section says what to change.
   - Event data must be keyed and transportable; nulls are kept; bad input throws `EventFireException` before sending
   - Fired events share the `service_calls` in-flight limits, per-app call counts and `dry_run` with service calls
   - Needs an administrator token, like the rest of Stewart
+  - `StewartIdentity::wasCausedByStewart()` also takes an `HaEvent`, so watchers can skip Stewart's own fired events
 - `RecordingHaContext::fireEvent()` records to `firedEvents`, echoes the event to `watchEvents()`, and
   `stubEventFireFailure()` makes it throw
 

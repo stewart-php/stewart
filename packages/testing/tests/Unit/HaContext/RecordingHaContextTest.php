@@ -208,6 +208,7 @@ final class RecordingHaContextTest extends TestCase
         self::assertCount(1, $echoes);
         self::assertSame(EventOrigin::Remote, $echoes[0]->origin);
         self::assertTrue($context->isSameOrParentOf($echoes[0]->context ?? EventContext::unknown()));
+        self::assertTrue(new StewartIdentity(RecordingHaContext::STEWART_USER_ID)->wasCausedByStewart($echoes[0]));
     }
 
     public function testCallsAndFiresGetDistinctContexts(): void
