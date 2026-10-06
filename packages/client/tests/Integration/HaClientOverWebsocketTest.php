@@ -15,6 +15,7 @@ use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
 use Stewart\Client\Tests\Fixtures\FakeHaServer;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\Exception\ServiceCallError;
 use Stewart\Contracts\History\HistoryDetail;
@@ -83,6 +84,16 @@ final class HaClientOverWebsocketTest extends TestCase
 
         self::assertSame('call-1', $client->callService('light', 'turn_on')->context?->id);
         self::assertSame('stewart-user', $client->getCurrentUserId());
+    }
+
+    public function testEventFireRoundTripsOverSocket(): void
+    {
+        $this->server->answerCommand('fire_event', ['context' => ['id' => 'fire-1', 'parent_id' => null, 'user_id' => 'stewart-user']]);
+
+        $context = $this->connectClient()->fireEvent(new EventPayload('doorbell_pressed', ['button' => 'front']));
+
+        self::assertSame('fire-1', $context->id);
+        self::assertSame(['button' => 'front'], $this->server->listReceivedCommands('fire_event')[0]['event_data'] ?? null);
     }
 
     public function testHistoryRoundTripsOverSocket(): void

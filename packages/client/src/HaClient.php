@@ -10,6 +10,7 @@ use DateTimeZone;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Stewart\Client\Connection\Command\CallService;
+use Stewart\Client\Connection\Command\FireEvent;
 use Stewart\Client\Connection\Command\GetConfig;
 use Stewart\Client\Connection\Command\GetCurrentUser;
 use Stewart\Client\Connection\Command\GetEntityRegistry;
@@ -28,7 +29,9 @@ use Stewart\Client\Registry\Collection\EntityRegistryCollection;
 use Stewart\Client\Registry\EntityRegistryEntry;
 use Stewart\Client\State\EntityStateDecoder;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\Event\HaEvent;
+use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Exception\ServiceCallException;
@@ -198,6 +201,20 @@ final class HaClient
         );
     }
 
+    /** @throws EventFireException */
+    public function fireEvent(EventPayload $payload): EventContext
+    {
+        try {
+            $result = $this->connection->send(new FireEvent($payload));
+        } catch (HaClientException $e) {
+            throw $this->toEventFireException($payload->eventType, $e);
+        }
+
+        $context = $result['context'] ?? null;
+
+        return \is_array($context) ? EventContext::fromArray($context) : EventContext::unknown();
+    }
+
     /** @throws HistoryException */
     public function fetchHistory(EntityId $entityId, HistoryWindow $window, HistoryDetail $detail): EntityStateHistory
     {
@@ -322,6 +339,17 @@ final class HaClient
             ),
             HaClientError::CommandTimedOut => ServiceCallException::timedOut($domain, $service, $e->getMessage(), $e),
             default => ServiceCallException::unreachable($domain, $service, $e->getMessage(), $e),
+        };
+    }
+
+    private function toEventFireException(string $eventType, HaClientException $e): EventFireException
+    {
+        return match ($e->reason) {
+            HaClientError::CommandRejected,
+            HaClientError::CommandUnauthorized,
+            HaClientError::CommandUnencodable => EventFireException::rejected($eventType, $e->findDetail() ?? $e->getMessage(), $e->findErrorCode(), $e),
+            HaClientError::CommandTimedOut => EventFireException::timedOut($eventType, $e->getMessage(), $e),
+            default => EventFireException::unreachable($eventType, $e->getMessage(), $e),
         };
     }
 }

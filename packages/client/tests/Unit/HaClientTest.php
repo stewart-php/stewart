@@ -16,7 +16,9 @@ use Stewart\Client\Exception\HaClientError;
 use Stewart\Client\HaClient;
 use Stewart\Client\State\EntityStateDecoder;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\Event\HaEvent;
+use Stewart\Contracts\Exception\EventFireError;
 use Stewart\Contracts\Exception\HistoryError;
 use Stewart\Contracts\Exception\ServiceCallError;
 use Stewart\Contracts\Exception\ServiceCallException;
@@ -289,6 +291,69 @@ final class HaClientTest extends TestCase
 
             throw $e;
         }
+    }
+
+    public function testEventFireReturnsHaContext(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('fire_event', ['type' => 'result', 'success' => true, 'result' => [
+            'context' => ['id' => 'fire-1', 'parent_id' => null, 'user_id' => 'stewart-user'],
+        ]]);
+
+        $context = $client->fireEvent(new EventPayload('doorbell_pressed', ['button' => 'front']));
+
+        self::assertSame('fire-1', $context->id);
+        self::assertSame('stewart-user', $context->userId);
+        self::assertSame(['button' => 'front'], $socket->listSentOfType('fire_event')[0]['event_data'] ?? null);
+    }
+
+    public function testEventFireWithoutContextIsUnknown(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('fire_event', ['type' => 'result', 'success' => true, 'result' => []]);
+
+        self::assertSame('', $client->fireEvent(new EventPayload('doorbell_pressed'))->id);
+    }
+
+    #[DataProvider('provideEventFireRejections')]
+    public function testEventFireRejectionKeepsHaCode(string $errorCode, string $message): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('fire_event', ['type' => 'result', 'success' => false, 'error' => ['code' => $errorCode, 'message' => $message]]);
+
+        $e = $this->assertThrowsReason(EventFireError::Rejected, static fn() => $client->fireEvent(new EventPayload('doorbell_pressed')));
+        self::assertSame($errorCode, $e->context['errorCode'] ?? null);
+        self::assertSame($message, $e->context['detail'] ?? null);
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function provideEventFireRejections(): iterable
+    {
+        yield 'rejected with a code' => ['invalid_format', 'Invalid event data'];
+        yield 'unauthorized' => ['unauthorized', 'Unauthorized'];
+    }
+
+    public function testEventFireTimesOut(): void
+    {
+        $timers = new ManualTimers();
+        $client = self::connect(FakeWebsocketConnector::createAuthenticatedConnection(), Duration::milliseconds(20), $timers);
+        async(static fn() => $timers->delay(Duration::milliseconds(20)))->ignore();
+
+        $this->assertThrowsReason(EventFireError::TimedOut, static fn() => $client->fireEvent(new EventPayload('doorbell_pressed')));
+    }
+
+    public function testEventFireWithoutConnectionIsUnreachable(): void
+    {
+        $client = self::connect(FakeWebsocketConnector::createAuthenticatedConnection());
+        $client->close();
+
+        $this->assertThrowsReason(EventFireError::Unreachable, static fn() => $client->fireEvent(new EventPayload('doorbell_pressed')));
     }
 
     public function testEntityRegistrySkipsInvalidEntries(): void
