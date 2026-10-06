@@ -41,4 +41,14 @@ final class AppException extends StewartException
     {
         return self::createForReason(AppError::InitializeTimedOut, ['appId' => $appId->value, 'timeout' => (string) $timeout], $previous);
     }
+
+    public static function unknown(AppId $appId): self
+    {
+        return self::createForReason(AppError::Unknown, ['appId' => $appId->value]);
+    }
+
+    public static function disabled(AppId $appId): self
+    {
+        return self::createForReason(AppError::Disabled, ['appId' => $appId->value]);
+    }
 }

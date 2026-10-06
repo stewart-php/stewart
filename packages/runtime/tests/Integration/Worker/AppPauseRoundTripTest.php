@@ -13,6 +13,7 @@ use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
+use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppPauseRegistry;
@@ -45,16 +46,17 @@ final class AppPauseRoundTripTest extends TestCase
         $pausedApps = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]));
         $pools = WorkerPoolFixture::createWorkerPool(new InMemoryWorkerSpawner(IpcCodec::createForWorkerBootstrap()), logger: $logger, outboxLimits: new OutboxLimits(100, 256));
         $appId = new AppId('serial-handler');
+        $apps = AppDefinitionCollection::keyedByAppId([new AppDefinition($appId, SerialHandler::class)]);
         $broker = BrokerKernelFixture::boot(
             $session,
             $pools,
-            WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition($appId, SerialHandler::class)]))]),
+            WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), $apps)]),
             AppIdCollection::fromIds([$appId]),
             $logger,
             ['shutdown_grace' => '1s'],
             new SyntheticServices()->withService(AppPauseRegistry::class, $pausedApps),
         );
-        $service = new AppPauseService($pausedApps, $pools->slots, $logger);
+        $service = new AppPauseService(new AppCatalog($apps, AppIdCollection::fromIds([$appId]), AppIdCollection::fromIds([])), $pausedApps, $pools->slots, $logger);
         $ready = $logger->waitForMessage('Worker ready');
 
         /** @var Future<null> $running */

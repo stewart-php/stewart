@@ -14,6 +14,8 @@ enum AppError: string implements ExceptionReason
     case NotInstantiable = 'not_instantiable';
     case IdInvalid = 'id_invalid';
     case InitializeTimedOut = 'initialize_timed_out';
+    case Unknown = 'unknown';
+    case Disabled = 'disabled';
 
     public function messageTemplate(): string
     {
@@ -24,6 +26,8 @@ enum AppError: string implements ExceptionReason
             self::NotInstantiable => '{className} has #[Automation] but cannot be instantiated.',
             self::IdInvalid => '{className}: automation ID "{appId}" is invalid; use lowercase letters, digits, "-" and "_", starting with a letter.',
             self::InitializeTimedOut => '{appId} initialize() did not return within {timeout}. Raise supervision.initialize_timeout if needed.',
+            self::Unknown => 'No automation with ID "{appId}".',
+            self::Disabled => 'Automation "{appId}" is not loaded because apps.{appId}.enabled is false.',
         };
     }
 }
