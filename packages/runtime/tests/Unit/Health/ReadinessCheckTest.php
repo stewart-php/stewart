@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Runtime\Tests\Unit\Control\Client;
+namespace Stewart\Runtime\Tests\Unit\Health;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Stewart\Runtime\Control\Client\ReadinessCheck;
-use Stewart\Runtime\Control\Client\ReadinessVerdict;
+use Stewart\Runtime\Health\ReadinessCheck;
+use Stewart\Runtime\Health\ReadinessVerdict;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
 use Stewart\Runtime\Tests\Fixtures\Control\StubSnapshotSource;

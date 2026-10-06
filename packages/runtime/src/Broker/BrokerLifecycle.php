@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker;
 
 use Psr\Log\LoggerInterface;
+use Stewart\Runtime\Broker\Http\ProbeListener;
 use Stewart\Runtime\Broker\Mqtt\MqttLink;
 use Stewart\Runtime\Broker\Mqtt\MqttMessageRouter;
 use Stewart\Runtime\Time\ProcessTimeZone;
@@ -24,6 +25,7 @@ final readonly class BrokerLifecycle
         private ConnectionTracker $connection,
         private ProcessTimeZone $processTimeZone,
         private ControlPlane $control,
+        private ProbeListener $probes,
         private MqttLink $mqtt,
         private MqttMessageRouter $mqttRouter,
         private AppPauseService $pauses,
@@ -46,6 +48,7 @@ final readonly class BrokerLifecycle
             // A stop can land while the previous step suspends; it has already closed what would start here.
             if ($this->run->isRunning()) {
                 $this->control->start();
+                $this->probes->start();
                 $this->mqtt->startInBackground($this->mqttRouter);
             }
 
@@ -66,9 +69,19 @@ final readonly class BrokerLifecycle
 
             throw $e;
         } finally {
+            $this->stopProbeListener();
             $this->stopControlPlane();
             $this->signals->removeAll();
             $this->loopErrors->restorePrevious();
+        }
+    }
+
+    private function stopProbeListener(): void
+    {
+        try {
+            $this->probes->stop();
+        } catch (Throwable $e) {
+            $this->logger->error('Could not stop the probe listener while shutting down', ['exception' => $e]);
         }
     }
 

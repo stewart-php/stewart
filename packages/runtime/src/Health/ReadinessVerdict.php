@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Runtime\Control\Client;
+namespace Stewart\Runtime\Health;
 
 final readonly class ReadinessVerdict
 {

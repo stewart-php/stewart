@@ -7,6 +7,7 @@ use Stewart\Runtime\App\AppDiscovery;
 use Stewart\Runtime\Config\Environment\LeafParser;
 use Stewart\Runtime\Config\Environment\LeafParserChain;
 use Stewart\Runtime\Config\EnvironmentVariables;
+use Stewart\Runtime\Health\ReadinessCheck;
 use Stewart\Runtime\Kernel\BrokerKernel;
 use Stewart\Runtime\Kernel\ProfileCompiler;
 use Stewart\Runtime\Logging\LoggerFactory;
@@ -29,6 +30,7 @@ return static function (ContainerConfigurator $container, ContainerBuilder $buil
     $services->load('Stewart\\Runtime\\Console\\', '../src/Console/');
     $services->load('Stewart\\Runtime\\Config\\', '../src/Config/');
     $services->load('Stewart\\Runtime\\Control\\Client\\', '../src/Control/Client/');
+    $services->set(ReadinessCheck::class);
 
     $services->set(ClosestNameFinder::class);
     $services->set(EnvironmentVariables::class)->factory([EnvironmentVariables::class, 'fromGlobals']);

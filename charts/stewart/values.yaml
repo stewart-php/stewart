@@ -95,6 +95,11 @@ securityContext:
 terminationGracePeriodSeconds: 30
 
 probes:
+  # http: the kubelet calls /healthz and /readyz on probes.port. exec: runs `stewart status --probe` in the pod.
+  mode: http
+  # The address the probe listener binds; "::" on an IPv6-only cluster.
+  host: 0.0.0.0
+  port: 8080
   startup:
     periodSeconds: 10
     timeoutSeconds: 10
