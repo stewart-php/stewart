@@ -42,7 +42,7 @@ section says what to change.
 ### Changed
 
 - A subscription the broker refuses is cancelled in the worker, not just logged
-- IPC protocol 19; broker and workers must run the same version
+- IPC protocol 20; broker and workers must run the same version
 - Builder triggers use the `trigger:` key, which needs Home Assistant 2024.10 or newer
 - Generated code format 4; regenerate after upgrading
 

@@ -1,0 +1,11 @@
+{
+    "t": "event_fire_result",
+    "m": {
+        "correlation_id": "w0:6",
+        "context": {
+            "id": "fire-1",
+            "parent_id": null,
+            "user_id": "stewart-user"
+        }
+    }
+}

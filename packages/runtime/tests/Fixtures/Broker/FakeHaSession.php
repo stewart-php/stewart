@@ -9,6 +9,7 @@ use Amp\Future;
 use Closure;
 use DateTimeZone;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\History\Collection\HistoricalStateCollection;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryDetail;
@@ -34,6 +35,8 @@ final class FakeHaSession implements HaSession
 
     public const string CALL_CONTEXT_PREFIX = 'call-';
 
+    public const string FIRE_CONTEXT_PREFIX = 'fire-';
+
     public ?HaSessionListener $listener = null;
 
     public ?Throwable $openFailure = null;
@@ -49,6 +52,9 @@ final class FakeHaSession implements HaSession
 
     /** @var list<ReceivedServiceCall> */
     public array $receivedCalls = [];
+
+    /** @var list<ReceivedEventFire> */
+    public array $receivedEventFires = [];
 
     public bool $connected = true;
 
@@ -182,6 +188,14 @@ final class FakeHaSession implements HaSession
         $latch?->waitUntilOpen();
 
         return new ServiceResponse($domain, $service, context: new EventContext(self::CALL_CONTEXT_PREFIX . $this->calls, userId: self::HA_USER_ID));
+    }
+
+    public function fireEvent(EventPayload $payload): EventContext
+    {
+        $this->receivedEventFires[] = new ReceivedEventFire($payload->eventType, $payload->data);
+        $this->callLatch?->waitUntilOpen();
+
+        return new EventContext(self::FIRE_CONTEXT_PREFIX . \count($this->receivedEventFires), userId: self::HA_USER_ID);
     }
 
     public function fetchHistory(EntityId $entityId, HistoryWindow $window, HistoryDetail $detail): EntityStateHistory
