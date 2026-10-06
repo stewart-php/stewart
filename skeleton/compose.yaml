@@ -1,7 +1,7 @@
 # Runs this checkout in the published runtime image: `make up` locally or on a server, `make deploy` after a push.
 services:
   stewart:
-    image: ghcr.io/stewart-php/runtime:0.5
+    image: ghcr.io/stewart-php/runtime:0.6
     user: "${UID:-1000}:${GID:-1000}"
     volumes:
       - .:/app
