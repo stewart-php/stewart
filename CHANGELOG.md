@@ -4,6 +4,57 @@ Every package, the `ghcr.io/stewart-php/runtime` image, the Helm chart and the s
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). On 0.x, a minor release may break; its "Upgrading"
 section says what to change.
 
+## [0.6.0] - 2026-10-06
+
+Stewart can now be operated from outside. Apps can be paused and resumed without a restart, from the CLI or over
+HTTP, and the daemon answers Kubernetes probes and Prometheus scrapes on its own HTTP ports.
+
+### Highlights
+
+- **Pausing apps.** `stewart app:pause porch` stops an app's events and schedule runs without unloading it;
+  `app:resume` undoes it and `app:reset` hands the decision back to `apps.<id>.paused` in `stewart.yaml`. With a
+  persistence store the choice survives restarts.
+- **HTTP probes.** `http.listen` answers `/healthz` and `/readyz` in-process, so Kubernetes probes no longer start PHP.
+  The chart uses them by default.
+- **HTTP admin API.** `http.admin.listen` with a bearer token lists apps, pauses, resumes and resets them, and
+  serves `/metrics`.
+- **Prometheus metrics.** `/metrics` exposes `stewart_*` metrics for apps, workers, the Home Assistant connection,
+  routing, service calls and the store; the chart can create a `PodMonitor`.
+
+### Added
+
+- `apps.<id>.paused` starts an app loaded but paused
+- `stewart app:pause`, `app:resume` and `app:reset` change an app's pause at run time
+  - A paused app keeps its subscriptions and schedules but receives no events or runs; they count as `suppressed`
+  - Pauses and resumes are stored in the persistence store and restored on start; `app:reset` removes the stored
+    override so config decides again, and also clears overrides of apps no longer loaded
+  - Unknown or disabled apps are refused; a change that could not be stored is applied and reported as a warning
+- `stewart status` shows `(paused by <source> <since> ago)` and a `suppressed` column
+- `http.listen` (default `off`) serves `/healthz` and `/readyz`, with the same verdicts as `stewart status --probe`
+- `http.admin.listen` (default `off`) and `http.admin.token` start the HTTP admin API; the daemon refuses to start
+  without a token
+  - `GET /api/apps`, `GET /api/apps/<id>`
+  - `POST /api/apps/<id>/pause`, `/resume` and `/reset`, recorded with the `http` source
+  - `GET /metrics` in the Prometheus text format
+- Worker restart and quarantine totals over the daemon's lifetime, in `stewart status` and as
+  `stewart_worker_restarts_total` and `stewart_worker_quarantines_total`
+- Chart
+  - `probes.mode` (`http` by default, `exec` for the previous `stewart status --probe`), `probes.host`, `probes.port`
+  - `adminApi.*` enables the admin API with a generated token kept in the chart secret
+  - `adminApi.podMonitor.*` creates a Prometheus Operator `PodMonitor`; it refuses a loopback `adminApi.host`
+
+### Changed
+
+- `AppId` rejects ids longer than 100 characters (`IdentifierError::AppIdTooLong`)
+- Chart probes call the HTTP port instead of running `stewart status` in the pod
+- IPC protocol 22 and control protocol 23; broker, workers and the CLI must run the same version
+
+### Upgrading
+
+1. Run `make upgrade VERSION=0.6`. Broker, workers and `stewart` commands must all run 0.6.
+2. Rename any app whose id is longer than 100 characters.
+3. On Kubernetes, the chart now probes port 8080 (`probes.port`); set `probes.mode: exec` to keep exec probes.
+
 ## [0.5.0] - 2026-10-06
 
 Apps now know where things are and who did what. They can schedule around the sun, react to any Home Assistant

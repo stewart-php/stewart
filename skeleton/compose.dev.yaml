@@ -1,7 +1,7 @@
 # Added by the Makefile for development: Xdebug, the Composer cache in var/, dependencies installed by `make install`.
 services:
   stewart:
-    image: ghcr.io/stewart-php/runtime:0.5-dev
+    image: ghcr.io/stewart-php/runtime:0.6-dev
     environment:
       STEWART_BOOT_COMPOSER: never
       COMPOSER_HOME: /app/var/composer
