@@ -15,6 +15,7 @@ use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\AppPause;
 use Stewart\Runtime\App\AppPauseOutcome;
 use Stewart\Runtime\App\AppPauseOverride;
+use Stewart\Runtime\App\AppPauseResetOutcome;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppPauseOverrideCodec;
 use Stewart\Runtime\Broker\AppPauseOverrideStore;
@@ -25,6 +26,7 @@ use Stewart\Runtime\Broker\WorkerSlotRegistry;
 use Stewart\Runtime\Exception\AppError;
 use Stewart\Runtime\Lifecycle\AppPauseOverridePersistence;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
+use Stewart\Runtime\Lifecycle\AppStateAfterReset;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Store\StorePrefix;
 use Stewart\Testing\Exception\AssertsReason;
@@ -136,8 +138,49 @@ final class AppPauseServiceTest extends TestCase
         $this->createService($registry)->restoreStoredOverrides();
 
         self::assertSame(['demo'], $registry->listPausedAppIds()->toStrings());
-        self::assertSame(['Stored pause overrides name apps that no longer exist'], $this->logger->listMessagesAt('warning'));
+        self::assertSame(['Stored pause overrides name apps that no longer exist; stewart app:reset <app> removes them'], $this->logger->listMessagesAt('warning'));
         self::assertSame('ghost', $this->logger->records->getFirst()?->context['apps']);
+    }
+
+    public function testResetReturnsAppToConfigPause(): void
+    {
+        $registry = $this->createRegistry(startsPaused: true);
+        $service = $this->createService($registry);
+        $service->resumeApp(new AppId('demo'), AppPauseSource::Control);
+
+        self::assertEquals(
+            new AppPauseResetOutcome(true, AppStateAfterReset::PausedByConfig, AppPauseOverridePersistence::Stored),
+            $service->resetApp(new AppId('demo'), AppPauseSource::Control),
+        );
+        self::assertTrue($registry->isPaused(new AppId('demo')));
+        self::assertNull($this->backend->read(self::OVERRIDE_KEY));
+    }
+
+    public function testResetWithoutOverrideRemovesNothing(): void
+    {
+        self::assertEquals(
+            new AppPauseResetOutcome(false, AppStateAfterReset::Running, AppPauseOverridePersistence::Stored),
+            $this->createService($this->createRegistry())->resetApp(new AppId('demo'), AppPauseSource::Control),
+        );
+    }
+
+    public function testResetRemovesOverrideOfAppNotLoaded(): void
+    {
+        $this->createOverrideStore()->saveOverride(new AppPauseOverride(new AppId('ghost'), true, $this->clock->getNow(), AppPauseSource::Control));
+
+        self::assertEquals(
+            new AppPauseResetOutcome(true, AppStateAfterReset::NotLoaded, AppPauseOverridePersistence::Stored),
+            $this->createService($this->createRegistry())->resetApp(new AppId('ghost'), AppPauseSource::Control),
+        );
+        self::assertFalse($this->createOverrideStore()->hasOverride(new AppId('ghost')));
+    }
+
+    public function testResetOfAppNotLoadedNeedsStoredOverride(): void
+    {
+        $service = $this->createService($this->createRegistry());
+
+        $this->assertThrowsReason(AppError::Unknown, fn() => $service->resetApp(new AppId('ghost'), AppPauseSource::Control));
+        $this->assertThrowsReason(AppError::Disabled, fn() => $service->resetApp(new AppId('dormant'), AppPauseSource::Control));
     }
 
     public function testUnknownAppIsRefused(): void

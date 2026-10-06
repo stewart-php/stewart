@@ -19,6 +19,7 @@ use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Config\ConfigLoader;
 use Stewart\Runtime\Console\AppPauseCommand;
 use Stewart\Runtime\Console\AppRequestCommand;
+use Stewart\Runtime\Console\AppResetCommand;
 use Stewart\Runtime\Console\AppResumeCommand;
 use Stewart\Runtime\Console\ControlCommand;
 use Stewart\Runtime\Control\Client\ControlClient;
@@ -44,6 +45,7 @@ use function Amp\async;
 
 #[CoversClass(AppPauseCommand::class)]
 #[CoversClass(AppResumeCommand::class)]
+#[CoversClass(AppResetCommand::class)]
 #[CoversClass(ControlCommand::class)]
 #[CoversClass(AppRequestCommand::class)]
 #[CoversClass(ControlClient::class)]
@@ -123,6 +125,27 @@ final class AppPauseCommandsTest extends TestCase
         self::assertSame("App serial-handler resumed.\n", $tester->getDisplay());
         self::assertSame(0, $tester->execute($this->createInput('serial-handler')));
         self::assertSame("App serial-handler was not paused.\n", $tester->getDisplay());
+    }
+
+    public function testResetHandsDecisionBackToConfig(): void
+    {
+        $this->createTester(AppPauseCommand::NAME)->execute($this->createInput('serial-handler'));
+        $tester = $this->createTester(AppResetCommand::NAME);
+
+        self::assertSame(0, $tester->execute($this->createInput('serial-handler')));
+        self::assertSame("App serial-handler pause override removed; it is running.\n", $tester->getDisplay());
+        self::assertSame(0, $tester->execute($this->createInput('serial-handler')));
+        self::assertSame("App serial-handler had no pause override.\n", $tester->getDisplay());
+    }
+
+    public function testResetRemovesOverrideOfRemovedApp(): void
+    {
+        $this->store->write('stewart:runtime:app-pause:ghost', '{"paused":true,"since":"2026-10-06T08:00:00.000000Z","source":"control"}', null);
+        $tester = $this->createTester(AppResetCommand::NAME);
+
+        self::assertSame(0, $tester->execute($this->createInput('ghost')));
+        self::assertSame("App ghost pause override removed.\n", $tester->getDisplay());
+        self::assertNull($this->store->read('stewart:runtime:app-pause:ghost'));
     }
 
     public function testUnknownAppIsOneLineAndExitOne(): void

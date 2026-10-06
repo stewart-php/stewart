@@ -21,6 +21,7 @@ use Stewart\Runtime\Control\Protocol\Frame\Hello;
 use Stewart\Runtime\Control\Protocol\Frame\PauseAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\Rejected;
 use Stewart\Runtime\Control\Protocol\Frame\RequestFailed;
+use Stewart\Runtime\Control\Protocol\Frame\ResetAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\ResumeAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\ServerFrame;
 use Stewart\Runtime\Control\Protocol\Frame\SnapshotFrame;
@@ -59,6 +60,12 @@ final readonly class ControlClient
     public function resumeApp(ControlTarget $target, AppId $appId, Duration $timeout): CommandResult
     {
         return $this->sendRequest($target, new ResumeAppRequest($appId->value), CommandResult::class, $timeout);
+    }
+
+    /** @throws ControlException|Throwable */
+    public function resetApp(ControlTarget $target, AppId $appId, Duration $timeout): CommandResult
+    {
+        return $this->sendRequest($target, new ResetAppRequest($appId->value), CommandResult::class, $timeout);
     }
 
     /**

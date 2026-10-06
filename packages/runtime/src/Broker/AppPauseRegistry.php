@@ -50,6 +50,14 @@ final class AppPauseRegistry
         return $changed;
     }
 
+    public function forgetOverride(AppId $appId): bool
+    {
+        $existed = isset($this->overrides[$appId->value]);
+        unset($this->overrides[$appId->value]);
+
+        return $existed;
+    }
+
     public function findOverride(AppId $appId): ?AppPauseOverride
     {
         return $this->overrides[$appId->value] ?? null;

@@ -55,6 +55,15 @@ final readonly class AppPauseOverrideStore
         return AppPauseOverrideCollection::keyedByAppId($overrides);
     }
 
+    /** @throws StoreException */
+    public function hasOverride(AppId $appId): bool
+    {
+        $store = $this->store;
+        $keyspace = $this->keyspace;
+
+        return $store !== null && $keyspace !== null && $store->exists($this->buildOverrideKey($keyspace, $appId));
+    }
+
     public function saveOverride(AppPauseOverride $override): AppPauseOverridePersistence
     {
         return $this->runWrite($override->appId, fn(StoreBackend $store, string $fullKey) => $store->write($fullKey, $this->codec->encodeOverride($override), null));
@@ -76,7 +85,7 @@ final readonly class AppPauseOverrideStore
         }
 
         try {
-            $write($store, $keyspace->buildFullKey(self::KEY_STEM . $appId->value));
+            $write($store, $this->buildOverrideKey($keyspace, $appId));
         } catch (JsonException|StewartException $e) {
             $this->logger->warning('Could not store the pause override', ['app' => $appId->value, 'exception' => $e]);
 
@@ -84,6 +93,12 @@ final readonly class AppPauseOverrideStore
         }
 
         return AppPauseOverridePersistence::Stored;
+    }
+
+    /** @throws StoreException */
+    private function buildOverrideKey(Keyspace $keyspace, AppId $appId): string
+    {
+        return $keyspace->buildFullKey(self::KEY_STEM . $appId->value);
     }
 
     /** @throws StoreException */

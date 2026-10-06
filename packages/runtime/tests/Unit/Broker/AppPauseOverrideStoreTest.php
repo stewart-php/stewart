@@ -73,12 +73,22 @@ final class AppPauseOverrideStoreTest extends TestCase
         self::assertSame(0, $store->loadOverrides()->count());
     }
 
+    public function testHasOverrideSeesStoredKey(): void
+    {
+        $store = $this->createStore();
+        $store->saveOverride(self::createOverride('heating', true));
+
+        self::assertTrue($store->hasOverride(new AppId('heating')));
+        self::assertFalse($store->hasOverride(new AppId('lights')));
+    }
+
     public function testWithoutStoreNothingIsPersisted(): void
     {
         $store = new AppPauseOverrideStore(new AppPauseOverrideCodec(AppPauseOverrideCodec::createOverrideWireMapper()), new NullLogger());
 
         self::assertSame(AppPauseOverridePersistence::NotConfigured, $store->saveOverride(self::createOverride('heating', true)));
         self::assertSame(AppPauseOverridePersistence::NotConfigured, $store->removeOverride(new AppId('heating')));
+        self::assertFalse($store->hasOverride(new AppId('heating')));
         self::assertSame(0, $store->loadOverrides()->count());
     }
 

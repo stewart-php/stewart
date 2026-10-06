@@ -21,9 +21,11 @@ use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\WorkerSlotRegistry;
 use Stewart\Runtime\Control\Protocol\Frame\CommandResult;
 use Stewart\Runtime\Control\Protocol\Frame\PauseAppRequest;
+use Stewart\Runtime\Control\Protocol\Frame\ResetAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\ResumeAppRequest;
 use Stewart\Runtime\Control\Request\AppPauseChangeHandler;
 use Stewart\Runtime\Control\Request\PauseAppRequestHandler;
+use Stewart\Runtime\Control\Request\ResetAppRequestHandler;
 use Stewart\Runtime\Control\Request\ResumeAppRequestHandler;
 use Stewart\Runtime\Exception\AppError;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
@@ -34,6 +36,7 @@ use Stewart\Testing\Time\VirtualClock;
 
 #[CoversClass(PauseAppRequestHandler::class)]
 #[CoversClass(ResumeAppRequestHandler::class)]
+#[CoversClass(ResetAppRequestHandler::class)]
 #[CoversClass(AppPauseChangeHandler::class)]
 final class AppPauseRequestHandlersTest extends TestCase
 {
@@ -47,13 +50,15 @@ final class AppPauseRequestHandlersTest extends TestCase
 
     private ResumeAppRequestHandler $resume;
 
+    private ResetAppRequestHandler $reset;
+
     protected function setUp(): void
     {
         $clock = new VirtualClock();
-        $apps = AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)]);
+        $apps = AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class), new AppDefinition(new AppId('porch'), Demo::class, startsPaused: true)]);
         $this->registry = new AppPauseRegistry($apps, new DaemonStartTime($clock));
         $service = new AppPauseService(
-            new AppCatalog($apps, AppIdCollection::fromIds([new AppId('demo')]), AppIdCollection::fromIds([])),
+            new AppCatalog($apps, AppIdCollection::fromIds([new AppId('demo'), new AppId('porch')]), AppIdCollection::fromIds([])),
             $this->registry,
             new AppPauseOverrideStore(new AppPauseOverrideCodec(AppPauseOverrideCodec::createOverrideWireMapper()), new NullLogger()),
             new WorkerSlotRegistry(),
@@ -62,6 +67,7 @@ final class AppPauseRequestHandlersTest extends TestCase
         );
         $this->pause = new PauseAppRequestHandler($service);
         $this->resume = new ResumeAppRequestHandler($service);
+        $this->reset = new ResetAppRequestHandler($service);
     }
 
     public function testPauseIsReportedAsChangedOnce(): void
@@ -77,6 +83,17 @@ final class AppPauseRequestHandlersTest extends TestCase
 
         self::assertEquals(new CommandResult(true, 'App demo resumed.', self::NOT_SAVED), $this->resume->answerRequest(new ResumeAppRequest('demo')));
         self::assertEquals(new CommandResult(false, 'App demo was not paused.', self::NOT_SAVED), $this->resume->answerRequest(new ResumeAppRequest('demo')));
+    }
+
+    public function testResetNamesStateItLeaves(): void
+    {
+        $this->pause->answerRequest(new PauseAppRequest('demo'));
+        $this->resume->answerRequest(new ResumeAppRequest('porch'));
+
+        self::assertEquals(new CommandResult(true, 'App demo pause override removed; it is running.', self::NOT_SAVED), $this->reset->answerRequest(new ResetAppRequest('demo')));
+        self::assertEquals(new CommandResult(false, 'App demo had no pause override.', self::NOT_SAVED), $this->reset->answerRequest(new ResetAppRequest('demo')));
+        self::assertEquals(new CommandResult(true, 'App porch pause override removed; config keeps it paused.', self::NOT_SAVED), $this->reset->answerRequest(new ResetAppRequest('porch')));
+        self::assertTrue($this->registry->isPaused(new AppId('porch')));
     }
 
     public function testUnknownAppIsRefused(): void

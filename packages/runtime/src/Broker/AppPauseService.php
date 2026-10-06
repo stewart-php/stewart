@@ -11,10 +11,12 @@ use Stewart\Contracts\Time\Clock;
 use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\App\AppPauseOutcome;
 use Stewart\Runtime\App\AppPauseOverride;
+use Stewart\Runtime\App\AppPauseResetOutcome;
 use Stewart\Runtime\Exception\AppException;
 use Stewart\Runtime\Ipc\Message\PausedAppsChanged;
 use Stewart\Runtime\Ipc\Wire\AppIdsFragment;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
+use Stewart\Runtime\Lifecycle\AppStateAfterReset;
 
 final readonly class AppPauseService
 {
@@ -35,7 +37,7 @@ final readonly class AppPauseService
         $unknown = $stored->filter(fn(AppPauseOverride $override): bool => !$this->apps->knownIds->containsId($override->appId));
 
         if ($unknown->count() > 0) {
-            $this->logger->warning('Stored pause overrides name apps that no longer exist', [
+            $this->logger->warning('Stored pause overrides name apps that no longer exist; stewart app:reset <app> removes them', [
                 'apps' => implode(', ', $unknown->mapToList(static fn(AppPauseOverride $override): string => $override->appId->value)),
             ]);
         }
@@ -51,6 +53,42 @@ final readonly class AppPauseService
     public function resumeApp(AppId $appId, AppPauseSource $source): AppPauseOutcome
     {
         return $this->overridePause($appId, false, $source);
+    }
+
+    /** @throws AppException|StoreException */
+    public function resetApp(AppId $appId, AppPauseSource $source): AppPauseResetOutcome
+    {
+        if ($this->apps->enabled->find($appId) === null) {
+            return $this->resetStoredOnlyApp($appId, $source);
+        }
+
+        $wasPaused = $this->pausedApps->isPaused($appId);
+        $removed = $this->pausedApps->forgetOverride($appId);
+        $persistence = $this->overrides->removeOverride($appId);
+        $paused = $this->pausedApps->isPaused($appId);
+
+        if ($paused !== $wasPaused) {
+            $this->broadcastPausedApps();
+        }
+
+        if ($removed) {
+            $this->logger->info('App pause override removed', ['app' => $appId->value, 'source' => $source->value, 'paused' => $paused]);
+        }
+
+        return new AppPauseResetOutcome($removed, $paused ? AppStateAfterReset::PausedByConfig : AppStateAfterReset::Running, $persistence);
+    }
+
+    /** @throws AppException|StoreException */
+    private function resetStoredOnlyApp(AppId $appId, AppPauseSource $source): AppPauseResetOutcome
+    {
+        if (!$this->overrides->hasOverride($appId)) {
+            throw $this->createNotLoadedException($appId);
+        }
+
+        $persistence = $this->overrides->removeOverride($appId);
+        $this->logger->info('App pause override removed', ['app' => $appId->value, 'source' => $source->value]);
+
+        return new AppPauseResetOutcome(true, AppStateAfterReset::NotLoaded, $persistence);
     }
 
     /** @throws AppException */
@@ -70,13 +108,17 @@ final readonly class AppPauseService
         return new AppPauseOutcome($changed, $persistence);
     }
 
+    /** @throws AppException */
     private function assertAppLoaded(AppId $appId): void
     {
-        if ($this->apps->enabled->find($appId) !== null) {
-            return;
+        if ($this->apps->enabled->find($appId) === null) {
+            throw $this->createNotLoadedException($appId);
         }
+    }
 
-        throw $this->apps->knownIds->containsId($appId) ? AppException::disabled($appId) : AppException::unknown($appId);
+    private function createNotLoadedException(AppId $appId): AppException
+    {
+        return $this->apps->knownIds->containsId($appId) ? AppException::disabled($appId) : AppException::unknown($appId);
     }
 
     private function broadcastPausedApps(): void
