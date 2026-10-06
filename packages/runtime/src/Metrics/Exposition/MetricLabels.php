@@ -15,7 +15,7 @@ final readonly class MetricLabels
     }
 
     /** @param non-empty-string $name */
-    public static function withSingleLabel(string $name, string $value): self
+    public static function fromLabel(string $name, string $value): self
     {
         return new self([$name => $value]);
     }

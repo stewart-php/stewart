@@ -6,57 +6,52 @@ namespace Stewart\Runtime\Metrics\Exposition;
 
 use Stewart\Runtime\Metrics\Exposition\Collection\MetricSampleCollection;
 
-final readonly class MetricFamily
+final class MetricFamily
 {
     private const string BUCKET_BOUND_LABEL = 'le';
 
+    /** @var list<MetricSample> */
+    private array $samples = [];
+
     /** @param non-empty-string $name */
-    private function __construct(
-        public string $name,
-        public string $help,
-        public MetricType $type,
-        public MetricSampleCollection $samples,
+    public function __construct(
+        public readonly string $name,
+        public readonly string $help,
+        public readonly MetricType $type,
     ) {}
 
     /** @param non-empty-string $name */
-    public static function createCounter(string $name, string $help): self
+    public static function createWithSample(string $name, string $help, MetricType $type, MetricLabels $labels, int|float|bool $value): self
     {
-        return new self($name, $help, MetricType::Counter, MetricSampleCollection::empty());
+        $family = new self($name, $help, $type);
+        $family->recordSample($labels, $value);
+
+        return $family;
     }
 
-    /** @param non-empty-string $name */
-    public static function createGauge(string $name, string $help): self
+    public function recordSample(MetricLabels $labels, int|float|bool $value): void
     {
-        return new self($name, $help, MetricType::Gauge, MetricSampleCollection::empty());
+        $this->samples[] = new MetricSample(MetricSampleSuffix::None, $labels, (float) $value);
     }
 
-    /** @param non-empty-string $name */
-    public static function createHistogram(string $name, string $help): self
+    public function recordHistogram(MetricLabels $labels, Histogram $histogram): void
     {
-        return new self($name, $help, MetricType::Histogram, MetricSampleCollection::empty());
-    }
-
-    public function withSample(MetricLabels $labels, int|float|bool $value): self
-    {
-        return $this->withAppendedSample(new MetricSample(MetricSampleSuffix::None, $labels, (float) $value));
-    }
-
-    public function withHistogram(MetricLabels $labels, HistogramBuckets $buckets): self
-    {
-        $family = $this;
-
-        foreach ($buckets->upperBounds as $index => $upperBound) {
-            $bucketLabels = $labels->withLabel(self::BUCKET_BOUND_LABEL, PrometheusNumber::formatValue($upperBound));
-            $family = $family->withAppendedSample(new MetricSample(MetricSampleSuffix::Bucket, $bucketLabels, $buckets->cumulativeCounts[$index] ?? $buckets->count));
+        foreach ($histogram->buckets as $bucket) {
+            $bucketLabels = $labels->withLabel(self::BUCKET_BOUND_LABEL, PrometheusNumber::formatValue($bucket->upperBound));
+            $this->samples[] = new MetricSample(MetricSampleSuffix::Bucket, $bucketLabels, $bucket->cumulativeCount);
         }
 
-        return $family
-            ->withAppendedSample(new MetricSample(MetricSampleSuffix::Sum, $labels, $buckets->sum->toSeconds()))
-            ->withAppendedSample(new MetricSample(MetricSampleSuffix::Count, $labels, $buckets->count));
+        $this->samples[] = new MetricSample(MetricSampleSuffix::Sum, $labels, $histogram->sum->toSeconds());
+        $this->samples[] = new MetricSample(MetricSampleSuffix::Count, $labels, $histogram->count);
     }
 
-    private function withAppendedSample(MetricSample $sample): self
+    public function hasSamples(): bool
     {
-        return new self($this->name, $this->help, $this->type, $this->samples->withAppendedSample($sample));
+        return $this->samples !== [];
+    }
+
+    public function listSamples(): MetricSampleCollection
+    {
+        return MetricSampleCollection::fromSamples($this->samples);
     }
 }

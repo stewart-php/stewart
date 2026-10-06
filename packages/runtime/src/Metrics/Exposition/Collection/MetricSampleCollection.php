@@ -15,9 +15,4 @@ final readonly class MetricSampleCollection extends ListCollection
     {
         return self::fromList($samples);
     }
-
-    public function withAppendedSample(MetricSample $sample): self
-    {
-        return $this->withAppendedElement($sample);
-    }
 }

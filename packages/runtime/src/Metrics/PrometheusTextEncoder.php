@@ -23,7 +23,7 @@ final readonly class PrometheusTextEncoder
         $text = '';
 
         foreach ($families as $family) {
-            if (!$family->samples->isEmpty()) {
+            if ($family->hasSamples()) {
                 $text .= $this->encodeFamily($family);
             }
         }
@@ -35,7 +35,7 @@ final readonly class PrometheusTextEncoder
     {
         $text = \sprintf("# HELP %s %s\n# TYPE %s %s\n", $family->name, strtr($family->help, self::HELP_ESCAPES), $family->name, $family->type->value);
 
-        foreach ($family->samples as $sample) {
+        foreach ($family->listSamples() as $sample) {
             $text .= $this->encodeSample($family->name, $sample);
         }
 

@@ -8,6 +8,7 @@ use Amp\Http\HttpStatus;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler;
 use Amp\Http\Server\Response;
+use LogicException;
 use Psr\Log\LoggerInterface;
 use SensitiveParameter;
 use Stewart\Contracts\App\AppId;
@@ -62,7 +63,9 @@ final readonly class AdminRequestHandler implements RequestHandler
         }
 
         try {
-            return $this->answerRoute($route);
+            return $route->action === AdminAction::ShowMetrics
+                ? new Response(HttpStatus::OK, self::METRICS_HEADERS, $this->metrics->exportMetrics())
+                : $this->respond(HttpStatus::OK, $this->answerRoute($route));
         } catch (StewartException $e) {
             return $this->respondWithFailure($this->selectFailureStatus($e->reason), new AdminFailure((string) $e->reason->value, $e->getMessage()));
         } catch (Throwable $e) {
@@ -72,16 +75,16 @@ final readonly class AdminRequestHandler implements RequestHandler
         }
     }
 
-    /** @throws Throwable */
-    private function answerRoute(AdminRoute $route): Response
+    /** @throws StewartException */
+    private function answerRoute(AdminRoute $route): AdminAppList|AdminAppView|AdminCommandResult
     {
         return match ($route->action) {
-            AdminAction::ListApps => $this->respond(HttpStatus::OK, $this->apps->listApps()),
-            AdminAction::ShowApp => $this->respond(HttpStatus::OK, $this->apps->showApp(new AppId((string) $route->appId))),
-            AdminAction::PauseApp => $this->respond(HttpStatus::OK, $this->apps->pauseApp(new AppId((string) $route->appId))),
-            AdminAction::ResumeApp => $this->respond(HttpStatus::OK, $this->apps->resumeApp(new AppId((string) $route->appId))),
-            AdminAction::ResetApp => $this->respond(HttpStatus::OK, $this->apps->resetApp(new AppId((string) $route->appId))),
-            AdminAction::ShowMetrics => new Response(HttpStatus::OK, self::METRICS_HEADERS, $this->metrics->exportMetrics()),
+            AdminAction::ListApps => $this->apps->listApps(),
+            AdminAction::ShowApp => $this->apps->showApp(new AppId((string) $route->appId)),
+            AdminAction::PauseApp => $this->apps->pauseApp(new AppId((string) $route->appId)),
+            AdminAction::ResumeApp => $this->apps->resumeApp(new AppId((string) $route->appId)),
+            AdminAction::ResetApp => $this->apps->resetApp(new AppId((string) $route->appId)),
+            AdminAction::ShowMetrics => throw new LogicException('Metrics are answered before the JSON routes.'),
         };
     }
 

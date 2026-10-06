@@ -19,6 +19,7 @@ final class PrometheusNumberTest extends TestCase
         yield 'integral' => [42.0, '42'];
         yield 'negative integral' => [-3.0, '-3'];
         yield 'fraction' => [0.005, '0.005'];
+        yield 'microsecond timestamp' => [1759750000.123456, '1759750000.123456'];
         yield 'positive infinity' => [INF, '+Inf'];
         yield 'negative infinity' => [-INF, '-Inf'];
         yield 'not a number' => [NAN, 'NaN'];

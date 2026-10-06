@@ -9,6 +9,7 @@ use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Metrics\Exposition\Collection\MetricFamilyCollection;
 use Stewart\Runtime\Metrics\Exposition\MetricFamily;
 use Stewart\Runtime\Metrics\Exposition\MetricLabels;
+use Stewart\Runtime\Metrics\Exposition\MetricType;
 use Stewart\Runtime\Metrics\RuntimeMetricSource;
 
 final readonly class ConnectionMetricSource implements RuntimeMetricSource
@@ -16,22 +17,21 @@ final readonly class ConnectionMetricSource implements RuntimeMetricSource
     public function collectMetrics(RuntimeSnapshot $snapshot): MetricFamilyCollection
     {
         $connection = $snapshot->connection;
-        $none = MetricLabels::none();
-        $phases = MetricFamily::createGauge('stewart_ha_connection_phase', 'Home Assistant connection phase; 1 for the current one.');
+        $phases = new MetricFamily('stewart_ha_connection_phase', 'Home Assistant connection phase; 1 for the current one.', MetricType::Gauge);
 
         foreach (ConnectionPhase::cases() as $phase) {
-            $phases = $phases->withSample(MetricLabels::withSingleLabel('phase', $phase->value), $phase === $connection->phase);
+            $phases->recordSample(MetricLabels::fromLabel('phase', $phase->value), $phase === $connection->phase);
         }
 
-        $lastOutage = MetricFamily::createGauge('stewart_ha_last_outage_seconds', 'Length of the last Home Assistant outage.');
+        $lastOutage = new MetricFamily('stewart_ha_last_outage_seconds', 'Length of the last Home Assistant outage.', MetricType::Gauge);
 
         if ($connection->lastOutage !== null) {
-            $lastOutage = $lastOutage->withSample($none, $connection->lastOutage->toSeconds());
+            $lastOutage->recordSample(MetricLabels::none(), $connection->lastOutage->toSeconds());
         }
 
         return MetricFamilyCollection::fromFamilies([
             $phases,
-            MetricFamily::createCounter('stewart_ha_reconnects_total', 'Home Assistant reconnects since the daemon started.')->withSample($none, $connection->reconnects),
+            MetricFamily::createWithSample('stewart_ha_reconnects_total', 'Home Assistant reconnects since the daemon started.', MetricType::Counter, MetricLabels::none(), $connection->reconnects),
             $lastOutage,
         ]);
     }

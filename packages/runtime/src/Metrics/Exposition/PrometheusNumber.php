@@ -19,7 +19,7 @@ final class PrometheusNumber
             $value === INF => '+Inf',
             $value === -INF => '-Inf',
             floor($value) === $value && abs($value) < self::LARGEST_EXACT_INTEGER => \sprintf('%d', $value),
-            default => (string) $value,
+            default => var_export($value, true),
         };
     }
 
