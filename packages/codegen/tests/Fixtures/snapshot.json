@@ -170,19 +170,31 @@
             "entity_id": "light.attic",
             "disabled_by": "user",
             "hidden_by": null,
-            "name": null
+            "name": null,
+            "area_id": null,
+            "device_id": null,
+            "labels": [],
+            "entity_category": null
         },
         {
             "entity_id": "light.cellar",
             "disabled_by": null,
             "hidden_by": "user",
-            "name": "Cellar"
+            "name": "Cellar",
+            "area_id": null,
+            "device_id": null,
+            "labels": [],
+            "entity_category": null
         },
         {
             "entity_id": "light.hall",
             "disabled_by": null,
             "hidden_by": null,
-            "name": null
+            "name": null,
+            "area_id": null,
+            "device_id": null,
+            "labels": [],
+            "entity_category": null
         }
     ],
     "services": {
@@ -475,5 +487,45 @@
                 }
             }
         }
-    }
+    },
+    "areas": [
+        {
+            "area_id": "hall",
+            "name": "Hall",
+            "floor_id": "ground",
+            "aliases": [
+                "Entrance"
+            ],
+            "labels": [],
+            "icon": null
+        },
+        {
+            "area_id": "kitchen",
+            "name": "Kitchen",
+            "floor_id": "ground",
+            "aliases": [],
+            "labels": [
+                "night"
+            ],
+            "icon": "mdi:stove"
+        }
+    ],
+    "floors": [
+        {
+            "floor_id": "ground",
+            "name": "Ground floor",
+            "level": 0,
+            "aliases": [],
+            "icon": null
+        }
+    ],
+    "labels": [
+        {
+            "label_id": "night",
+            "name": "Night",
+            "color": "indigo",
+            "icon": null,
+            "description": null
+        }
+    ]
 }

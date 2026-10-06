@@ -6,7 +6,7 @@ namespace Stewart\Tests\Architecture;
 
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
-use Stewart\Codegen\Entity\EntityFilter;
+use Stewart\Codegen\Entity\EntityInclusionRules;
 use Stewart\Codegen\GenerationOptions;
 use Stewart\Codegen\GenerationTarget;
 use Stewart\Codegen\Tests\Fixtures\GeneratedTreeComparison;
@@ -22,7 +22,7 @@ final class RuntimeGeneratedSetTest extends TestCase
         $generation = new GenerationRun(
             GoldenSnapshot::resolveGenerator(),
             new GenerationTarget(GeneratedSet::NAMESPACE, GeneratedSet::getDirectory()),
-            new GenerationOptions(EntityFilter::fromPatterns(['*'], GeneratedSet::IGNORED_ENTITY_PATTERNS)),
+            new GenerationOptions(EntityInclusionRules::fromPatterns(['*'], GeneratedSet::IGNORED_ENTITY_PATTERNS)),
         );
 
         new GeneratedTreeComparison($generation)

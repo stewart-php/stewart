@@ -27,7 +27,7 @@ final readonly class AppActivityRecorder implements DispatchListener, ScheduleLi
 
     public function handlerFailed(RegisteredSubscription $subscription, Throwable $error): void
     {
-        $origin = \sprintf('subscription %s (%s)', $subscription->id, $subscription->selector->toCanonicalKey());
+        $origin = \sprintf('subscription %s (%s)', $subscription->id, $subscription->describeMatch());
 
         $this->failures->report($subscription->scope, AppFailurePhase::Handler, $error, $origin);
     }
@@ -47,7 +47,7 @@ final readonly class AppActivityRecorder implements DispatchListener, ScheduleLi
 
         $this->logger->forScope($subscription->scope)->warning('Handler is falling behind; dropping its oldest events', [
             'subscription' => $subscription->id->value,
-            'selector' => $subscription->selector->toCanonicalKey(),
+            'selector' => $subscription->describeMatch(),
             'dropped' => $droppedSoFar,
         ]);
     }

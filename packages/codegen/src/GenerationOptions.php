@@ -6,19 +6,19 @@ namespace Stewart\Codegen;
 
 use Stewart\Codegen\Attribute\AttributeFilter;
 use Stewart\Codegen\Attribute\Collection\AttributeFilterCollection;
-use Stewart\Codegen\Entity\EntityFilter;
+use Stewart\Codegen\Entity\EntityInclusionRules;
 
 final readonly class GenerationOptions
 {
-    public EntityFilter $filter;
+    public EntityInclusionRules $inclusionRules;
 
     private AttributeFilterCollection $attributes;
 
     public function __construct(
-        ?EntityFilter $filter = null,
+        ?EntityInclusionRules $inclusionRules = null,
         ?AttributeFilterCollection $attributes = null,
     ) {
-        $this->filter = $filter ?? EntityFilter::allowingEverything();
+        $this->inclusionRules = $inclusionRules ?? EntityInclusionRules::allowingEverything();
         $this->attributes = $attributes ?? AttributeFilterCollection::empty();
     }
 

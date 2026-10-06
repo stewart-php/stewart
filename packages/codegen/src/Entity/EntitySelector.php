@@ -11,13 +11,13 @@ use Stewart\Contracts\State\Collection\EntityStateCollection;
 
 final readonly class EntitySelector
 {
-    public function selectEntities(Snapshot $snapshot, EntityFilter $filter): EntitySelection
+    public function selectEntities(Snapshot $snapshot, EntityInclusionRules $inclusionRules): EntitySelection
     {
         $generated = [];
         $ignored = [];
 
         foreach ($snapshot->states as $state) {
-            if ($this->isHiddenAway($snapshot->registry->find($state->entityId)) || !$filter->allows($state->entityId)) {
+            if ($this->isHiddenAway($snapshot->registry->find($state->entityId)) || !$inclusionRules->allows($state->entityId)) {
                 $ignored[] = $state->entityId;
 
                 continue;

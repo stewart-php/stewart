@@ -15,6 +15,15 @@ use Stewart\Contracts\Connection\ConnectionLost;
 use Stewart\Contracts\Connection\ConnectionRestored;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\HaEvent;
+use Stewart\Contracts\Registry\AreaId;
+use Stewart\Contracts\Registry\Collection\AreaCollection;
+use Stewart\Contracts\Registry\Collection\DeviceCollection;
+use Stewart\Contracts\Registry\Collection\FloorCollection;
+use Stewart\Contracts\Registry\Collection\LabelCollection;
+use Stewart\Contracts\Registry\Collection\RegisteredEntityCollection;
+use Stewart\Contracts\Registry\EntityFilter;
+use Stewart\Contracts\Registry\IndexedRegistry;
+use Stewart\Contracts\Registry\RegisteredEntity;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
@@ -27,6 +36,7 @@ use Stewart\Contracts\Topic\TopicEvent;
 use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Contracts\Trigger\TriggerSpec;
+use Stewart\Runtime\Dispatch\EntityFilterIndex;
 use Stewart\Runtime\Dispatch\LocalDispatcher;
 use Stewart\Runtime\Dispatch\LocalSubscription;
 use Stewart\Runtime\Dispatch\RegisteredSubscription;
@@ -37,6 +47,7 @@ use Stewart\Runtime\Model\Collection\SubscriptionIdCollection;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionId;
 use Stewart\Runtime\Model\SubscriptionKind;
+use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\Scope\ScopeLifecycle;
 use Stewart\Runtime\Tests\Fixtures\Worker\RecordingDispatchListener;
 use Stewart\Testing\Async\Latch;
@@ -46,16 +57,21 @@ use Stewart\Testing\Time\EventLoopTicks;
 #[CoversClass(SubscriptionQueue::class)]
 #[CoversClass(LocalSubscription::class)]
 #[CoversClass(SelectorIndex::class)]
+#[CoversClass(EntityFilterIndex::class)]
+#[CoversClass(RegisteredSubscription::class)]
 final class LocalDispatcherTest extends TestCase
 {
     private RecordingDispatchListener $listener;
 
     private ScopeLifecycle $scopes;
 
+    private RegistryCache $registry;
+
     protected function setUp(): void
     {
         $this->listener = new RecordingDispatchListener();
         $this->scopes = new ScopeLifecycle();
+        $this->registry = new RegistryCache();
     }
 
     public function testRefusedRegistrationLeavesNothingBehind(): void
@@ -68,7 +84,7 @@ final class LocalDispatcherTest extends TestCase
 
             public function subscriptionCancelled(RegisteredSubscription $subscription): void {}
         };
-        $dispatcher = new LocalDispatcher('w0', 100, $this->listener, $refusing, $this->scopes);
+        $dispatcher = new LocalDispatcher('w0', 100, $this->listener, $refusing, $this->scopes, $this->registry);
         $scope = new SubscriptionScope();
 
         try {
@@ -104,6 +120,55 @@ final class LocalDispatcherTest extends TestCase
 
         self::assertEqualsCanonicalizing(['hall:light.hall', 'lights:light.hall'], $seen);
         self::assertSame(['w0:0', 'w0:1', 'w0:2'], $this->listener->registered);
+    }
+
+    public function testEntityFilterFollowsRegistryRevision(): void
+    {
+        $dispatcher = $this->createDispatcher();
+        $seen = [];
+        $this->registry->replaceIfNewer(self::createRegistryPlacingHallIn('kitchen'), 1);
+
+        $this->register($dispatcher, 'app', SubscriptionKind::StateChange, Selector::exact('light.hall'), static function (StateChange $change) use (&$seen): void {
+            $seen[] = 'selector:' . $change->entityId;
+        });
+        $this->register($dispatcher, 'app', SubscriptionKind::StateChange, Selector::any(), static function (StateChange $change) use (&$seen): void {
+            $seen[] = 'kitchen:' . $change->entityId;
+        }, entityFilter: EntityFilter::inArea('kitchen'));
+
+        $dispatcher->dispatchStateChange(self::createChange('light.hall'));
+        $dispatcher->dispatchStateChange(self::createChange('light.porch'));
+        EventLoopTicks::settle();
+
+        self::assertEqualsCanonicalizing(['selector:light.hall', 'kitchen:light.hall'], $seen);
+
+        $this->registry->replaceIfNewer(self::createRegistryPlacingHallIn('hall'), 2);
+        $dispatcher->dispatchStateChange(self::createChange('light.hall'));
+        EventLoopTicks::settle();
+
+        self::assertSame(['selector:light.hall'], \array_slice($seen, 2), 'The cached match is dropped with the old registry.');
+    }
+
+    public function testCancelledEntityFilterNoLongerMatches(): void
+    {
+        $dispatcher = $this->createDispatcher();
+        $seen = 0;
+
+        $subscription = $this->register($dispatcher, 'app', SubscriptionKind::StateChange, Selector::any(), static function () use (&$seen): void {
+            ++$seen;
+        }, entityFilter: EntityFilter::inDomain('light'));
+        $subscription->unsubscribe();
+
+        $dispatcher->dispatchStateChange(self::createChange('light.hall'));
+        EventLoopTicks::settle();
+
+        self::assertSame(0, $seen);
+    }
+
+    public function testEntityFilterIsOnlyForStateChanges(): void
+    {
+        $this->expectException(LogicException::class);
+
+        $this->register($this->createDispatcher(), 'app', SubscriptionKind::Event, Selector::any(), static function (): void {}, entityFilter: EntityFilter::inDomain('light'));
     }
 
     public function testStateSubscriptionMatchesOnceRegistered(): void
@@ -545,7 +610,7 @@ final class LocalDispatcherTest extends TestCase
 
     private function createDispatcher(int $queueLimit = 100): LocalDispatcher
     {
-        return new LocalDispatcher('w0', $queueLimit, $this->listener, $this->listener, $this->scopes);
+        return new LocalDispatcher('w0', $queueLimit, $this->listener, $this->listener, $this->scopes, $this->registry);
     }
 
     private function goLive(LocalDispatcher $dispatcher, string $appId): void
@@ -566,6 +631,17 @@ final class LocalDispatcherTest extends TestCase
         $dispatcher->cancelAll();
     }
 
+    private static function createRegistryPlacingHallIn(string $areaId): IndexedRegistry
+    {
+        return IndexedRegistry::fromParts(
+            AreaCollection::empty(),
+            FloorCollection::empty(),
+            LabelCollection::empty(),
+            DeviceCollection::empty(),
+            RegisteredEntityCollection::keyedByEntityId([new RegisteredEntity(new EntityId('light.hall'), areaId: new AreaId($areaId))]),
+        );
+    }
+
     private static function createChange(string $entityId): StateChange
     {
         return new StateChange(new EntityId($entityId), null, new EntityState(new EntityId($entityId), 'on'));
@@ -582,9 +658,10 @@ final class LocalDispatcherTest extends TestCase
         Selector $selector,
         Closure $handler,
         bool $activate = true,
+        ?EntityFilter $entityFilter = null,
     ): Subscription {
         $scope = new SubscriptionScope();
-        $subscription = $dispatcher->register(self::createScope($appId), $kind, $selector, $scope, $handler);
+        $subscription = $dispatcher->register(self::createScope($appId), $kind, $selector, $scope, $handler, entityFilter: $entityFilter);
         $scope->attachedTo($subscription);
 
         if ($activate) {

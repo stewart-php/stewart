@@ -28,6 +28,9 @@ final readonly class HaClientSnapshotFetcher implements SnapshotFetcher
                 states: $client->getStates(),
                 registry: $client->getEntityRegistry(),
                 services: $client->getServices(),
+                areas: $client->getAreaRegistry(),
+                floors: $client->getFloorRegistry(),
+                labels: $client->getLabelRegistry(),
             );
         } finally {
             $client->close();

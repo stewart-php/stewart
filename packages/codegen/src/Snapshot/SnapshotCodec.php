@@ -9,15 +9,22 @@ use JsonException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Stewart\Client\Registry\EntityRegistryEntry;
+use Stewart\Client\Registry\RegistryDecoder;
 use Stewart\Client\State\EntityStateDecoder;
 use Stewart\Codegen\Exception\CodegenException;
 use Stewart\Contracts\Exception\IdentifierException;
+use Stewart\Contracts\Registry\Area;
+use Stewart\Contracts\Registry\Floor;
+use Stewart\Contracts\Registry\Label;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Support\Json\JsonDecoder;
 
 final readonly class SnapshotCodec
 {
-    public function __construct(private EntityStateDecoder $entityStateDecoder) {}
+    public function __construct(
+        private EntityStateDecoder $entityStateDecoder,
+        private RegistryDecoder $registryDecoder = new RegistryDecoder(),
+    ) {}
 
     public function encodeSnapshot(Snapshot $snapshot): string
     {
@@ -37,6 +44,46 @@ final readonly class SnapshotCodec
             'states' => $snapshot->states->mapToList($this->buildEntityStateArray(...)),
             'registry' => $snapshot->registry->mapToList(static fn(EntityRegistryEntry $entry): array => $entry->toArray()),
             'services' => $snapshot->services,
+            'areas' => $snapshot->areas->mapToList($this->buildAreaArray(...)),
+            'floors' => $snapshot->floors->mapToList($this->buildFloorArray(...)),
+            'labels' => $snapshot->labels->mapToList($this->buildLabelArray(...)),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function buildAreaArray(Area $area): array
+    {
+        return [
+            'area_id' => $area->areaId->value,
+            'name' => $area->name,
+            'floor_id' => $area->floorId?->value,
+            'aliases' => $area->aliases,
+            'labels' => $area->listLabelIds()->toStrings(),
+            'icon' => $area->icon,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function buildFloorArray(Floor $floor): array
+    {
+        return [
+            'floor_id' => $floor->floorId->value,
+            'name' => $floor->name,
+            'level' => $floor->level,
+            'aliases' => $floor->aliases,
+            'icon' => $floor->icon,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function buildLabelArray(Label $label): array
+    {
+        return [
+            'label_id' => $label->labelId->value,
+            'name' => $label->name,
+            'color' => $label->color,
+            'icon' => $label->icon,
+            'description' => $label->description,
         ];
     }
 
@@ -85,7 +132,30 @@ final readonly class SnapshotCodec
             states: $this->decodeEntriesSkippingInvalidIds($decoded['states'] ?? null, $this->entityStateDecoder->decodeEntityStateOrSkip(...), $logger),
             registry: $this->decodeEntriesSkippingInvalidIds($decoded['registry'] ?? null, EntityRegistryEntry::fromArray(...), $logger),
             services: $services,
+            areas: $this->decodeRegistryRows($decoded['areas'] ?? null, $this->registryDecoder->decodeAreaOrSkip(...)),
+            floors: $this->decodeRegistryRows($decoded['floors'] ?? null, $this->registryDecoder->decodeFloorOrSkip(...)),
+            labels: $this->decodeRegistryRows($decoded['labels'] ?? null, $this->registryDecoder->decodeLabelOrSkip(...)),
         );
+    }
+
+    /**
+     * @template T of object
+     * @param Closure(array<array-key, mixed>): ?T $decodeRow
+     * @return list<T>
+     */
+    private function decodeRegistryRows(mixed $rows, Closure $decodeRow): array
+    {
+        $decoded = [];
+
+        foreach (\is_array($rows) ? $rows : [] as $row) {
+            $entry = \is_array($row) ? $decodeRow($row) : null;
+
+            if ($entry !== null) {
+                $decoded[] = $entry;
+            }
+        }
+
+        return $decoded;
     }
 
     /**

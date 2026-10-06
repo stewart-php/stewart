@@ -31,6 +31,10 @@ interface HaSession
 
     public function snapshotStateCache(): StateCacheSnapshot;
 
+    public function snapshotRegistry(): RegistryCacheSnapshot;
+
+    public function refreshRegistry(): bool;
+
     public function countEntities(): int;
 
     public function getTimeZone(): DateTimeZone;

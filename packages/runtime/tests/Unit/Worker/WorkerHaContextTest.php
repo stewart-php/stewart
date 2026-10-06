@@ -9,13 +9,26 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Stewart\Contracts\App\AppId;
+use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\EventFireError;
 use Stewart\Contracts\Exception\ServiceCallError;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exception\StateError;
 use Stewart\Contracts\Exception\TopicError;
 use Stewart\Contracts\Exception\TopicException;
+use Stewart\Contracts\Registry\Area;
+use Stewart\Contracts\Registry\AreaId;
+use Stewart\Contracts\Registry\Collection\AreaCollection;
+use Stewart\Contracts\Registry\Collection\DeviceCollection;
+use Stewart\Contracts\Registry\Collection\FloorCollection;
+use Stewart\Contracts\Registry\Collection\LabelCollection;
+use Stewart\Contracts\Registry\Collection\RegisteredEntityCollection;
+use Stewart\Contracts\Registry\EntityFilter;
+use Stewart\Contracts\Registry\IndexedRegistry;
+use Stewart\Contracts\Registry\RegisteredEntity;
 use Stewart\Contracts\Selector\Collection\SelectorCollection;
+use Stewart\Contracts\State\Collection\EntityStateCollection;
+use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\EventFireRequest;
@@ -23,6 +36,8 @@ use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
+use Stewart\Runtime\Registry\RegistryCache;
+use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Tests\Fixtures\Ipc\FailingTransport;
 use Stewart\Runtime\Tests\Fixtures\Ipc\NullTransport;
 use Stewart\Runtime\Tests\Fixtures\Worker\WorkerHaContextFixture;
@@ -63,6 +78,26 @@ final class WorkerHaContextTest extends TestCase
         }
 
         self::assertSame(1, $transport->attempts);
+    }
+
+    public function testEntityFilterListsStatesByRegistry(): void
+    {
+        $states = new StateCache();
+        $states->replaceAll(EntityStateCollection::keyedByEntityId([new EntityState(new EntityId('light.kitchen'), 'on'), new EntityState(new EntityId('light.porch'), 'on')]));
+        $registry = new RegistryCache();
+        $registry->replaceIfNewer(IndexedRegistry::fromParts(
+            AreaCollection::keyedByAreaId([new Area(new AreaId('kitchen'), 'Kitchen')]),
+            FloorCollection::empty(),
+            LabelCollection::empty(),
+            DeviceCollection::empty(),
+            RegisteredEntityCollection::keyedByEntityId([new RegisteredEntity(new EntityId('light.kitchen'), areaId: new AreaId('kitchen'))]),
+        ), 1);
+        $ha = WorkerHaContextFixture::createWorkerHaContext(new NullTransport(), ResourceScope::forApp(new AppId('demo')), stateCache: $states, registry: $registry);
+
+        self::assertSame(['light.kitchen'], $ha->listStates(EntityFilter::inArea('kitchen'))->listEntityIds()->toStrings());
+        self::assertSame(['light.kitchen', 'light.porch'], $ha->listStates(EntityFilter::inDomain('light'))->listEntityIds()->toStrings());
+        self::assertSame('Kitchen', $ha->getRegistry()->findAreaByName('kitchen')?->name);
+        self::assertSame('Kitchen', $ha->forApp(new AppId('other'))->getRegistry()->findArea('kitchen')?->name);
     }
 
     public function testPublishOnBrokenChannelThrowsTopicError(): void

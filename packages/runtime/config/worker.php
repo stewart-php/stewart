@@ -8,6 +8,7 @@ use Stewart\Runtime\App\GeneratedRoots;
 use Stewart\Runtime\Dispatch\DispatchListener;
 use Stewart\Runtime\Dispatch\SubscriptionListener;
 use Stewart\Runtime\Model\ResourceScope;
+use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\Schedule\AsyncHandlerRunner;
 use Stewart\Runtime\Schedule\HandlerRunner;
 use Stewart\Runtime\Schedule\ScheduleListener;
@@ -62,6 +63,7 @@ return static function (ContainerConfigurator $container): void {
     $services->alias(HandlerRunner::class, AsyncHandlerRunner::class);
 
     $services->set(StateCache::class);
+    $services->set(RegistryCache::class);
     $services->set(StoreValueCodec::class);
     $services->set(GeneratedRoots::class)->factory([GeneratedRoots::class, 'fromNamespace']);
 

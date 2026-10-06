@@ -14,6 +14,7 @@ use Stewart\Client\Connection\HomeAssistantUrl;
 use Stewart\Client\Event\EventDecoder;
 use Stewart\Client\Exception\HaClientError;
 use Stewart\Client\HaClient;
+use Stewart\Client\Registry\RegistryDecoder;
 use Stewart\Client\State\EntityStateDecoder;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventPayload;
@@ -375,6 +376,47 @@ final class HaClientTest extends TestCase
         self::assertTrue($registry->find(new EntityId('light.attic'))?->isDisabled());
     }
 
+    public function testRegistryJoinsAllFiveRegistries(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+        $ok = static fn(array $rows): array => ['type' => 'result', 'success' => true, 'result' => $rows];
+
+        $socket->replyWhenSent('config/area_registry/list', $ok([['area_id' => 'kitchen', 'name' => 'Kitchen', 'floor_id' => 'ground', 'labels' => ['cooking']]]));
+        $socket->replyWhenSent('config/floor_registry/list', $ok([['floor_id' => 'ground', 'name' => 'Ground', 'level' => 0]]));
+        $socket->replyWhenSent('config/label_registry/list', $ok([['label_id' => 'night', 'name' => 'Night']]));
+        $socket->replyWhenSent('config/device_registry/list', $ok([['id' => 'bulb', 'name' => 'Bulb', 'area_id' => 'kitchen', 'labels' => []], ['id' => '']]));
+        $socket->replyWhenSent('config/entity_registry/list', $ok([['entity_id' => 'light.ceiling', 'device_id' => 'bulb', 'area_id' => null, 'labels' => ['night']]]));
+
+        $registry = $client->getRegistry();
+        $placement = $registry->findEntityPlacement('light.ceiling');
+
+        self::assertSame('kitchen', $placement->areaId?->value);
+        self::assertSame('ground', $placement->floorId?->value);
+        self::assertSame(['night', 'cooking'], $placement->labelIds->toStrings());
+        self::assertCount(1, $registry->listDevices());
+    }
+
+    public function testFloorsAreEmptyOnOlderHomeAssistant(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('config/floor_registry/list', ['type' => 'result', 'success' => false, 'error' => ['code' => 'unknown_command', 'message' => 'Unknown command.']]);
+
+        self::assertTrue($client->getFloorRegistry()->isEmpty());
+    }
+
+    public function testRegistryRejectionPropagates(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('config/label_registry/list', ['type' => 'result', 'success' => false, 'error' => ['code' => 'unauthorized', 'message' => 'No.']]);
+
+        $this->assertThrowsReason(HaClientError::CommandUnauthorized, static fn() => $client->getLabelRegistry());
+    }
+
     public function testHistoryRowsBecomeEntityStates(): void
     {
         $socket = FakeWebsocketConnector::createAuthenticatedConnection();
@@ -455,7 +497,7 @@ final class HaClientTest extends TestCase
             new FakeWebsocketConnector($socket),
         );
 
-        $client = new HaClient($connection, new EventDecoder(new EntityStateDecoder()), new EntityStateDecoder(), new NullLogger());
+        $client = new HaClient($connection, new EventDecoder(new EntityStateDecoder()), new EntityStateDecoder(), new RegistryDecoder(), new NullLogger());
         $client->connect();
 
         return $client;

@@ -17,6 +17,21 @@ use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Mqtt\MqttMessage;
 use Stewart\Contracts\Mqtt\MqttQos;
+use Stewart\Contracts\Registry\Area;
+use Stewart\Contracts\Registry\AreaId;
+use Stewart\Contracts\Registry\Collection\AreaCollection;
+use Stewart\Contracts\Registry\Collection\DeviceCollection;
+use Stewart\Contracts\Registry\Collection\FloorCollection;
+use Stewart\Contracts\Registry\Collection\LabelCollection;
+use Stewart\Contracts\Registry\Collection\RegisteredEntityCollection;
+use Stewart\Contracts\Registry\Device;
+use Stewart\Contracts\Registry\DeviceId;
+use Stewart\Contracts\Registry\Floor;
+use Stewart\Contracts\Registry\FloorId;
+use Stewart\Contracts\Registry\IndexedRegistry;
+use Stewart\Contracts\Registry\Label;
+use Stewart\Contracts\Registry\LabelId;
+use Stewart\Contracts\Registry\RegisteredEntity;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
@@ -52,6 +67,7 @@ use Stewart\Runtime\Ipc\Message\MqttPublish;
 use Stewart\Runtime\Ipc\Message\Ping;
 use Stewart\Runtime\Ipc\Message\Pong;
 use Stewart\Runtime\Ipc\Message\Publish;
+use Stewart\Runtime\Ipc\Message\RegistrySnapshot;
 use Stewart\Runtime\Ipc\Message\ServiceCallFailed;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
@@ -71,6 +87,7 @@ use Stewart\Runtime\Ipc\Wire\AppIdsFragment;
 use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
 use Stewart\Runtime\Ipc\Wire\HistoricalStatesFragment;
 use Stewart\Runtime\Ipc\Wire\IpcCodec;
+use Stewart\Runtime\Ipc\Wire\RegistryFragment;
 use Stewart\Runtime\Ipc\Wire\StateChangesFragment;
 use Stewart\Runtime\Ipc\Wire\WorkerAppsFragment;
 use Stewart\Runtime\Ipc\WorkerApp;
@@ -102,6 +119,7 @@ final class IpcMessageSamples
         return [
             'bootstrap' => IpcMessageSample::createRoundTrip(self::createBootstrap()),
             'state_snapshot' => new IpcMessageSample(new StateSnapshot(self::createStates($state), 4), new StateSnapshot(self::createStates($state), 4)),
+            'registry_snapshot' => new IpcMessageSample(new RegistrySnapshot(self::createRegistry(), 3), new RegistrySnapshot(self::createRegistry(), 3)),
             'state_changes' => new IpcMessageSample(self::createStateChangeBatch($at), self::createStateChangeBatch($at)),
             'state_resynced' => new IpcMessageSample(new StateResynced(self::createStates($state), 9, Duration::seconds(12.5)), new StateResynced(self::createStates($state), 9, Duration::seconds(12.5))),
             'ha_connection_lost' => IpcMessageSample::createRoundTrip(new HaConnectionLost($at, 'websocket closed')),
@@ -166,6 +184,21 @@ final class IpcMessageSamples
     private static function createStates(EntityState $state): EntityStatesFragment
     {
         return EntityStatesFragment::fromCollection(EntityStateCollection::keyedByEntityId([$state]));
+    }
+
+    private static function createRegistry(): RegistryFragment
+    {
+        $kitchen = new AreaId('kitchen');
+        $bulb = new DeviceId('bulb');
+        $night = new LabelId('night');
+
+        return RegistryFragment::fromRegistry(IndexedRegistry::fromParts(
+            AreaCollection::keyedByAreaId([new Area($kitchen, 'Kitchen', new FloorId('ground'), ['Cooking'], [$night], 'mdi:stove')]),
+            FloorCollection::keyedByFloorId([new Floor(new FloorId('ground'), 'Ground', 0)]),
+            LabelCollection::keyedByLabelId([new Label($night, 'Night', 'indigo')]),
+            DeviceCollection::keyedByDeviceId([new Device($bulb, 'Bulb', 'Ceiling', $kitchen, [], 'Signify', 'LCA001')]),
+            RegisteredEntityCollection::keyedByEntityId([new RegisteredEntity(new EntityId('light.ceiling'), $bulb, null, [$night], 'Ceiling', null, null, null)]),
+        ));
     }
 
     private static function createStateChangeBatch(Instant $at): StateChangeBatch

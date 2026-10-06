@@ -6,14 +6,23 @@ namespace Stewart\Client\Registry;
 
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\IdentifierException;
+use Stewart\Contracts\Registry\AreaId;
+use Stewart\Contracts\Registry\DeviceId;
+use Stewart\Contracts\Registry\LabelId;
+use Stewart\Contracts\Registry\RegisteredEntity;
 
 final readonly class EntityRegistryEntry
 {
+    /** @param list<string> $labelIds */
     public function __construct(
         public EntityId $entityId,
         public ?string $disabledBy = null,
         public ?string $hiddenBy = null,
         public ?string $name = null,
+        public ?string $areaId = null,
+        public ?string $deviceId = null,
+        public array $labelIds = [],
+        public ?string $entityCategory = null,
     ) {}
 
     public function isDisabled(): bool
@@ -33,14 +42,18 @@ final readonly class EntityRegistryEntry
     public static function fromArray(array $raw): self
     {
         return new self(
-            entityId: new EntityId(self::readString($raw, 'entity_id') ?? ''),
-            disabledBy: self::readString($raw, 'disabled_by'),
-            hiddenBy: self::readString($raw, 'hidden_by'),
-            name: self::readString($raw, 'name'),
+            entityId: new EntityId(RegistryRow::readString($raw, 'entity_id') ?? ''),
+            disabledBy: RegistryRow::readString($raw, 'disabled_by'),
+            hiddenBy: RegistryRow::readString($raw, 'hidden_by'),
+            name: RegistryRow::readString($raw, 'name'),
+            areaId: RegistryRow::readString($raw, 'area_id'),
+            deviceId: RegistryRow::readString($raw, 'device_id'),
+            labelIds: RegistryRow::readStrings($raw, 'labels'),
+            entityCategory: RegistryRow::readString($raw, 'entity_category'),
         );
     }
 
-    /** @return array<string, string|null> */
+    /** @return array<string, string|list<string>|null> */
     public function toArray(): array
     {
         return [
@@ -48,14 +61,24 @@ final readonly class EntityRegistryEntry
             'disabled_by' => $this->disabledBy,
             'hidden_by' => $this->hiddenBy,
             'name' => $this->name,
+            'area_id' => $this->areaId,
+            'device_id' => $this->deviceId,
+            'labels' => $this->labelIds,
+            'entity_category' => $this->entityCategory,
         ];
     }
 
-    /** @param array<array-key, mixed> $raw */
-    private static function readString(array $raw, string $key): ?string
+    public function toRegisteredEntity(): RegisteredEntity
     {
-        $value = $raw[$key] ?? null;
-
-        return \is_string($value) && $value !== '' ? $value : null;
+        return new RegisteredEntity(
+            entityId: $this->entityId,
+            deviceId: DeviceId::tryFromString($this->deviceId ?? ''),
+            areaId: AreaId::tryFromString($this->areaId ?? ''),
+            labelIds: array_values(array_filter(array_map(LabelId::tryFromString(...), $this->labelIds))),
+            name: $this->name,
+            entityCategory: $this->entityCategory,
+            hiddenBy: $this->hiddenBy,
+            disabledBy: $this->disabledBy,
+        );
     }
 }

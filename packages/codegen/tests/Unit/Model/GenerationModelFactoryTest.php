@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Client\State\EntityStateDecoder;
 use Stewart\Codegen\Emitter\EmitContext;
-use Stewart\Codegen\Entity\EntityFilter;
+use Stewart\Codegen\Entity\EntityInclusionRules;
 use Stewart\Codegen\Entity\UnmatchedEntitySelector;
 use Stewart\Codegen\GenerationOptions;
 use Stewart\Codegen\GenerationTarget;
@@ -22,7 +22,7 @@ use Stewart\Codegen\Tests\Fixtures\GoldenSnapshot;
 use Stewart\Testing\Filesystem\TempDirectory;
 
 #[CoversClass(GenerationModelFactory::class)]
-#[CoversClass(EntityFilter::class)]
+#[CoversClass(EntityInclusionRules::class)]
 #[CoversClass(EmitContext::class)]
 #[CoversClass(UnmatchedEntitySelector::class)]
 final class GenerationModelFactoryTest extends TestCase
@@ -88,7 +88,7 @@ final class GenerationModelFactoryTest extends TestCase
         return new GenerationRun(
             GoldenSnapshot::resolveGenerator(),
             new GenerationTarget('Acme\Home', $this->temp->path),
-            new GenerationOptions(EntityFilter::fromPatterns($include, ['light.debug_*'])),
+            new GenerationOptions(EntityInclusionRules::fromPatterns($include, ['light.debug_*'])),
         )->writeFiles($snapshot);
     }
 

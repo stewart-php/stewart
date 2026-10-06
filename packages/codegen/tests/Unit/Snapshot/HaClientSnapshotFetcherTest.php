@@ -13,6 +13,8 @@ use Stewart\Client\HaClientFactory;
 use Stewart\Codegen\Exception\CodegenError;
 use Stewart\Codegen\Snapshot\HaClientSnapshotFetcher;
 use Stewart\Codegen\Snapshot\Snapshot;
+use Stewart\Contracts\Registry\AreaId;
+use Stewart\Contracts\Registry\LabelId;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Time\ManualTimers;
@@ -40,6 +42,9 @@ final class HaClientSnapshotFetcherTest extends TestCase
 
         self::assertSame('2026.9.0', $snapshot->haVersion);
         self::assertSame(['light.hall'], $snapshot->states->listEntityIds()->toStrings());
+        self::assertSame('Kitchen', $snapshot->areas->find(new AreaId('kitchen'))?->name);
+        self::assertSame('Night', $snapshot->labels->find(new LabelId('night'))?->name);
+        self::assertTrue($snapshot->floors->isEmpty());
     }
 
     public function testMissingCoreStateIsAccepted(): void
@@ -71,6 +76,9 @@ final class HaClientSnapshotFetcherTest extends TestCase
         $socket->replyWhenSent('get_states', self::createResult([['entity_id' => 'light.hall', 'state' => 'on', 'attributes' => []]]));
         $socket->replyWhenSent('config/entity_registry/list', self::createResult([]));
         $socket->replyWhenSent('get_services', self::createResult([]));
+        $socket->replyWhenSent('config/area_registry/list', self::createResult([['area_id' => 'kitchen', 'name' => 'Kitchen']]));
+        $socket->replyWhenSent('config/floor_registry/list', self::createResult([]));
+        $socket->replyWhenSent('config/label_registry/list', self::createResult([['label_id' => 'night', 'name' => 'Night']]));
 
         return $socket;
     }

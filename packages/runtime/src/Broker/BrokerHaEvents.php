@@ -24,6 +24,7 @@ final readonly class BrokerHaEvents implements HaSessionListener
         private ConnectionTracker $connection,
         private BrokerRun $run,
         private TriggerRejections $triggerRejections,
+        private RegistryRefresher $registryRefresher,
     ) {}
 
     public function stateChanged(StateChange $change): void
@@ -33,6 +34,7 @@ final readonly class BrokerHaEvents implements HaSessionListener
 
     public function eventFired(HaEvent $event): void
     {
+        $this->registryRefresher->scheduleRefreshFor($event);
         $this->router->routeEvent($event);
     }
 
@@ -58,6 +60,8 @@ final readonly class BrokerHaEvents implements HaSessionListener
         $snapshot = $this->session->snapshotStateCache();
         $this->connection->markRestored($outage);
 
+        // The registry goes first so a resynced change is matched against the current areas and labels.
+        $this->slots->broadcast($this->session->snapshotRegistry()->toRegistrySnapshot());
         $this->slots->broadcast(new StateResynced($snapshot->states, $snapshot->revision, $outage));
     }
 

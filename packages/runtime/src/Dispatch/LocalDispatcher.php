@@ -9,6 +9,7 @@ use LogicException;
 use Stewart\Contracts\Connection\ConnectionEvent;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\Mqtt\MqttMessage;
+use Stewart\Contracts\Registry\EntityFilter;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Stream\SubscriptionScope;
@@ -20,6 +21,7 @@ use Stewart\Runtime\Model\Collection\SubscriptionIdCollection;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionId;
 use Stewart\Runtime\Model\SubscriptionKind;
+use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\Scope\ScopeLifecycle;
 use Throwable;
 
@@ -32,14 +34,18 @@ final class LocalDispatcher
 
     private readonly SelectorIndex $stateIndex;
 
+    private readonly EntityFilterIndex $stateFilterIndex;
+
     public function __construct(
         private readonly string $subscriptionIdPrefix,
         private readonly int $subscriptionQueueLimit,
         private readonly DispatchListener $listener,
         private readonly SubscriptionListener $subscriptions,
         private readonly ScopeLifecycle $scopes,
+        RegistryCache $registry,
     ) {
         $this->stateIndex = new SelectorIndex();
+        $this->stateFilterIndex = new EntityFilterIndex($registry);
     }
 
     public function register(
@@ -49,9 +55,14 @@ final class LocalDispatcher
         SubscriptionScope $subscriptionScope,
         Closure $handler,
         ?TriggerSpec $trigger = null,
+        ?EntityFilter $entityFilter = null,
     ): Subscription {
         if ($kind->needsTriggerSpec() !== ($trigger !== null)) {
             throw new LogicException(\sprintf('A %s subscription %s a trigger spec.', $kind->value, $trigger === null ? 'needs' : 'takes no'));
+        }
+
+        if ($entityFilter !== null && $kind !== SubscriptionKind::StateChange) {
+            throw new LogicException(\sprintf('A %s subscription takes no entity filter.', $kind->value));
         }
 
         $id = SubscriptionId::fromString($this->subscriptionIdPrefix . ':' . $this->counter++);
@@ -68,6 +79,7 @@ final class LocalDispatcher
             $subscriptionScope,
             $handler,
             $trigger,
+            $entityFilter,
         );
 
         $queue = new SubscriptionQueue($subscription, $this->subscriptionQueueLimit, $this->listener, $this->scopes->isLive($scope));
@@ -75,7 +87,9 @@ final class LocalDispatcher
         $this->queues[$subscription->id->value] = $queue;
         $subscriptionScope->deliverVia($queue->emit(...));
 
-        if ($kind === SubscriptionKind::StateChange) {
+        if ($entityFilter !== null) {
+            $this->stateFilterIndex->add($subscription->id, $entityFilter);
+        } elseif ($kind === SubscriptionKind::StateChange) {
             $this->stateIndex->add($subscription->id, $kind, $selector);
         }
 
@@ -84,6 +98,7 @@ final class LocalDispatcher
         } catch (Throwable $e) {
             unset($this->queues[$subscription->id->value]);
             $this->stateIndex->remove($subscription->id);
+            $this->stateFilterIndex->remove($subscription->id);
             $queue->cancel();
 
             throw $e;
@@ -101,11 +116,8 @@ final class LocalDispatcher
 
     public function dispatchStateChange(StateChange $change): void
     {
-        $this->deliver(
-            SubscriptionKind::StateChange,
-            $change,
-            $this->stateIndex->findMatching(SubscriptionKind::StateChange, $change->entityId->value),
-        );
+        $this->deliver(SubscriptionKind::StateChange, $change, $this->stateIndex->findMatching(SubscriptionKind::StateChange, $change->entityId->value));
+        $this->deliver(SubscriptionKind::StateChange, $change, $this->stateFilterIndex->findMatching($change->entityId));
     }
 
     public function dispatchEvent(HaEvent $event, SubscriptionIdCollection $deliverTo): void
@@ -147,6 +159,7 @@ final class LocalDispatcher
 
         unset($this->queues[$subscriptionId->value]);
         $this->stateIndex->remove($subscriptionId);
+        $this->stateFilterIndex->remove($subscriptionId);
         $queue->cancel();
 
         $this->subscriptions->subscriptionCancelled($queue->subscription);

@@ -19,6 +19,10 @@ use Stewart\Contracts\Exception\TopicError;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Identity\StewartIdentity;
+use Stewart\Contracts\Registry\Area;
+use Stewart\Contracts\Registry\AreaId;
+use Stewart\Contracts\Registry\EntityFilter;
+use Stewart\Contracts\Registry\RegisteredEntity;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\State\StateChange;
@@ -51,6 +55,26 @@ final class RecordingHaContextTest extends TestCase
 
         self::assertSame(['dusk'], $sunsets);
         self::assertSame([], $sunrises);
+    }
+
+    public function testEntityFilterFollowsSeededRegistry(): void
+    {
+        $ha = new RecordingHaContext();
+        $ha->registry
+            ->seedArea(new Area(new AreaId('kitchen'), 'Kitchen'))
+            ->seedEntity(new RegisteredEntity(new EntityId('light.kitchen'), areaId: new AreaId('kitchen')));
+        $ha->seedState('light.kitchen', 'off')->seedState('light.porch', 'off');
+        $seen = [];
+
+        $ha->watchStateChanges(EntityFilter::inArea('kitchen'))->subscribe(static function (StateChange $change) use (&$seen): void {
+            $seen[] = $change->entityId->value;
+        });
+        $ha->pushState('light.porch', 'on');
+        $ha->pushState('light.kitchen', 'on');
+
+        self::assertSame(['light.kitchen'], $seen);
+        self::assertSame(['light.kitchen'], $ha->listStates(EntityFilter::inArea('kitchen'))->listEntityIds()->toStrings());
+        self::assertSame('Kitchen', $ha->getRegistry()->findArea('kitchen')?->name);
     }
 
     public function testWatchedTriggersAreRecorded(): void

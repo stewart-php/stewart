@@ -22,7 +22,7 @@ use Throwable;
 
 final readonly class IpcCodec
 {
-    public const int PROTOCOL_VERSION = 20;
+    public const int PROTOCOL_VERSION = 21;
 
     private const string UNKNOWN_TYPE = '?';
 
@@ -48,6 +48,10 @@ final readonly class IpcCodec
             new ExceptionDetailsConverter(),
             StringIdentifierConverter::createForEntityIds(),
             StringIdentifierConverter::createForAppIds(),
+            StringIdentifierConverter::createForAreaIds(),
+            StringIdentifierConverter::createForFloorIds(),
+            StringIdentifierConverter::createForLabelIds(),
+            StringIdentifierConverter::createForDeviceIds(),
             new StringIdentifierConverter(SubscriptionId::class, 'a subscription id', SubscriptionId::fromString(...)),
             new StringIdentifierConverter(CorrelationId::class, 'a correlation id', CorrelationId::fromString(...)),
             new WorkerIdConverter(),

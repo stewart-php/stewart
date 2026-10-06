@@ -9,6 +9,7 @@ use Stewart\Runtime\Dispatch\LocalDispatcher;
 use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
+use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Worker\AppActivityCounters;
 use Stewart\Runtime\Worker\ConnectionStatus;
@@ -36,14 +37,16 @@ final class WorkerHaContextFixture
         ?Duration $callTimeout = null,
         AppActivityCounters $activityCounters = new AppActivityCounters(),
         ConnectionStatus $connection = new ConnectionStatus(),
+        RegistryCache $registry = new RegistryCache(),
     ): WorkerHaContext {
         return new WorkerHaContext(
             $stateCache,
+            $registry,
             $connection,
             new ServiceCaller($transport, $pending, $connection, $timers, $callTimeout ?? Duration::seconds(1)),
             new HistoryReader($transport, $pending, $connection, $timers, $timers->clock, $callTimeout ?? Duration::seconds(1)),
             new EventFirer($transport, $pending, $connection, $timers, $callTimeout ?? Duration::seconds(1)),
-            new DispatchStreams($dispatcher ?? RecordingDispatchListener::createDispatcher('w0', 10), $timers),
+            new DispatchStreams($dispatcher ?? RecordingDispatchListener::createDispatcher('w0', 10, $registry), $timers),
             new TopicPublisher($transport, $timers->clock, $activityCounters),
             $scope,
         );

@@ -18,6 +18,8 @@ use Stewart\Contracts\Exception\TopicException;
 use Stewart\Contracts\Exception\TriggerException;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryQuery;
+use Stewart\Contracts\Registry\EntityFilter;
+use Stewart\Contracts\Registry\Registry;
 use Stewart\Contracts\Selector\Collection\SelectorCollection;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\Service\ServiceResponse;
@@ -44,9 +46,11 @@ interface HaContext
     /** @throws HistoryException|IdentifierException */
     public function getHistory(EntityId|string $entityId, HistoryQuery $query): EntityStateHistory;
 
-    public function listStates(string|EntityId|Selector|SelectorCollection|null $selector = null): EntityStateCollection;
+    public function listStates(string|EntityId|Selector|SelectorCollection|EntityFilter|null $selector = null): EntityStateCollection;
 
-    public function watchStateChanges(string|EntityId|Selector|SelectorCollection $selector): StateChangeStream;
+    public function watchStateChanges(string|EntityId|Selector|SelectorCollection|EntityFilter $selector): StateChangeStream;
+
+    public function getRegistry(): Registry;
 
     /**
      * @return EventStream<HaEvent>

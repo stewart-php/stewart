@@ -45,15 +45,31 @@ section says what to change.
   - `StewartIdentity::wasCausedByStewart()` also takes an `HaEvent`, so watchers can skip Stewart's own fired events
 - `RecordingHaContext::fireEvent()` records to `firedEvents`, echoes the event to `watchEvents()`, and
   `stubEventFireFailure()` makes it throw
+- `HaContext::getRegistry()` reads Home Assistant's areas, floors, labels, devices and registered entities
+  - `findArea()`, `findAreaByName()` (name or alias), `listAreasOnFloor()`, `listDevicesInArea()`,
+    `findEntityPlacement()` and the same lookups for floors, labels, devices and entities
+  - Typed `AreaId`, `FloorId`, `LabelId` and `DeviceId`; every lookup also takes a plain string
+  - The broker fetches the registries on every connect and again a second after a `*_registry_updated` event
+- `EntityFilter` selects entities by area, floor, label, device, domain or id pattern for `listStates()` and
+  `watchStateChanges()`: `EntityFilter::inArea('kitchen')->withDomain('light')->withLabel('night')`
+  - Values within one condition are alternatives; all conditions must match
+  - Area, floor and labels resolve like Home Assistant targets: an entity's own area overrides its device's, labels
+    come from the entity, its device and its area, and hidden or config/diagnostic entities match only by domain or id
+  - A running watch picks up registry changes with the next state change
+- `ServiceTarget::forAreas()`, `forFloors()`, `forLabels()` and `forDevices()` take the typed ids
+- `RecordingHaContext::$registry` (`InMemoryRegistry`) seeds areas, floors, labels, devices and entities for tests
+- `stewart generate` stores areas, floors and labels in the snapshot and completes their ids in PhpStorm for
+  `EntityFilter`, `Registry` lookups, `ServiceTarget` and the id constructors
 
 ### Changed
 
 - A subscription the broker refuses is cancelled in the worker, not just logged
 - Refused-call warnings and reasons speak of calls to Home Assistant, covering service calls and fired events
 - `RecordingHaContext` numbers contexts across service calls and fired events
-- IPC protocol 20; broker and workers must run the same version
+- IPC protocol 21; broker and workers must run the same version
+- `HaContext` gains `getRegistry()`; a custom implementation must add it
 - Builder triggers use the `trigger:` key, which needs Home Assistant 2024.10 or newer
-- Generated code format 4; regenerate after upgrading
+- Generated code format 5; regenerate after upgrading
 
 ### Upgrading
 

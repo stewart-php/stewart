@@ -29,7 +29,7 @@ final readonly class AppResourcesFixture
         ScheduleListener $scheduleListener = new RecordingScheduleListener(),
     ) {
         $this->scopes = new ScopeLifecycle();
-        $this->dispatcher = RecordingDispatchListener::createDispatcher('w0', $subscriptionQueueLimit, $this->scopes);
+        $this->dispatcher = RecordingDispatchListener::createDispatcher('w0', $subscriptionQueueLimit, scopes: $this->scopes);
         $this->schedules = new ScheduleRegistry(
             'w0',
             new ScheduleContext($timers, $timers->clock, new InlineHandlerRunner(), $scheduleListener),

@@ -14,6 +14,7 @@ use Stewart\Client\Event\EventDecoder;
 use Stewart\Client\Exception\HaClientError;
 use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
+use Stewart\Client\Registry\RegistryDecoder;
 use Stewart\Client\State\EntityStateDecoder;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
@@ -23,6 +24,7 @@ use Stewart\Runtime\Broker\Reconnector;
 use Stewart\Runtime\Broker\Trigger\HaTriggerLink;
 use Stewart\Runtime\Broker\WebsocketHaSession;
 use Stewart\Runtime\Config\BackoffPolicy;
+use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Tests\Fixtures\Broker\RecordingSessionListener;
 use Stewart\Testing\Exception\AssertsReason;
@@ -39,6 +41,13 @@ use function Amp\async;
 final class WebsocketHaSessionTest extends TestCase
 {
     use AssertsReason;
+    private const array REGISTRY_COMMANDS = [
+        'config/area_registry/list',
+        'config/floor_registry/list',
+        'config/label_registry/list',
+        'config/device_registry/list',
+        'config/entity_registry/list',
+    ];
 
     private const int FIRST_SUBSCRIPTION = 1;
 
@@ -76,7 +85,7 @@ final class WebsocketHaSessionTest extends TestCase
         $socket = self::createHaSocket(['hall' => 'off', 'porch' => 'on']);
         $session = $this->open($socket);
 
-        self::assertSame(['auth', 'subscribe_events', 'get_config', 'auth/current_user', 'get_states'], array_column($socket->sent, 'type'));
+        self::assertSame(['auth', 'subscribe_events', 'get_config', 'auth/current_user', 'get_states', ...self::REGISTRY_COMMANDS], array_column($socket->sent, 'type'));
         self::assertTrue($session->isConnected());
         self::assertSame(self::HA_USER_ID, $session->getHaUserId());
         self::assertSame('Europe/Budapest', $session->getTimeZone()->getName());
@@ -84,6 +93,47 @@ final class WebsocketHaSessionTest extends TestCase
         self::assertSame([self::HALL, self::PORCH], $session->listEntityIds());
         self::assertSame(2, $session->countEntities());
         self::assertSame(1, $session->snapshotStateCache()->revision);
+    }
+
+    public function testRegistryIsFetchedOnEveryConnect(): void
+    {
+        $first = self::createHaSocket(['hall' => 'off']);
+        $second = self::createHaSocket(['hall' => 'on'], authenticated: false);
+        $session = $this->open($first, $second);
+        $initial = $session->snapshotRegistry();
+
+        self::assertSame(1, $initial->revision);
+        self::assertSame('kitchen', $initial->registry->registry->findEntityPlacement(self::HALL)->areaId?->value);
+        self::assertSame($initial, $session->snapshotRegistry(), 'One snapshot is shared until the registry changes.');
+
+        $first->close(1001, 'restarting');
+        EventLoopTicks::settleUntil(fn(): bool => \count($this->listener->lost) === 1);
+        self::authenticate($second);
+        EventLoopTicks::settleUntil(static fn(): bool => $session->isConnected());
+
+        self::assertSame(2, $session->snapshotRegistry()->revision);
+    }
+
+    public function testRefreshLoadsNextRegistryRevision(): void
+    {
+        $socket = self::createHaSocket(['hall' => 'off']);
+        $session = $this->open($socket);
+        self::replyWithRegistry($socket, 'hall');
+
+        self::assertTrue($session->refreshRegistry());
+        self::assertSame(2, $session->snapshotRegistry()->revision);
+        self::assertSame('hall', $session->snapshotRegistry()->registry->registry->findEntityPlacement(self::HALL)->areaId?->value);
+    }
+
+    public function testRejectedRefreshKeepsPreviousRegistry(): void
+    {
+        $socket = self::createHaSocket(['hall' => 'off']);
+        $session = $this->open($socket);
+        $socket->replyWhenSent('config/area_registry/list', ['type' => 'result', 'success' => false, 'error' => ['code' => 'unknown_error', 'message' => 'boom']]);
+
+        self::assertFalse($session->refreshRegistry());
+        self::assertSame(1, $session->snapshotRegistry()->revision);
+        self::assertSame('kitchen', $session->snapshotRegistry()->registry->registry->findEntityPlacement(self::HALL)->areaId?->value);
     }
 
     public function testChangesDuringSeedAreAppliedSilently(): void
@@ -138,7 +188,7 @@ final class WebsocketHaSessionTest extends TestCase
         EventLoopTicks::settleUntil(static fn(): bool => $session->isConnected());
 
         self::assertTrue($session->isConnected());
-        self::assertSame(['auth', 'subscribe_events', 'get_states'], array_column($second->sent, 'type'), 'The time zone and user are asked for once.');
+        self::assertSame(['auth', 'subscribe_events', 'get_states', ...self::REGISTRY_COMMANDS], array_column($second->sent, 'type'), 'The time zone and user are asked for once.');
         self::assertEquals([Duration::seconds(1)], $this->listener->outages, 'One failed attempt, then one backoff.');
         self::assertSame(2, $session->snapshotStateCache()->revision);
     }
@@ -229,7 +279,7 @@ final class WebsocketHaSessionTest extends TestCase
 
         self::assertTrue($session->isConnected());
         self::assertSame([], $this->listener->lost);
-        self::assertSame(['auth', 'subscribe_events', 'auth/current_user', 'get_states'], array_column($second->sent, 'type'), 'The user was never answered, so it is asked again.');
+        self::assertSame(['auth', 'subscribe_events', 'auth/current_user', 'get_states', ...self::REGISTRY_COMMANDS], array_column($second->sent, 'type'), 'The user was never answered, so it is asked again.');
         self::assertSame(1, $session->snapshotStateCache()->revision);
     }
 
@@ -256,7 +306,7 @@ final class WebsocketHaSessionTest extends TestCase
         $session->subscribeTrigger(self::createSunsetSpec());
         $session->open($this->listener);
 
-        self::assertSame(['auth', 'subscribe_events', 'subscribe_trigger', 'get_config', 'auth/current_user', 'get_states'], array_column($socket->sent, 'type'));
+        self::assertSame(['auth', 'subscribe_events', 'subscribe_trigger', 'get_config', 'auth/current_user', 'get_states', ...self::REGISTRY_COMMANDS], array_column($socket->sent, 'type'));
     }
 
     public function testTriggersAreReissuedAfterReconnect(): void
@@ -268,11 +318,11 @@ final class WebsocketHaSessionTest extends TestCase
         $session->open($this->listener);
 
         $first->close(1001, 'restarting');
-        EventLoopTicks::settleUntil(static fn(): bool => $session->isConnected() && $second->listSentOfType('get_states') !== []);
+        EventLoopTicks::settleUntil(static fn(): bool => $session->isConnected() && $second->listSentOfType('config/entity_registry/list') !== []);
         $second->queueFrame(self::createTriggerFrame(self::findTriggerSubscriptionId($second)));
         EventLoopTicks::settleUntil(fn(): bool => $this->listener->firedTriggers !== []);
 
-        self::assertSame(['auth', 'subscribe_events', 'subscribe_trigger', 'get_states'], array_column($second->sent, 'type'));
+        self::assertSame(['auth', 'subscribe_events', 'subscribe_trigger', 'get_states', ...self::REGISTRY_COMMANDS], array_column($second->sent, 'type'));
         self::assertCount(1, $this->listener->firedTriggers);
     }
 
@@ -334,7 +384,7 @@ final class WebsocketHaSessionTest extends TestCase
         self::authenticate($second);
         EventLoopTicks::settleUntil(static fn(): bool => $session->isConnected());
 
-        self::assertSame(['auth', 'subscribe_events', 'get_states'], array_column($second->sent, 'type'));
+        self::assertSame(['auth', 'subscribe_events', 'get_states', ...self::REGISTRY_COMMANDS], array_column($second->sent, 'type'));
         self::assertSame([], $first->listSentOfType('unsubscribe_events'));
     }
 
@@ -361,7 +411,7 @@ final class WebsocketHaSessionTest extends TestCase
             new FakeWebsocketConnector(...$sockets),
         );
 
-        $client = new HaClient($connection, new EventDecoder(new EntityStateDecoder()), new EntityStateDecoder(), new NullLogger());
+        $client = new HaClient($connection, new EventDecoder(new EntityStateDecoder()), new EntityStateDecoder(), new RegistryDecoder(), new NullLogger());
 
         return $this->session = new WebsocketHaSession(
             $client,
@@ -373,6 +423,7 @@ final class WebsocketHaSessionTest extends TestCase
             $this->logger,
             $this->timers->clock,
             new StateCache(),
+            new RegistryCache(),
             new HaTriggerLink($client, new NullLogger()),
         );
     }
@@ -409,8 +460,18 @@ final class WebsocketHaSessionTest extends TestCase
         }
 
         $socket->replyWhenSent('get_states', ['type' => 'result', 'success' => true, 'result' => $states]);
+        self::replyWithRegistry($socket, 'kitchen');
 
         return $socket;
+    }
+
+    private static function replyWithRegistry(FakeWebsocketConnection $socket, string $hallLightArea): void
+    {
+        $socket->replyWhenSent('config/area_registry/list', ['type' => 'result', 'success' => true, 'result' => [['area_id' => $hallLightArea, 'name' => ucfirst($hallLightArea)]]]);
+        $socket->replyWhenSent('config/floor_registry/list', ['type' => 'result', 'success' => true, 'result' => []]);
+        $socket->replyWhenSent('config/label_registry/list', ['type' => 'result', 'success' => true, 'result' => []]);
+        $socket->replyWhenSent('config/device_registry/list', ['type' => 'result', 'success' => true, 'result' => []]);
+        $socket->replyWhenSent('config/entity_registry/list', ['type' => 'result', 'success' => true, 'result' => [['entity_id' => self::HALL, 'area_id' => $hallLightArea]]]);
     }
 
     private static function authenticate(FakeWebsocketConnection $socket): void

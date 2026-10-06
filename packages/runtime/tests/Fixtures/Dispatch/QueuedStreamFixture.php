@@ -13,6 +13,7 @@ use Stewart\Contracts\StateChangeStream;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Dispatch\LocalDispatcher;
 use Stewart\Runtime\Model\ResourceScope;
+use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\Scope\ScopeLifecycle;
 use Stewart\Runtime\Tests\Fixtures\Worker\RecordingDispatchListener;
 use Stewart\Runtime\Worker\Context\DispatchStreams;
@@ -40,7 +41,7 @@ final class QueuedStreamFixture
         $scopes = new ScopeLifecycle();
         $scopes->activateScope($this->scope);
 
-        $this->dispatcher = new LocalDispatcher('w0', $subscriptionQueueLimit, $this->listener, $this->listener, $scopes);
+        $this->dispatcher = new LocalDispatcher('w0', $subscriptionQueueLimit, $this->listener, $this->listener, $scopes, new RegistryCache());
         $this->streams = new DispatchStreams($this->dispatcher, $this->timers);
     }
 

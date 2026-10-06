@@ -25,6 +25,7 @@ use Stewart\Runtime\Broker\SubscriptionRegistry;
 use Stewart\Runtime\Broker\WebsocketHaSession;
 use Stewart\Runtime\Broker\WorkerSpawner;
 use Stewart\Runtime\Control\ControlPlaneFactory;
+use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Store\GuardedStoreBackend;
 use Stewart\Store\StoreBackend;
@@ -43,6 +44,7 @@ return static function (ContainerConfigurator $container): void {
 
     $services->load('Stewart\\Runtime\\Broker\\', '../src/Broker/');
     $services->set(StateCache::class);
+    $services->set(RegistryCache::class);
     $services->load('Stewart\\Runtime\\Control\\', '../src/Control/')->exclude('../src/Control/{Client,Protocol}');
 
     $services->set(BrokerLifecycle::class)->public();
