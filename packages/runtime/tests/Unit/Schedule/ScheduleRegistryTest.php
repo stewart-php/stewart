@@ -509,10 +509,67 @@ final class ScheduleRegistryTest extends TestCase
         self::assertSame('01:00:30', $task->getNextRunAt()?->toDateTime(self::getUtcZone())->format('H:i:s'));
     }
 
+    public function testPausedScheduleSkipsThenRunsAfterResume(): void
+    {
+        $task = $this->scheduler->runEvery(Duration::seconds(10), $this->record(...));
+        $this->goLive('demo');
+        $this->pause('demo');
+
+        $this->timers->delay(Duration::seconds(20));
+
+        self::assertSame([], $this->runs);
+        self::assertCount(2, $this->listener->suppressed, 'Each firing while paused is suppressed, not deferred.');
+        self::assertTrue($task->isActive());
+
+        $this->resume('demo');
+        $this->timers->delay(Duration::seconds(10));
+
+        self::assertSame(['00:00:30'], $this->listScheduledTimes());
+    }
+
+    public function testOneShotDueWhilePausedIsDropped(): void
+    {
+        $this->goLive('demo');
+        $task = $this->scheduler->runAfter(Duration::seconds(30), $this->record(...));
+        $this->pause('demo');
+
+        $this->timers->delay(Duration::minutes(1));
+        $this->resume('demo');
+        $this->timers->delay(Duration::minutes(1));
+
+        self::assertSame([], $this->runs);
+        self::assertFalse($task->isActive());
+        self::assertSame(0, $this->registry->count());
+    }
+
+    public function testScheduleArmedWhilePausedStartsPaused(): void
+    {
+        $this->goLive('demo');
+        $this->pause('demo');
+
+        $this->scheduler->runEvery(Duration::seconds(10), $this->record(...));
+        $this->timers->delay(Duration::seconds(10));
+
+        self::assertSame([], $this->runs);
+        self::assertCount(1, $this->listener->suppressed);
+    }
+
     private function goLive(string $appId, ?ScheduleRegistry $registry = null): void
     {
         $this->scopes->activateScope(self::createScope($appId));
         ($registry ?? $this->registry)->startEntriesOf(self::createScope($appId));
+    }
+
+    private function pause(string $appId): void
+    {
+        $this->scopes->pauseScope(self::createScope($appId));
+        $this->registry->pauseEntriesOf(self::createScope($appId));
+    }
+
+    private function resume(string $appId): void
+    {
+        $this->scopes->resumeScope(self::createScope($appId));
+        $this->registry->resumeEntriesOf(self::createScope($appId));
     }
 
     private function release(string $appId): void

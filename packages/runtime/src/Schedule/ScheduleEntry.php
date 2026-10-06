@@ -21,6 +21,8 @@ final class ScheduleEntry
 
     public private(set) bool $live = false;
 
+    public private(set) bool $paused = false;
+
     private bool $running = false;
 
     /** @var (Closure(ScheduledRun): void)|null */
@@ -68,6 +70,16 @@ final class ScheduleEntry
         $this->armTimerForNextOccurrence();
 
         return true;
+    }
+
+    public function pause(): void
+    {
+        $this->paused = true;
+    }
+
+    public function resume(): void
+    {
+        $this->paused = false;
     }
 
     public function getNextRunAt(): ?Instant
@@ -150,6 +162,12 @@ final class ScheduleEntry
     private function startHandlerRun(Closure $handler, Instant $scheduledFor, int $missed): void
     {
         $run = new ScheduledRun($this->task, $scheduledFor, $this->context->clock->getNow(), $missed);
+
+        if ($this->paused) {
+            $this->context->listener->scheduledRunSuppressed($this->origin, $run);
+
+            return;
+        }
 
         if ($this->running) {
             $this->reportOverlap($run);

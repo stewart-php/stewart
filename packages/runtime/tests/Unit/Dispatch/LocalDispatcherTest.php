@@ -608,9 +608,122 @@ final class LocalDispatcherTest extends TestCase
         self::assertSame([1, 2], $this->listener->dropReports, 'The listener sees every drop and decides how often to log.');
     }
 
+    public function testPausedAppSuppressesItsEvents(): void
+    {
+        $dispatcher = $this->createDispatcher();
+        $handled = [];
+
+        $paused = $this->register($dispatcher, 'app', SubscriptionKind::Topic, Selector::any(), static function (TopicEvent $event) use (&$handled): void {
+            $handled[] = ['app', $event->payload];
+        });
+        $other = $this->register($dispatcher, 'other', SubscriptionKind::Topic, Selector::any(), static function (TopicEvent $event) use (&$handled): void {
+            $handled[] = ['other', $event->payload];
+        });
+        $this->pause($dispatcher, 'app');
+
+        $dispatcher->dispatchTopic(new TopicEvent('t', 1, new AppId('x'), Instant::fromEpochMicroseconds(0)), self::listDeliveryTargets($paused, $other));
+        EventLoopTicks::settleUntil(static function () use (&$handled): bool {
+            return \count($handled) === 1;
+        });
+
+        self::assertSame([['other', 1]], $handled);
+        self::assertSame([$paused->getId()], $this->listener->suppressed);
+    }
+
+    public function testPauseDiscardsQueuedEvents(): void
+    {
+        $dispatcher = $this->createDispatcher();
+        $handled = 0;
+
+        $subscription = $this->register($dispatcher, 'app', SubscriptionKind::Topic, Selector::any(), static function () use (&$handled): void {
+            ++$handled;
+        }, activate: false);
+
+        foreach ([1, 2] as $payload) {
+            $dispatcher->dispatchTopic(new TopicEvent('t', $payload, new AppId('x'), Instant::fromEpochMicroseconds(0)), self::listDeliveryTargets($subscription));
+        }
+
+        $this->pause($dispatcher, 'app');
+        $this->goLive($dispatcher, 'app');
+        $this->resume($dispatcher, 'app');
+        EventLoopTicks::settle();
+
+        self::assertSame(0, $handled, 'Events queued before the pause are not replayed on resume.');
+        self::assertCount(2, $this->listener->suppressed);
+    }
+
+    public function testResumedAppReceivesOnlyNewEvents(): void
+    {
+        $dispatcher = $this->createDispatcher();
+        $handled = [];
+
+        $subscription = $this->register($dispatcher, 'app', SubscriptionKind::Topic, Selector::any(), static function (TopicEvent $event) use (&$handled): void {
+            $handled[] = $event->payload;
+        });
+        $this->pause($dispatcher, 'app');
+        $dispatcher->dispatchTopic(new TopicEvent('t', 'missed', new AppId('x'), Instant::fromEpochMicroseconds(0)), self::listDeliveryTargets($subscription));
+
+        $this->resume($dispatcher, 'app');
+        $dispatcher->dispatchTopic(new TopicEvent('t', 'fresh', new AppId('x'), Instant::fromEpochMicroseconds(0)), self::listDeliveryTargets($subscription));
+        EventLoopTicks::settleUntil(static function () use (&$handled): bool {
+            return \count($handled) === 1;
+        });
+
+        self::assertSame(['fresh'], $handled);
+    }
+
+    public function testPausedAppSuppressesStreamEmissions(): void
+    {
+        $dispatcher = $this->createDispatcher();
+        $handled = 0;
+        $scope = new SubscriptionScope();
+
+        $subscription = $dispatcher->register(self::createScope('app'), SubscriptionKind::Topic, Selector::any(), $scope, static fn(): null => null);
+        $scope->attachedTo($subscription);
+        $this->goLive($dispatcher, 'app');
+        $this->pause($dispatcher, 'app');
+
+        $scope->emit(static function () use (&$handled): void {
+            ++$handled;
+        });
+        EventLoopTicks::settle();
+
+        self::assertSame(0, $handled);
+        self::assertSame([$subscription->getId()], $this->listener->suppressed);
+    }
+
+    public function testSubscriptionOfPausedAppStartsPaused(): void
+    {
+        $dispatcher = $this->createDispatcher();
+        $handled = 0;
+        $this->pause($dispatcher, 'app');
+
+        $subscription = $this->register($dispatcher, 'app', SubscriptionKind::Topic, Selector::any(), static function () use (&$handled): void {
+            ++$handled;
+        });
+
+        $dispatcher->dispatchTopic(new TopicEvent('t', 1, new AppId('x'), Instant::fromEpochMicroseconds(0)), self::listDeliveryTargets($subscription));
+        EventLoopTicks::settle();
+
+        self::assertSame(0, $handled);
+        self::assertSame([$subscription->getId()], $this->listener->suppressed);
+    }
+
     private function createDispatcher(int $queueLimit = 100): LocalDispatcher
     {
         return new LocalDispatcher('w0', $queueLimit, $this->listener, $this->listener, $this->scopes, $this->registry);
+    }
+
+    private function pause(LocalDispatcher $dispatcher, string $appId): void
+    {
+        $this->scopes->pauseScope(self::createScope($appId));
+        $dispatcher->pauseQueuesOf(self::createScope($appId));
+    }
+
+    private function resume(LocalDispatcher $dispatcher, string $appId): void
+    {
+        $this->scopes->resumeScope(self::createScope($appId));
+        $dispatcher->resumeQueuesOf(self::createScope($appId));
     }
 
     private function goLive(LocalDispatcher $dispatcher, string $appId): void

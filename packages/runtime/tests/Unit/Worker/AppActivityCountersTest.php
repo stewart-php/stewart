@@ -33,11 +33,21 @@ final class AppActivityCountersTest extends TestCase
         $demo->recordDroppedEvent();
         $demo->recordScheduleRun();
         $demo->recordPublish();
+        $demo->recordSuppressedWork();
         $counters->findOrCreateActivityForScope(self::createScope('echo'))->recordPublish();
 
-        self::assertSame([2, 1, 1, 1], [$demo->delivered, $demo->dropped, $demo->scheduleRuns, $demo->publishes]);
+        self::assertSame([2, 1, 1, 1, 1], [$demo->delivered, $demo->dropped, $demo->scheduleRuns, $demo->publishes, $demo->suppressed]);
         self::assertSame(1, $counters->findOrCreateActivityForScope(self::createScope('echo'))->publishes);
         self::assertFalse($demo->isIdle());
+    }
+
+    public function testSuppressedWorkMakesAppNotIdle(): void
+    {
+        $activity = new AppActivityCounters()->findOrCreateActivityForScope(self::createScope('demo'));
+
+        $activity->recordSuppressedWork();
+
+        self::assertFalse($activity->isIdle());
     }
 
     public function testPublishesAreCountedPerScope(): void

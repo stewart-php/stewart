@@ -54,6 +54,10 @@ final class ScheduleRegistry
 
         $this->entries[$entry->origin->taskId] = $entry;
 
+        if ($this->scopes->isPaused($scope)) {
+            $entry->pause();
+        }
+
         if ($this->scopes->isLive($scope)) {
             $this->goLive($entry);
         }
@@ -67,6 +71,20 @@ final class ScheduleRegistry
             if (!$entry->live) {
                 $this->goLive($entry);
             }
+        }
+    }
+
+    public function pauseEntriesOf(ResourceScope $scope): void
+    {
+        foreach ($this->listEntriesOf($scope) as $entry) {
+            $entry->pause();
+        }
+    }
+
+    public function resumeEntriesOf(ResourceScope $scope): void
+    {
+        foreach ($this->listEntriesOf($scope) as $entry) {
+            $entry->resume();
         }
     }
 

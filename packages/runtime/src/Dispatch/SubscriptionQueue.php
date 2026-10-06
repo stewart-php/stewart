@@ -28,6 +28,7 @@ final class SubscriptionQueue
         private readonly int $limit,
         private readonly DispatchListener $listener,
         public private(set) bool $live = true,
+        public private(set) bool $paused = false,
     ) {
         $this->pending = new SplQueue();
     }
@@ -35,6 +36,12 @@ final class SubscriptionQueue
     public function push(object $event): void
     {
         if ($this->cancelled) {
+            return;
+        }
+
+        if ($this->paused) {
+            $this->listener->eventSuppressed($this->subscription);
+
             return;
         }
 
@@ -58,6 +65,12 @@ final class SubscriptionQueue
             return;
         }
 
+        if ($this->paused) {
+            $this->listener->eventSuppressed($this->subscription);
+
+            return;
+        }
+
         $this->enqueue(QueuedWork::forStreamEmission($emission));
     }
 
@@ -72,6 +85,27 @@ final class SubscriptionQueue
         if (!$this->pending->isEmpty()) {
             $this->startDraining();
         }
+    }
+
+    public function pause(): void
+    {
+        if ($this->cancelled || $this->paused) {
+            return;
+        }
+
+        $this->paused = true;
+        $discarded = $this->pending;
+        $this->pending = new SplQueue();
+        $this->pendingEvents = 0;
+
+        foreach ($discarded as $ignored) {
+            $this->listener->eventSuppressed($this->subscription);
+        }
+    }
+
+    public function resume(): void
+    {
+        $this->paused = false;
     }
 
     public function cancel(): void
@@ -131,7 +165,7 @@ final class SubscriptionQueue
     private function drain(): void
     {
         try {
-            while (!$this->cancelled && !$this->pending->isEmpty()) {
+            while (!$this->cancelled && !$this->paused && !$this->pending->isEmpty()) {
                 $work = $this->pending->dequeue();
 
                 if ($work->droppable) {

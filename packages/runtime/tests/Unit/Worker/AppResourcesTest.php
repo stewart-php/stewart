@@ -91,6 +91,34 @@ final class AppResourcesTest extends TestCase
         self::assertSame(0, $this->runs);
     }
 
+    public function testPauseGatesOnlyThatAppUntilResumed(): void
+    {
+        $this->resources->activateScope(ResourceScope::forApp(new AppId('demo')));
+        $this->resources->activateScope(ResourceScope::forApp(new AppId('other')));
+        $this->scheduleEveryTenSeconds('demo');
+        $this->scheduleEveryTenSeconds('other');
+
+        $this->resources->pauseScope(ResourceScope::forApp(new AppId('demo')));
+        $this->fixture->timers->delay(Duration::seconds(10));
+
+        self::assertSame(1, $this->runs);
+        self::assertTrue($this->fixture->scopes->isPaused(ResourceScope::forApp(new AppId('demo'))));
+
+        $this->resources->resumeScope(ResourceScope::forApp(new AppId('demo')));
+        $this->fixture->timers->delay(Duration::seconds(10));
+
+        self::assertSame(3, $this->runs);
+    }
+
+    public function testPausingReleasedAppChangesNothing(): void
+    {
+        $this->resources->releaseScope(ResourceScope::forApp(new AppId('demo')));
+
+        $this->resources->pauseScope(ResourceScope::forApp(new AppId('demo')));
+
+        self::assertFalse($this->fixture->scopes->isPaused(ResourceScope::forApp(new AppId('demo'))));
+    }
+
     private function subscribe(string $appId): Subscription
     {
         $scope = new SubscriptionScope();
