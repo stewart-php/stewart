@@ -130,7 +130,7 @@ spec:
             {{- include "stewart.env" (dict "root" . "homeAssistantToken" $homeAssistantToken "persistenceUrl" $persistenceUrl "controlToken" $controlToken) | nindent 12 }}
             {{- if eq .Values.probes.mode "http" }}
             - name: STEWART_HTTP__LISTEN
-              value: {{ printf "tcp://0.0.0.0:%d" (int .Values.probes.port) | quote }}
+              value: {{ printf (ternary "tcp://[%s]:%d" "tcp://%s:%d" (contains ":" .Values.probes.host)) .Values.probes.host (int .Values.probes.port) | quote }}
             {{- end }}
             {{- with .Values.env }}
             {{- toYaml . | nindent 12 }}

@@ -63,6 +63,7 @@ classes are rewritten inside the image.
 | `podSecurityContext`, `securityContext` | non-root, read-only root, no capabilities | |
 | `terminationGracePeriodSeconds` | `30` | Must exceed `shutdown_grace` (5s) plus a second |
 | `probes.mode` | `http` | `http` probes the daemon's port; `exec` runs `stewart status --probe` |
+| `probes.host` | `0.0.0.0` | IP the probe listener binds; `::` on an IPv6-only cluster |
 | `probes.port` | `8080` | Container port of the probe listener (`http.listen`), never exposed by a Service |
 | `probes.{startup,liveness,readiness}` | see `values.yaml` | Periods, timeouts and thresholds |
 | `valkey.enabled` | `true` | Run a single Valkey next to Stewart, reachable only inside the cluster |

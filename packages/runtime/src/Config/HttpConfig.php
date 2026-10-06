@@ -16,7 +16,7 @@ final readonly class HttpConfig
         $listen = $http->findString('listen');
 
         return new self(
-            listen: $listen === null || trim($listen) === '' || strcasecmp(trim($listen), StewartConfigSchema::OFF) === 0
+            listen: $listen === null || strcasecmp(trim($listen), StewartConfigSchema::OFF) === 0
                 ? null
                 : $http->readParsedValue('listen', HttpListenAddress::parse(...)),
         );

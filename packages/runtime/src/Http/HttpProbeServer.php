@@ -41,9 +41,7 @@ final class HttpProbeServer implements ProbeListener
             new SocketClientFactory($amphpLogger),
             allowedMethods: self::PROBE_METHODS,
         );
-        $port = $this->address->port;
-        \assert($port >= 1 && $port <= 65535);
-        $server->expose(new InternetAddress($this->address->ip, $port));
+        $server->expose(new InternetAddress($this->address->ip, $this->address->port));
         $server->start($this->requests, new DefaultErrorHandler());
         $this->server = $server;
 
