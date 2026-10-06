@@ -7,7 +7,7 @@ namespace Stewart\Codegen\Tests\Fixtures;
 use Stewart\Codegen\Attribute\AttributeFilter;
 use Stewart\Codegen\Attribute\Collection\AttributeFilterCollection;
 use Stewart\Codegen\Attribute\KeyPatterns;
-use Stewart\Codegen\Entity\EntityFilter;
+use Stewart\Codegen\Entity\EntityInclusionRules;
 use Stewart\Codegen\GenerationOptions;
 use Stewart\Codegen\GenerationTarget;
 use Stewart\Codegen\Generator;
@@ -55,7 +55,7 @@ final class GoldenSnapshot
             self::resolveGenerator(),
             new GenerationTarget(self::NAMESPACE, $directory ?? self::getExpectedDirectory()),
             new GenerationOptions(
-                EntityFilter::fromPatterns(['*'], ['light.debug_*']),
+                EntityInclusionRules::fromPatterns(['*'], ['light.debug_*']),
                 AttributeFilterCollection::keyedByDomain([new AttributeFilter('sensor', new KeyPatterns(['battery']))]),
             ),
         );

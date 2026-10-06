@@ -10,7 +10,7 @@ use Stewart\Contracts\Selector\Collection\SelectorCollection;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 
-final readonly class EntityFilter
+final readonly class EntityInclusionRules
 {
     private function __construct(
         public SelectorCollection $include,

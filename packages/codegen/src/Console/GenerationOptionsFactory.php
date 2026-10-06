@@ -7,7 +7,7 @@ namespace Stewart\Codegen\Console;
 use Stewart\Codegen\Attribute\AttributeFilter;
 use Stewart\Codegen\Attribute\Collection\AttributeFilterCollection;
 use Stewart\Codegen\Attribute\KeyPatterns;
-use Stewart\Codegen\Entity\EntityFilter;
+use Stewart\Codegen\Entity\EntityInclusionRules;
 use Stewart\Codegen\GenerationOptions;
 use Stewart\Runtime\Config\CodegenConfig;
 
@@ -16,7 +16,7 @@ final readonly class GenerationOptionsFactory
     public function createFromCodegenConfig(CodegenConfig $codegen): GenerationOptions
     {
         return new GenerationOptions(
-            EntityFilter::fromPatterns($codegen->include, $codegen->exclude),
+            EntityInclusionRules::fromPatterns($codegen->include, $codegen->exclude),
             $this->buildAttributeFilters($codegen),
         );
     }

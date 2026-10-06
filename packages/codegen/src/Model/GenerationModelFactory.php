@@ -44,7 +44,7 @@ final readonly class GenerationModelFactory
     /** @throws CodegenException */
     public function buildModelFromSnapshot(Snapshot $snapshot, GenerationOptions $options): GenerationModel
     {
-        $selection = $this->entitySelector->selectEntities($snapshot, $options->filter);
+        $selection = $this->entitySelector->selectEntities($snapshot, $options->inclusionRules);
         $catalog = $this->serviceCatalogParser->parseServicesResponse($snapshot->services);
         $byDomain = $selection->generated->groupByDomain();
 
@@ -75,7 +75,7 @@ final readonly class GenerationModelFactory
             entityIds: $selection->listEntityIds(),
             ignoredEntityIds: $selection->ignored,
             warnings: GenerationWarningCollection::fromWarnings([
-                ...$options->filter->listUnmatchedIncludes($snapshot->states)->mapToList(
+                ...$options->inclusionRules->listUnmatchedIncludes($snapshot->states)->mapToList(
                     static fn(Selector $include): UnmatchedEntitySelector => new UnmatchedEntitySelector($include->getPattern()),
                 ),
                 ...$unseenAttributes,
