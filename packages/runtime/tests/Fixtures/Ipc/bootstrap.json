@@ -1,7 +1,7 @@
 {
     "t": "bootstrap",
     "m": {
-        "protocol": 21,
+        "protocol": 22,
         "worker_id": 1,
         "time_zone": "Europe/Budapest",
         "location": {
@@ -30,6 +30,7 @@
             "recovery_interval_us": 5000000
         },
         "known_app_ids": ["demo", "echo"],
+        "paused_app_ids": ["echo"],
         "ha_user_id": "stewart-user"
     }
 }

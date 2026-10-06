@@ -58,8 +58,8 @@ final class AppMetricsTest extends TestCase
 
     public function testSharedScopeIsTalliedOncePerWorker(): void
     {
-        $this->metrics->recordActivityReports(self::createHandle(0), new Pong(1, Duration::zero(), 0, [new AppActivityReport(ResourceScope::shared(), AppState::Running, 1, 0, 2, 0, 0, 0, 0)]));
-        $this->metrics->recordActivityReports(self::createHandle(1), new Pong(1, Duration::zero(), 0, [new AppActivityReport(ResourceScope::shared(), AppState::Running, 0, 0, 5, 0, 0, 0, 0)]));
+        $this->metrics->recordActivityReports(self::createHandle(0), new Pong(1, Duration::zero(), 0, [new AppActivityReport(ResourceScope::shared(), AppState::Running, 1, 0, 2, 0, 0, 0, 0, 0)]));
+        $this->metrics->recordActivityReports(self::createHandle(1), new Pong(1, Duration::zero(), 0, [new AppActivityReport(ResourceScope::shared(), AppState::Running, 0, 0, 5, 0, 0, 0, 0, 0)]));
 
         $shared = array_values(array_filter(new AppStatusBuilder($this->metrics)->buildAppStatuses()->listValues(), static fn(AppStatus $app): bool => $app->id === '@shared'));
 
@@ -69,9 +69,9 @@ final class AppMetricsTest extends TestCase
     public function testFailureCountComesFromActivityReports(): void
     {
         $handle = self::createHandle(0);
-        $this->metrics->recordActivityReports($handle, new Pong(1, Duration::zero(), 0, [new AppActivityReport(ResourceScope::forApp(new AppId('demo')), AppState::Running, 1, 0, 0, 0, 0, 0, 2)]));
+        $this->metrics->recordActivityReports($handle, new Pong(1, Duration::zero(), 0, [new AppActivityReport(ResourceScope::forApp(new AppId('demo')), AppState::Running, 1, 0, 0, 0, 0, 0, 2, 0)]));
         $this->metrics->recordLastFailure(new WorkerId(0), new AppFailed(ResourceScope::forApp(new AppId('demo')), AppFailurePhase::Handler, 'RuntimeException', 'boom', '', 'subscription w0:1', 100, null));
-        $this->metrics->recordActivityReports($handle, new Pong(2, Duration::zero(), 0, [new AppActivityReport(ResourceScope::forApp(new AppId('demo')), AppState::Running, 1, 0, 0, 0, 0, 0, 150)]));
+        $this->metrics->recordActivityReports($handle, new Pong(2, Duration::zero(), 0, [new AppActivityReport(ResourceScope::forApp(new AppId('demo')), AppState::Running, 1, 0, 0, 0, 0, 0, 150, 0)]));
 
         $demo = new AppStatusBuilder($this->metrics)->buildAppStatuses()->listValues()[0];
 

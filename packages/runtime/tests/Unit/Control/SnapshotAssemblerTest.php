@@ -70,7 +70,7 @@ final class SnapshotAssemblerTest extends TestCase
 
         $handle = $this->broker->getLiveHandleOf(0);
         $this->broker->serviceCalls->forward($handle, new ServiceCallRequest(new CorrelationId('0:1'), ResourceScope::forApp(new AppId('demo')), 'light', 'turn_on', [], null, false));
-        $this->broker->metrics->recordActivityReports($handle, new Pong(1, Duration::microseconds(300), 5_000_000, [new AppActivityReport(ResourceScope::forApp(new AppId('demo')), AppState::Running, 1, 0, 3, 0, 0, 0, 0)]));
+        $this->broker->metrics->recordActivityReports($handle, new Pong(1, Duration::microseconds(300), 5_000_000, [new AppActivityReport(ResourceScope::forApp(new AppId('demo')), AppState::Running, 1, 0, 3, 0, 0, 0, 0, 0)]));
         $this->broker->crashWorker(1);
 
         $snapshot = $this->createAssembler()->assembleSnapshot();

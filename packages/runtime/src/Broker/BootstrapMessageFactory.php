@@ -29,6 +29,7 @@ final readonly class BootstrapMessageFactory
     public function __construct(
         StewartConfig $config,
         private AppCatalog $apps,
+        private AppPauseRegistry $pausedApps,
         string $userServicesFile,
     ) {
         $this->workerSettings = new WorkerSettings(
@@ -55,6 +56,7 @@ final readonly class BootstrapMessageFactory
             settings: $this->workerSettings,
             store: $this->storeSettings,
             knownAppIds: AppIdsFragment::fromCollection($this->apps->knownIds),
+            pausedAppIds: AppIdsFragment::fromCollection($this->pausedApps->listPausedAppIds()),
             haUserId: $session->getHaUserId(),
         );
     }

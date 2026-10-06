@@ -34,6 +34,7 @@ final class TestBootstrap
         bool $mqttEnabled = false,
         ?string $haUserId = null,
         ?GeoLocation $location = null,
+        ?AppIdCollection $pausedAppIds = null,
     ): Bootstrap {
         return new Bootstrap(
             protocol: IpcCodec::PROTOCOL_VERSION,
@@ -44,6 +45,7 @@ final class TestBootstrap
             settings: self::createSettings($callTimeout ?? Duration::seconds(30), $initializeTimeout, $servicesFile, $mqttEnabled),
             store: $store,
             knownAppIds: AppIdsFragment::fromCollection(AppIdCollection::fromIds(array_map(static fn(WorkerApp $app): AppId => $app->id, $apps))),
+            pausedAppIds: AppIdsFragment::fromCollection($pausedAppIds ?? AppIdCollection::empty()),
             haUserId: $haUserId,
         );
     }

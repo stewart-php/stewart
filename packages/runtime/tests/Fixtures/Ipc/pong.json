@@ -14,7 +14,8 @@
                 "subscription_dropped": 1,
                 "schedule_runs": 4,
                 "publishes": 2,
-                "failures": 3
+                "failures": 3,
+                "suppressed": 5
             }
         ],
         "store": {

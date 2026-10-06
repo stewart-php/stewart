@@ -64,6 +64,7 @@ use Stewart\Runtime\Ipc\Message\HistoryResult;
 use Stewart\Runtime\Ipc\Message\LogRecord;
 use Stewart\Runtime\Ipc\Message\MqttMessageDelivery;
 use Stewart\Runtime\Ipc\Message\MqttPublish;
+use Stewart\Runtime\Ipc\Message\PausedAppsChanged;
 use Stewart\Runtime\Ipc\Message\Ping;
 use Stewart\Runtime\Ipc\Message\Pong;
 use Stewart\Runtime\Ipc\Message\Publish;
@@ -122,6 +123,7 @@ final class IpcMessageSamples
             'registry_snapshot' => new IpcMessageSample(new RegistrySnapshot(self::createRegistry(), 3), new RegistrySnapshot(self::createRegistry(), 3)),
             'state_changes' => new IpcMessageSample(self::createStateChangeBatch($at), self::createStateChangeBatch($at)),
             'state_resynced' => new IpcMessageSample(new StateResynced(self::createStates($state), 9, Duration::seconds(12.5)), new StateResynced(self::createStates($state), 9, Duration::seconds(12.5))),
+            'paused_apps_changed' => IpcMessageSample::createRoundTrip(new PausedAppsChanged(self::createAppIds('demo', 'echo'))),
             'ha_connection_lost' => IpcMessageSample::createRoundTrip(new HaConnectionLost($at, 'websocket closed')),
             'event_fired' => IpcMessageSample::createRoundTrip(new EventFired(new HaEvent('zha_event', ['args' => [1, 2], 'params' => ['duration' => 0.5]], EventOrigin::Remote, $at, new EventContext('c')), [new SubscriptionId('w0:1')])),
             'trigger_fired' => IpcMessageSample::createRoundTrip(new TriggerFired(new TriggerEvent(['platform' => 'sun', 'event' => 'sunset', 'offset' => -1800.0, 'id' => 'dusk', 'idx' => '0'], new EventContext('c'), $at), [new SubscriptionId('w0:4')])),
@@ -153,7 +155,7 @@ final class IpcMessageSamples
             'app_failed' => IpcMessageSample::createRoundTrip(new AppFailed($demo, AppFailurePhase::Handler, 'RuntimeException', 'boom', '#0 {main}', 'subscription w0:1', 100, new ExceptionDetails('Stewart\Contracts\Exception\StateException', 'entity_not_found', ['entityId' => 'light.hall', 'known' => ['a', null]]))),
             'mqtt_publish' => IpcMessageSample::createRoundTrip(new MqttPublish(new MqttMessage('home/hall/light', "on\xff", MqttQos::AtLeastOnce, true), $demo)),
             'mqtt_message' => IpcMessageSample::createRoundTrip(new MqttMessageDelivery(new MqttMessage('home/hall/temp', '{"t":21.5}'), [new SubscriptionId('w0:3')])),
-            'pong' => IpcMessageSample::createRoundTrip(new Pong(42, Duration::microseconds(1_250), 12_345_678, [new AppActivityReport($demo, AppState::Running, 2, 1, 30, 1, 4, 2, 3)], new StoreHealth(false, 'timed out', Instant::fromEpochMicroseconds(1_700_000_000_000_000)))),
+            'pong' => IpcMessageSample::createRoundTrip(new Pong(42, Duration::microseconds(1_250), 12_345_678, [new AppActivityReport($demo, AppState::Running, 2, 1, 30, 1, 4, 2, 3, 5)], new StoreHealth(false, 'timed out', Instant::fromEpochMicroseconds(1_700_000_000_000_000)))),
         ];
     }
 
@@ -176,6 +178,7 @@ final class IpcMessageSamples
             settings: new WorkerSettings(LogLevel::Info, Duration::seconds(35), Duration::seconds(5), 100, Duration::seconds(60), '/app/services.php', 'Stewart\Generated', true),
             store: new StoreSettings('redis://:not-a-secret@valkey:6379/0', 'stewart', Duration::seconds(5), Duration::seconds(5)),
             knownAppIds: self::createAppIds('demo', 'echo'),
+            pausedAppIds: self::createAppIds('echo'),
             haUserId: 'stewart-user',
         );
     }

@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Worker;
 
 use Psr\Log\LoggerInterface;
 use Stewart\Runtime\Exception\TransportException;
+use Stewart\Runtime\Ipc\Message\Bootstrap;
 use Stewart\Runtime\Ipc\Message\WorkerReady;
 use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Ipc\Wire\AppIdsFragment;
@@ -20,7 +21,9 @@ final readonly class WorkerSession
     public function __construct(
         private WorkerId $workerId,
         private Transport $transport,
+        private Bootstrap $bootstrap,
         private AppLifecycle $apps,
+        private PausedAppsSync $pausedApps,
         private StateCacheSync $stateCacheSync,
         private PendingRequests $pending,
         private BrokerMessageReader $reader,
@@ -60,6 +63,8 @@ final readonly class WorkerSession
 
     private function constructAndInitializeApps(): void
     {
+        $this->pausedApps->applyPausedAppIds($this->bootstrap->pausedAppIds->collection);
+
         // Constructors may do I/O because the reader runs; initialize() waits for the state cache.
         $this->apps->constructApps();
 
