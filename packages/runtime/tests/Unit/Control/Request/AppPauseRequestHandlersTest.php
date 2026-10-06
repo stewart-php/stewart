@@ -6,12 +6,15 @@ namespace Stewart\Runtime\Tests\Unit\Control\Request;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\NullLogger;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Exception\IdentifierError;
 use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
+use Stewart\Runtime\Broker\AppPauseOverrideCodec;
+use Stewart\Runtime\Broker\AppPauseOverrideStore;
 use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\AppPauseService;
 use Stewart\Runtime\Broker\DaemonStartTime;
@@ -50,6 +53,7 @@ final class AppPauseRequestHandlersTest extends TestCase
         $service = new AppPauseService(
             new AppCatalog($apps, AppIdCollection::fromIds([new AppId('demo')]), AppIdCollection::fromIds([])),
             $this->registry,
+            new AppPauseOverrideStore(new AppPauseOverrideCodec(AppPauseOverrideCodec::createOverrideWireMapper()), new NullLogger()),
             new WorkerSlotRegistry(),
             $clock,
             new RecordingLogger(),

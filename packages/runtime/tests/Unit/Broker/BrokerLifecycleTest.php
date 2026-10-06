@@ -23,7 +23,7 @@ use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\App\AppDefinition;
-use Stewart\Runtime\App\AppPause;
+use Stewart\Runtime\App\AppPauseOverride;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppMetrics;
 use Stewart\Runtime\Broker\AppPauseRegistry;
@@ -194,7 +194,7 @@ final class BrokerLifecycleTest extends TestCase
         $this->broker = $this->createBroker();
         $this->startBroker();
 
-        $this->pausedApps->pauseApp(new AppPause(new AppId('demo'), Instant::fromEpochMicroseconds(0), AppPauseSource::Control));
+        $this->pausedApps->recordOverride(new AppPauseOverride(new AppId('demo'), true, Instant::fromEpochMicroseconds(0), AppPauseSource::Control));
         $this->crashAndRestart(0);
 
         $sent = $this->listEverythingSentToWorker(0);

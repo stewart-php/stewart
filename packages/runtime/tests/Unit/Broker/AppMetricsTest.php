@@ -11,7 +11,7 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\App\AppDefinition;
-use Stewart\Runtime\App\AppPause;
+use Stewart\Runtime\App\AppPauseOverride;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppMetrics;
 use Stewart\Runtime\Broker\AppPauseRegistry;
@@ -92,7 +92,7 @@ final class AppMetricsTest extends TestCase
     public function testPausedAppReportsSuppressedDelta(): void
     {
         $handle = self::createHandle(0);
-        $this->pausedApps->pauseApp(new AppPause(new AppId('demo'), Instant::fromEpochMicroseconds(0), AppPauseSource::Control));
+        $this->pausedApps->recordOverride(new AppPauseOverride(new AppId('demo'), true, Instant::fromEpochMicroseconds(0), AppPauseSource::Control));
         $this->metrics->recordActivityReports($handle, new Pong(1, Duration::zero(), 0, [new AppActivityReport(ResourceScope::forApp(new AppId('demo')), AppState::Running, 1, 0, 0, 0, 0, 0, 0, 3)]));
         $this->metrics->recordActivityReports($handle, new Pong(2, Duration::zero(), 0, [new AppActivityReport(ResourceScope::forApp(new AppId('demo')), AppState::Running, 1, 0, 0, 0, 0, 0, 0, 7)]));
 
