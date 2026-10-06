@@ -203,6 +203,19 @@ final class BrokerLifecycleTest extends TestCase
         self::assertSame(['demo'], $sent[0]->pausedAppIds->collection->toStrings());
     }
 
+    public function testStoredPauseReachesFirstBootstrap(): void
+    {
+        $this->store = new InMemoryStoreBackend($this->timers->clock);
+        $this->store->write('stewart:runtime:app-pause:demo', '{"paused":true,"since":"2026-10-06T08:00:00.000000Z","source":"control"}', null);
+        $this->broker = $this->createBroker();
+        $this->startBroker();
+
+        $sent = $this->listEverythingSentToWorker(0);
+
+        self::assertInstanceOf(Bootstrap::class, $sent[0]);
+        self::assertSame(['demo'], $sent[0]->pausedAppIds->collection->toStrings());
+    }
+
     public function testUnreachableStoreStopsBeforeConnecting(): void
     {
         $this->store = new InMemoryStoreBackend($this->timers->clock);

@@ -10,6 +10,7 @@ use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\AppPause;
 use Stewart\Runtime\App\AppPauseOverride;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
+use Stewart\Runtime\App\Collection\AppPauseOverrideCollection;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
 
 final class AppPauseRegistry
@@ -26,6 +27,13 @@ final class AppPauseRegistry
     ) {
         foreach ($enabledApps->filter(static fn(AppDefinition $app): bool => $app->startsPaused) as $app) {
             $this->configPausedAppIds[$app->id->value] = $app->id;
+        }
+    }
+
+    public function restoreOverrides(AppPauseOverrideCollection $overrides): void
+    {
+        foreach ($overrides as $override) {
+            $this->overrides[$override->appId->value] = $override;
         }
     }
 

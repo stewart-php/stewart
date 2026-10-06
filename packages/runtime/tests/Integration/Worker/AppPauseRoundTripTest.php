@@ -29,15 +29,22 @@ use Stewart\Runtime\Control\Protocol\Codec\FrameCodec;
 use Stewart\Runtime\Control\Request\PauseAppRequestHandler;
 use Stewart\Runtime\Control\Request\ResumeAppRequestHandler;
 use Stewart\Runtime\Ipc\Wire\IpcCodec;
+use Stewart\Runtime\Kernel\SyntheticServices;
 use Stewart\Runtime\Model\WorkerId;
+use Stewart\Runtime\Tests\Fixtures\Broker\BootedBroker;
 use Stewart\Runtime\Tests\Fixtures\Broker\BrokerKernelFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
 use Stewart\Runtime\Tests\Fixtures\Broker\ReceivedServiceCall;
 use Stewart\Runtime\Tests\Fixtures\Broker\WorkerPoolFixture;
 use Stewart\Runtime\Tests\Fixtures\Protocol\SerialHandler;
 use Stewart\Runtime\Tests\Fixtures\Worker\InMemoryWorkerSpawner;
+use Stewart\Runtime\Time\SystemClock;
+use Stewart\Store\GuardedStoreBackend;
+use Stewart\Store\StoreDsn;
+use Stewart\Store\StoreTiming;
 use Stewart\Support\Time\RevoltTimers;
 use Stewart\Testing\Logging\RecordingLogger;
+use Stewart\Testing\Store\InMemoryStoreBackend;
 
 use function Amp\async;
 
@@ -50,6 +57,11 @@ final class AppPauseRoundTripTest extends TestCase
     private const float WAIT_SECONDS = 5;
 
     private const string CONTROL_TOKEN = 'round-trip-token';
+
+    private const string STORE_URL = 'redis://valkey:6379/0';
+
+    /** @var Future<mixed>|null */
+    private ?Future $running = null;
 
     public function testPausedAppSkipsChangesUntilResumed(): void
     {
@@ -125,6 +137,65 @@ final class AppPauseRoundTripTest extends TestCase
 
         $broker->run->stop('test done');
         $run->await(new TimeoutCancellation(self::WAIT_SECONDS));
+    }
+
+    public function testStoredPauseSurvivesBrokerRestart(): void
+    {
+        $appId = new AppId('serial-handler');
+        $store = new InMemoryStoreBackend(SystemClock::inUtc());
+        $client = new ControlClient(new FrameCodec(FrameCodec::createControlWireMapper()), new ProjectRoot(sys_get_temp_dir()), new RevoltTimers());
+        $timeout = Duration::seconds(self::WAIT_SECONDS);
+        $controlListen = 'unix://' . sys_get_temp_dir() . '/stw-' . bin2hex(random_bytes(4)) . '.sock';
+        $control = new ControlTarget(ControlAddress::parse($controlListen), self::CONTROL_TOKEN);
+
+        $first = $this->startBrokerWithStore($appId, $store, new FakeHaSession(), $controlListen);
+        self::assertTrue($client->pauseApp($control, $appId, $timeout)->changed);
+        $pause = $client->fetchSnapshot($control, $timeout)->apps[0]->pause;
+        $this->stopBroker($first);
+
+        $session = new FakeHaSession();
+        $second = $this->startBrokerWithStore($appId, $store, $session, $controlListen);
+        self::assertEquals($pause, $client->fetchSnapshot($control, $timeout)->apps[0]->pause);
+        $this->changeSerial($session, '1', '2');
+
+        self::assertTrue($client->resumeApp($control, $appId, $timeout)->changed);
+        $called = $session->waitForNextCall();
+        $this->changeSerial($session, '2', '3');
+        $called->await(new TimeoutCancellation(self::WAIT_SECONDS));
+
+        self::assertSame([['value' => '3']], array_map(static fn(ReceivedServiceCall $call): array => $call->data, $session->receivedCalls));
+        $this->stopBroker($second);
+    }
+
+    private function startBrokerWithStore(AppId $appId, InMemoryStoreBackend $store, FakeHaSession $session, string $controlListen): BootedBroker
+    {
+        $logger = new RecordingLogger();
+        $pools = WorkerPoolFixture::createWorkerPool(new InMemoryWorkerSpawner(IpcCodec::createForWorkerBootstrap()), logger: $logger, outboxLimits: new OutboxLimits(100, 256));
+        $broker = BrokerKernelFixture::boot(
+            $session,
+            $pools,
+            WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition($appId, SerialHandler::class)]))]),
+            AppIdCollection::fromIds([$appId]),
+            $logger,
+            [
+                'shutdown_grace' => '1s',
+                'control' => ['listen' => $controlListen, 'token' => self::CONTROL_TOKEN],
+                'persistence' => ['url' => self::STORE_URL],
+            ],
+            new SyntheticServices()->withService(GuardedStoreBackend::class, new GuardedStoreBackend($store, StoreDsn::parse(self::STORE_URL), new StoreTiming(Duration::seconds(2), Duration::seconds(5)), $pools->clock)),
+        );
+        $ready = $logger->waitForMessage('Worker ready');
+        $this->running = async($broker->lifecycle->run(...));
+        $ready->await(new TimeoutCancellation(self::WAIT_SECONDS));
+
+        return $broker;
+    }
+
+    private function stopBroker(BootedBroker $broker): void
+    {
+        $broker->run->stop('test done');
+        $this->running?->await(new TimeoutCancellation(self::WAIT_SECONDS));
+        $this->running = null;
     }
 
     private function changeSerial(FakeHaSession $session, string $from, string $to): void

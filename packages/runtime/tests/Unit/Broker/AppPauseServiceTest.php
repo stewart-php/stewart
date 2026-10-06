@@ -14,6 +14,7 @@ use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\AppPause;
 use Stewart\Runtime\App\AppPauseOutcome;
+use Stewart\Runtime\App\AppPauseOverride;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppPauseOverrideCodec;
 use Stewart\Runtime\Broker\AppPauseOverrideStore;
@@ -123,6 +124,22 @@ final class AppPauseServiceTest extends TestCase
         self::assertSame(AppPauseOverridePersistence::NotConfigured, $service->pauseApp(new AppId('demo'), AppPauseSource::Control)->persistence);
     }
 
+    public function testRestoreAppliesOverridesOfLoadedAppsOnly(): void
+    {
+        $registry = $this->createRegistry();
+        $store = $this->createOverrideStore();
+
+        foreach (['demo', 'dormant', 'ghost'] as $appId) {
+            $store->saveOverride(new AppPauseOverride(new AppId($appId), true, $this->clock->getNow(), AppPauseSource::Control));
+        }
+
+        $this->createService($registry)->restoreStoredOverrides();
+
+        self::assertSame(['demo'], $registry->listPausedAppIds()->toStrings());
+        self::assertSame(['Stored pause overrides name apps that no longer exist'], $this->logger->listMessagesAt('warning'));
+        self::assertSame('ghost', $this->logger->records->getFirst()?->context['apps']);
+    }
+
     public function testUnknownAppIsRefused(): void
     {
         $service = $this->createService($this->createRegistry());
@@ -153,11 +170,16 @@ final class AppPauseServiceTest extends TestCase
         return new AppPauseService(
             self::createCatalog(),
             $registry,
-            new AppPauseOverrideStore(new AppPauseOverrideCodec(AppPauseOverrideCodec::createOverrideWireMapper()), new NullLogger(), $this->backend, new StorePrefix('stewart')),
+            $this->createOverrideStore(),
             new WorkerSlotRegistry(),
             $this->clock,
             $this->logger,
         );
+    }
+
+    private function createOverrideStore(): AppPauseOverrideStore
+    {
+        return new AppPauseOverrideStore(new AppPauseOverrideCodec(AppPauseOverrideCodec::createOverrideWireMapper()), new NullLogger(), $this->backend, new StorePrefix('stewart'));
     }
 
     private static function createCatalog(): AppCatalog

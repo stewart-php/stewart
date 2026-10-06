@@ -26,6 +26,7 @@ final readonly class BrokerLifecycle
         private ControlPlane $control,
         private MqttLink $mqtt,
         private MqttMessageRouter $mqttRouter,
+        private AppPauseService $pauses,
         private LoggerInterface $logger,
         private ?StoreBackend $store = null,
     ) {}
@@ -40,6 +41,7 @@ final readonly class BrokerLifecycle
         try {
             // Before Home Assistant: an unreachable store is a config error, not an outage.
             $this->store?->probe();
+            $this->pauses->restoreStoredOverrides();
 
             // A stop can land while the previous step suspends; it has already closed what would start here.
             if ($this->run->isRunning()) {

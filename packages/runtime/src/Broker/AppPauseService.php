@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Broker;
 
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\App\AppId;
+use Stewart\Contracts\Exception\StoreException;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\App\AppPauseOutcome;
@@ -25,6 +26,20 @@ final readonly class AppPauseService
         private Clock $clock,
         private LoggerInterface $logger,
     ) {}
+
+    /** @throws StoreException */
+    public function restoreStoredOverrides(): void
+    {
+        $stored = $this->overrides->loadOverrides();
+        $this->pausedApps->restoreOverrides($stored->filter(fn(AppPauseOverride $override): bool => $this->apps->enabled->find($override->appId) !== null));
+        $unknown = $stored->filter(fn(AppPauseOverride $override): bool => !$this->apps->knownIds->containsId($override->appId));
+
+        if ($unknown->count() > 0) {
+            $this->logger->warning('Stored pause overrides name apps that no longer exist', [
+                'apps' => implode(', ', $unknown->mapToList(static fn(AppPauseOverride $override): string => $override->appId->value)),
+            ]);
+        }
+    }
 
     /** @throws AppException */
     public function pauseApp(AppId $appId, AppPauseSource $source): AppPauseOutcome
