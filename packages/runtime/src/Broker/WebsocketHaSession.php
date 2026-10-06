@@ -130,6 +130,25 @@ final class WebsocketHaSession implements HaSession
         return $this->registryCacheSnapshot;
     }
 
+    public function refreshRegistry(): bool
+    {
+        if (!$this->isConnected() || $this->establishing) {
+            return false;
+        }
+
+        try {
+            $registry = $this->client->getRegistry();
+        } catch (HaClientException $e) {
+            $this->logger->warning('Could not refresh the Home Assistant registry; the previous one stays', ['exception' => $e]);
+
+            return false;
+        }
+
+        $this->registry->replaceAsNextRevision($registry);
+
+        return true;
+    }
+
     public function countEntities(): int
     {
         return $this->states->count();

@@ -55,6 +55,12 @@ final class FakeHaSession implements HaSession
 
     public int $registryRevision = 1;
 
+    public int $registryRefreshes = 0;
+
+    public bool $registryRefreshSucceeds = true;
+
+    public ?Latch $registryRefreshGate = null;
+
     public int $calls = 0;
 
     /** @var list<ReceivedServiceCall> */
@@ -144,6 +150,20 @@ final class FakeHaSession implements HaSession
     public function snapshotRegistry(): RegistryCacheSnapshot
     {
         return new RegistryCacheSnapshot(RegistryFragment::fromRegistry($this->registry), $this->registryRevision);
+    }
+
+    public function refreshRegistry(): bool
+    {
+        ++$this->registryRefreshes;
+        $this->registryRefreshGate?->waitUntilOpen();
+
+        if (!$this->registryRefreshSucceeds) {
+            return false;
+        }
+
+        ++$this->registryRevision;
+
+        return true;
     }
 
     public function countEntities(): int

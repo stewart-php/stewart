@@ -114,6 +114,28 @@ final class WebsocketHaSessionTest extends TestCase
         self::assertSame(2, $session->snapshotRegistry()->revision);
     }
 
+    public function testRefreshLoadsNextRegistryRevision(): void
+    {
+        $socket = self::createHaSocket(['hall' => 'off']);
+        $session = $this->open($socket);
+        self::replyWithRegistry($socket, 'hall');
+
+        self::assertTrue($session->refreshRegistry());
+        self::assertSame(2, $session->snapshotRegistry()->revision);
+        self::assertSame('hall', $session->snapshotRegistry()->registry->registry->findEntityPlacement(self::HALL)->areaId?->value);
+    }
+
+    public function testRejectedRefreshKeepsPreviousRegistry(): void
+    {
+        $socket = self::createHaSocket(['hall' => 'off']);
+        $session = $this->open($socket);
+        $socket->replyWhenSent('config/area_registry/list', ['type' => 'result', 'success' => false, 'error' => ['code' => 'unknown_error', 'message' => 'boom']]);
+
+        self::assertFalse($session->refreshRegistry());
+        self::assertSame(1, $session->snapshotRegistry()->revision);
+        self::assertSame('kitchen', $session->snapshotRegistry()->registry->registry->findEntityPlacement(self::HALL)->areaId?->value);
+    }
+
     public function testChangesDuringSeedAreAppliedSilently(): void
     {
         $socket = self::createHaSocket(['hall' => 'off', 'porch' => 'off'], during: [
@@ -438,13 +460,18 @@ final class WebsocketHaSessionTest extends TestCase
         }
 
         $socket->replyWhenSent('get_states', ['type' => 'result', 'success' => true, 'result' => $states]);
-        $socket->replyWhenSent('config/area_registry/list', ['type' => 'result', 'success' => true, 'result' => [['area_id' => 'kitchen', 'name' => 'Kitchen']]]);
+        self::replyWithRegistry($socket, 'kitchen');
+
+        return $socket;
+    }
+
+    private static function replyWithRegistry(FakeWebsocketConnection $socket, string $hallLightArea): void
+    {
+        $socket->replyWhenSent('config/area_registry/list', ['type' => 'result', 'success' => true, 'result' => [['area_id' => $hallLightArea, 'name' => ucfirst($hallLightArea)]]]);
         $socket->replyWhenSent('config/floor_registry/list', ['type' => 'result', 'success' => true, 'result' => []]);
         $socket->replyWhenSent('config/label_registry/list', ['type' => 'result', 'success' => true, 'result' => []]);
         $socket->replyWhenSent('config/device_registry/list', ['type' => 'result', 'success' => true, 'result' => []]);
-        $socket->replyWhenSent('config/entity_registry/list', ['type' => 'result', 'success' => true, 'result' => [['entity_id' => self::HALL, 'area_id' => 'kitchen']]]);
-
-        return $socket;
+        $socket->replyWhenSent('config/entity_registry/list', ['type' => 'result', 'success' => true, 'result' => [['entity_id' => self::HALL, 'area_id' => $hallLightArea]]]);
     }
 
     private static function authenticate(FakeWebsocketConnection $socket): void

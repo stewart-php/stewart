@@ -340,6 +340,30 @@ final class BrokerLifecycleTest extends TestCase
         self::assertInstanceOf(HaConnectionLost::class, $sent[3]);
     }
 
+    public function testRegistryUpdateReachesEveryWorker(): void
+    {
+        $this->startBroker();
+
+        $this->session->listener?->eventFired(new HaEvent('area_registry_updated'));
+        $this->timers->delay(Duration::seconds(1));
+        EventLoopTicks::settleUntil(fn(): bool => $this->hasEachWorkerReceivedRegistryRevision(2));
+
+        self::assertSame(1, $this->session->registryRefreshes);
+    }
+
+    public function testFailedRegistryRefreshSendsNothing(): void
+    {
+        $this->startBroker();
+        $this->session->registryRefreshSucceeds = false;
+
+        $this->session->listener?->eventFired(new HaEvent('entity_registry_updated'));
+        $this->timers->delay(Duration::seconds(1));
+        EventLoopTicks::settle();
+
+        self::assertSame(1, $this->session->registryRefreshes);
+        self::assertFalse($this->hasEachWorkerReceivedRegistryRevision(2));
+    }
+
     public function testWorkerRespawnedDuringOutageIsResynced(): void
     {
         $this->supervision = ConfigFixture::createSupervisionConfig(['restart_initial_delay' => '1ms', 'restart_max_delay' => '1ms', 'ping_interval' => 'off']);
@@ -706,5 +730,13 @@ final class BrokerLifecycleTest extends TestCase
     private static function createScope(string $appId): ResourceScope
     {
         return ResourceScope::forApp(new AppId($appId));
+    }
+
+    private function hasEachWorkerReceivedRegistryRevision(int $revision): bool
+    {
+        return array_all([0, 1], fn(int $workerId): bool => array_any(
+            $this->listSentToWorker($workerId, RegistrySnapshot::class),
+            static fn(RegistrySnapshot $snapshot): bool => $snapshot->revision === $revision,
+        ));
     }
 }
