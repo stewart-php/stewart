@@ -22,6 +22,8 @@ use Stewart\Contracts\Exception\StateException;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryQuery;
+use Stewart\Contracts\Registry\EntityFilter;
+use Stewart\Contracts\Registry\Registry;
 use Stewart\Contracts\Selector\Collection\SelectorCollection;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\Service\ServiceFields;
@@ -46,6 +48,7 @@ use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Testing\HaContext\Collection\RecordedEventFireCollection;
 use Stewart\Testing\HaContext\Collection\RecordedHistoryQueryCollection;
 use Stewart\Testing\HaContext\Collection\RecordedServiceCallCollection;
+use Stewart\Testing\Registry\InMemoryRegistry;
 use Stewart\Testing\Stream\PushSource;
 use Stewart\Testing\Time\ManualTimers;
 use Stewart\Testing\Time\VirtualClock;
@@ -100,9 +103,12 @@ final class RecordingHaContext implements HaContext
 
     public readonly VirtualClock $clock;
 
+    public readonly InMemoryRegistry $registry;
+
     public function __construct(public readonly ManualTimers $timers = new ManualTimers())
     {
         $this->clock = $timers->clock;
+        $this->registry = new InMemoryRegistry();
         $this->calls = RecordedServiceCallCollection::empty();
         $this->published = TopicEventCollection::empty();
         $this->firedEvents = RecordedEventFireCollection::empty();
@@ -248,17 +254,32 @@ final class RecordingHaContext implements HaContext
         return $this->history->sliceForWindow($id, $window, $query->detail);
     }
 
-    public function listStates(string|EntityId|Selector|SelectorCollection|null $selector = null): EntityStateCollection
+    public function listStates(string|EntityId|Selector|SelectorCollection|EntityFilter|null $selector = null): EntityStateCollection
     {
-        return $selector === null ? $this->states : $this->states->filterBySelector(Selector::fromSpec($selector));
+        return match (true) {
+            $selector === null => $this->states,
+            $selector instanceof EntityFilter => $this->states->filterByEntityFilter($selector, $this->registry),
+            default => $this->states->filterBySelector(Selector::fromSpec($selector)),
+        };
     }
 
-    public function watchStateChanges(string|EntityId|Selector|SelectorCollection $selector): StateChangeStream
+    public function watchStateChanges(string|EntityId|Selector|SelectorCollection|EntityFilter $selector): StateChangeStream
     {
-        $matcher = Selector::fromSpec($selector);
+        $registry = $this->registry;
 
-        return new StateChanges($this->stateChanges, $this->timers)
-            ->filter(static fn(StateChange $change): bool => $matcher->matches($change->entityId->value));
+        if ($selector instanceof EntityFilter) {
+            $matches = static fn(StateChange $change): bool => $selector->matchesEntity($change->entityId, $registry);
+        } else {
+            $matcher = Selector::fromSpec($selector);
+            $matches = static fn(StateChange $change): bool => $matcher->matches($change->entityId->value);
+        }
+
+        return new StateChanges($this->stateChanges, $this->timers)->filter($matches);
+    }
+
+    public function getRegistry(): Registry
+    {
+        return $this->registry;
     }
 
     public function watchEvents(string|Selector|SelectorCollection $eventType): EventStream

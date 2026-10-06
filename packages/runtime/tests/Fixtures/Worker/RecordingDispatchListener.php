@@ -29,11 +29,11 @@ final class RecordingDispatchListener implements DispatchListener, SubscriptionL
     /** @var list<string> */
     public array $delivered = [];
 
-    public static function createDispatcher(string $processId, int $queueLimit, ScopeLifecycle $scopes = new ScopeLifecycle()): LocalDispatcher
+    public static function createDispatcher(string $processId, int $queueLimit, RegistryCache $registry = new RegistryCache(), ScopeLifecycle $scopes = new ScopeLifecycle()): LocalDispatcher
     {
         $listener = new self();
 
-        return new LocalDispatcher($processId, $queueLimit, $listener, $listener, $scopes, new RegistryCache());
+        return new LocalDispatcher($processId, $queueLimit, $listener, $listener, $scopes, $registry);
     }
 
     public function subscriptionRegistered(RegisteredSubscription $subscription): void

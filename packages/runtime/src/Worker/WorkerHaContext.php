@@ -15,6 +15,8 @@ use Stewart\Contracts\Exception\TopicException;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryQuery;
+use Stewart\Contracts\Registry\EntityFilter;
+use Stewart\Contracts\Registry\Registry;
 use Stewart\Contracts\Selector\Collection\SelectorCollection;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\Service\ServiceFields;
@@ -30,6 +32,7 @@ use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Model\ResourceScope;
+use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Worker\Context\DispatchStreams;
 use Stewart\Runtime\Worker\Context\EventFirer;
@@ -41,6 +44,7 @@ final readonly class WorkerHaContext implements HaContext
 {
     public function __construct(
         private StateCache $states,
+        private RegistryCache $registry,
         private ConnectionStatus $connection,
         private ServiceCaller $serviceCalls,
         private HistoryReader $history,
@@ -52,7 +56,7 @@ final readonly class WorkerHaContext implements HaContext
 
     public function forApp(AppId $appId): self
     {
-        return new self($this->states, $this->connection, $this->serviceCalls, $this->history, $this->eventFires, $this->streams, $this->topics, ResourceScope::forApp($appId));
+        return new self($this->states, $this->registry, $this->connection, $this->serviceCalls, $this->history, $this->eventFires, $this->streams, $this->topics, ResourceScope::forApp($appId));
     }
 
     public function getState(EntityId|string $entityId): ?EntityState
@@ -77,14 +81,23 @@ final readonly class WorkerHaContext implements HaContext
         return $this->history->fetchHistory($this->resourceScope, EntityId::fromStringOrId($entityId), $query);
     }
 
-    public function listStates(string|EntityId|Selector|SelectorCollection|null $selector = null): EntityStateCollection
+    public function listStates(string|EntityId|Selector|SelectorCollection|EntityFilter|null $selector = null): EntityStateCollection
     {
+        if ($selector instanceof EntityFilter) {
+            return $this->states->getAllStates()->filterByEntityFilter($selector, $this->registry);
+        }
+
         return $this->states->filterBySelector($selector === null ? null : Selector::fromSpec($selector));
     }
 
-    public function watchStateChanges(string|EntityId|Selector|SelectorCollection $selector): StateChangeStream
+    public function watchStateChanges(string|EntityId|Selector|SelectorCollection|EntityFilter $selector): StateChangeStream
     {
-        return $this->streams->watchStateChanges($this->resourceScope, Selector::fromSpec($selector));
+        return $this->streams->watchStateChanges($this->resourceScope, $selector instanceof EntityFilter ? $selector : Selector::fromSpec($selector));
+    }
+
+    public function getRegistry(): Registry
+    {
+        return $this->registry;
     }
 
     public function watchEvents(string|Selector|SelectorCollection $eventType): EventStream

@@ -12,6 +12,15 @@ use Stewart\Contracts\App;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Registry\Area;
+use Stewart\Contracts\Registry\AreaId;
+use Stewart\Contracts\Registry\Collection\AreaCollection;
+use Stewart\Contracts\Registry\Collection\DeviceCollection;
+use Stewart\Contracts\Registry\Collection\FloorCollection;
+use Stewart\Contracts\Registry\Collection\LabelCollection;
+use Stewart\Contracts\Registry\Collection\RegisteredEntityCollection;
+use Stewart\Contracts\Registry\IndexedRegistry;
+use Stewart\Contracts\Registry\RegisteredEntity;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Runtime\App\AppDefinition;
@@ -29,6 +38,7 @@ use Stewart\Runtime\Tests\Fixtures\Broker\ReceivedEventFire;
 use Stewart\Runtime\Tests\Fixtures\Broker\WorkerPoolFixture;
 use Stewart\Runtime\Tests\Fixtures\Protocol\HistoryReporter;
 use Stewart\Runtime\Tests\Fixtures\Protocol\InitFirer;
+use Stewart\Runtime\Tests\Fixtures\Protocol\KitchenWatcher;
 use Stewart\Runtime\Tests\Fixtures\Protocol\SerialHandler;
 use Stewart\Runtime\Tests\Fixtures\Worker\InMemoryWorkerSpawner;
 use Stewart\Testing\Logging\RecordedLog;
@@ -69,6 +79,42 @@ final class InMemoryWorkerTest extends TestCase
         $running->await(new TimeoutCancellation(self::WAIT_SECONDS));
 
         self::assertSame(0, $pools->slots->countLiveWorkers());
+    }
+
+    public function testAreaFilterReceivesOnlyEntitiesInThatArea(): void
+    {
+        $session = new FakeHaSession();
+        $session->registry = IndexedRegistry::fromParts(
+            AreaCollection::keyedByAreaId([new Area(new AreaId(KitchenWatcher::AREA), 'Kitchen')]),
+            FloorCollection::empty(),
+            LabelCollection::empty(),
+            DeviceCollection::empty(),
+            RegisteredEntityCollection::keyedByEntityId([new RegisteredEntity(new EntityId('light.kitchen'), areaId: new AreaId(KitchenWatcher::AREA))]),
+        );
+        $logger = new RecordingLogger();
+        $pools = WorkerPoolFixture::createWorkerPool(new InMemoryWorkerSpawner(IpcCodec::createForWorkerBootstrap()), logger: $logger, outboxLimits: new OutboxLimits(100, 256));
+        $broker = self::createBroker($session, $pools, $logger, new AppId('kitchen-watcher'), KitchenWatcher::class);
+
+        $ready = $logger->waitForMessage('Worker ready');
+
+        /** @var Future<null> $running */
+        $running = async($broker->lifecycle->run(...));
+
+        $ready->await(new TimeoutCancellation(self::WAIT_SECONDS));
+
+        $called = $session->waitForNextCall();
+
+        foreach (['light.porch', 'light.kitchen'] as $entityId) {
+            $session->listener?->stateChanged(new StateChange(new EntityId($entityId), null, new EntityState(new EntityId($entityId), 'on')));
+        }
+
+        $called->await(new TimeoutCancellation(self::WAIT_SECONDS));
+
+        self::assertSame(['entity_id' => 'light.kitchen'], $session->receivedCalls[0]->data);
+        self::assertCount(1, $session->receivedCalls);
+
+        $broker->run->stop('test done');
+        $running->await(new TimeoutCancellation(self::WAIT_SECONDS));
     }
 
     public function testAppReadsHistoryThroughBroker(): void
