@@ -21,4 +21,9 @@ final class IdentifierException extends StewartException
     {
         return self::createForReason(IdentifierError::EntityNotGenerated, ['entityId' => $entityId, 'domain' => $domain]);
     }
+
+    public static function registryIdEmpty(string $kind): self
+    {
+        return self::createForReason(IdentifierError::RegistryIdEmpty, ['kind' => $kind]);
+    }
 }

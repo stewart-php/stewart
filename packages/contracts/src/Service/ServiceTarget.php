@@ -6,6 +6,11 @@ namespace Stewart\Contracts\Service;
 
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\IdentifierException;
+use Stewart\Contracts\Registry\AreaId;
+use Stewart\Contracts\Registry\DeviceId;
+use Stewart\Contracts\Registry\FloorId;
+use Stewart\Contracts\Registry\LabelId;
+use Stewart\Contracts\Registry\RegistryId;
 use Stewart\Contracts\Wire\ListOf;
 
 final readonly class ServiceTarget implements ServiceTargetSource
@@ -36,24 +41,24 @@ final readonly class ServiceTarget implements ServiceTargetSource
         return new self(entityIds: array_values(array_map(EntityId::fromStringOrId(...), $entityIds)));
     }
 
-    public static function forDevices(string ...$deviceIds): self
+    public static function forDevices(DeviceId|string ...$deviceIds): self
     {
-        return new self(deviceIds: array_values($deviceIds));
+        return new self(deviceIds: self::listIdValues($deviceIds));
     }
 
-    public static function forAreas(string ...$areaIds): self
+    public static function forAreas(AreaId|string ...$areaIds): self
     {
-        return new self(areaIds: array_values($areaIds));
+        return new self(areaIds: self::listIdValues($areaIds));
     }
 
-    public static function forFloors(string ...$floorIds): self
+    public static function forFloors(FloorId|string ...$floorIds): self
     {
-        return new self(floorIds: array_values($floorIds));
+        return new self(floorIds: self::listIdValues($floorIds));
     }
 
-    public static function forLabels(string ...$labelIds): self
+    public static function forLabels(LabelId|string ...$labelIds): self
     {
-        return new self(labelIds: array_values($labelIds));
+        return new self(labelIds: self::listIdValues($labelIds));
     }
 
     public function toServiceTarget(): self
@@ -88,5 +93,14 @@ final readonly class ServiceTarget implements ServiceTargetSource
         }
 
         return $out;
+    }
+
+    /**
+     * @param array<RegistryId|string> $ids
+     * @return list<string>
+     */
+    private static function listIdValues(array $ids): array
+    {
+        return array_values(array_map(static fn(RegistryId|string $id): string => (string) $id, $ids));
     }
 }
