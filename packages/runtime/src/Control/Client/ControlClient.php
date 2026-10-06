@@ -46,19 +46,19 @@ final readonly class ControlClient
     /** @throws ControlException|Throwable */
     public function fetchSnapshot(ControlTarget $target, Duration $timeout): RuntimeSnapshot
     {
-        return $this->sendRequest($target, new SnapshotRequest(), SnapshotFrame::class, 'a snapshot', $timeout)->snapshot;
+        return $this->sendRequest($target, new SnapshotRequest(), SnapshotFrame::class, $timeout)->snapshot;
     }
 
     /** @throws ControlException|Throwable */
     public function pauseApp(ControlTarget $target, AppId $appId, Duration $timeout): CommandResult
     {
-        return $this->sendRequest($target, new PauseAppRequest($appId->value), CommandResult::class, 'a command result', $timeout);
+        return $this->sendRequest($target, new PauseAppRequest($appId->value), CommandResult::class, $timeout);
     }
 
     /** @throws ControlException|Throwable */
     public function resumeApp(ControlTarget $target, AppId $appId, Duration $timeout): CommandResult
     {
-        return $this->sendRequest($target, new ResumeAppRequest($appId->value), CommandResult::class, 'a command result', $timeout);
+        return $this->sendRequest($target, new ResumeAppRequest($appId->value), CommandResult::class, $timeout);
     }
 
     /**
@@ -67,12 +67,12 @@ final readonly class ControlClient
      * @return T
      * @throws ControlException|Throwable
      */
-    private function sendRequest(ControlTarget $target, ClientFrame $request, string $responseClass, string $expectedResponse, Duration $timeout): ServerFrame
+    private function sendRequest(ControlTarget $target, ClientFrame $request, string $responseClass, Duration $timeout): ServerFrame
     {
         $deadline = $this->deadlines->timeout($timeout);
 
         try {
-            return $this->exchangeFrames($target, $request, $responseClass, $expectedResponse, $deadline);
+            return $this->exchangeFrames($target, $request, $responseClass, $deadline);
         } catch (CancelledException $e) {
             throw ControlException::requestTimedOut($timeout, $e);
         }
@@ -84,7 +84,7 @@ final readonly class ControlClient
      * @return T
      * @throws ControlException|Throwable
      */
-    private function exchangeFrames(ControlTarget $target, ClientFrame $request, string $responseClass, string $expectedResponse, Cancellation $deadline): ServerFrame
+    private function exchangeFrames(ControlTarget $target, ClientFrame $request, string $responseClass, Cancellation $deadline): ServerFrame
     {
         $socket = Socket\connect($target->address->resolveSocketAddress($this->projectRoot), null, $deadline);
 
@@ -100,12 +100,12 @@ final readonly class ControlClient
             }
 
             if (!$response instanceof $responseClass) {
-                throw ControlException::unexpectedFrame($response::class, $expectedResponse);
+                throw ControlException::unexpectedFrame($response::class, $responseClass);
             }
 
             $bye = $this->readFrame($reader, $deadline);
 
-            return $bye instanceof Bye ? $response : throw ControlException::unexpectedFrame($bye::class, 'a bye');
+            return $bye instanceof Bye ? $response : throw ControlException::unexpectedFrame($bye::class, Bye::class);
         } finally {
             $socket->close();
         }

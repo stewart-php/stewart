@@ -206,6 +206,11 @@ final class ControlServer implements ControlPlane
             $this->logger->info('Refused a control request', ['peer' => $session->describePeer(), 'reason' => $e->reason->value]);
 
             return new RequestFailed((string) $e->reason->value, $e->getMessage());
+        } catch (Throwable $e) {
+            $this->logger->warning('Could not answer a control request', ['peer' => $session->describePeer(), 'exception' => $e]);
+            $unanswerable = ControlException::requestUnanswerable($e);
+
+            return new RequestFailed($unanswerable->reason->value, $unanswerable->getMessage());
         }
     }
 

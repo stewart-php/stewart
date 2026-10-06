@@ -125,7 +125,8 @@ final class ControlClientTest extends TestCase
 
         try {
             $e = $this->assertThrowsReason(ControlError::RequestFailed, fn() => self::createClient()->fetchSnapshot($this->createControlTarget(), Duration::seconds(2)));
-            self::assertSame('unknown', $e->context['reason'] ?? null);
+            self::assertInstanceOf(ControlException::class, $e);
+            self::assertSame('unknown', $e->findBrokerReason());
         } finally {
             $listener->close();
         }
@@ -137,7 +138,7 @@ final class ControlClientTest extends TestCase
 
         try {
             $e = $this->assertThrowsReason(ControlError::UnexpectedFrame, fn() => self::createClient()->fetchSnapshot($this->createControlTarget(), Duration::seconds(2)));
-            self::assertSame('a bye', $e->context['expectedFrame'] ?? null);
+            self::assertSame(Bye::class, $e->context['expectedFrameClass'] ?? null);
         } finally {
             $listener->close();
         }
