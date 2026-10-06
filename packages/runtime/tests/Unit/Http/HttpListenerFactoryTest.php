@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Tests\Unit\Http;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Stewart\Runtime\Config\HttpAdminConfig;
 use Stewart\Runtime\Config\HttpConfig;
 use Stewart\Runtime\Config\HttpListenAddress;
 use Stewart\Runtime\Health\ProbeReportCodec;
@@ -20,12 +21,12 @@ final class HttpListenerFactoryTest extends TestCase
 {
     public function testUnsetListenCreatesNoListener(): void
     {
-        self::assertTrue($this->createFactory(new HttpConfig(null))->createHttpListeners()->isEmpty());
+        self::assertTrue($this->createFactory(new HttpConfig(null, new HttpAdminConfig(null, null)))->createHttpListeners()->isEmpty());
     }
 
     public function testListenAddressCreatesProbeListener(): void
     {
-        $factory = $this->createFactory(new HttpConfig(new HttpListenAddress('127.0.0.1', 8080)));
+        $factory = $this->createFactory(new HttpConfig(new HttpListenAddress('127.0.0.1', 8080), new HttpAdminConfig(null, null)));
 
         self::assertInstanceOf(AmpHttpListener::class, $factory->createHttpListeners()->getFirst());
     }

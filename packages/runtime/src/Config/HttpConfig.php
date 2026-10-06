@@ -8,7 +8,10 @@ use Stewart\Runtime\Exception\ConfigurationException;
 
 final readonly class HttpConfig
 {
-    public function __construct(public ?HttpListenAddress $listen) {}
+    public function __construct(
+        public ?HttpListenAddress $listen,
+        public HttpAdminConfig $admin,
+    ) {}
 
     /** @throws ConfigurationException */
     public static function fromSection(ConfigSection $http): self
@@ -19,6 +22,7 @@ final readonly class HttpConfig
             listen: $listen === null || strcasecmp(trim($listen), StewartConfigSchema::OFF) === 0
                 ? null
                 : $http->readParsedValue('listen', HttpListenAddress::parse(...)),
+            admin: HttpAdminConfig::fromSection($http->readSection('admin')),
         );
     }
 }

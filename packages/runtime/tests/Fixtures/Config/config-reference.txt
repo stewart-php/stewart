@@ -180,6 +180,15 @@ http:
     # tcp://ip:port, such as tcp://0.0.0.0:8080 or tcp://[::]:8080. "off" disables the port.
     listen:               'off'
 
+    # The HTTP admin API that lists, pauses and resumes apps. The token is a secret: set it from the environment.
+    admin:
+
+        # tcp://ip:port, such as tcp://127.0.0.1:8081. "off" disables the API.
+        listen:               'off'
+
+        # Bearer token every request presents. Required while listen is set: the daemon refuses to start without one.
+        token:                null
+
 # What `stewart generate` writes: typed classes over the entities and services of your own instance.
 codegen:
 
