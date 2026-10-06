@@ -31,8 +31,7 @@ final class WorkerShutdown
     public function __construct(
         private readonly AppLifecycle $apps,
         private readonly AppResources $resources,
-        private readonly PendingCalls $pending,
-        private readonly PendingHistoryQueries $pendingHistory,
+        private readonly PendingRequests $pending,
         private readonly Deadlines $deadlines,
         private readonly LoggerInterface $logger,
         private readonly Duration $workerShutdownGrace,
@@ -70,7 +69,6 @@ final class WorkerShutdown
     public function stopAfterBrokerLoss(string $reason): void
     {
         $this->pending->failAll('the broker is gone');
-        $this->pendingHistory->failAll('the broker is gone');
         $this->stopWithConfiguredGrace($reason);
     }
 

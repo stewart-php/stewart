@@ -6,12 +6,12 @@ namespace Stewart\Runtime\Worker\Message;
 
 use Stewart\Runtime\Ipc\Message\BrokerMessage;
 use Stewart\Runtime\Ipc\Message\HistoryResult;
-use Stewart\Runtime\Worker\PendingHistoryQueries;
+use Stewart\Runtime\Worker\PendingRequests;
 
 /** @implements BrokerMessageHandler<HistoryResult> */
 final readonly class HistoryResultHandler implements BrokerMessageHandler
 {
-    public function __construct(private PendingHistoryQueries $pending) {}
+    public function __construct(private PendingRequests $pending) {}
 
     public function handledMessageClass(): string
     {

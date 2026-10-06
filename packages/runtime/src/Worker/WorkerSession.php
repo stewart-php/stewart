@@ -22,8 +22,7 @@ final readonly class WorkerSession
         private Transport $transport,
         private AppLifecycle $apps,
         private StateCacheSync $stateCacheSync,
-        private PendingCalls $pending,
-        private PendingHistoryQueries $pendingHistory,
+        private PendingRequests $pending,
         private BrokerMessageReader $reader,
         private WorkerShutdown $shutdown,
         private LoopErrorReporter $loopErrors,
@@ -41,8 +40,7 @@ final readonly class WorkerSession
 
             $this->shutdown->awaitStopped();
 
-            $abandoned = $this->pending->failAll('the worker is shutting down')
-                + $this->pendingHistory->failAll('the worker is shutting down');
+            $abandoned = $this->pending->failAll('the worker is shutting down');
         } finally {
             $this->loopErrors->restorePrevious();
         }
