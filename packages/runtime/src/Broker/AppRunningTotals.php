@@ -95,13 +95,16 @@ final class AppRunningTotals
     {
         $calls = $this->calls;
         ksort($calls);
+        $pause = $this->appId === null ? null : $pausedApps->findPause($this->appId);
 
         return new AppStatus(
             id: $this->id,
             class: $this->class,
             workerId: $this->workerId?->value,
             state: $this->state,
-            paused: $this->appId !== null && $pausedApps->isPaused($this->appId),
+            paused: $pause !== null,
+            pausedSince: $pause?->since,
+            pauseSource: $pause?->source,
             reportedAt: $this->reportedAt,
             subscriptions: $this->subscriptions,
             schedules: $this->schedules,

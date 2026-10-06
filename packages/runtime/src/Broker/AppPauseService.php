@@ -9,10 +9,10 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\App\AppPause;
-use Stewart\Runtime\App\AppPauseSource;
 use Stewart\Runtime\Exception\AppException;
 use Stewart\Runtime\Ipc\Message\PausedAppsChanged;
 use Stewart\Runtime\Ipc\Wire\AppIdsFragment;
+use Stewart\Runtime\Lifecycle\AppPauseSource;
 
 final readonly class AppPauseService
 {

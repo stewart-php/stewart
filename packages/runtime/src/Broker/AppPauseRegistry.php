@@ -9,8 +9,8 @@ use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\AppPause;
-use Stewart\Runtime\App\AppPauseSource;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
+use Stewart\Runtime\Lifecycle\AppPauseSource;
 
 final class AppPauseRegistry
 {

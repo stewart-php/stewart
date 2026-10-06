@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Runtime\App;
+namespace Stewart\Runtime\Lifecycle;
 
 enum AppPauseSource: string
 {

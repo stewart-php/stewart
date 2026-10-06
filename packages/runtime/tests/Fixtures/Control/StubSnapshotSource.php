@@ -19,6 +19,7 @@ use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
 use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
 use Stewart\Runtime\Control\Protocol\Status\WorkerStatus;
 use Stewart\Runtime\Lifecycle\AppFailurePhase;
+use Stewart\Runtime\Lifecycle\AppPauseSource;
 use Stewart\Runtime\Lifecycle\AppState;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
@@ -65,6 +66,8 @@ final class StubSnapshotSource
                 workerId: 0,
                 state: AppState::Running,
                 paused: true,
+                pausedSince: Instant::fromIso('2026-09-26T10:58:00Z'),
+                pauseSource: AppPauseSource::Control,
                 reportedAt: Instant::fromIso('2026-09-26T10:59:55Z'),
                 subscriptions: 2,
                 schedules: 1,

@@ -1,0 +1,5 @@
+{
+    "type": "request_failed",
+    "reason": "unknown",
+    "message": "No automation with ID \"ghost\"."
+}

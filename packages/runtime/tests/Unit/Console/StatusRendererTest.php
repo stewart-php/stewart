@@ -22,6 +22,7 @@ use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
 use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
 use Stewart\Runtime\Control\Protocol\Status\WorkerStatus;
 use Stewart\Runtime\Lifecycle\AppFailurePhase;
+use Stewart\Runtime\Lifecycle\AppPauseSource;
 use Stewart\Runtime\Lifecycle\AppState;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
@@ -56,6 +57,8 @@ final class StatusRendererTest extends TestCase
                     workerId: 0,
                     state: AppState::Running,
                     paused: true,
+                    pausedSince: self::createInstantAt($now - 125.0),
+                    pauseSource: AppPauseSource::Control,
                     reportedAt: self::createInstantAt($now - 7.0),
                     subscriptions: 1,
                     schedules: 1,
@@ -66,7 +69,7 @@ final class StatusRendererTest extends TestCase
                     ],
                     lastFailure: new FailureReport(AppFailurePhase::Handler, 'RuntimeException', 'lamp offline', null, 'unreachable', self::createInstantAt($now - 60.0)),
                 ),
-                new AppStatus('echo', 'Echo', 1, null, false, null, 0, 0, new AppCounters(), [], null),
+                new AppStatus('echo', 'Echo', 1, null, false, null, null, null, 0, 0, new AppCounters(), [], null),
             ],
             subscriptions: [],
             store: new StoreHealth(false, 'connection refused', self::createInstantAt($now - 20.0)),

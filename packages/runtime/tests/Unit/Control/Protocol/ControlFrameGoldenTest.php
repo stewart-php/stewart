@@ -9,9 +9,14 @@ use PHPUnit\Framework\TestCase;
 use Stewart\Runtime\Control\Protocol\Codec\FrameCodec;
 use Stewart\Runtime\Control\Protocol\ControlProtocol;
 use Stewart\Runtime\Control\Protocol\Frame\Bye;
+use Stewart\Runtime\Control\Protocol\Frame\CommandResult;
 use Stewart\Runtime\Control\Protocol\Frame\Hello;
+use Stewart\Runtime\Control\Protocol\Frame\PauseAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\Rejected;
+use Stewart\Runtime\Control\Protocol\Frame\RequestFailed;
+use Stewart\Runtime\Control\Protocol\Frame\ResumeAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\SnapshotFrame;
+use Stewart\Runtime\Control\Protocol\Frame\SnapshotRequest;
 use Stewart\Runtime\Control\Protocol\Frame\Welcome;
 use Stewart\Runtime\Tests\Fixtures\Control\StubSnapshotSource;
 use Stewart\Runtime\Tests\Fixtures\Wire\VersionedGoldenSet;
@@ -27,10 +32,15 @@ final class ControlFrameGoldenTest extends TestCase
 
         foreach ([
             new Hello('golden-token', 'stewart status'),
+            new SnapshotRequest(),
+            new PauseAppRequest('porch'),
+            new ResumeAppRequest('porch'),
             new Welcome(ControlProtocol::VERSION),
             new Rejected('the token does not match control.token'),
             new SnapshotFrame(new StubSnapshotSource()->takeSnapshot()),
-            new Bye('snapshot sent'),
+            new CommandResult(true, 'App porch paused.'),
+            new RequestFailed('unknown', 'No automation with ID "ghost".'),
+            new Bye('request answered'),
         ] as $frame) {
             $line = $codec->encodeFrame($frame);
             $decoded = json_decode($line, true, flags: \JSON_THROW_ON_ERROR);

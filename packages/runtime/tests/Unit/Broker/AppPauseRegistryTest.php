@@ -10,9 +10,9 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\AppPause;
-use Stewart\Runtime\App\AppPauseSource;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppPauseRegistry;
+use Stewart\Runtime\Lifecycle\AppPauseSource;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Testing\Time\VirtualClock;
 

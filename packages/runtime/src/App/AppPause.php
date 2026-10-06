@@ -6,6 +6,7 @@ namespace Stewart\Runtime\App;
 
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Time\Instant;
+use Stewart\Runtime\Lifecycle\AppPauseSource;
 
 final readonly class AppPause
 {

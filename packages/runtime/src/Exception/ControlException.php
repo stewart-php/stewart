@@ -96,8 +96,18 @@ final class ControlException extends StewartException
         return self::createForReason(ControlError::UnexpectedFrame, ['frameClass' => $frameClass, 'expectedFrame' => $expectedFrame]);
     }
 
-    public static function snapshotTimedOut(Duration $timeout, Throwable $previous): self
+    public static function requestTimedOut(Duration $timeout, Throwable $previous): self
     {
-        return self::createForReason(ControlError::SnapshotTimedOut, ['timeout' => (string) $timeout], $previous);
+        return self::createForReason(ControlError::RequestTimedOut, ['timeout' => (string) $timeout], $previous);
+    }
+
+    public static function requestUnexpected(string $frameClass): self
+    {
+        return self::createForReason(ControlError::RequestUnexpected, ['frameClass' => $frameClass]);
+    }
+
+    public static function requestFailed(string $reason, string $message): self
+    {
+        return self::createForReason(ControlError::RequestFailed, ['reason' => $reason, 'message' => $message]);
     }
 }

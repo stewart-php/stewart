@@ -25,7 +25,9 @@ enum ControlError: string implements ExceptionReason
     case ProtocolMismatch = 'protocol_mismatch';
     case BrokerHungUp = 'broker_hung_up';
     case UnexpectedFrame = 'unexpected_frame';
-    case SnapshotTimedOut = 'snapshot_timed_out';
+    case RequestTimedOut = 'request_timed_out';
+    case RequestUnexpected = 'request_unexpected';
+    case RequestFailed = 'request_failed';
 
     public function messageTemplate(): string
     {
@@ -47,7 +49,9 @@ enum ControlError: string implements ExceptionReason
             self::ProtocolMismatch => 'Broker speaks control protocol {brokerProtocol}, this client {clientProtocol}.',
             self::BrokerHungUp => 'The broker hung up before the session ended.',
             self::UnexpectedFrame => 'The broker sent {frameClass} instead of {expectedFrame}.',
-            self::SnapshotTimedOut => 'The broker sent no snapshot within {timeout}.',
+            self::RequestTimedOut => 'The broker did not answer within {timeout}.',
+            self::RequestUnexpected => 'The control session expects a request, not {frameClass}.',
+            self::RequestFailed => 'The broker refused the request: {message}',
         };
     }
 }

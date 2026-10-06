@@ -20,14 +20,18 @@ use Stewart\Runtime\Control\Protocol\ControlProtocol;
 use Stewart\Runtime\Control\Protocol\Frame\Bye;
 use Stewart\Runtime\Control\Protocol\Frame\Hello;
 use Stewart\Runtime\Control\Protocol\Frame\Rejected;
+use Stewart\Runtime\Control\Protocol\Frame\RequestFailed;
 use Stewart\Runtime\Control\Protocol\Frame\ServerFrame;
 use Stewart\Runtime\Control\Protocol\Frame\SnapshotFrame;
+use Stewart\Runtime\Control\Protocol\Frame\SnapshotRequest;
 use Stewart\Runtime\Control\Protocol\Frame\Welcome;
+use Stewart\Runtime\Control\Request\ControlRequestDispatcher;
 use Stewart\Runtime\Control\Server\ClientSession;
 use Stewart\Runtime\Control\Server\ControlServer;
 use Stewart\Runtime\Control\Server\UnixSocketFile;
 use Stewart\Runtime\Exception\ControlError;
 use Stewart\Runtime\Exception\ControlException;
+use Stewart\Runtime\Tests\Fixtures\Control\StubSnapshotRequestHandler;
 use Stewart\Runtime\Tests\Fixtures\Control\StubSnapshotSource;
 use Stewart\Support\Time\Deadlines;
 use Stewart\Support\Time\RevoltTimers;
@@ -128,7 +132,7 @@ final class ControlServerTest extends TestCase
         self::assertCount(8, $accepted);
     }
 
-    public function testGoodHelloGetsAWelcomeOneSnapshotAndBye(): void
+    public function testRequestGetsWelcomeOneAnswerAndBye(): void
     {
         $this->listen();
         $socket = $this->connect();
@@ -138,13 +142,40 @@ final class ControlServerTest extends TestCase
         self::assertInstanceOf(Welcome::class, $welcome);
         self::assertSame(ControlProtocol::VERSION, $welcome->protocol);
 
+        $socket->write($this->codec->encodeFrame(new SnapshotRequest()));
         $snapshot = $this->read($socket);
         self::assertInstanceOf(SnapshotFrame::class, $snapshot);
         self::assertSame('stub', $snapshot->snapshot->daemon->version);
 
         self::assertInstanceOf(Bye::class, $this->read($socket));
-        self::assertNull($socket->read(new TimeoutCancellation(1.0)), 'The session ends after the snapshot.');
+        self::assertNull($socket->read(new TimeoutCancellation(1.0)), 'The session ends after one answer.');
         self::assertSame(1, $this->snapshots->taken);
+    }
+
+    public function testRequestWithoutHandlerIsAnsweredAsFailed(): void
+    {
+        $this->listen();
+        $socket = $this->connect();
+        self::assertInstanceOf(Welcome::class, $this->greet($socket));
+        $socket->write($this->codec->encodeFrame(new Hello(self::TOKEN, 'phpunit')));
+
+        $failed = $this->read($socket);
+        self::assertInstanceOf(RequestFailed::class, $failed);
+        self::assertSame(ControlError::RequestUnexpected->value, $failed->reason);
+        self::assertInstanceOf(Bye::class, $this->read($socket));
+        self::assertContains('Refused a control request', $this->logger->listMessagesAt('info'));
+    }
+
+    public function testUndecodableRequestIsAnsweredAsFailed(): void
+    {
+        $this->listen();
+        $socket = $this->connect();
+        self::assertInstanceOf(Welcome::class, $this->greet($socket));
+        $socket->write("not json\n");
+
+        $failed = $this->read($socket);
+        self::assertInstanceOf(RequestFailed::class, $failed);
+        self::assertSame(ControlError::FrameNotJson->value, $failed->reason);
     }
 
     public function testOversizedHelloIsRefused(): void
@@ -280,7 +311,7 @@ final class ControlServerTest extends TestCase
         $this->listen(sessionTimeout: 0.1, deadlines: $timers);
         $stalled = $this->connect();
         self::awaitSessionDeadline($timers);
-        $stalled->write($this->codec->encodeFrame(new Hello(self::TOKEN, 'phpunit')));
+        $stalled->write($this->codec->encodeFrame(new Hello(self::TOKEN, 'phpunit')) . $this->codec->encodeFrame(new SnapshotRequest()));
         EventLoopTicks::settleUntil(fn(): bool => $this->snapshots->taken === 1, 100);
 
         $timers->delay(Duration::milliseconds(100));
@@ -310,7 +341,7 @@ final class ControlServerTest extends TestCase
         return new ControlServer(
             address: new UnixControlAddress($this->path),
             token: self::TOKEN,
-            snapshot: $this->snapshots->takeSnapshot(...),
+            requests: new ControlRequestDispatcher([new StubSnapshotRequestHandler($this->snapshots)]),
             deadlines: $deadlines,
             codec: $this->codec,
             logger: $this->logger,
