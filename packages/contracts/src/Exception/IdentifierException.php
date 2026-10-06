@@ -17,6 +17,11 @@ final class IdentifierException extends StewartException
         return self::createForReason(IdentifierError::AppIdInvalid, ['appId' => $appId]);
     }
 
+    public static function appIdTooLong(string $appId, int $limit): self
+    {
+        return self::createForReason(IdentifierError::AppIdTooLong, ['appId' => $appId, 'limit' => $limit]);
+    }
+
     public static function entityNotGenerated(string $entityId, string $domain): self
     {
         return self::createForReason(IdentifierError::EntityNotGenerated, ['entityId' => $entityId, 'domain' => $domain]);
