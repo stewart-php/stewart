@@ -18,6 +18,7 @@ use Stewart\Runtime\Broker\WorkerSlotRegistry;
 use Stewart\Runtime\Control\Protocol\Frame\CommandResult;
 use Stewart\Runtime\Control\Protocol\Frame\PauseAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\ResumeAppRequest;
+use Stewart\Runtime\Control\Request\AppPauseChangeHandler;
 use Stewart\Runtime\Control\Request\PauseAppRequestHandler;
 use Stewart\Runtime\Control\Request\ResumeAppRequestHandler;
 use Stewart\Runtime\Exception\AppError;
@@ -29,6 +30,7 @@ use Stewart\Testing\Time\VirtualClock;
 
 #[CoversClass(PauseAppRequestHandler::class)]
 #[CoversClass(ResumeAppRequestHandler::class)]
+#[CoversClass(AppPauseChangeHandler::class)]
 final class AppPauseRequestHandlersTest extends TestCase
 {
     use AssertsReason;

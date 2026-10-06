@@ -4,50 +4,19 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Console;
 
-use Amp\ByteStream\StreamException;
-use Amp\CancelledException;
 use Stewart\Contracts\App\AppId;
-use Stewart\Contracts\Exception\StewartException;
-use Stewart\Runtime\Config\ConfigLoader;
-use Stewart\Runtime\Control\Client\ControlClient;
-use Stewart\Runtime\Control\Client\ControlTargetResolver;
+use Stewart\Contracts\Time\Duration;
+use Stewart\Runtime\Control\Client\ControlTarget;
+use Stewart\Runtime\Control\Protocol\Frame\CommandResult;
 use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(name: self::NAME, description: 'Resume a paused app')]
-final class AppResumeCommand extends ControlCommand
+final class AppResumeCommand extends AppRequestCommand
 {
     public const string NAME = 'app:resume';
 
-    public function __construct(
-        ConfigLoader $config,
-        ControlTargetResolver $targets,
-        private readonly ControlClient $client,
-    ) {
-        parent::__construct($config, $targets);
-    }
-
-    protected function configure(): void
+    protected function sendAppRequest(ControlTarget $target, AppId $appId, Duration $timeout): CommandResult
     {
-        parent::configure();
-        $this->addArgument('app', InputArgument::REQUIRED, 'The automation ID, as shown by stewart status');
-    }
-
-    protected function execute(InputInterface $input, OutputInterface $output): int
-    {
-        try {
-            $result = $this->client->resumeApp($this->resolveControlTarget($input), new AppId($this->stringArgument($input, 'app')), $this->parseTimeoutOption($input));
-        } catch (StewartException|StreamException|CancelledException $e) {
-            $output->writeln('<error>' . $e->getMessage() . '</error>');
-
-            return Command::FAILURE;
-        }
-
-        $output->writeln($result->message);
-
-        return Command::SUCCESS;
+        return $this->client->resumeApp($target, $appId, $timeout);
     }
 }

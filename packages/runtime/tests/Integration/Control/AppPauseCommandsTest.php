@@ -19,6 +19,7 @@ use Stewart\Runtime\Config\ConfigLoader;
 use Stewart\Runtime\Config\ProjectRoot;
 use Stewart\Runtime\Config\UnixControlAddress;
 use Stewart\Runtime\Console\AppPauseCommand;
+use Stewart\Runtime\Console\AppRequestCommand;
 use Stewart\Runtime\Console\AppResumeCommand;
 use Stewart\Runtime\Console\ControlCommand;
 use Stewart\Runtime\Control\Client\ControlClient;
@@ -40,6 +41,7 @@ use Symfony\Component\Filesystem\Filesystem;
 #[CoversClass(AppPauseCommand::class)]
 #[CoversClass(AppResumeCommand::class)]
 #[CoversClass(ControlCommand::class)]
+#[CoversClass(AppRequestCommand::class)]
 #[CoversClass(ControlClient::class)]
 final class AppPauseCommandsTest extends TestCase
 {
