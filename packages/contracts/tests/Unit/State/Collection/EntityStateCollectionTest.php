@@ -7,9 +7,11 @@ namespace Stewart\Contracts\Tests\Unit\State\Collection;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Registry\EntityFilter;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
+use Stewart\Contracts\Tests\Fixtures\Registry\RegistryFixture;
 use Stewart\Contracts\Time\Instant;
 
 #[CoversClass(EntityStateCollection::class)]
@@ -33,6 +35,13 @@ final class EntityStateCollectionTest extends TestCase
         self::assertSame(['light.hall', 'light.porch'], self::listKeys($states->filterBySelector(Selector::glob('light.*'))));
         self::assertSame(['switch.fan'], self::listKeys($states->filterBySelector(Selector::exact('switch.fan'))));
         self::assertTrue($states->filterBySelector(Selector::exact('switch.none'))->isEmpty());
+    }
+
+    public function testEntityFilterNarrowsStates(): void
+    {
+        $states = EntityStateCollection::keyedByEntityId([self::createState('light.kitchen_ceiling', 'on', 1), self::createState('light.hall_spot', 'on', 1)]);
+
+        self::assertSame(['light.kitchen_ceiling'], self::listKeys($states->filterByEntityFilter(EntityFilter::inArea('kitchen'), RegistryFixture::createRegistry())));
     }
 
     public function testStatesGroupByDomain(): void

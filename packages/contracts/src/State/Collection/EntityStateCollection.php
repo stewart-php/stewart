@@ -7,6 +7,8 @@ namespace Stewart\Contracts\State\Collection;
 use Stewart\Contracts\Collection\KeyedCollection;
 use Stewart\Contracts\Entity\Collection\EntityIdCollection;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Registry\EntityFilter;
+use Stewart\Contracts\Registry\Registry;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\EntityState;
 
@@ -50,6 +52,11 @@ final readonly class EntityStateCollection extends KeyedCollection
         }
 
         return $this->filter(static fn(EntityState $state): bool => $selector->matches($state->entityId->value));
+    }
+
+    public function filterByEntityFilter(EntityFilter $filter, Registry $registry): self
+    {
+        return $this->filter(static fn(EntityState $state): bool => $filter->matchesEntity($state->entityId, $registry));
     }
 
     public function sortedByEntityId(): self
