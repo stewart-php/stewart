@@ -6,7 +6,7 @@ namespace Stewart\Runtime\Broker\Http;
 
 use Throwable;
 
-interface ProbeListener
+interface HttpListener
 {
     /** @throws Throwable */
     public function start(): void;

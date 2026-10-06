@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Tests\Fixtures\Broker\Http;
 
-use Stewart\Runtime\Broker\Http\ProbeListener;
+use Stewart\Runtime\Broker\Http\HttpListener;
 
-final class RecordingProbeListener implements ProbeListener
+final class RecordingHttpListener implements HttpListener
 {
     public bool $started = false;
 
