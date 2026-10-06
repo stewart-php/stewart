@@ -30,6 +30,33 @@ final class EntityRegistryEntryTest extends TestCase
         self::assertSame($entry->toArray(), EntityRegistryEntry::fromArray($entry->toArray())->toArray());
     }
 
+    public function testCarriesAreaDeviceAndLabels(): void
+    {
+        $entry = EntityRegistryEntry::fromArray([
+            'entity_id' => 'sensor.bulb_signal',
+            'area_id' => 'kitchen',
+            'device_id' => 'bulb',
+            'labels' => ['night', ''],
+            'entity_category' => 'diagnostic',
+        ]);
+        $entity = $entry->toRegisteredEntity();
+
+        self::assertSame($entry->toArray(), EntityRegistryEntry::fromArray($entry->toArray())->toArray());
+        self::assertSame('kitchen', $entity->areaId?->value);
+        self::assertSame('bulb', $entity->deviceId?->value);
+        self::assertSame(['night'], $entity->listLabelIds()->toStrings());
+        self::assertTrue($entity->hasEntityCategory());
+    }
+
+    public function testOlderSnapshotRowLeavesPlacementEmpty(): void
+    {
+        $entity = EntityRegistryEntry::fromArray(['entity_id' => 'light.hall', 'disabled_by' => null, 'hidden_by' => null, 'name' => null])->toRegisteredEntity();
+
+        self::assertNull($entity->areaId);
+        self::assertNull($entity->deviceId);
+        self::assertSame([], $entity->labelIds);
+    }
+
     public function testEmptyStringIsNoValue(): void
     {
         $entry = EntityRegistryEntry::fromArray(['entity_id' => 'light.hall', 'hidden_by' => '', 'name' => '']);

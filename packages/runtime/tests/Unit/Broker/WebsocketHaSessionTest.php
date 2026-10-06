@@ -14,6 +14,7 @@ use Stewart\Client\Event\EventDecoder;
 use Stewart\Client\Exception\HaClientError;
 use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
+use Stewart\Client\Registry\RegistryDecoder;
 use Stewart\Client\State\EntityStateDecoder;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
@@ -361,7 +362,7 @@ final class WebsocketHaSessionTest extends TestCase
             new FakeWebsocketConnector(...$sockets),
         );
 
-        $client = new HaClient($connection, new EventDecoder(new EntityStateDecoder()), new EntityStateDecoder(), new NullLogger());
+        $client = new HaClient($connection, new EventDecoder(new EntityStateDecoder()), new EntityStateDecoder(), new RegistryDecoder(), new NullLogger());
 
         return $this->session = new WebsocketHaSession(
             $client,

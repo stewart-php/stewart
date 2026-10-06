@@ -11,12 +11,17 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Stewart\Client\Connection\Command\CallService;
 use Stewart\Client\Connection\Command\FireEvent;
+use Stewart\Client\Connection\Command\GetAreaRegistry;
 use Stewart\Client\Connection\Command\GetConfig;
 use Stewart\Client\Connection\Command\GetCurrentUser;
+use Stewart\Client\Connection\Command\GetDeviceRegistry;
 use Stewart\Client\Connection\Command\GetEntityRegistry;
+use Stewart\Client\Connection\Command\GetFloorRegistry;
 use Stewart\Client\Connection\Command\GetHistoryDuringPeriod;
+use Stewart\Client\Connection\Command\GetLabelRegistry;
 use Stewart\Client\Connection\Command\GetServices;
 use Stewart\Client\Connection\Command\GetStates;
+use Stewart\Client\Connection\Command\HaCommand;
 use Stewart\Client\Connection\Command\SubscribeEvents;
 use Stewart\Client\Connection\Command\SubscribeTrigger;
 use Stewart\Client\Connection\Command\SubscriptionCommand;
@@ -27,6 +32,7 @@ use Stewart\Client\Exception\HaClientError;
 use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\Registry\Collection\EntityRegistryCollection;
 use Stewart\Client\Registry\EntityRegistryEntry;
+use Stewart\Client\Registry\RegistryDecoder;
 use Stewart\Client\State\EntityStateDecoder;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventPayload;
@@ -39,6 +45,11 @@ use Stewart\Contracts\History\Collection\HistoricalStateCollection;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
+use Stewart\Contracts\Registry\Collection\AreaCollection;
+use Stewart\Contracts\Registry\Collection\DeviceCollection;
+use Stewart\Contracts\Registry\Collection\FloorCollection;
+use Stewart\Contracts\Registry\Collection\LabelCollection;
+use Stewart\Contracts\Registry\IndexedRegistry;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
@@ -57,6 +68,7 @@ final class HaClient
         private readonly HaConnection $connection,
         private readonly EventDecoder $decoder,
         private readonly EntityStateDecoder $states,
+        private readonly RegistryDecoder $registries,
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {}
 
@@ -68,7 +80,7 @@ final class HaClient
     ): self {
         $states = new EntityStateDecoder($logger);
 
-        return new self(new HaConnection($config, $deadlines, $logger, $connector), new EventDecoder($states), $states, $logger);
+        return new self(new HaConnection($config, $deadlines, $logger, $connector), new EventDecoder($states), $states, new RegistryDecoder($logger), $logger);
     }
 
     public function connect(): void
@@ -134,6 +146,37 @@ final class HaClient
         }
 
         return EntityRegistryCollection::keyedByEntityId($entries);
+    }
+
+    public function getAreaRegistry(): AreaCollection
+    {
+        return AreaCollection::keyedByAreaId($this->decodeRows($this->connection->send(new GetAreaRegistry()), $this->registries->decodeAreaOrSkip(...)));
+    }
+
+    public function getFloorRegistry(): FloorCollection
+    {
+        return FloorCollection::keyedByFloorId($this->decodeRows($this->sendUnlessUnknown(new GetFloorRegistry()), $this->registries->decodeFloorOrSkip(...)));
+    }
+
+    public function getLabelRegistry(): LabelCollection
+    {
+        return LabelCollection::keyedByLabelId($this->decodeRows($this->sendUnlessUnknown(new GetLabelRegistry()), $this->registries->decodeLabelOrSkip(...)));
+    }
+
+    public function getDeviceRegistry(): DeviceCollection
+    {
+        return DeviceCollection::keyedByDeviceId($this->decodeRows($this->connection->send(new GetDeviceRegistry()), $this->registries->decodeDeviceOrSkip(...)));
+    }
+
+    public function getRegistry(): IndexedRegistry
+    {
+        return IndexedRegistry::fromParts(
+            $this->getAreaRegistry(),
+            $this->getFloorRegistry(),
+            $this->getLabelRegistry(),
+            $this->getDeviceRegistry(),
+            $this->getEntityRegistry()->toRegisteredEntities(),
+        );
     }
 
     /** @throws HaClientException */
@@ -307,6 +350,42 @@ final class HaClient
             throw $e->reason === HaClientError::CommandUnauthorized
                 ? HaClientException::administratorRequired($e)
                 : $e;
+        }
+    }
+
+    /**
+     * @template T of object
+     * @param array<array-key, mixed> $rows
+     * @param Closure(array<array-key, mixed>): ?T $decodeOrSkip
+     * @return list<T>
+     */
+    private function decodeRows(array $rows, Closure $decodeOrSkip): array
+    {
+        $decoded = [];
+
+        foreach ($rows as $row) {
+            $entry = \is_array($row) ? $decodeOrSkip($row) : null;
+
+            if ($entry !== null) {
+                $decoded[] = $entry;
+            }
+        }
+
+        return $decoded;
+    }
+
+    /** @return array<array-key, mixed> */
+    private function sendUnlessUnknown(HaCommand $command): array
+    {
+        // Floors and labels arrived in Home Assistant 2024.4.
+        try {
+            return $this->connection->send($command);
+        } catch (HaClientException $e) {
+            if ($e->reason === HaClientError::CommandRejected && $e->findErrorCode() === self::UNKNOWN_COMMAND_CODE) {
+                return [];
+            }
+
+            throw $e;
         }
     }
 
