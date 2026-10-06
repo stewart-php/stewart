@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Dispatch;
 
 use Closure;
+use Stewart\Contracts\Registry\EntityFilter;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\Stream\SubscriptionScope;
 use Stewart\Contracts\Trigger\TriggerSpec;
@@ -22,5 +23,11 @@ final readonly class RegisteredSubscription
         public SubscriptionScope $subscriptionScope,
         public Closure $handler,
         public ?TriggerSpec $trigger = null,
+        public ?EntityFilter $entityFilter = null,
     ) {}
+
+    public function describeMatch(): string
+    {
+        return $this->entityFilter?->toCanonicalKey() ?? $this->selector->toCanonicalKey();
+    }
 }

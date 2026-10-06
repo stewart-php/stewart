@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Dispatch;
 
 use Closure;
+use Stewart\Contracts\Registry\EntityFilter;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\Stream\StreamSource;
 use Stewart\Contracts\Stream\SubscriptionScope;
@@ -25,10 +26,11 @@ final readonly class DispatchSource implements StreamSource
         private SubscriptionKind $kind,
         private Selector $selector,
         private ?TriggerSpec $trigger = null,
+        private ?EntityFilter $entityFilter = null,
     ) {}
 
     public function attach(SubscriptionScope $scope, Closure $downstream): Subscription
     {
-        return $this->dispatcher->register($this->scope, $this->kind, $this->selector, $scope, $downstream, $this->trigger);
+        return $this->dispatcher->register($this->scope, $this->kind, $this->selector, $scope, $downstream, $this->trigger, $this->entityFilter);
     }
 }

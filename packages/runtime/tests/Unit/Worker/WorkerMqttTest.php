@@ -18,6 +18,7 @@ use Stewart\Runtime\Ipc\Message\Subscribe;
 use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionKind;
+use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\Scope\ScopeLifecycle;
 use Stewart\Runtime\Tests\Fixtures\Ipc\FailingTransport;
 use Stewart\Runtime\Tests\Fixtures\Ipc\FakeWorkerTransport;
@@ -88,7 +89,7 @@ final class WorkerMqttTest extends TestCase
     private static function createMqtt(Transport $transport, bool $brokerMqttEnabled = true): WorkerMqtt
     {
         $listener = new RecordingDispatchListener();
-        $dispatcher = new LocalDispatcher('w0', 10, $listener, new BrokerSubscriptions($transport, new RecordingLogger()), new ScopeLifecycle());
+        $dispatcher = new LocalDispatcher('w0', 10, $listener, new BrokerSubscriptions($transport, new RecordingLogger()), new ScopeLifecycle(), new RegistryCache());
 
         return new WorkerMqtt(
             $transport,

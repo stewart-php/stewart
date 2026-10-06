@@ -9,6 +9,7 @@ use Stewart\Contracts\Event\EventTypeSelector;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\EventStream;
 use Stewart\Contracts\Mqtt\MqttMessage;
+use Stewart\Contracts\Registry\EntityFilter;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
@@ -31,10 +32,12 @@ final readonly class DispatchStreams
         private Timers&Deadlines $timers,
     ) {}
 
-    public function watchStateChanges(ResourceScope $scope, Selector $selector): StateChangeStream
+    public function watchStateChanges(ResourceScope $scope, Selector|EntityFilter $match): StateChangeStream
     {
         /** @var DispatchSource<StateChange> $source */
-        $source = new DispatchSource($this->dispatcher, $scope, SubscriptionKind::StateChange, $selector);
+        $source = $match instanceof EntityFilter
+            ? new DispatchSource($this->dispatcher, $scope, SubscriptionKind::StateChange, Selector::any(), entityFilter: $match)
+            : new DispatchSource($this->dispatcher, $scope, SubscriptionKind::StateChange, $match);
 
         return new StateChanges($source, $this->timers);
     }

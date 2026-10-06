@@ -8,6 +8,7 @@ use Stewart\Runtime\Dispatch\DispatchListener;
 use Stewart\Runtime\Dispatch\LocalDispatcher;
 use Stewart\Runtime\Dispatch\RegisteredSubscription;
 use Stewart\Runtime\Dispatch\SubscriptionListener;
+use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\Scope\ScopeLifecycle;
 use Throwable;
 
@@ -32,7 +33,7 @@ final class RecordingDispatchListener implements DispatchListener, SubscriptionL
     {
         $listener = new self();
 
-        return new LocalDispatcher($processId, $queueLimit, $listener, $listener, $scopes);
+        return new LocalDispatcher($processId, $queueLimit, $listener, $listener, $scopes, new RegistryCache());
     }
 
     public function subscriptionRegistered(RegisteredSubscription $subscription): void
