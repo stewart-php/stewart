@@ -79,6 +79,14 @@ final readonly class AppPauseService
         return new AppPauseResetOutcome($removed, $paused ? AppStateAfterReset::PausedByConfig : AppStateAfterReset::Running, $persistence);
     }
 
+    /** @throws AppException */
+    public function assertAppLoaded(AppId $appId): void
+    {
+        if ($this->apps->enabled->find($appId) === null) {
+            throw $this->createNotLoadedException($appId);
+        }
+    }
+
     /** @throws AppException|StoreException */
     private function resetStoredOnlyApp(AppId $appId, AppPauseSource $source): AppPauseResetOutcome
     {
@@ -123,14 +131,6 @@ final readonly class AppPauseService
         return $configPause === null
             ? new AppPauseOverride($appId, $paused, $this->clock->getNow(), $source)
             : new AppPauseOverride($appId, true, $configPause->since, $configPause->source);
-    }
-
-    /** @throws AppException */
-    private function assertAppLoaded(AppId $appId): void
-    {
-        if ($this->apps->enabled->find($appId) === null) {
-            throw $this->createNotLoadedException($appId);
-        }
     }
 
     private function createNotLoadedException(AppId $appId): AppException

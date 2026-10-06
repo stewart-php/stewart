@@ -22,8 +22,8 @@ final readonly class ResumeAppRequestHandler extends AppPauseChangeHandler
         return $this->pauses->resumeApp($appId, AppPauseSource::Control);
     }
 
-    protected function describeOutcome(AppId $appId, bool $changed): string
+    protected function describeOutcome(AppId $appId, AppPauseOutcome $outcome): string
     {
-        return \sprintf($changed ? 'App %s resumed.' : 'App %s was not paused.', $appId);
+        return $this->messages->describeResumeOutcome($appId, $outcome);
     }
 }
