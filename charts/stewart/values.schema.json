@@ -79,6 +79,16 @@
                 "existingSecretKey": {"type": "string", "minLength": 1}
             }
         },
+        "adminApi": {
+            "type": "object",
+            "properties": {
+                "enabled": {"type": "boolean"},
+                "host": {"type": "string", "minLength": 1},
+                "port": {"type": "integer", "minimum": 1, "maximum": 65535},
+                "existingSecret": {"type": "string"},
+                "existingSecretKey": {"type": "string", "minLength": 1}
+            }
+        },
         "config": {"type": "object"},
         "logLevel": {"enum": ["debug", "info", "notice", "warning", "error"]},
         "logFormat": {"enum": ["line", "json"]},
