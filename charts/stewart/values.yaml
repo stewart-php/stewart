@@ -53,6 +53,15 @@ control:
   existingSecret: ""
   existingSecretKey: token
 
+# The HTTP admin API lists, pauses and resumes apps (http.admin). Its token is generated like the control token.
+# The default loopback host is reachable through `kubectl port-forward`; bind 0.0.0.0 to call it from other pods.
+adminApi:
+  enabled: false
+  host: 127.0.0.1
+  port: 8081
+  existingSecret: ""
+  existingSecretKey: token
+
 # stewart.yaml content; when set it replaces the project's own file, so repeat the app options it holds.
 config: {}
 

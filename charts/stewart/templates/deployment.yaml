@@ -5,13 +5,14 @@
 {{- $homeAssistantToken := include "stewart.homeAssistantTokenSource" . -}}
 {{- $persistenceUrl := include "stewart.persistenceUrlSource" . -}}
 {{- $controlToken := include "stewart.controlTokenSource" . -}}
+{{- $adminToken := include "stewart.adminTokenSource" . -}}
 {{- if not $homeAssistantToken }}
 {{- fail "set homeAssistant.existingSecret, or homeAssistant.token" }}
 {{- end }}
 {{- $readOnlyRoot := and .Values.securityContext.readOnlyRootFilesystem (not (and (eq $mode "image") .Values.code.generateOnStart)) -}}
 {{- $containerSecurity := set (deepCopy .Values.securityContext) "readOnlyRootFilesystem" $readOnlyRoot -}}
 {{- $waitForValkey := and .Values.valkey.enabled (not $persistenceUrl) -}}
-{{- $secretFiles := dict "control-token" $controlToken "home-assistant-token" $homeAssistantToken "persistence-url" $persistenceUrl -}}
+{{- $secretFiles := dict "control-token" $controlToken "admin-token" $adminToken "home-assistant-token" $homeAssistantToken "persistence-url" $persistenceUrl -}}
 {{- if eq $mode "git" }}
 {{- with .Values.code.git.tokenSecret }}{{ if .name }}{{ $_ := set $secretFiles "git-token" (printf "%s/%s" .name .key) }}{{ end }}{{ end }}
 {{- with .Values.code.git.sshKeySecret }}{{ if .name }}{{ $_ := set $secretFiles "git-ssh-key" (printf "%s/%s" .name .key) }}{{ end }}{{ end }}
@@ -132,14 +133,27 @@ spec:
             - name: STEWART_HTTP__LISTEN
               value: {{ printf (ternary "tcp://[%s]:%d" "tcp://%s:%d" (contains ":" .Values.probes.host)) .Values.probes.host (int .Values.probes.port) | quote }}
             {{- end }}
+            {{- if .Values.adminApi.enabled }}
+            - name: STEWART_HTTP__ADMIN__LISTEN
+              value: {{ printf (ternary "tcp://[%s]:%d" "tcp://%s:%d" (contains ":" .Values.adminApi.host)) .Values.adminApi.host (int .Values.adminApi.port) | quote }}
+            - name: STEWART_HTTP__ADMIN__TOKEN_FILE
+              value: /run/secrets/stewart/admin-token
+            {{- end }}
             {{- with .Values.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-          {{- if eq .Values.probes.mode "http" }}
+          {{- if or (eq .Values.probes.mode "http") .Values.adminApi.enabled }}
           ports:
+            {{- if eq .Values.probes.mode "http" }}
             - name: probe
               containerPort: {{ .Values.probes.port }}
               protocol: TCP
+            {{- end }}
+            {{- if .Values.adminApi.enabled }}
+            - name: admin
+              containerPort: {{ .Values.adminApi.port }}
+              protocol: TCP
+            {{- end }}
           {{- end }}
           securityContext:
             {{- toYaml $containerSecurity | nindent 12 }}

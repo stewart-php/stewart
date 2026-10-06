@@ -55,6 +55,9 @@ classes are rewritten inside the image.
 | `persistence.url` | `""` | An external `redis://` URL; empty with `valkey.enabled` uses the chart's Valkey |
 | `persistence.existingSecret`, `.existingSecretKey` | `""`, `url` | Secret holding the URL, when it carries a password |
 | `control.existingSecret`, `.existingSecretKey` | `""`, `token` | Secret with the control token; name one when rendering with `helm template`, or the generated token changes on every render |
+| `adminApi.enabled` | `false` | Start the HTTP admin API (`http.admin`) that lists, pauses and resumes apps |
+| `adminApi.host`, `.port` | `127.0.0.1`, `8081` | Where it binds; loopback is reachable through `kubectl port-forward`, `0.0.0.0` from other pods |
+| `adminApi.existingSecret`, `.existingSecretKey` | `""`, `token` | Secret with the admin bearer token; name one when rendering with `helm template`, or the generated token changes on every render |
 | `config` | `{}` | `stewart.yaml` content; when set it replaces the project's file |
 | `logLevel`, `logFormat` | `info`, `json` | |
 | `workers` | `0` | Worker processes; `0` is min(4, CPUs), and a CPU limit counts |
@@ -77,4 +80,13 @@ kubectl logs -f deployment/home-stewart
 kubectl exec deployment/home-stewart -- stewart status
 kubectl exec deployment/home-stewart -- stewart app:pause porch   # app:resume to undo, app:reset to let config decide; kept across restarts with persistence.url
 kubectl rollout restart deployment/home-stewart   # git mode: deploy the latest commit of code.git.ref
+```
+
+With `adminApi.enabled`, the same pause commands work over HTTP:
+
+```bash
+kubectl port-forward deployment/home-stewart 8081:8081 &
+TOKEN=$(kubectl get secret home-stewart -o jsonpath='{.data.admin-token}' | base64 -d)
+curl -H "Authorization: Bearer $TOKEN" localhost:8081/api/apps
+curl -X POST -H "Authorization: Bearer $TOKEN" localhost:8081/api/apps/porch/pause   # resume, reset
 ```

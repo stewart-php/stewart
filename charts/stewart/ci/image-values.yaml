@@ -12,3 +12,5 @@ config:
       options:
         watch: sun.sun
 workers: 2
+adminApi:
+  enabled: true

@@ -38,7 +38,7 @@ use Stewart\Runtime\Broker\ControlPlane;
 use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\EventFireProxy;
 use Stewart\Runtime\Broker\EventRouter;
-use Stewart\Runtime\Broker\Http\ProbeListener;
+use Stewart\Runtime\Broker\Http\Collection\HttpListenerCollection;
 use Stewart\Runtime\Broker\LoopErrorLogger;
 use Stewart\Runtime\Broker\ManifestCheck;
 use Stewart\Runtime\Broker\Message\AppFailedHandler;
@@ -88,7 +88,7 @@ use Stewart\Runtime\Tests\Fixtures\Broker\BootedBroker;
 use Stewart\Runtime\Tests\Fixtures\Broker\BrokerKernelFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerSpawner;
-use Stewart\Runtime\Tests\Fixtures\Broker\Http\RecordingProbeListener;
+use Stewart\Runtime\Tests\Fixtures\Broker\Http\RecordingHttpListener;
 use Stewart\Runtime\Tests\Fixtures\Broker\ReceivedEventFire;
 use Stewart\Runtime\Tests\Fixtures\Broker\RecordingControlPlane;
 use Stewart\Runtime\Tests\Fixtures\Broker\UnversionedManifest;
@@ -148,7 +148,7 @@ final class BrokerLifecycleTest extends TestCase
 
     private ?RecordingControlPlane $control = null;
 
-    private ?RecordingProbeListener $probes = null;
+    private ?RecordingHttpListener $httpListener = null;
 
     private RecordingLogger $logger;
 
@@ -579,21 +579,21 @@ final class BrokerLifecycleTest extends TestCase
         self::assertTrue($control->stopped);
     }
 
-    public function testProbeListenerRunsForTheWholeRun(): void
+    public function testHttpListenerRunsForTheWholeRun(): void
     {
-        $probes = new RecordingProbeListener();
-        $this->probes = $probes;
+        $listener = new RecordingHttpListener();
+        $this->httpListener = $listener;
         $this->broker = $this->createBroker();
         $this->startBroker();
 
-        self::assertTrue($probes->started);
-        self::assertFalse($probes->stopped);
+        self::assertTrue($listener->started);
+        self::assertFalse($listener->stopped);
 
         $this->broker->run->stop('test');
         $this->running?->await();
         $this->running = null;
 
-        self::assertTrue($probes->stopped);
+        self::assertTrue($listener->stopped);
     }
 
     public function testStrayFailedFutureIsLoggedAndRunGoesOn(): void
@@ -788,8 +788,8 @@ final class BrokerLifecycleTest extends TestCase
             $overrides = $overrides->withService(ControlPlane::class, $this->control);
         }
 
-        if ($this->probes !== null) {
-            $overrides = $overrides->withService(ProbeListener::class, $this->probes);
+        if ($this->httpListener !== null) {
+            $overrides = $overrides->withService(HttpListenerCollection::class, HttpListenerCollection::fromListeners([$this->httpListener]));
         }
 
         return BrokerKernelFixture::boot(

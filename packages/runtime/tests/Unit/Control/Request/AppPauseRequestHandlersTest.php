@@ -13,6 +13,7 @@ use Stewart\Contracts\Exception\IdentifierError;
 use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
+use Stewart\Runtime\Broker\AppPauseOutcomeMessages;
 use Stewart\Runtime\Broker\AppPauseOverrideCodec;
 use Stewart\Runtime\Broker\AppPauseOverrideStore;
 use Stewart\Runtime\Broker\AppPauseRegistry;
@@ -65,9 +66,10 @@ final class AppPauseRequestHandlersTest extends TestCase
             $clock,
             new RecordingLogger(),
         );
-        $this->pause = new PauseAppRequestHandler($service);
-        $this->resume = new ResumeAppRequestHandler($service);
-        $this->reset = new ResetAppRequestHandler($service);
+        $messages = new AppPauseOutcomeMessages();
+        $this->pause = new PauseAppRequestHandler($service, $messages);
+        $this->resume = new ResumeAppRequestHandler($service, $messages);
+        $this->reset = new ResetAppRequestHandler($service, $messages);
     }
 
     public function testPauseIsReportedAsChangedOnce(): void

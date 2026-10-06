@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Broker;
 
+use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Broker\Collection\AppRunningTotalsCollection;
@@ -81,6 +82,11 @@ final class AppMetrics
     public function listRunningTotals(): AppRunningTotalsCollection
     {
         return AppRunningTotalsCollection::fromTotals($this->runningTotals);
+    }
+
+    public function findAppRunningTotals(AppId $appId): ?AppRunningTotals
+    {
+        return $this->runningTotals[$appId->value] ?? null;
     }
 
     private function findOrCreateRunningTotals(WorkerId $workerId, ResourceScope $scope): AppRunningTotals

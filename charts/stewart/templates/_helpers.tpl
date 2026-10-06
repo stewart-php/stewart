@@ -69,6 +69,16 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 {{- end }}
 
+{{- define "stewart.adminTokenSource" -}}
+{{- if .Values.adminApi.enabled -}}
+{{- if .Values.adminApi.existingSecret -}}
+{{ .Values.adminApi.existingSecret }}/{{ .Values.adminApi.existingSecretKey }}
+{{- else -}}
+{{ include "stewart.fullname" . }}/admin-token
+{{- end -}}
+{{- end -}}
+{{- end }}
+
 {{- define "stewart.probe" -}}
 {{- if eq .root.Values.probes.mode "http" -}}
 httpGet:

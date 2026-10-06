@@ -21,6 +21,7 @@ enum ConfigurationError: string implements ExceptionReason
     case HomeAssistantMissing = 'home_assistant_missing';
     case PlaceholderUnset = 'placeholder_unset';
     case ControlTokenMissing = 'control_token_missing';
+    case AdminTokenMissing = 'admin_token_missing';
     case WorkerIndexOutOfRange = 'worker_index_out_of_range';
     case AppNameMismatch = 'app_name_mismatch';
     case AppUnknown = 'app_unknown';
@@ -50,6 +51,7 @@ enum ConfigurationError: string implements ExceptionReason
             self::HomeAssistantMissing => 'home_assistant is not configured. Set STEWART_HOME_ASSISTANT__URL and STEWART_HOME_ASSISTANT__TOKEN.',
             self::PlaceholderUnset => '{setting} refers to ${{variable}}, which is not set. Set it or add a default: ${{variable}:-value}.',
             self::ControlTokenMissing => 'control.token is required while control.listen is set; set STEWART_CONTROL__TOKEN or set control.listen to "off".',
+            self::AdminTokenMissing => 'http.admin.token is required while http.admin.listen is set; set STEWART_HTTP__ADMIN__TOKEN or set http.admin.listen to "off".',
             self::WorkerIndexOutOfRange => 'App "{appId}" is pinned to worker {worker}, but the highest worker index is {highestIndex}.',
             self::AppNameMismatch => 'stewart.yaml configures app "{appId}", but the automation ID is "{automationId}".',
             self::AppUnknown => 'stewart.yaml configures app "{appId}", but no automation has that ID.',

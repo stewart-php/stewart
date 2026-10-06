@@ -68,6 +68,11 @@ final class AppRunningTotals
         return $scope->isShared() ? $scope->wireValue() . '#' . $workerId->value : $scope->wireValue();
     }
 
+    public function isSharedScope(): bool
+    {
+        return $this->appId === null;
+    }
+
     public function recordActivityReport(AppActivityReport $report, ?AppActivityReport $previous, Instant $at): void
     {
         $this->state = $report->state;

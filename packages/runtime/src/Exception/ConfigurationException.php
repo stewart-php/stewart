@@ -80,6 +80,11 @@ final class ConfigurationException extends StewartException
         return self::createForReason(ConfigurationError::ControlTokenMissing);
     }
 
+    public static function adminTokenMissing(): self
+    {
+        return self::createForReason(ConfigurationError::AdminTokenMissing);
+    }
+
     public static function workerIndexOutOfRange(AppId $appId, int $worker, int $workers): self
     {
         return self::createForReason(

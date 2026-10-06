@@ -11,7 +11,8 @@ use Stewart\Runtime\Config\HttpListenAddress;
 use Stewart\Runtime\Health\ProbeReport;
 use Stewart\Runtime\Health\ProbeReportCodec;
 use Stewart\Runtime\Health\ProbeStatus;
-use Stewart\Runtime\Http\HttpProbeServer;
+use Stewart\Runtime\Http\AmpHttpListener;
+use Stewart\Runtime\Http\HttpListenerRole;
 use Stewart\Runtime\Http\ProbeRequestHandler;
 use Stewart\Runtime\Tests\Fixtures\Health\StubProbeReporter;
 use Stewart\Testing\Logging\RecordingLogger;
@@ -20,15 +21,15 @@ use function Amp\ByteStream\buffer;
 use function Amp\Socket\connect;
 use function Amp\Socket\listen;
 
-#[CoversClass(HttpProbeServer::class)]
+#[CoversClass(AmpHttpListener::class)]
 #[CoversClass(ProbeRequestHandler::class)]
-final class HttpProbeServerTest extends TestCase
+final class AmpHttpListenerTest extends TestCase
 {
     private StubProbeReporter $reporter;
 
     private RecordingLogger $logger;
 
-    private HttpProbeServer $server;
+    private AmpHttpListener $server;
 
     /** @var int<0, 65535> */
     private int $port;
@@ -39,9 +40,10 @@ final class HttpProbeServerTest extends TestCase
         $this->logger = new RecordingLogger();
         $this->port = self::findFreePort();
         $codec = new ProbeReportCodec(ProbeReportCodec::createProbeReportWireMapper());
-        $this->server = new HttpProbeServer(
+        $this->server = new AmpHttpListener(
             new HttpListenAddress('127.0.0.1', $this->port),
             new ProbeRequestHandler($this->reporter, $codec, $this->logger),
+            HttpListenerRole::Probe,
             $this->logger,
         );
         $this->server->start();
