@@ -164,7 +164,7 @@ final class BrokerLifecycleTest extends TestCase
         $this->session = new FakeHaSession();
         $this->spawner = new FakeWorkerSpawner();
         $this->logger = new RecordingLogger();
-        $this->pausedApps = new AppPauseRegistry();
+        $this->pausedApps = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]));
         $this->broker = $this->createBroker();
     }
 

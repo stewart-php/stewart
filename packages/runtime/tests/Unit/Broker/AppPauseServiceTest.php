@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Tests\Unit\Broker;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\App\AppId;
+use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\AppPauseService;
 use Stewart\Runtime\Broker\WorkerSlotRegistry;
@@ -18,7 +19,7 @@ final class AppPauseServiceTest extends TestCase
     public function testChangesAreLoggedOnce(): void
     {
         $logger = new RecordingLogger();
-        $registry = new AppPauseRegistry();
+        $registry = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]));
         $service = new AppPauseService($registry, new WorkerSlotRegistry(), $logger);
 
         $service->pauseApp(new AppId('demo'));

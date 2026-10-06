@@ -6,11 +6,20 @@ namespace Stewart\Runtime\Broker;
 
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
+use Stewart\Runtime\App\AppDefinition;
+use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 
 final class AppPauseRegistry
 {
     /** @var array<string, AppId> */
     private array $pausedApps = [];
+
+    public function __construct(AppDefinitionCollection $enabledApps)
+    {
+        foreach ($enabledApps->filter(static fn(AppDefinition $app): bool => $app->startsPaused) as $app) {
+            $this->pausedApps[$app->id->value] = $app->id;
+        }
+    }
 
     public function pauseApp(AppId $appId): bool
     {

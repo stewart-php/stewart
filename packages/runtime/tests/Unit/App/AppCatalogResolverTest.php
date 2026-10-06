@@ -40,6 +40,14 @@ final class AppCatalogResolverTest extends TestCase
         self::assertNotNull($demo);
         self::assertSame([], $demo->options);
         self::assertNull($demo->worker);
+        self::assertFalse($demo->startsPaused);
+    }
+
+    public function testPausedOverrideStartsAppPaused(): void
+    {
+        $catalog = new AppCatalogResolver()->resolveCatalog(self::createDiscoveryResult('demo'), AppOverrideCollection::keyedByAppId([self::createOverride('demo', paused: true)]), workers: 0);
+
+        self::assertTrue($catalog->enabled->find(new AppId('demo'))?->startsPaused);
     }
 
     public function testOverrideTunesItsApp(): void
@@ -152,8 +160,8 @@ final class AppCatalogResolverTest extends TestCase
     }
 
     /** @param array<string, mixed> $options */
-    private static function createOverride(string $id, bool $enabled = true, ?int $worker = null, array $options = []): AppOverride
+    private static function createOverride(string $id, bool $enabled = true, ?int $worker = null, array $options = [], bool $paused = false): AppOverride
     {
-        return new AppOverride(new AppId($id), $enabled, $worker, $options);
+        return new AppOverride(new AppId($id), $enabled, $paused, $worker, $options);
     }
 }

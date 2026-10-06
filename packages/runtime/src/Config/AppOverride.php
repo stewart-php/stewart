@@ -14,6 +14,7 @@ final readonly class AppOverride
     public function __construct(
         public AppId $id,
         public bool $enabled,
+        public bool $paused,
         public ?int $worker,
         public array $options,
     ) {}
@@ -27,6 +28,7 @@ final readonly class AppOverride
         return new self(
             id: new AppId($id),
             enabled: $app->readBool('enabled'),
+            paused: $app->readBool('paused'),
             worker: $app->findInt('worker'),
             options: $app->readMap('options'),
         );
