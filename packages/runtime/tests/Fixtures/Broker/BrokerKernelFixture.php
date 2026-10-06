@@ -11,7 +11,6 @@ use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\BrokerRun;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\DaemonStartTime;
-use Stewart\Runtime\Broker\DisabledControlPlane;
 use Stewart\Runtime\Broker\HaSession;
 use Stewart\Runtime\Broker\Mqtt\DisabledMqttLink;
 use Stewart\Runtime\Broker\Mqtt\MqttLink;
@@ -48,7 +47,7 @@ final class BrokerKernelFixture
         $config = ConfigFixture::createStewartConfig([...self::QUIET_YAML, ...$yaml]);
         $startTime = new DaemonStartTime($pools->clock);
         $mqttLink ??= new DisabledMqttLink($logger);
-        $run = new BrokerRun($pools->pool, $pools->watchdog, $session, new DisabledControlPlane(), $mqttLink, $logger, $config->shutdownGrace, $startTime);
+        $run = new BrokerRun($pools->pool, $pools->watchdog, $session, $mqttLink, $logger, $config->shutdownGrace, $startTime);
         $services = new SyntheticServices()
             ->withService(HaSession::class, $session)
             ->withService(SystemClock::class, $pools->clock)

@@ -548,6 +548,20 @@ final class BrokerLifecycleTest extends TestCase
         self::assertSame([], $this->spawner->spawned);
     }
 
+    public function testControlPlaneStopsAfterTheRunEnds(): void
+    {
+        $control = new RecordingControlPlane();
+        $this->control = $control;
+        $this->broker = $this->createBroker();
+        $this->startBroker();
+
+        $this->broker->run->stop('test');
+        $this->running?->await();
+        $this->running = null;
+
+        self::assertTrue($control->stopped);
+    }
+
     public function testStrayFailedFutureIsLoggedAndRunGoesOn(): void
     {
         $this->startBroker();
