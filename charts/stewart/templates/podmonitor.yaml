@@ -1,0 +1,39 @@
+{{- with .Values.adminApi.podMonitor }}
+{{- if .enabled }}
+{{- if not $.Values.adminApi.enabled }}
+{{- fail "adminApi.podMonitor.enabled needs adminApi.enabled: /metrics is served by the admin API" }}
+{{- end }}
+{{- $host := $.Values.adminApi.host }}
+{{- if or (hasPrefix "127." $host) (has $host (list "localhost" "::1")) }}
+{{- fail (printf "adminApi.host is %s, which Prometheus cannot reach; set adminApi.host: 0.0.0.0, which also opens the pause API to the pod network behind its token" $host) }}
+{{- end }}
+{{- $token := splitList "/" (include "stewart.adminTokenSource" $) }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ include "stewart.fullname" $ }}
+  labels:
+    {{- include "stewart.labels" $ | nindent 4 }}
+    {{- with .labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "stewart.selectorLabels" $ | nindent 6 }}
+  podMetricsEndpoints:
+    - port: admin
+      path: /metrics
+      {{- with .interval }}
+      interval: {{ . }}
+      {{- end }}
+      {{- with .scrapeTimeout }}
+      scrapeTimeout: {{ . }}
+      {{- end }}
+      authorization:
+        type: Bearer
+        credentials:
+          name: {{ first $token }}
+          key: {{ last $token }}
+{{- end }}
+{{- end }}

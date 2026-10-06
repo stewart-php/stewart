@@ -12,7 +12,8 @@ RUN     := $(DC) run --rm --no-deps php
 RUN_APP := $(DC) run --rm php
 RUNTIME_IMAGE ?= stewart-runtime:local
 HELM    := $(DOCKER) run --rm -v "$(CURDIR):/work" -w /work -u "$(UID):$(GID)" -e HOME=/tmp alpine/helm:4.3.0
-KUBECONFORM := $(DOCKER) run --rm -i ghcr.io/yannh/kubeconform:v0.8.0
+KUBECONFORM := $(DOCKER) run --rm -i ghcr.io/yannh/kubeconform:v0.8.0 -schema-location default \
+	-schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
 
 .PHONY: help
 help: ## Show this help
