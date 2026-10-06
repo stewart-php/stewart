@@ -103,6 +103,18 @@ final class AppMetricsTest extends TestCase
         self::assertNull($echo->pause);
     }
 
+    public function testResumeOverConfigPauseIsReported(): void
+    {
+        $this->pausedApps = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class, startsPaused: true)]), new DaemonStartTime(new VirtualClock()));
+        $this->pausedApps->recordOverride(new AppPauseOverride(new AppId('demo'), false, Instant::fromEpochMicroseconds(5), AppPauseSource::Control));
+
+        [$demo, $echo] = $this->listAppStatuses();
+
+        self::assertNull($demo->pause);
+        self::assertEquals(new AppPauseStatus(Instant::fromEpochMicroseconds(5), AppPauseSource::Control), $demo->configPauseOverride);
+        self::assertNull($echo->configPauseOverride);
+    }
+
     public function testLatencyOnABoundCountsInThatBucket(): void
     {
         $this->metrics->recordFinishedCall(new WorkerId(0), ResourceScope::forApp(new AppId('demo')), ServiceCallOutcome::Succeeded, Duration::milliseconds(5));

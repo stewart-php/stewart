@@ -84,6 +84,13 @@ final class AppPauseRegistry
         return null;
     }
 
+    public function findConfigPauseOverride(AppId $appId): ?AppPauseOverride
+    {
+        $override = $this->findOverride($appId);
+
+        return $override !== null && !$override->paused && isset($this->configPausedAppIds[$appId->value]) ? $override : null;
+    }
+
     public function listPausedAppIds(): AppIdCollection
     {
         return AppIdCollection::fromIds([

@@ -65,6 +65,7 @@
                     "since": "2026-09-26T10:58:00.000000Z",
                     "source": "control"
                 },
+                "config_pause_override": null,
                 "reported_at": "2026-09-26T10:59:55.000000Z",
                 "subscriptions": 2,
                 "schedules": 1,

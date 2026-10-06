@@ -69,6 +69,20 @@ final class AppPauseRegistryTest extends TestCase
         self::assertSame(['demo'], $registry->listPausedAppIds()->toStrings());
     }
 
+    public function testOnlyResumeOverConfigPauseIsConfigOverride(): void
+    {
+        $configPaused = self::createRegistry(startsPaused: true);
+        $resume = self::createOverride('demo', false);
+        $configPaused->recordOverride($resume);
+        $notConfigPaused = self::createRegistry();
+        $notConfigPaused->recordOverride(self::createOverride('demo', false));
+
+        self::assertSame($resume, $configPaused->findConfigPauseOverride(new AppId('demo')));
+        self::assertNull($notConfigPaused->findConfigPauseOverride(new AppId('demo')));
+        $configPaused->recordOverride(self::createOverride('demo', true));
+        self::assertNull($configPaused->findConfigPauseOverride(new AppId('demo')));
+    }
+
     public function testForgottenOverrideFallsBackToConfig(): void
     {
         $registry = self::createRegistry(startsPaused: true);

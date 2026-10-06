@@ -107,11 +107,15 @@ final readonly class StatusRenderer
     {
         $state = $app->state === null ? 'unknown' : $app->state->value;
 
-        if ($app->pause === null) {
-            return $state;
+        if ($app->pause !== null) {
+            return \sprintf('%s (paused by %s %s)', $state, $app->pause->source->value, $this->formatter->formatTimeAgo($app->pause->since, $now));
         }
 
-        return \sprintf('%s (paused by %s %s)', $state, $app->pause->source->value, $this->formatter->formatTimeAgo($app->pause->since, $now));
+        if ($app->configPauseOverride !== null) {
+            return \sprintf('%s (resumed by %s %s over config)', $state, $app->configPauseOverride->source->value, $this->formatter->formatTimeAgo($app->configPauseOverride->since, $now));
+        }
+
+        return $state;
     }
 
     private function renderFailureTable(OutputInterface $output, RuntimeSnapshot $snapshot, Instant $now): void

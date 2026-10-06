@@ -17,6 +17,7 @@ final readonly class AppStatus
         public ?int $workerId,
         public ?AppState $state,
         public ?AppPauseStatus $pause,
+        public ?AppPauseStatus $configPauseOverride,
         public ?Instant $reportedAt,
         public int $subscriptions,
         public int $schedules,
