@@ -39,6 +39,8 @@ final class AppPauseRequestHandlersTest extends TestCase
 {
     use AssertsReason;
 
+    private const string NOT_SAVED = 'Not saved: persistence.url is not set, so this lasts until the daemon restarts.';
+
     private AppPauseRegistry $registry;
 
     private PauseAppRequestHandler $pause;
@@ -64,8 +66,8 @@ final class AppPauseRequestHandlersTest extends TestCase
 
     public function testPauseIsReportedAsChangedOnce(): void
     {
-        self::assertEquals(new CommandResult(true, 'App demo paused.'), $this->pause->answerRequest(new PauseAppRequest('demo')));
-        self::assertEquals(new CommandResult(false, 'App demo was already paused.'), $this->pause->answerRequest(new PauseAppRequest('demo')));
+        self::assertEquals(new CommandResult(true, 'App demo paused.', self::NOT_SAVED), $this->pause->answerRequest(new PauseAppRequest('demo')));
+        self::assertEquals(new CommandResult(false, 'App demo was already paused.', self::NOT_SAVED), $this->pause->answerRequest(new PauseAppRequest('demo')));
         self::assertSame(AppPauseSource::Control, $this->registry->findPause(new AppId('demo'))?->source);
     }
 
@@ -73,8 +75,8 @@ final class AppPauseRequestHandlersTest extends TestCase
     {
         $this->pause->answerRequest(new PauseAppRequest('demo'));
 
-        self::assertEquals(new CommandResult(true, 'App demo resumed.'), $this->resume->answerRequest(new ResumeAppRequest('demo')));
-        self::assertEquals(new CommandResult(false, 'App demo was not paused.'), $this->resume->answerRequest(new ResumeAppRequest('demo')));
+        self::assertEquals(new CommandResult(true, 'App demo resumed.', self::NOT_SAVED), $this->resume->answerRequest(new ResumeAppRequest('demo')));
+        self::assertEquals(new CommandResult(false, 'App demo was not paused.', self::NOT_SAVED), $this->resume->answerRequest(new ResumeAppRequest('demo')));
     }
 
     public function testUnknownAppIsRefused(): void

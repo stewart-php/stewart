@@ -17,6 +17,7 @@ use Stewart\Runtime\Control\Protocol\Frame\CommandResult;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
 
@@ -47,6 +48,10 @@ abstract class AppRequestCommand extends ControlCommand
         }
 
         $output->writeln($result->message);
+
+        if ($result->warning !== null) {
+            ($output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output)->writeln('<comment>' . $result->warning . '</comment>');
+        }
 
         return Command::SUCCESS;
     }

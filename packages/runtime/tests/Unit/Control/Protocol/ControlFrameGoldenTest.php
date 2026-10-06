@@ -38,7 +38,7 @@ final class ControlFrameGoldenTest extends TestCase
             new Welcome(ControlProtocol::VERSION),
             new Rejected('the token does not match control.token'),
             new SnapshotFrame(new StubSnapshotSource()->takeSnapshot()),
-            new CommandResult(true, 'App porch paused.'),
+            new CommandResult(true, 'App porch paused.', 'Not saved: persistence.url is not set, so this lasts until the daemon restarts.'),
             new RequestFailed('unknown', 'No automation with ID "ghost".'),
             new Bye('request answered'),
         ] as $frame) {

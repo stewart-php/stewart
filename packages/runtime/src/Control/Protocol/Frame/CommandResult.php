@@ -9,5 +9,6 @@ final readonly class CommandResult implements ServerFrame
     public function __construct(
         public bool $changed,
         public string $message,
+        public ?string $warning,
     ) {}
 }
