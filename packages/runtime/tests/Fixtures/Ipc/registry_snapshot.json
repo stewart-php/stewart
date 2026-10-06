@@ -1,0 +1,66 @@
+{
+    "t": "registry_snapshot",
+    "m": {
+        "registry": {
+            "areas": [
+                {
+                    "area_id": "kitchen",
+                    "name": "Kitchen",
+                    "floor_id": "ground",
+                    "aliases": [
+                        "Cooking"
+                    ],
+                    "label_ids": [
+                        "night"
+                    ],
+                    "icon": "mdi:stove"
+                }
+            ],
+            "floors": [
+                {
+                    "floor_id": "ground",
+                    "name": "Ground",
+                    "level": 0,
+                    "aliases": [],
+                    "icon": null
+                }
+            ],
+            "labels": [
+                {
+                    "label_id": "night",
+                    "name": "Night",
+                    "color": "indigo",
+                    "icon": null,
+                    "description": null
+                }
+            ],
+            "devices": [
+                {
+                    "device_id": "bulb",
+                    "name": "Bulb",
+                    "name_by_user": "Ceiling",
+                    "area_id": "kitchen",
+                    "label_ids": [],
+                    "manufacturer": "Signify",
+                    "model": "LCA001",
+                    "disabled_by": null
+                }
+            ],
+            "entities": [
+                {
+                    "entity_id": "light.ceiling",
+                    "device_id": "bulb",
+                    "area_id": null,
+                    "label_ids": [
+                        "night"
+                    ],
+                    "name": "Ceiling",
+                    "entity_category": null,
+                    "hidden_by": null,
+                    "disabled_by": null
+                }
+            ]
+        },
+        "revision": 3
+    }
+}
