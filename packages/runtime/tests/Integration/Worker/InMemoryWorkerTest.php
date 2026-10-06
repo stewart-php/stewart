@@ -25,8 +25,10 @@ use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Broker\BootedBroker;
 use Stewart\Runtime\Tests\Fixtures\Broker\BrokerKernelFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
+use Stewart\Runtime\Tests\Fixtures\Broker\ReceivedEventFire;
 use Stewart\Runtime\Tests\Fixtures\Broker\WorkerPoolFixture;
 use Stewart\Runtime\Tests\Fixtures\Protocol\HistoryReporter;
+use Stewart\Runtime\Tests\Fixtures\Protocol\InitFirer;
 use Stewart\Runtime\Tests\Fixtures\Protocol\SerialHandler;
 use Stewart\Runtime\Tests\Fixtures\Worker\InMemoryWorkerSpawner;
 use Stewart\Testing\Logging\RecordedLog;
@@ -99,6 +101,27 @@ final class InMemoryWorkerTest extends TestCase
         $record = $logger->records->findFirstWhere(static fn(RecordedLog $log): bool => $log->message === 'History read');
         self::assertSame(2, $record?->context['changes'] ?? null);
         self::assertTrue($record->context['was_on'] ?? null);
+
+        $broker->run->stop('test done');
+        $running->await(new TimeoutCancellation(self::WAIT_SECONDS));
+    }
+
+    public function testAppFiresEventThroughBroker(): void
+    {
+        $session = new FakeHaSession();
+        $logger = new RecordingLogger();
+        $pools = WorkerPoolFixture::createWorkerPool(new InMemoryWorkerSpawner(IpcCodec::createForWorkerBootstrap()), logger: $logger, outboxLimits: new OutboxLimits(100, 256));
+        $broker = self::createBroker($session, $pools, $logger, new AppId('init-firer'), InitFirer::class);
+
+        $fired = $logger->waitForMessage('Initialize fire finished');
+
+        /** @var Future<null> $running */
+        $running = async($broker->lifecycle->run(...));
+
+        $fired->await(new TimeoutCancellation(self::WAIT_SECONDS));
+        $record = $logger->records->findFirstWhere(static fn(RecordedLog $log): bool => $log->message === 'Initialize fire finished');
+        self::assertSame(FakeHaSession::FIRE_CONTEXT_PREFIX . '1', $record?->context['context'] ?? null);
+        self::assertEquals([new ReceivedEventFire(InitFirer::EVENT_TYPE, ['button' => 'front'])], $session->receivedEventFires);
 
         $broker->run->stop('test done');
         $running->await(new TimeoutCancellation(self::WAIT_SECONDS));

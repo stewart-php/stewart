@@ -47,6 +47,12 @@ final class EventPayloadTest extends TestCase
         yield 'longer than 64 characters' => [str_repeat('a', 65)];
     }
 
+    public function testListDataIsRejected(): void
+    {
+        /** @phpstan-ignore argument.type (a list is the invalid input under test) */
+        $this->assertThrowsReason(EventFireError::DataNotKeyed, static fn() => new EventPayload('doorbell_pressed', ['front', 'back']));
+    }
+
     public function testObjectIsRejectedWithItsPath(): void
     {
         $e = $this->assertThrowsReason(EventFireError::DataInvalid, static fn() => new EventPayload('doorbell_pressed', ['meta' => [1, new stdClass()]]));

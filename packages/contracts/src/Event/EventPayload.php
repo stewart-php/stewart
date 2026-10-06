@@ -22,6 +22,10 @@ final readonly class EventPayload
             throw EventFireException::typeInvalid($eventType);
         }
 
+        if ($data !== [] && array_is_list($data)) {
+            throw EventFireException::dataNotKeyed($eventType);
+        }
+
         foreach ($data as $key => $value) {
             $this->assertTransportable($value, (string) $key);
         }

@@ -13,6 +13,7 @@ use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Worker\AppActivityCounters;
 use Stewart\Runtime\Worker\ConnectionStatus;
 use Stewart\Runtime\Worker\Context\DispatchStreams;
+use Stewart\Runtime\Worker\Context\EventFirer;
 use Stewart\Runtime\Worker\Context\HistoryReader;
 use Stewart\Runtime\Worker\Context\ServiceCaller;
 use Stewart\Runtime\Worker\Context\TopicPublisher;
@@ -41,6 +42,7 @@ final class WorkerHaContextFixture
             $connection,
             new ServiceCaller($transport, $pending, $connection, $timers, $callTimeout ?? Duration::seconds(1)),
             new HistoryReader($transport, $pending, $connection, $timers, $timers->clock, $callTimeout ?? Duration::seconds(1)),
+            new EventFirer($transport, $pending, $connection, $timers, $callTimeout ?? Duration::seconds(1)),
             new DispatchStreams($dispatcher ?? RecordingDispatchListener::createDispatcher('w0', 10), $timers),
             new TopicPublisher($transport, $timers->clock, $activityCounters),
             $scope,

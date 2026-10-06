@@ -18,11 +18,14 @@ use Stewart\Contracts\Mqtt\MqttMessage;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
+use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Topic\TopicEvent;
 use Stewart\Runtime\Ipc\Message\AppFailed;
 use Stewart\Runtime\Ipc\Message\EventFired;
+use Stewart\Runtime\Ipc\Message\EventFireRequest;
+use Stewart\Runtime\Ipc\Message\EventFireResult;
 use Stewart\Runtime\Ipc\Message\HaConnectionLost;
 use Stewart\Runtime\Ipc\Message\LogRecord;
 use Stewart\Runtime\Ipc\Message\MqttMessageDelivery;
@@ -51,6 +54,7 @@ use Stewart\Runtime\Tests\Fixtures\Protocol\DisposeCaller;
 use Stewart\Runtime\Tests\Fixtures\Protocol\EdgeWatcher;
 use Stewart\Runtime\Tests\Fixtures\Protocol\EventLogger;
 use Stewart\Runtime\Tests\Fixtures\Protocol\InitCaller;
+use Stewart\Runtime\Tests\Fixtures\Protocol\InitFirer;
 use Stewart\Runtime\Tests\Fixtures\Protocol\InMemoryStoreBackendOpener;
 use Stewart\Runtime\Tests\Fixtures\Protocol\MqttRelay;
 use Stewart\Runtime\Tests\Fixtures\Protocol\OperatorChain;
@@ -340,6 +344,23 @@ final class WorkerProtocolTest extends TestCase
 
         self::assertSame('light.turn_on', $log->context['service'] ?? null);
         self::assertSame(['init-caller'], $ready->appIds->collection->toStrings());
+
+        $this->shutDown('done');
+    }
+
+    public function testEventFireInsideInitializeGetsItsContext(): void
+    {
+        $this->start([new WorkerApp(id: new AppId('init-firer'), class: InitFirer::class, options: [])], callTimeout: 5.0);
+
+        $request = $this->receiveUntil(EventFireRequest::class);
+        $this->send(new EventFireResult($request->correlationId, new EventContext('fire-1')));
+
+        $log = $this->receiveUntil(LogRecord::class, static fn(LogRecord $log): bool => $log->message === 'Initialize fire finished');
+
+        self::assertSame(InitFirer::EVENT_TYPE, $request->eventType);
+        self::assertSame(['button' => 'front'], $request->data);
+        self::assertSame('init-firer', $request->scope->wireValue());
+        self::assertSame('fire-1', $log->context['context'] ?? null);
 
         $this->shutDown('done');
     }

@@ -23,6 +23,11 @@ final class EventFireException extends StewartException
         return self::createForReason(EventFireError::DataInvalid, ['eventType' => $eventType, 'path' => $path, 'actualType' => $actualType]);
     }
 
+    public static function dataNotKeyed(string $eventType): self
+    {
+        return self::createForReason(EventFireError::DataNotKeyed, ['eventType' => $eventType]);
+    }
+
     public static function rejected(string $eventType, string $detail, ?string $errorCode = null, ?Throwable $previous = null): self
     {
         return self::createForReasonWithAppendedText(

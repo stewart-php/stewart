@@ -18,7 +18,7 @@ enum ServiceCallOutcome: string
     public static function failedWith(ServiceCallError|EventFireError $reason): self
     {
         return match ($reason) {
-            ServiceCallError::Rejected, EventFireError::Rejected, EventFireError::TypeInvalid, EventFireError::DataInvalid => self::Rejected,
+            ServiceCallError::Rejected, EventFireError::Rejected, EventFireError::TypeInvalid, EventFireError::DataInvalid, EventFireError::DataNotKeyed => self::Rejected,
             ServiceCallError::Unreachable, EventFireError::Unreachable => self::Unreachable,
             ServiceCallError::TimedOut, EventFireError::TimedOut => self::TimedOut,
             ServiceCallError::Overloaded, EventFireError::Overloaded => self::Refused,

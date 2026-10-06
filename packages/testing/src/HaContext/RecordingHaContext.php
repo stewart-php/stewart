@@ -10,9 +10,12 @@ use Stewart\Contracts\Connection\ConnectionEvent;
 use Stewart\Contracts\Connection\ConnectionLost;
 use Stewart\Contracts\Entity\Entity;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Event\EventOrigin;
+use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\Event\EventTypeSelector;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\EventStream;
+use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exception\StateException;
@@ -40,6 +43,7 @@ use Stewart\Contracts\Trigger\Collection\TriggerSpecCollection;
 use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Contracts\Trigger\TriggerSpec;
+use Stewart\Testing\HaContext\Collection\RecordedEventFireCollection;
 use Stewart\Testing\HaContext\Collection\RecordedHistoryQueryCollection;
 use Stewart\Testing\HaContext\Collection\RecordedServiceCallCollection;
 use Stewart\Testing\Stream\PushSource;
@@ -56,6 +60,8 @@ final class RecordingHaContext implements HaContext
 
     public private(set) TopicEventCollection $published;
 
+    public private(set) RecordedEventFireCollection $firedEvents;
+
     public private(set) RecordedHistoryQueryCollection $historyQueries;
 
     private EntityStateCollection $states;
@@ -67,6 +73,11 @@ final class RecordingHaContext implements HaContext
 
     /** @var array<string, array<string, mixed>|ServiceCallException> */
     private array $serviceOutcomes = [];
+
+    /** @var array<string, EventFireException> */
+    private array $eventFireFailures = [];
+
+    private int $issuedContextCount = 0;
 
     /** @var PushSource<StateChange> */
     private readonly PushSource $stateChanges;
@@ -94,6 +105,7 @@ final class RecordingHaContext implements HaContext
         $this->clock = $timers->clock;
         $this->calls = RecordedServiceCallCollection::empty();
         $this->published = TopicEventCollection::empty();
+        $this->firedEvents = RecordedEventFireCollection::empty();
         $this->states = EntityStateCollection::empty();
         $this->historyQueries = RecordedHistoryQueryCollection::empty();
         $this->history = new SeededHistory();
@@ -141,6 +153,13 @@ final class RecordingHaContext implements HaContext
     public function stubServiceFailure(string $domain, string $service, ServiceCallException $failure): self
     {
         $this->serviceOutcomes[$domain . '.' . $service] = $failure;
+
+        return $this;
+    }
+
+    public function stubEventFireFailure(string $eventType, EventFireException $failure): self
+    {
+        $this->eventFireFailures[$eventType] = $failure;
 
         return $this;
     }
@@ -270,6 +289,26 @@ final class RecordingHaContext implements HaContext
         return $this->callStubbedService($domain, $service, $data, $target, true);
     }
 
+    public function fireEvent(string $eventType, array $data = []): EventContext
+    {
+        $payload = new EventPayload($eventType, $data);
+
+        if (!$this->connected) {
+            throw EventFireException::unreachable($eventType, 'Home Assistant is disconnected');
+        }
+
+        $fire = new RecordedEventFire($payload->eventType, $payload->data, $this->issueContext());
+        $this->firedEvents = $this->firedEvents->withRecordedFire($fire);
+
+        if (isset($this->eventFireFailures[$eventType])) {
+            throw $this->eventFireFailures[$eventType];
+        }
+
+        $this->events->push(new HaEvent($fire->eventType, $fire->data, EventOrigin::Remote, $this->clock->getNow(), $fire->context));
+
+        return $fire->context;
+    }
+
     public function publish(string $topic, bool|int|float|string|array|null $payload = null): void
     {
         $event = new TopicEvent($topic, new TopicPayload($payload)->value, new AppId('test'), $this->clock->getNow());
@@ -302,22 +341,27 @@ final class RecordingHaContext implements HaContext
      */
     private function callStubbedService(string $domain, string $service, array $data, ?ServiceTargetSource $target, bool $returnsResponse): ServiceResponse
     {
+        if (!$this->connected) {
+            throw ServiceCallException::unreachable($domain, $service, 'Home Assistant is disconnected');
+        }
+
         $call = new RecordedServiceCall(
             $domain,
             $service,
             ServiceFields::fromFieldsDroppingNulls($data)->fields,
             $target?->toServiceTarget(),
             $returnsResponse,
-            new EventContext(self::CONTEXT_ID_PREFIX . ($this->calls->count() + 1), userId: self::STEWART_USER_ID),
+            $this->issueContext(),
         );
-
-        if (!$this->connected) {
-            throw ServiceCallException::unreachable($domain, $service, 'Home Assistant is disconnected');
-        }
 
         $this->calls = $this->calls->withRecordedCall($call);
         $outcome = $this->serviceOutcomes[$call->getServiceName()] ?? [];
 
         return $outcome instanceof ServiceCallException ? throw $outcome : new ServiceResponse($domain, $service, $outcome, $call->context);
+    }
+
+    private function issueContext(): EventContext
+    {
+        return new EventContext(self::CONTEXT_ID_PREFIX . ++$this->issuedContextCount, userId: self::STEWART_USER_ID);
     }
 }
