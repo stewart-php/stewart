@@ -46,6 +46,12 @@ final class RegistryCache implements Registry
         return true;
     }
 
+    public function replaceAsNextRevision(IndexedRegistry $registry): void
+    {
+        $this->registry = $registry;
+        ++$this->revision;
+    }
+
     public function getRevision(): int
     {
         return $this->revision;

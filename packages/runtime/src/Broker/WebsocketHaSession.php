@@ -27,6 +27,8 @@ use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Broker\Trigger\HaTriggerLink;
 use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
+use Stewart\Runtime\Ipc\Wire\RegistryFragment;
+use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\StateCache;
 use Throwable;
 
@@ -55,12 +57,15 @@ final class WebsocketHaSession implements HaSession
 
     private ?StateCacheSnapshot $stateCacheSnapshot = null;
 
+    private ?RegistryCacheSnapshot $registryCacheSnapshot = null;
+
     public function __construct(
         private readonly HaClient $client,
         private readonly Reconnector $reconnector,
         private readonly LoggerInterface $logger,
         private readonly Clock $clock,
         private readonly StateCache $states,
+        private readonly RegistryCache $registry,
         private readonly HaTriggerLink $triggers,
     ) {
         $this->stop = new DeferredCancellation();
@@ -112,6 +117,17 @@ final class WebsocketHaSession implements HaSession
         }
 
         return $this->stateCacheSnapshot;
+    }
+
+    public function snapshotRegistry(): RegistryCacheSnapshot
+    {
+        $revision = $this->registry->getRevision();
+
+        if ($this->registryCacheSnapshot?->revision !== $revision) {
+            $this->registryCacheSnapshot = new RegistryCacheSnapshot(RegistryFragment::fromRegistry($this->registry->getIndexedRegistry()), $revision);
+        }
+
+        return $this->registryCacheSnapshot;
     }
 
     public function countEntities(): int
@@ -188,9 +204,11 @@ final class WebsocketHaSession implements HaSession
             $this->siteSettings ??= $this->client->getSiteSettings();
             $this->haUserId ??= $this->client->getCurrentUserId();
             $states = $this->client->getStates();
+            $registry = $this->client->getRegistry();
             $this->client->flushEvents();
 
             $this->establishing = false;
+            $this->registry->replaceAsNextRevision($registry);
             $this->states->replaceAll($states);
 
             foreach ($this->pendingChanges as $change) {

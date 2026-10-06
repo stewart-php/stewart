@@ -14,6 +14,7 @@ use Stewart\Contracts\History\Collection\HistoricalStateCollection;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
+use Stewart\Contracts\Registry\IndexedRegistry;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
@@ -24,8 +25,10 @@ use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Broker\HaSession;
 use Stewart\Runtime\Broker\HaSessionListener;
+use Stewart\Runtime\Broker\RegistryCacheSnapshot;
 use Stewart\Runtime\Broker\StateCacheSnapshot;
 use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
+use Stewart\Runtime\Ipc\Wire\RegistryFragment;
 use Stewart\Testing\Async\Latch;
 use Throwable;
 
@@ -47,6 +50,10 @@ final class FakeHaSession implements HaSession
     public ?Closure $duringOpen = null;
 
     public int $revision = 1;
+
+    public IndexedRegistry $registry;
+
+    public int $registryRevision = 1;
 
     public int $calls = 0;
 
@@ -81,6 +88,11 @@ final class FakeHaSession implements HaSession
 
     /** @var DeferredFuture<null>|null */
     private ?DeferredFuture $nextCall = null;
+
+    public function __construct()
+    {
+        $this->registry = IndexedRegistry::empty();
+    }
 
     public static function createOpened(): self
     {
@@ -127,6 +139,11 @@ final class FakeHaSession implements HaSession
     public function snapshotStateCache(): StateCacheSnapshot
     {
         return new StateCacheSnapshot(EntityStatesFragment::fromCollection(EntityStateCollection::keyedByEntityId([new EntityState(new EntityId('light.hall'), 'on')])), $this->revision);
+    }
+
+    public function snapshotRegistry(): RegistryCacheSnapshot
+    {
+        return new RegistryCacheSnapshot(RegistryFragment::fromRegistry($this->registry), $this->registryRevision);
     }
 
     public function countEntities(): int

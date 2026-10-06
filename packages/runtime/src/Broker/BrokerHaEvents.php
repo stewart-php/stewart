@@ -58,6 +58,8 @@ final readonly class BrokerHaEvents implements HaSessionListener
         $snapshot = $this->session->snapshotStateCache();
         $this->connection->markRestored($outage);
 
+        // The registry goes first so a resynced change is matched against the current areas and labels.
+        $this->slots->broadcast($this->session->snapshotRegistry()->toRegistrySnapshot());
         $this->slots->broadcast(new StateResynced($snapshot->states, $snapshot->revision, $outage));
     }
 

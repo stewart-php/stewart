@@ -59,6 +59,7 @@ use Stewart\Runtime\Ipc\Message\EventFireRequest;
 use Stewart\Runtime\Ipc\Message\EventFireResult;
 use Stewart\Runtime\Ipc\Message\HaConnectionLost;
 use Stewart\Runtime\Ipc\Message\Pong;
+use Stewart\Runtime\Ipc\Message\RegistrySnapshot;
 use Stewart\Runtime\Ipc\Message\ServiceCallFailed;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
@@ -207,8 +208,9 @@ final class BrokerLifecycleTest extends TestCase
             self::assertSame($workerId, $sent[0]->workerId->value);
             self::assertSame('Europe/Budapest', $sent[0]->timeZone);
             self::assertEquals(Duration::seconds(35), $sent[0]->settings->callTimeout);
-            self::assertInstanceOf(StateSnapshot::class, $sent[1]);
-            self::assertSame(1, $sent[1]->revision);
+            self::assertInstanceOf(RegistrySnapshot::class, $sent[1]);
+            self::assertInstanceOf(StateSnapshot::class, $sent[2]);
+            self::assertSame(1, $sent[2]->revision);
         }
     }
 
@@ -328,13 +330,14 @@ final class BrokerLifecycleTest extends TestCase
 
         $this->session->listener?->connectionLost('gone', Instant::fromEpochMicroseconds(0));
         $spawning->open();
-        EventLoopTicks::settleUntil(fn(): bool => isset($this->spawner->spawned[0]) && \count($this->listEverythingSentToWorker(0)) >= 3);
+        EventLoopTicks::settleUntil(fn(): bool => isset($this->spawner->spawned[0]) && \count($this->listEverythingSentToWorker(0)) >= 4);
 
         $sent = $this->listEverythingSentToWorker(0);
 
         self::assertInstanceOf(Bootstrap::class, $sent[0]);
-        self::assertInstanceOf(StateSnapshot::class, $sent[1]);
-        self::assertInstanceOf(HaConnectionLost::class, $sent[2]);
+        self::assertInstanceOf(RegistrySnapshot::class, $sent[1]);
+        self::assertInstanceOf(StateSnapshot::class, $sent[2]);
+        self::assertInstanceOf(HaConnectionLost::class, $sent[3]);
     }
 
     public function testWorkerRespawnedDuringOutageIsResynced(): void
@@ -349,14 +352,16 @@ final class BrokerLifecycleTest extends TestCase
         self::assertCount(2, $this->spawner->spawned[0], 'A restart does not wait for Home Assistant.');
 
         $this->session->listener?->reconnected(Duration::seconds(1));
-        EventLoopTicks::settleUntil(fn(): bool => \count($this->listEverythingSentToWorker(0)) >= 4);
+        EventLoopTicks::settleUntil(fn(): bool => \count($this->listEverythingSentToWorker(0)) >= 6);
 
         $sent = $this->listEverythingSentToWorker(0);
 
         self::assertInstanceOf(Bootstrap::class, $sent[0]);
-        self::assertInstanceOf(StateSnapshot::class, $sent[1]);
-        self::assertInstanceOf(HaConnectionLost::class, $sent[2]);
-        self::assertInstanceOf(StateResynced::class, $sent[3]);
+        self::assertInstanceOf(RegistrySnapshot::class, $sent[1]);
+        self::assertInstanceOf(StateSnapshot::class, $sent[2]);
+        self::assertInstanceOf(HaConnectionLost::class, $sent[3]);
+        self::assertInstanceOf(RegistrySnapshot::class, $sent[4], 'The registry precedes the resync.');
+        self::assertInstanceOf(StateResynced::class, $sent[5]);
     }
 
     public function testServiceCallFailsWhileDisconnected(): void
