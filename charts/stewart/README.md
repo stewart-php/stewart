@@ -71,6 +71,6 @@ classes are rewritten inside the image.
 ```bash
 kubectl logs -f deployment/home-stewart
 kubectl exec deployment/home-stewart -- stewart status
-kubectl exec deployment/home-stewart -- stewart app:pause porch   # app:resume to undo; lost on restart
+kubectl exec deployment/home-stewart -- stewart app:pause porch   # app:resume to undo, app:reset to let config decide; kept across restarts with persistence.url
 kubectl rollout restart deployment/home-stewart   # git mode: deploy the latest commit of code.git.ref
 ```
