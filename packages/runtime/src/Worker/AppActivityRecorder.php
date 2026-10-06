@@ -37,6 +37,11 @@ final readonly class AppActivityRecorder implements DispatchListener, ScheduleLi
         $this->activityCounters->findOrCreateActivityForScope($subscription->scope)->recordDeliveredEvent();
     }
 
+    public function eventSuppressed(RegisteredSubscription $subscription): void
+    {
+        $this->activityCounters->findOrCreateActivityForScope($subscription->scope)->recordSuppressedWork();
+    }
+
     public function eventDropped(RegisteredSubscription $subscription, int $droppedSoFar): void
     {
         $this->activityCounters->findOrCreateActivityForScope($subscription->scope)->recordDroppedEvent();
@@ -55,6 +60,11 @@ final readonly class AppActivityRecorder implements DispatchListener, ScheduleLi
     public function scheduledRunStarted(ScheduleOrigin $origin, ScheduledRun $run): void
     {
         $this->activityCounters->findOrCreateActivityForScope($origin->scope)->recordScheduleRun();
+    }
+
+    public function scheduledRunSuppressed(ScheduleOrigin $origin, ScheduledRun $run): void
+    {
+        $this->activityCounters->findOrCreateActivityForScope($origin->scope)->recordSuppressedWork();
     }
 
     public function scheduledRunFailed(ScheduleOrigin $origin, Throwable $error): void

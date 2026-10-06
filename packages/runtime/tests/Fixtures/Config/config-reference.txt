@@ -211,6 +211,9 @@ apps:
     -
         enabled:              true
 
+        # Start loaded but paused: no events or schedule runs reach it until resumed.
+        paused:               false
+
         # Pin to a worker index. Omit to have it distributed round-robin.
         worker:               null
 

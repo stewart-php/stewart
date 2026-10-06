@@ -25,6 +25,7 @@ use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppMetrics;
+use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\AppRunningTotals;
 use Stewart\Runtime\Broker\BrokerHaEvents;
 use Stewart\Runtime\Broker\BrokerLifecycle;
@@ -150,6 +151,8 @@ final class BrokerLifecycleTest extends TestCase
 
     private AppMetrics $metrics;
 
+    private AppPauseRegistry $pausedApps;
+
     private ?WorkerSlotRegistry $slots = null;
 
     /** @var Future<mixed>|null */
@@ -161,6 +164,7 @@ final class BrokerLifecycleTest extends TestCase
         $this->session = new FakeHaSession();
         $this->spawner = new FakeWorkerSpawner();
         $this->logger = new RecordingLogger();
+        $this->pausedApps = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]));
         $this->broker = $this->createBroker();
     }
 
@@ -178,6 +182,22 @@ final class BrokerLifecycleTest extends TestCase
 
         self::assertInstanceOf(Bootstrap::class, $sent[0]);
         self::assertSame(['demo', 'echo', 'retired'], $sent[0]->knownAppIds->collection->toStrings());
+        self::assertSame([], $sent[0]->pausedAppIds->collection->toStrings());
+    }
+
+    public function testRestartedWorkerIsBootstrappedPaused(): void
+    {
+        $this->supervision = ConfigFixture::createSupervisionConfig(['restart_initial_delay' => '1ms', 'restart_max_delay' => '1ms', 'ping_interval' => 'off']);
+        $this->broker = $this->createBroker();
+        $this->startBroker();
+
+        $this->pausedApps->pauseApp(new AppId('demo'));
+        $this->crashAndRestart(0);
+
+        $sent = $this->listEverythingSentToWorker(0);
+
+        self::assertInstanceOf(Bootstrap::class, $sent[0]);
+        self::assertSame(['demo'], $sent[0]->pausedAppIds->collection->toStrings());
     }
 
     public function testUnreachableStoreStopsBeforeConnecting(): void
@@ -558,7 +578,7 @@ final class BrokerLifecycleTest extends TestCase
 
         $worker = $this->spawner->getLatestProcess(1)->channel;
         $worker->deliver(new ServiceCallRequest(new CorrelationId('1:0'), self::createScope('echo'), 'light', 'turn_on', [], null, false));
-        $worker->deliver(new Pong(1, Duration::zero(), 0, [new AppActivityReport(self::createScope('echo'), AppState::Running, 2, 1, 5, 0, 1, 0, 1)]));
+        $worker->deliver(new Pong(1, Duration::zero(), 0, [new AppActivityReport(self::createScope('echo'), AppState::Running, 2, 1, 5, 0, 1, 0, 1, 0)]));
         $worker->deliver(new AppFailed(self::createScope('echo'), AppFailurePhase::Handler, 'RuntimeException', 'boom', '', null, 1, null));
         EventLoopTicks::settleUntil(fn(): bool => $this->readAppStatusAt(1)->lastFailure !== null && \count($this->readAppStatusAt(1)->serviceCalls) === 1);
 
@@ -581,11 +601,11 @@ final class BrokerLifecycleTest extends TestCase
         $this->broker = $this->createBroker();
         $this->startBroker();
 
-        $this->spawner->getLatestProcess(0)->channel->deliver(new Pong(1, Duration::zero(), 0, [new AppActivityReport(self::createScope('demo'), AppState::Running, 0, 0, 4, 0, 0, 0, 0)]));
-        $this->spawner->getLatestProcess(0)->channel->deliver(new Pong(2, Duration::zero(), 0, [new AppActivityReport(self::createScope('demo'), AppState::Running, 0, 0, 6, 0, 0, 0, 0)]));
+        $this->spawner->getLatestProcess(0)->channel->deliver(new Pong(1, Duration::zero(), 0, [new AppActivityReport(self::createScope('demo'), AppState::Running, 0, 0, 4, 0, 0, 0, 0, 0)]));
+        $this->spawner->getLatestProcess(0)->channel->deliver(new Pong(2, Duration::zero(), 0, [new AppActivityReport(self::createScope('demo'), AppState::Running, 0, 0, 6, 0, 0, 0, 0, 0)]));
         EventLoopTicks::settleUntil(fn(): bool => $this->readAppStatusAt(0)->counters->delivered === 6);
         $this->crashAndRestart(0);
-        $this->spawner->getLatestProcess(0)->channel->deliver(new Pong(3, Duration::zero(), 0, [new AppActivityReport(self::createScope('demo'), AppState::Running, 0, 0, 3, 0, 0, 0, 0)]));
+        $this->spawner->getLatestProcess(0)->channel->deliver(new Pong(3, Duration::zero(), 0, [new AppActivityReport(self::createScope('demo'), AppState::Running, 0, 0, 3, 0, 0, 0, 0, 0)]));
         EventLoopTicks::settleUntil(fn(): bool => $this->readAppStatusAt(0)->counters->delivered === 9);
 
         self::assertSame(9, $this->readAppStatusAt(0)->counters->delivered, 'Six before the crash, three since.');
@@ -615,7 +635,7 @@ final class BrokerLifecycleTest extends TestCase
 
     private function readAppStatusAt(int $index): AppStatus
     {
-        return new AppStatusBuilder($this->metrics)->buildAppStatuses()->listValues()[$index];
+        return new AppStatusBuilder($this->metrics, $this->pausedApps)->buildAppStatuses()->listValues()[$index];
     }
 
     private function startBroker(): void
@@ -700,7 +720,8 @@ final class BrokerLifecycleTest extends TestCase
             ->withService(SupervisionConfig::class, $supervision)
             ->withService(SubscriptionRegistry::class, $this->registry)
             ->withService(ConnectionTracker::class, $this->connection)
-            ->withService(AppMetrics::class, $this->metrics);
+            ->withService(AppMetrics::class, $this->metrics)
+            ->withService(AppPauseRegistry::class, $this->pausedApps);
         $yaml = ['shutdown_grace' => '10ms'];
 
         if ($this->store !== null) {

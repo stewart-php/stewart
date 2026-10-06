@@ -61,6 +61,7 @@
                 "class": "App\\Porch",
                 "worker_id": 0,
                 "state": "running",
+                "paused": true,
                 "reported_at": "2026-09-26T10:59:55.000000Z",
                 "subscriptions": 2,
                 "schedules": 1,
@@ -69,7 +70,8 @@
                     "subscription_dropped": 1,
                     "schedule_runs": 4,
                     "publishes": 2,
-                    "failures": 1
+                    "failures": 1,
+                    "suppressed": 6
                 },
                 "service_calls": [
                     {

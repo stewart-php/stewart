@@ -29,6 +29,28 @@ final readonly class AppResources
         $this->schedules->startEntriesOf($scope);
     }
 
+    public function pauseScope(ResourceScope $scope): void
+    {
+        if ($this->scopes->isClosed($scope)) {
+            return;
+        }
+
+        $this->scopes->pauseScope($scope);
+        $this->dispatcher->pauseQueuesOf($scope);
+        $this->schedules->pauseEntriesOf($scope);
+    }
+
+    public function resumeScope(ResourceScope $scope): void
+    {
+        if ($this->scopes->isClosed($scope)) {
+            return;
+        }
+
+        $this->scopes->resumeScope($scope);
+        $this->dispatcher->resumeQueuesOf($scope);
+        $this->schedules->resumeEntriesOf($scope);
+    }
+
     public function releaseScope(ResourceScope $scope): void
     {
         $this->scopes->releaseScope($scope);

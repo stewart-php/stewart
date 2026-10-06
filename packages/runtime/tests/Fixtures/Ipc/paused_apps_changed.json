@@ -1,0 +1,6 @@
+{
+    "t": "paused_apps_changed",
+    "m": {
+        "paused_app_ids": ["demo", "echo"]
+    }
+}

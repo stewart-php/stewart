@@ -17,5 +17,6 @@ final readonly class AppDefinition
         public string $class,
         public array $options = [],
         public ?int $worker = null,
+        public bool $startsPaused = false,
     ) {}
 }

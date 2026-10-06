@@ -9,6 +9,8 @@ use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Runtime\App\Collection\AppDefinitionCollection;
+use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\BrokerSubscription;
 use Stewart\Runtime\Broker\ConnectionTracker;
 use Stewart\Runtime\Broker\DaemonStartTime;
@@ -70,7 +72,7 @@ final class SnapshotAssemblerTest extends TestCase
 
         $handle = $this->broker->getLiveHandleOf(0);
         $this->broker->serviceCalls->forward($handle, new ServiceCallRequest(new CorrelationId('0:1'), ResourceScope::forApp(new AppId('demo')), 'light', 'turn_on', [], null, false));
-        $this->broker->metrics->recordActivityReports($handle, new Pong(1, Duration::microseconds(300), 5_000_000, [new AppActivityReport(ResourceScope::forApp(new AppId('demo')), AppState::Running, 1, 0, 3, 0, 0, 0, 0)]));
+        $this->broker->metrics->recordActivityReports($handle, new Pong(1, Duration::microseconds(300), 5_000_000, [new AppActivityReport(ResourceScope::forApp(new AppId('demo')), AppState::Running, 1, 0, 3, 0, 0, 0, 0, 0)]));
         $this->broker->crashWorker(1);
 
         $snapshot = $this->createAssembler()->assembleSnapshot();
@@ -118,7 +120,7 @@ final class SnapshotAssemblerTest extends TestCase
             workerStatuses: new WorkerStatusBuilder($broker->pools->slots, $broker->pools->watchdog, $broker->pools->restartPolicy, $broker->callSlots),
             registrationInfos: new RegistrationInfoBuilder($broker->registry),
             storeHealth: new StoreHealthBuilder($broker->pools->slots, storeConfigured: false),
-            appStatuses: new AppStatusBuilder($broker->metrics),
+            appStatuses: new AppStatusBuilder($broker->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]))),
             connection: $connection,
             clock: $broker->timers->clock,
         );

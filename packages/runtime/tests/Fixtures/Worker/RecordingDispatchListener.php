@@ -29,6 +29,9 @@ final class RecordingDispatchListener implements DispatchListener, SubscriptionL
     /** @var list<string> */
     public array $delivered = [];
 
+    /** @var list<string> */
+    public array $suppressed = [];
+
     public static function createDispatcher(string $processId, int $queueLimit, RegistryCache $registry = new RegistryCache(), ScopeLifecycle $scopes = new ScopeLifecycle()): LocalDispatcher
     {
         $listener = new self();
@@ -59,5 +62,10 @@ final class RecordingDispatchListener implements DispatchListener, SubscriptionL
     public function eventDelivered(RegisteredSubscription $subscription): void
     {
         $this->delivered[] = $subscription->id->value;
+    }
+
+    public function eventSuppressed(RegisteredSubscription $subscription): void
+    {
+        $this->suppressed[] = $subscription->id->value;
     }
 }

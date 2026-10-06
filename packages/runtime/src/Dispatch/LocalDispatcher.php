@@ -82,7 +82,13 @@ final class LocalDispatcher
             $entityFilter,
         );
 
-        $queue = new SubscriptionQueue($subscription, $this->subscriptionQueueLimit, $this->listener, $this->scopes->isLive($scope));
+        $queue = new SubscriptionQueue(
+            $subscription,
+            $this->subscriptionQueueLimit,
+            $this->listener,
+            $this->scopes->isLive($scope),
+            $this->scopes->isPaused($scope),
+        );
 
         $this->queues[$subscription->id->value] = $queue;
         $subscriptionScope->deliverVia($queue->emit(...));
@@ -111,6 +117,20 @@ final class LocalDispatcher
     {
         foreach ($this->listQueuesOf($scope) as $queue) {
             $queue->activate();
+        }
+    }
+
+    public function pauseQueuesOf(ResourceScope $scope): void
+    {
+        foreach ($this->listQueuesOf($scope) as $queue) {
+            $queue->pause();
+        }
+    }
+
+    public function resumeQueuesOf(ResourceScope $scope): void
+    {
+        foreach ($this->listQueuesOf($scope) as $queue) {
+            $queue->resume();
         }
     }
 

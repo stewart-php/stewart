@@ -59,6 +59,7 @@ final readonly class AppCatalogResolver
                 class: $app->class,
                 options: $override === null ? [] : $override->options,
                 worker: $worker,
+                startsPaused: $override !== null && $override->paused,
             );
         }
 

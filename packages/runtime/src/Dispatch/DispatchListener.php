@@ -13,4 +13,6 @@ interface DispatchListener
     public function eventDropped(RegisteredSubscription $subscription, int $droppedSoFar): void;
 
     public function eventDelivered(RegisteredSubscription $subscription): void;
+
+    public function eventSuppressed(RegisteredSubscription $subscription): void;
 }

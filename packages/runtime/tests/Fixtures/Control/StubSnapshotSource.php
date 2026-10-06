@@ -64,10 +64,11 @@ final class StubSnapshotSource
                 class: 'App\\Porch',
                 workerId: 0,
                 state: AppState::Running,
+                paused: true,
                 reportedAt: Instant::fromIso('2026-09-26T10:59:55Z'),
                 subscriptions: 2,
                 schedules: 1,
-                counters: new AppCounters(delivered: 30, subscriptionDropped: 1, scheduleRuns: 4, publishes: 2, failures: 1),
+                counters: new AppCounters(delivered: 30, subscriptionDropped: 1, scheduleRuns: 4, publishes: 2, failures: 1, suppressed: 6),
                 serviceCalls: [
                     new ServiceCallStats(ServiceCallOutcome::Succeeded, 10, new LatencyHistogram([5, 10, 25], [2, 9, 10], 10, Duration::milliseconds(80))),
                     new ServiceCallStats(ServiceCallOutcome::Refused, 2, null),

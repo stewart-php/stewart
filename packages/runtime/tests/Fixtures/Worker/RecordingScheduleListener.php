@@ -23,6 +23,9 @@ final class RecordingScheduleListener implements ScheduleListener
     /** @var list<ScheduleOrigin> */
     public array $started = [];
 
+    /** @var list<ScheduleOrigin> */
+    public array $suppressed = [];
+
     public function scheduledRunFailed(ScheduleOrigin $origin, Throwable $error): void
     {
         $this->failedRuns[] = $origin;
@@ -32,6 +35,11 @@ final class RecordingScheduleListener implements ScheduleListener
     public function scheduledRunStarted(ScheduleOrigin $origin, ScheduledRun $run): void
     {
         $this->started[] = $origin;
+    }
+
+    public function scheduledRunSuppressed(ScheduleOrigin $origin, ScheduledRun $run): void
+    {
+        $this->suppressed[] = $origin;
     }
 
     public function scheduleFailed(ScheduleOrigin $origin, Throwable $error): void

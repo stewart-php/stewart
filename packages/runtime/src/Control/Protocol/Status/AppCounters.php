@@ -12,5 +12,6 @@ final readonly class AppCounters
         public int $scheduleRuns = 0,
         public int $publishes = 0,
         public int $failures = 0,
+        public int $suppressed = 0,
     ) {}
 }

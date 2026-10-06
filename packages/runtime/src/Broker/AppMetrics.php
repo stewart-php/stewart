@@ -33,7 +33,7 @@ final class AppMetrics
 
         foreach ($workerSlots as $slot) {
             foreach ($slot->apps as $app) {
-                $this->runningTotals[$app->id->value] = AppRunningTotals::forApp($app->id->value, $app->class, $slot->workerId);
+                $this->runningTotals[$app->id->value] = AppRunningTotals::forApp($app->id, $app->class, $slot->workerId);
             }
         }
     }

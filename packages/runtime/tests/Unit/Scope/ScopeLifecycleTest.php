@@ -72,6 +72,25 @@ final class ScopeLifecycleTest extends TestCase
         self::assertFalse($this->scopes->isLive(self::createScope('demo')));
     }
 
+    public function testPausedScopeIsPausedUntilResumed(): void
+    {
+        $this->scopes->pauseScope(self::createScope('demo'));
+
+        self::assertTrue($this->scopes->isPaused(self::createScope('demo')));
+        self::assertFalse($this->scopes->isPaused(self::createScope('other')));
+
+        $this->scopes->resumeScope(self::createScope('demo'));
+
+        self::assertFalse($this->scopes->isPaused(self::createScope('demo')));
+    }
+
+    public function testSharedScopeCannotBePaused(): void
+    {
+        $this->expectException(LogicException::class);
+
+        $this->scopes->pauseScope(ResourceScope::shared());
+    }
+
     private static function createScope(string $appId): ResourceScope
     {
         return ResourceScope::forApp(new AppId($appId));

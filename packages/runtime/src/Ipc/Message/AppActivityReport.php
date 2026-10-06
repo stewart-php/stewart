@@ -19,5 +19,6 @@ final readonly class AppActivityReport
         public int $scheduleRuns,
         public int $publishes,
         public int $failures,
+        public int $suppressed,
     ) {}
 }

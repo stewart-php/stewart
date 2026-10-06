@@ -79,6 +79,7 @@ final class ConfigLoaderTest extends TestCase
             apps:
               demo:
                 worker: 0
+                paused: true
                 options:
                   watch: light.hall
               echo:
@@ -91,8 +92,8 @@ final class ConfigLoaderTest extends TestCase
         self::assertSame('from-the-file', $config->requireHomeAssistant()->token);
         self::assertEquals(
             AppOverrideCollection::keyedByAppId([
-                new AppOverride(new AppId('demo'), enabled: true, worker: 0, options: ['watch' => 'light.hall']),
-                new AppOverride(new AppId('echo'), enabled: false, worker: null, options: []),
+                new AppOverride(new AppId('demo'), enabled: true, paused: true, worker: 0, options: ['watch' => 'light.hall']),
+                new AppOverride(new AppId('echo'), enabled: false, paused: false, worker: null, options: []),
             ]),
             $config->apps,
         );

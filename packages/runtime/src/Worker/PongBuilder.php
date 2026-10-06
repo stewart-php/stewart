@@ -62,6 +62,7 @@ final readonly class PongBuilder
             scheduleRuns: $activity->scheduleRuns,
             publishes: $activity->publishes,
             failures: $activity->failures,
+            suppressed: $activity->suppressed,
         );
     }
 }
