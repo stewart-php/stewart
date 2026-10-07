@@ -271,4 +271,36 @@ final class RecordingHaContextTest extends TestCase
     {
         $this->assertThrowsReason(EventFireError::DataInvalid, static fn() => new RecordingHaContext()->fireEvent('doorbell_pressed', ['ratio' => \NAN]));
     }
+
+    public function testSeedStateStampsChangeWithClockNow(): void
+    {
+        $ha = new RecordingHaContext()->seedState('light.hall', 'on');
+
+        self::assertEquals($ha->clock->getNow(), $ha->requireState('light.hall')->lastChangedAt);
+    }
+
+    public function testSeedStateKeepsGivenChangeInstant(): void
+    {
+        $ha = new RecordingHaContext();
+        $changedAt = $ha->clock->getNow()->minus(Duration::hours(2));
+        $ha->seedState('light.hall', 'on', changedAt: $changedAt);
+
+        self::assertTrue($ha->requireState('light.hall')->hasHeldFor(Duration::hours(2), $ha->clock));
+    }
+
+    public function testPushStateStampsChangeOnNewValueOnly(): void
+    {
+        $ha = new RecordingHaContext()->seedState('light.hall', 'on');
+        $seededAt = $ha->clock->getNow();
+
+        $ha->timers->delay(Duration::minutes(5));
+        $ha->pushState('light.hall', 'on', ['brightness' => 80]);
+
+        self::assertEquals($seededAt, $ha->requireState('light.hall')->lastChangedAt);
+        self::assertEquals($ha->clock->getNow(), $ha->requireState('light.hall')->lastUpdatedAt);
+
+        $ha->pushState('light.hall', 'off');
+
+        self::assertEquals($ha->clock->getNow(), $ha->requireState('light.hall')->lastChangedAt);
+    }
 }

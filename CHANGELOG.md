@@ -9,6 +9,8 @@ section says what to change.
 ### Added
 
 - `Clock::isWithin('22:00', '06:00')` tells whether local time is in a daily window, crossing midnight
+- `EntityState::hasHeldFor()` and `getHeldDuration()` measure how long a state has kept its value
+- `RecordingHaContext::seedState()` takes a `changedAt:` instant, and `pushState()` stamps `lastChangedAt` on a new value
 
 ## [0.6.0] - 2026-10-06
 
