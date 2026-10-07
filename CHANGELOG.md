@@ -14,11 +14,14 @@ section says what to change.
   and `hysteresis:`
 - `startWithCurrentState()` on state streams emits the matching entities' current states first, marked
   `StateChange::isInitial()`
+- `Scheduler::runAtEntityTime()` runs at the time an `input_datetime` or timestamp sensor holds and re-arms when it
+  changes
 - `RecordingHaContext::seedState()` takes a `changedAt:` instant, and `pushState()` stamps `lastChangedAt` on a new value
 
 ### Upgrading
 
 1. Code that constructs `StateChanges` or `StateTransitions` directly now passes a `CurrentStateReader`.
+2. Custom `Clock` and `Scheduler` implementations add `isWithin()` and `runAtEntityTime()`.
 
 ## [0.6.0] - 2026-10-06
 

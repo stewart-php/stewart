@@ -6,6 +6,8 @@ namespace Stewart\Contracts\Schedule;
 
 use Closure;
 use DateTimeImmutable;
+use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Exception\ScheduleException;
 use Stewart\Contracts\Sun\SunEvent;
 use Stewart\Contracts\Time\Duration;
@@ -33,6 +35,12 @@ interface Scheduler
 
     /** @param Closure(ScheduledRun): void $handler */
     public function runAt(DateTimeImmutable $moment, Closure $handler): ScheduledTask;
+
+    /**
+     * @param Closure(ScheduledRun): void $handler
+     * @throws ScheduleException|IdentifierException
+     */
+    public function runAtEntityTime(EntityId|string $entity, Closure $handler): ScheduledTask;
 
     /**
      * @param Closure(ScheduledRun): void $handler

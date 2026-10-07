@@ -23,6 +23,7 @@ use Stewart\Runtime\Schedule\ScheduleRegistry;
 use Stewart\Runtime\Schedule\TriggerFactory;
 use Stewart\Runtime\Schedule\WorkerScheduler;
 use Stewart\Runtime\Scope\ScopeLifecycle;
+use Stewart\Runtime\Tests\Fixtures\Schedule\WorkerSchedulerFixture;
 use Stewart\Runtime\Tests\Fixtures\Worker\InlineHandlerRunner;
 use Stewart\Runtime\Tests\Fixtures\Worker\RecordingScheduleListener;
 use Stewart\Sun\LocatedSunCalendar;
@@ -67,7 +68,7 @@ final class WorkerSchedulerSunTest extends TestCase
             $this->scopes,
         );
         $this->calendar = new LocatedSunCalendar(new GeoLocation(47.4979, 19.0402), $this->timers->clock, new NoaaSolarCalculator());
-        $this->scheduler = new WorkerScheduler($this->registry, $this->calendar, new RecordingLogger(), self::createScope());
+        $this->scheduler = WorkerSchedulerFixture::createWorkerScheduler($this->registry, $this->calendar, new RecordingLogger(), self::createScope());
         $this->runs = [];
     }
 
@@ -132,7 +133,7 @@ final class WorkerSchedulerSunTest extends TestCase
 
     public function testUnknownLocationRefusesSunSchedule(): void
     {
-        $scheduler = new WorkerScheduler($this->registry, new UnlocatedSunCalendar(), new RecordingLogger(), self::createScope());
+        $scheduler = WorkerSchedulerFixture::createWorkerScheduler($this->registry, new UnlocatedSunCalendar(), new RecordingLogger(), self::createScope());
 
         $this->assertThrowsReason(ScheduleError::SunLocationUnknown, fn(): ScheduledTask => $scheduler->runAtSunrise($this->record(...)));
         self::assertSame(0, $this->registry->countFor(self::createScope()));

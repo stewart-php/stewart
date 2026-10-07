@@ -8,11 +8,13 @@ use Closure;
 use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\App\AppId;
+use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Schedule\CalendarSchedule;
 use Stewart\Contracts\Schedule\CronSchedule;
 use Stewart\Contracts\Schedule\DayOfWeek;
 use Stewart\Contracts\Schedule\DelaySchedule;
 use Stewart\Contracts\Schedule\ElapsedSchedule;
+use Stewart\Contracts\Schedule\EntityTime;
 use Stewart\Contracts\Schedule\IntervalSchedule;
 use Stewart\Contracts\Schedule\OneShotSchedule;
 use Stewart\Contracts\Schedule\ScheduledTask;
@@ -31,13 +33,14 @@ final readonly class WorkerScheduler implements Scheduler
     public function __construct(
         private ScheduleRegistry $registry,
         private SunCalendar $sunCalendar,
+        private EntityTimeScheduler $entityTimes,
         private LoggerInterface $logger,
         private ResourceScope $resourceScope,
     ) {}
 
     public function forApp(AppId $appId, LoggerInterface $logger): self
     {
-        return new self($this->registry, $this->sunCalendar, $logger, ResourceScope::forApp($appId));
+        return new self($this->registry, $this->sunCalendar, $this->entityTimes, $logger, ResourceScope::forApp($appId));
     }
 
     public function runEvery(Duration $period, Closure $handler): ScheduledTask
@@ -63,6 +66,14 @@ final readonly class WorkerScheduler implements Scheduler
     public function runAt(DateTimeImmutable $moment, Closure $handler): ScheduledTask
     {
         return $this->armSchedule(OneShotSchedule::fromMoment($moment), $handler);
+    }
+
+    public function runAtEntityTime(EntityId|string $entity, Closure $handler): ScheduledTask
+    {
+        $entityId = EntityId::fromStringOrId($entity);
+        EntityTime::requireSupportedEntity($entityId);
+
+        return $this->entityTimes->armForEntity($this->resourceScope, $this->logger, $entityId, $handler);
     }
 
     public function runAtSunEvent(SunEvent $event, Closure $handler, ?SunOffset $offset = null): ScheduledTask

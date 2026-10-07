@@ -14,9 +14,9 @@ use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Registry\RegistryCache;
-use Stewart\Runtime\Schedule\WorkerScheduler;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Tests\Fixtures\Ipc\NullTransport;
+use Stewart\Runtime\Tests\Fixtures\Schedule\WorkerSchedulerFixture;
 use Stewart\Runtime\Tests\Fixtures\Worker\AppResourcesFixture;
 use Stewart\Runtime\Tests\Fixtures\Worker\WorkerHaContextFixture;
 use Stewart\Runtime\Worker\AppActivityCounters;
@@ -56,7 +56,7 @@ final class AppRuntimeServicesFixture
             logger: $logger,
             clock: $timers->clock,
             deadlines: $timers,
-            scheduler: new WorkerScheduler($resources->schedules, $sunCalendar, $logger, ResourceScope::shared()),
+            scheduler: WorkerSchedulerFixture::createWorkerScheduler($resources->schedules, $sunCalendar, $logger, ResourceScope::shared(), $timers, $stateCache, $resources->dispatcher),
             context: WorkerHaContextFixture::createWorkerHaContext(
                 transport: $transport,
                 scope: ResourceScope::shared(),

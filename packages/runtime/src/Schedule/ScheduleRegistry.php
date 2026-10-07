@@ -33,7 +33,7 @@ final class ScheduleRegistry
     {
         $trigger = $this->triggers->createTriggerFor($schedule);
         $entry = new ScheduleEntry(
-            new ScheduleOrigin($scope, $this->scheduleIdPrefix . ':' . $this->counter++, $trigger->describe()),
+            new ScheduleOrigin($scope, $this->claimTaskId(), $trigger->describe()),
             $trigger,
             $logger,
             $this->context,
@@ -63,6 +63,11 @@ final class ScheduleRegistry
         }
 
         return $entry->task;
+    }
+
+    public function claimTaskId(): string
+    {
+        return $this->scheduleIdPrefix . ':' . $this->counter++;
     }
 
     public function startEntriesOf(ResourceScope $scope): void
