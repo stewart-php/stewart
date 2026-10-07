@@ -16,6 +16,7 @@ use Stewart\Contracts\StateTransitionStream;
 use Stewart\Contracts\Stream\StateChanges;
 use Stewart\Contracts\Stream\StateTransitions;
 use Stewart\Contracts\Stream\WhenChangedToOperator;
+use Stewart\Contracts\Tests\Fixtures\State\FixedStateReader;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Stream\PushSource;
@@ -44,7 +45,7 @@ final class StateTransitionsTest extends TestCase
     {
         $this->timers = new ManualTimers();
         $this->source = new PushSource();
-        $this->stream = new StateChanges($this->source, $this->timers);
+        $this->stream = new StateChanges($this->source, $this->timers, new FixedStateReader());
         $this->received = [];
     }
 

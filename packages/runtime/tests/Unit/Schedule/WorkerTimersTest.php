@@ -12,8 +12,8 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Schedule\ScheduledTimerHandle;
-use Stewart\Runtime\Schedule\WorkerScheduler;
 use Stewart\Runtime\Schedule\WorkerTimers;
+use Stewart\Runtime\Tests\Fixtures\Schedule\WorkerSchedulerFixture;
 use Stewart\Runtime\Tests\Fixtures\Worker\AppResourcesFixture;
 use Stewart\Runtime\Tests\Fixtures\Worker\RecordingScheduleListener;
 use Stewart\Sun\UnlocatedSunCalendar;
@@ -34,7 +34,7 @@ final class WorkerTimersTest extends TestCase
     {
         $this->listener = new RecordingScheduleListener();
         $this->fixture = new AppResourcesFixture(scheduleListener: $this->listener);
-        $this->timers = new WorkerTimers(new WorkerScheduler($this->fixture->schedules, new UnlocatedSunCalendar(), new NullLogger(), self::createScope()));
+        $this->timers = new WorkerTimers(WorkerSchedulerFixture::createWorkerScheduler($this->fixture->schedules, new UnlocatedSunCalendar(), new NullLogger(), self::createScope(), $this->fixture->timers));
         $this->fired = 0;
     }
 

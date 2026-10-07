@@ -14,6 +14,11 @@ final class ScheduleException extends StewartException
         return self::createForReason(ScheduleError::CronInvalid, ['expression' => $expression], $previous);
     }
 
+    public static function entityTimeDomainUnsupported(string $entityId): self
+    {
+        return self::createForReason(ScheduleError::EntityTimeDomainUnsupported, ['entityId' => $entityId]);
+    }
+
     public static function sunLocationUnknown(string $event, Throwable $previous): self
     {
         return self::createForReason(ScheduleError::SunLocationUnknown, ['event' => $event], $previous);
@@ -27,5 +32,10 @@ final class ScheduleException extends StewartException
     public static function timeOfDayOutOfRange(string $unit, int $value, int $highest): self
     {
         return self::createForReason(ScheduleError::TimeOfDayOutOfRange, ['unit' => $unit, 'value' => $value, 'highest' => $highest]);
+    }
+
+    public static function timeWindowEmpty(string $time): self
+    {
+        return self::createForReason(ScheduleError::TimeWindowEmpty, ['time' => $time]);
     }
 }

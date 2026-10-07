@@ -8,6 +8,6 @@ final readonly class StateChanges extends ComposedStateChangeStream
 {
     protected function extendWith(StreamSource $stage): static
     {
-        return new static($stage, $this->timers);
+        return new static($stage, $this->timers, $this->currentStates);
     }
 }

@@ -18,9 +18,19 @@ final readonly class StateChange
         public StateChangeOrigin $origin = StateChangeOrigin::Live,
     ) {}
 
+    public static function fromCurrentState(EntityState $state): self
+    {
+        return new self($state->entityId, $state, $state, origin: StateChangeOrigin::Initial);
+    }
+
     public function isReconstructed(): bool
     {
         return $this->origin === StateChangeOrigin::Resync;
+    }
+
+    public function isInitial(): bool
+    {
+        return $this->origin === StateChangeOrigin::Initial;
     }
 
     public function isNew(): bool

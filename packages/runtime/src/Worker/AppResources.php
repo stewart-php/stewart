@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Worker;
 
 use Stewart\Runtime\Dispatch\LocalDispatcher;
 use Stewart\Runtime\Model\ResourceScope;
+use Stewart\Runtime\Schedule\EntityTimeScheduler;
 use Stewart\Runtime\Schedule\ScheduleRegistry;
 use Stewart\Runtime\Scope\ScopeLifecycle;
 
@@ -15,6 +16,7 @@ final readonly class AppResources
         private ScopeLifecycle $scopes,
         private LocalDispatcher $dispatcher,
         private ScheduleRegistry $schedules,
+        private EntityTimeScheduler $entityTimes,
     ) {}
 
     public function activateScope(ResourceScope $scope): void
@@ -49,11 +51,13 @@ final readonly class AppResources
         $this->scopes->resumeScope($scope);
         $this->dispatcher->resumeQueuesOf($scope);
         $this->schedules->resumeEntriesOf($scope);
+        $this->entityTimes->refreshTasksOf($scope);
     }
 
     public function releaseScope(ResourceScope $scope): void
     {
         $this->scopes->releaseScope($scope);
+        $this->entityTimes->cancelTasksOf($scope);
         $this->dispatcher->cancelSubscriptionsOf($scope);
         $this->schedules->cancelEntriesOf($scope);
     }
@@ -61,6 +65,7 @@ final readonly class AppResources
     public function releaseAll(): void
     {
         $this->scopes->stopAll();
+        $this->entityTimes->cancelAll();
         $this->dispatcher->cancelAll();
         $this->schedules->cancelAll();
     }

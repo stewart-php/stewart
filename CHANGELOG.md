@@ -4,6 +4,25 @@ Every package, the `ghcr.io/stewart-php/runtime` image, the Helm chart and the s
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). On 0.x, a minor release may break; its "Upgrading"
 section says what to change.
 
+## [Unreleased]
+
+### Added
+
+- `Clock::isWithin('22:00', '06:00')` tells whether local time is in a daily window, crossing midnight
+- `EntityState::hasHeldFor()` and `getHeldDuration()` measure how long a state has kept its value
+- `whenAbove()` and `whenBelow()` on state streams fire once per numeric threshold crossing, with `for:`, `attribute:`
+  and `hysteresis:`
+- `startWithCurrentState()` on state streams emits the matching entities' current states first, marked
+  `StateChange::isInitial()`
+- `Scheduler::runAtEntityTime()` runs at the time an `input_datetime` or timestamp sensor holds, re-arms when it
+  changes and re-reads it when a paused app resumes
+- `RecordingHaContext::seedState()` takes a `changedAt:` instant, and `pushState()` stamps `lastChangedAt` on a new value
+
+### Upgrading
+
+1. Code that constructs `StateChanges` or `StateTransitions` directly now passes a `CurrentStateReader`.
+2. Custom `Clock` and `Scheduler` implementations add `isWithin()` and `runAtEntityTime()`.
+
 ## [0.6.0] - 2026-10-06
 
 Stewart can now be operated from outside. Apps can be paused and resumed without a restart, from the CLI or over

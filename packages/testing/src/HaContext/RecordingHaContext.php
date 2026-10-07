@@ -124,11 +124,12 @@ final class RecordingHaContext implements HaContext
     }
 
     /** @param array<string, mixed> $attributes */
-    public function seedState(string $entityId, string $state, array $attributes = []): self
+    public function seedState(string $entityId, string $state, array $attributes = [], ?Instant $changedAt = null): self
     {
-        $seeded = new EntityState(new EntityId($entityId), $state, $attributes);
+        $changedAt ??= $this->clock->getNow();
+        $seeded = new EntityState(new EntityId($entityId), $state, $attributes, $changedAt, $changedAt);
         $this->states = $this->states->withState($seeded);
-        $this->history->recordState($seeded, $this->clock->getNow());
+        $this->history->recordState($seeded, $changedAt);
 
         return $this;
     }
@@ -185,10 +186,15 @@ final class RecordingHaContext implements HaContext
     /** @param array<string, mixed> $attributes */
     public function pushState(string $entityId, string $state, array $attributes = [], ?EventContext $context = null): void
     {
+        $id = new EntityId($entityId);
+        $previous = $this->states->find($id);
+        $now = $this->clock->getNow();
+        $changedAt = $previous?->state === $state ? $previous->lastChangedAt ?? $now : $now;
+
         $this->pushStateChange(new StateChange(
-            new EntityId($entityId),
-            $this->states->find(new EntityId($entityId)),
-            new EntityState(new EntityId($entityId), $state, $attributes, context: $context),
+            $id,
+            $previous,
+            new EntityState($id, $state, $attributes, $changedAt, $now, $context),
             context: $context,
         ));
     }
@@ -274,7 +280,7 @@ final class RecordingHaContext implements HaContext
             $matches = static fn(StateChange $change): bool => $matcher->matches($change->entityId->value);
         }
 
-        return new StateChanges($this->stateChanges, $this->timers)->filter($matches);
+        return new StateChanges($this->stateChanges, $this->timers, new RecordedStateReader($this, $selector))->filter($matches);
     }
 
     public function getRegistry(): Registry

@@ -6,6 +6,8 @@ namespace Stewart\Testing\Time;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use Stewart\Contracts\Schedule\TimeOfDay;
+use Stewart\Contracts\Schedule\TimeWindow;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
@@ -44,6 +46,11 @@ final class VirtualClock implements Clock
     public function getTimeZone(): DateTimeZone
     {
         return $this->zone;
+    }
+
+    public function isWithin(TimeOfDay|string $start, TimeOfDay|string $end): bool
+    {
+        return TimeWindow::between($start, $end)->includes($this->getNow()->toDateTime($this->getTimeZone()));
     }
 
     public function getWallTime(): DateTimeImmutable

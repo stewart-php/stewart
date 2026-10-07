@@ -90,4 +90,10 @@ final class TimeOfDayTest extends TestCase
     {
         self::assertFalse(TimeOfDay::fromHourMinuteSecond(7, 0)->equals(TimeOfDay::fromHourMinuteSecond(7, 0, 1)));
     }
+
+    public function testSecondsOfDayCountsFromMidnight(): void
+    {
+        self::assertSame(0, TimeOfDay::parse('00:00')->toSecondsOfDay());
+        self::assertSame(86_399, TimeOfDay::parse('23:59:59')->toSecondsOfDay());
+    }
 }

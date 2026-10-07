@@ -34,7 +34,7 @@ final class ScheduleEntry
 
     /**
      * @param Closure(ScheduledRun): void $handler
-     * @param Closure(string): void $onCancel
+     * @param Closure(self): void $onCancel
      */
     public function __construct(
         public readonly ScheduleOrigin $origin,
@@ -98,7 +98,7 @@ final class ScheduleEntry
         $this->timer?->cancel();
         $this->timer = null;
 
-        ($this->onCancel)($this->origin->taskId);
+        ($this->onCancel)($this);
     }
 
     private function armTimerForNextOccurrence(): void

@@ -8,4 +8,5 @@ enum StateChangeOrigin: string
 {
     case Live = 'live';
     case Resync = 'resync';
+    case Initial = 'initial';
 }
