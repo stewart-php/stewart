@@ -63,4 +63,20 @@ final class SystemClockTest extends TestCase
         self::assertNotNull($fired);
         self::assertGreaterThanOrEqual(20_000, $fired->elapsedSince($before)->toMicroseconds());
     }
+
+    public function testIsWithinIncludesCurrentWallTime(): void
+    {
+        $clock = new SystemClock(new DateTimeZone('Asia/Kolkata'));
+        $wall = $clock->getNow()->toDateTime($clock->getTimeZone());
+
+        self::assertTrue($clock->isWithin($wall->modify('-1 hour')->format('H:i'), $wall->modify('+1 hour')->format('H:i')));
+    }
+
+    public function testIsWithinExcludesWindowLaterInDay(): void
+    {
+        $clock = new SystemClock(new DateTimeZone('Asia/Kolkata'));
+        $wall = $clock->getNow()->toDateTime($clock->getTimeZone());
+
+        self::assertFalse($clock->isWithin($wall->modify('+2 hours')->format('H:i'), $wall->modify('+3 hours')->format('H:i')));
+    }
 }

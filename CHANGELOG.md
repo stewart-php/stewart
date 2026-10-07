@@ -4,6 +4,12 @@ Every package, the `ghcr.io/stewart-php/runtime` image, the Helm chart and the s
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). On 0.x, a minor release may break; its "Upgrading"
 section says what to change.
 
+## [Unreleased]
+
+### Added
+
+- `Clock::isWithin('22:00', '06:00')` tells whether local time is in a daily window, crossing midnight
+
 ## [0.6.0] - 2026-10-06
 
 Stewart can now be operated from outside. Apps can be paused and resumed without a restart, from the CLI or over

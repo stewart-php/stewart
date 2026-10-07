@@ -56,4 +56,12 @@ final class VirtualClockTest extends TestCase
         self::assertSame('2025-12-31 23:55:00', $timers->clock->getWallTime()->format('Y-m-d H:i:s'));
         self::assertSame(600_000_000, $timers->clock->getMonotonicTime()->toMicroseconds());
     }
+
+    public function testIsWithinUsesClockTimeZone(): void
+    {
+        $clock = new VirtualClock(new DateTimeImmutable('2026-06-01 23:30:00', new DateTimeZone('Europe/Budapest')));
+
+        self::assertTrue($clock->isWithin('22:00', '06:00'));
+        self::assertFalse($clock->isWithin('21:00', '22:00'));
+    }
 }

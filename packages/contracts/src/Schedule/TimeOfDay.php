@@ -59,6 +59,11 @@ final readonly class TimeOfDay
         return \sprintf('%02d:%02d:%02d', $this->hour, $this->minute, $this->second);
     }
 
+    public function toSecondsOfDay(): int
+    {
+        return $this->hour * 3_600 + $this->minute * 60 + $this->second;
+    }
+
     public function resolveOnDay(DateTimeInterface $day, DateTimeZone $zone): ?DateTimeImmutable
     {
         $wall = $day->format('Y-m-d') . ' ' . $this->format();

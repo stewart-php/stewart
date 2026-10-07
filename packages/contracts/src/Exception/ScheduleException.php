@@ -28,4 +28,9 @@ final class ScheduleException extends StewartException
     {
         return self::createForReason(ScheduleError::TimeOfDayOutOfRange, ['unit' => $unit, 'value' => $value, 'highest' => $highest]);
     }
+
+    public static function timeWindowEmpty(string $time): self
+    {
+        return self::createForReason(ScheduleError::TimeWindowEmpty, ['time' => $time]);
+    }
 }
