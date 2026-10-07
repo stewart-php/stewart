@@ -33,6 +33,16 @@ abstract readonly class ComposedStateChangeStream extends ComposedStream impleme
         return $this->extendWith(new WhenStableForOperator($this->timers, $this->source, $window));
     }
 
+    public function whenAbove(float $threshold, ?Duration $for = null, ?string $attribute = null, float $hysteresis = 0.0): static
+    {
+        return $this->extendWith(new ThresholdCrossingOperator($this->timers, $this->source, ThresholdDirection::Above, $threshold, $for, $attribute, $hysteresis));
+    }
+
+    public function whenBelow(float $threshold, ?Duration $for = null, ?string $attribute = null, float $hysteresis = 0.0): static
+    {
+        return $this->extendWith(new ThresholdCrossingOperator($this->timers, $this->source, ThresholdDirection::Below, $threshold, $for, $attribute, $hysteresis));
+    }
+
     /** @return EventStream<StateChange> */
     public function acrossEntities(): EventStream
     {
