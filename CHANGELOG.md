@@ -4,24 +4,55 @@ Every package, the `ghcr.io/stewart-php/runtime` image, the Helm chart and the s
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). On 0.x, a minor release may break; its "Upgrading"
 section says what to change.
 
-## [Unreleased]
+## [0.7.0] - 2026-10-07
+
+Automations need less glue. State streams can start from the current state and react to numeric thresholds, a
+schedule can follow an `input_datetime`, and states and clocks answer "how long?" and "is it night?" directly.
+
+### Highlights
+
+- **Numeric thresholds.** `watchStateChanges('sensor.living_room_temperature')->whenAbove(25.0, for:
+  Duration::minutes(5), hysteresis: 0.5)` fires once per crossing; `whenBelow()` is its mirror, and `attribute:`
+  reads a climate entity's `current_temperature` instead of the state.
+- **Starting from now.** `startWithCurrentState()` emits each matching entity's current state before live changes,
+  marked `StateChange::isInitial()`, so a handler no longer reads the state once by hand at startup.
+- **Entity-driven schedules.** `$scheduler->runAtEntityTime('input_datetime.wake_up', fn () => …)` runs at the time
+  the helper or a timestamp sensor holds and follows its changes, without a Home Assistant trigger subscription.
+- **Time helpers.** `$clock->isWithin('22:00', '06:00')` checks a daily window across midnight, and
+  `$state->hasHeldFor(Duration::minutes(10), $clock)` checks how long a state has kept its value.
 
 ### Added
 
-- `Clock::isWithin('22:00', '06:00')` tells whether local time is in a daily window, crossing midnight
-- `EntityState::hasHeldFor()` and `getHeldDuration()` measure how long a state has kept its value
+- `Clock::isWithin()` tells whether local time is in a daily window; the start is included, the end is not, and an
+  equal start and end is refused (`ScheduleError::TimeWindowEmpty`)
+- `EntityState::hasHeldFor()` and `getHeldDuration()` measure the time since `lastChangedAt`
 - `whenAbove()` and `whenBelow()` on state streams fire once per numeric threshold crossing, with `for:`, `attribute:`
   and `hysteresis:`
+  - A crossing counts only from a known number; a first reading or one after `unavailable` primes without firing
+  - A negative hysteresis or a non-finite threshold is refused (`StateError::ThresholdHysteresisNegative`,
+    `ThresholdNotFinite`)
 - `startWithCurrentState()` on state streams emits the matching entities' current states first, marked
-  `StateChange::isInitial()`
-- `Scheduler::runAtEntityTime()` runs at the time an `input_datetime` or timestamp sensor holds, re-arms when it
-  changes and re-reads it when a paused app resumes
-- `RecordingHaContext::seedState()` takes a `changedAt:` instant, and `pushState()` stamps `lastChangedAt` on a new value
+  `StateChange::isInitial()` (`StateChangeOrigin::Initial`); only the operators after it see them
+- `Scheduler::runAtEntityTime()` runs at the time an `input_datetime` or timestamp sensor holds
+  - A date and time runs once, a time alone every day; a date only, a past moment or `unavailable` waits for the next
+    change
+  - It re-arms on every change, re-reads the entity when a paused app resumes and right before each run
+  - Other domains are refused (`ScheduleError::EntityTimeDomainUnsupported`)
+- `RecordingHaContext::seedState()` takes a `changedAt:` instant
+
+### Changed
+
+- `RecordingHaContext::seedState()` and `pushState()` stamp `lastChangedAt` and `lastUpdatedAt`; `pushState()` moves
+  `lastChangedAt` only when the value changes
+- `StateChanges` and `StateTransitions` take a `CurrentStateReader`
 
 ### Upgrading
 
-1. Code that constructs `StateChanges` or `StateTransitions` directly now passes a `CurrentStateReader`.
-2. Custom `Clock` and `Scheduler` implementations add `isWithin()` and `runAtEntityTime()`.
+1. Run `make upgrade VERSION=0.7`. Broker, workers and `stewart` commands must all run 0.7.
+2. Code that constructs `StateChanges` or `StateTransitions` directly now passes a `CurrentStateReader`.
+3. Custom `Clock` and `Scheduler` implementations add `isWithin()` and `runAtEntityTime()`.
+4. Tests comparing whole `EntityState` objects from `RecordingHaContext` with `assertEquals` now see the stamped
+   `lastChangedAt` and `lastUpdatedAt`.
 
 ## [0.6.0] - 2026-10-06
 
