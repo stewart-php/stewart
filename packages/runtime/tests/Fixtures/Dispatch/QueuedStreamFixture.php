@@ -15,6 +15,7 @@ use Stewart\Runtime\Dispatch\LocalDispatcher;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\Scope\ScopeLifecycle;
+use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Tests\Fixtures\Worker\RecordingDispatchListener;
 use Stewart\Runtime\Worker\Context\DispatchStreams;
 use Stewart\Testing\Time\EventLoopTicks;
@@ -26,23 +27,29 @@ final class QueuedStreamFixture
 
     public readonly RecordingDispatchListener $listener;
 
+    public readonly StateCache $states;
+
     private readonly LocalDispatcher $dispatcher;
 
     private readonly DispatchStreams $streams;
 
     private readonly ResourceScope $scope;
 
+    private readonly ScopeLifecycle $scopes;
+
     public function __construct(int $subscriptionQueueLimit = 100)
     {
         $this->timers = new ManualTimers();
         $this->listener = new RecordingDispatchListener();
+        $this->states = new StateCache();
         $this->scope = ResourceScope::forApp(new AppId('queued-streams'));
 
-        $scopes = new ScopeLifecycle();
-        $scopes->activateScope($this->scope);
+        $this->scopes = new ScopeLifecycle();
+        $this->scopes->activateScope($this->scope);
 
-        $this->dispatcher = new LocalDispatcher('w0', $subscriptionQueueLimit, $this->listener, $this->listener, $scopes, new RegistryCache());
-        $this->streams = new DispatchStreams($this->dispatcher, $this->timers);
+        $registry = new RegistryCache();
+        $this->dispatcher = new LocalDispatcher('w0', $subscriptionQueueLimit, $this->listener, $this->listener, $this->scopes, $registry);
+        $this->streams = new DispatchStreams($this->dispatcher, $this->timers, $this->states, $registry);
     }
 
     public function watchStateChanges(string $selector): StateChangeStream
@@ -55,6 +62,19 @@ final class QueuedStreamFixture
         $id = new EntityId($entityId);
 
         $this->dispatcher->dispatchStateChange(new StateChange($id, new EntityState($id, $from), new EntityState($id, $to)));
+    }
+
+    public function seedState(string $entityId, string $state): void
+    {
+        $id = new EntityId($entityId);
+
+        $this->states->applyChange(new StateChange($id, null, new EntityState($id, $state)));
+    }
+
+    public function pauseScope(): void
+    {
+        $this->scopes->pauseScope($this->scope);
+        $this->dispatcher->pauseQueuesOf($this->scope);
     }
 
     public function advanceTime(Duration $by): void

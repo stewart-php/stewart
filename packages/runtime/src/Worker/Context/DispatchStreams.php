@@ -23,6 +23,9 @@ use Stewart\Runtime\Dispatch\DispatchSource;
 use Stewart\Runtime\Dispatch\LocalDispatcher;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionKind;
+use Stewart\Runtime\Registry\RegistryCache;
+use Stewart\Runtime\State\CachedStateReader;
+use Stewart\Runtime\State\StateCache;
 use Stewart\Support\Time\Deadlines;
 
 final readonly class DispatchStreams
@@ -30,6 +33,8 @@ final readonly class DispatchStreams
     public function __construct(
         private LocalDispatcher $dispatcher,
         private Timers&Deadlines $timers,
+        private StateCache $states,
+        private RegistryCache $registry,
     ) {}
 
     public function watchStateChanges(ResourceScope $scope, Selector|EntityFilter $match): StateChangeStream
@@ -39,7 +44,7 @@ final readonly class DispatchStreams
             ? new DispatchSource($this->dispatcher, $scope, SubscriptionKind::StateChange, Selector::any(), entityFilter: $match)
             : new DispatchSource($this->dispatcher, $scope, SubscriptionKind::StateChange, $match);
 
-        return new StateChanges($source, $this->timers);
+        return new StateChanges($source, $this->timers, new CachedStateReader($this->states, $this->registry, $match));
     }
 
     /** @return EventStream<HaEvent> */

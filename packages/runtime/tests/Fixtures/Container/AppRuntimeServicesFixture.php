@@ -13,6 +13,7 @@ use Stewart\Runtime\Container\AppRuntimeServices;
 use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
+use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\Schedule\WorkerScheduler;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Tests\Fixtures\Ipc\NullTransport;
@@ -67,7 +68,7 @@ final class AppRuntimeServicesFixture
             stores: $stores,
             mqtt: new WorkerMqtt(
                 $transport,
-                new DispatchStreams($resources->dispatcher, $timers),
+                new DispatchStreams($resources->dispatcher, $timers, $stateCache, new RegistryCache()),
                 new AppActivityCounters(),
                 $mqttEnabled,
                 ResourceScope::shared(),

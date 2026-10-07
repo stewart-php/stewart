@@ -16,6 +16,7 @@ use Stewart\Contracts\Stream\CrossingLatches;
 use Stewart\Contracts\Stream\StateChanges;
 use Stewart\Contracts\Stream\ThresholdCrossingOperator;
 use Stewart\Contracts\Stream\ThresholdDirection;
+use Stewart\Contracts\Tests\Fixtures\State\FixedStateReader;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Stream\PushSource;
@@ -47,7 +48,7 @@ final class ThresholdCrossingTest extends TestCase
     {
         $this->timers = new ManualTimers();
         $this->source = new PushSource();
-        $this->stream = new StateChanges($this->source, $this->timers);
+        $this->stream = new StateChanges($this->source, $this->timers, new FixedStateReader());
         $this->received = [];
     }
 

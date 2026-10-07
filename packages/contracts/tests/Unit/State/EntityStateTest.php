@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
+use Stewart\Contracts\State\StateChangeOrigin;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Testing\Time\VirtualClock;
@@ -131,5 +132,14 @@ final class EntityStateTest extends TestCase
     private function createStateChangedAt(Instant $changedAt): EntityState
     {
         return new EntityState(new EntityId('light.hall'), 'on', lastChangedAt: $changedAt);
+    }
+
+    public function testIsInitialOnlyForInitialOrigin(): void
+    {
+        $state = new EntityState(new EntityId('light.hall'), 'on');
+
+        self::assertTrue(StateChange::fromCurrentState($state)->isInitial());
+        self::assertFalse(new StateChange($state->entityId, $state, $state)->isInitial());
+        self::assertFalse(new StateChange($state->entityId, $state, $state, origin: StateChangeOrigin::Resync)->isInitial());
     }
 }

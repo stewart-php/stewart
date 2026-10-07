@@ -20,6 +20,7 @@ use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\Scope\ScopeLifecycle;
+use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Tests\Fixtures\Ipc\FailingTransport;
 use Stewart\Runtime\Tests\Fixtures\Ipc\FakeWorkerTransport;
 use Stewart\Runtime\Tests\Fixtures\Worker\RecordingDispatchListener;
@@ -93,7 +94,7 @@ final class WorkerMqttTest extends TestCase
 
         return new WorkerMqtt(
             $transport,
-            new DispatchStreams($dispatcher, new ManualTimers()),
+            new DispatchStreams($dispatcher, new ManualTimers(), new StateCache(), new RegistryCache()),
             new AppActivityCounters(),
             $brokerMqttEnabled,
             ResourceScope::shared(),

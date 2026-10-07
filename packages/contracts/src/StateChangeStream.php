@@ -14,6 +14,8 @@ interface StateChangeStream extends EventStream
 {
     public function distinctUntilChanged(): static;
 
+    public function startWithCurrentState(): static;
+
     /** @throws TimeException */
     public function whenChangedTo(string $state, ?Duration $for = null): StateTransitionStream;
 

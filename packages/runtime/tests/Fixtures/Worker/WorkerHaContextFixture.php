@@ -46,7 +46,7 @@ final class WorkerHaContextFixture
             new ServiceCaller($transport, $pending, $connection, $timers, $callTimeout ?? Duration::seconds(1)),
             new HistoryReader($transport, $pending, $connection, $timers, $timers->clock, $callTimeout ?? Duration::seconds(1)),
             new EventFirer($transport, $pending, $connection, $timers, $callTimeout ?? Duration::seconds(1)),
-            new DispatchStreams($dispatcher ?? RecordingDispatchListener::createDispatcher('w0', 10, $registry), $timers),
+            new DispatchStreams($dispatcher ?? RecordingDispatchListener::createDispatcher('w0', 10, $registry), $timers, $stateCache, $registry),
             new TopicPublisher($transport, $timers->clock, $activityCounters),
             $scope,
         );

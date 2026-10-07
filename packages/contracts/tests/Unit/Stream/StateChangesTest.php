@@ -17,6 +17,7 @@ use Stewart\Contracts\Stream\StateChanges;
 use Stewart\Contracts\Stream\ThrottleOperator;
 use Stewart\Contracts\Stream\WhenChangedToOperator;
 use Stewart\Contracts\Stream\WhenStableForOperator;
+use Stewart\Contracts\Tests\Fixtures\State\FixedStateReader;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Testing\Stream\PushSource;
 use Stewart\Testing\Time\ManualTimers;
@@ -48,7 +49,7 @@ final class StateChangesTest extends TestCase
     {
         $this->timers = new ManualTimers();
         $this->source = new PushSource();
-        $this->stream = new StateChanges($this->source, $this->timers);
+        $this->stream = new StateChanges($this->source, $this->timers, new FixedStateReader());
         $this->received = [];
     }
 

@@ -303,4 +303,17 @@ final class RecordingHaContextTest extends TestCase
 
         self::assertEquals($ha->clock->getNow(), $ha->requireState('light.hall')->lastChangedAt);
     }
+
+    public function testStartWithSeedsMatchingStates(): void
+    {
+        $ha = new RecordingHaContext()->seedState('light.hall', 'on')->seedState('switch.fan', 'off');
+        $received = [];
+
+        $ha->watchStateChanges('light.*')->startWithCurrentState()->subscribe(static function (StateChange $change) use (&$received): void {
+            $received[] = ($change->isInitial() ? 'initial:' : 'live:') . $change->entityId->value;
+        });
+        $ha->pushState('light.hall', 'off');
+
+        self::assertSame(['initial:light.hall', 'live:light.hall'], $received);
+    }
 }

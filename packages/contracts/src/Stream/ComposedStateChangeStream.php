@@ -6,14 +6,25 @@ namespace Stewart\Contracts\Stream;
 
 use Closure;
 use Stewart\Contracts\EventStream;
+use Stewart\Contracts\State\CurrentStateReader;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
 use Stewart\Contracts\StateTransitionStream;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Contracts\Time\Timers;
 
 /** @extends ComposedStream<StateChange> */
 abstract readonly class ComposedStateChangeStream extends ComposedStream implements StateChangeStream
 {
+    /** @param StreamSource<StateChange> $source */
+    public function __construct(
+        StreamSource $source,
+        Timers $timers,
+        protected CurrentStateReader $currentStates,
+    ) {
+        parent::__construct($source, $timers);
+    }
+
     public function distinctUntilChanged(): static
     {
         $key = static fn(StateChange $change): ?string => $change->to?->state;
@@ -21,11 +32,16 @@ abstract readonly class ComposedStateChangeStream extends ComposedStream impleme
         return $this->extendWith(new DistinctUntilChangedOperator($this->source, $key, $this->createPartitionKeyReader()));
     }
 
+    public function startWithCurrentState(): static
+    {
+        return $this->extendWith(new StartWithCurrentStateOperator($this->source, $this->currentStates));
+    }
+
     public function whenChangedTo(string $state, ?Duration $for = null): StateTransitionStream
     {
         $transition = new WhenChangedToOperator($this->timers, $this->source, $state, $for, PreviousStateRule::excludingUnavailable());
 
-        return new StateTransitions($transition, $this->timers, $transition);
+        return new StateTransitions($transition, $this->timers, $this->currentStates, $transition);
     }
 
     public function whenStableFor(Duration $window): static

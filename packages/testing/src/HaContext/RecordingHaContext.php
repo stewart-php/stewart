@@ -280,7 +280,7 @@ final class RecordingHaContext implements HaContext
             $matches = static fn(StateChange $change): bool => $matcher->matches($change->entityId->value);
         }
 
-        return new StateChanges($this->stateChanges, $this->timers)->filter($matches);
+        return new StateChanges($this->stateChanges, $this->timers, new RecordedStateReader($this, $selector))->filter($matches);
     }
 
     public function getRegistry(): Registry

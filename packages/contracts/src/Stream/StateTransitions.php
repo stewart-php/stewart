@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Contracts\Stream;
 
 use Stewart\Contracts\Exception\StateException;
+use Stewart\Contracts\State\CurrentStateReader;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateTransitionStream;
 use Stewart\Contracts\Time\Timers;
@@ -15,9 +16,10 @@ final readonly class StateTransitions extends ComposedStateChangeStream implemen
     public function __construct(
         StreamSource $source,
         Timers $timers,
+        CurrentStateReader $currentStates,
         private ?WhenChangedToOperator $transition = null,
     ) {
-        parent::__construct($source, $timers);
+        parent::__construct($source, $timers, $currentStates);
     }
 
     public function from(string $state, string ...$otherStates): static
@@ -32,7 +34,7 @@ final readonly class StateTransitions extends ComposedStateChangeStream implemen
 
     protected function extendWith(StreamSource $stage): static
     {
-        return new static($stage, $this->timers);
+        return new static($stage, $this->timers, $this->currentStates);
     }
 
     private function withPreviousStateRule(PreviousStateRule $rule): static
@@ -43,6 +45,6 @@ final readonly class StateTransitions extends ComposedStateChangeStream implemen
 
         $transition = $this->transition->withPreviousStateRule($rule);
 
-        return new static($transition, $this->timers, $transition);
+        return new static($transition, $this->timers, $this->currentStates, $transition);
     }
 }
