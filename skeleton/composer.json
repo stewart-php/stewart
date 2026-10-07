@@ -6,11 +6,11 @@
     "require": {
         "php": ">=8.5",
         "psr/log": "^3.0",
-        "stewart-php/codegen": "^0.6",
-        "stewart-php/contracts": "^0.6",
-        "stewart-php/mqtt": "^0.6",
-        "stewart-php/runtime": "^0.6",
-        "stewart-php/store-redis": "^0.6",
+        "stewart-php/codegen": "^0.7",
+        "stewart-php/contracts": "^0.7",
+        "stewart-php/mqtt": "^0.7",
+        "stewart-php/runtime": "^0.7",
+        "stewart-php/store-redis": "^0.7",
         "symfony/dependency-injection": "^7.4 || ^8.0"
     },
     "require-dev": {
