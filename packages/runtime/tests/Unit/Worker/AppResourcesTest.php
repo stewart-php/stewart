@@ -130,7 +130,7 @@ final class AppResourcesTest extends TestCase
 
     private function scheduleEveryTenSeconds(string $appId): ScheduledTask
     {
-        $scheduler = WorkerSchedulerFixture::createWorkerScheduler($this->fixture->schedules, new UnlocatedSunCalendar(), new NullLogger(), ResourceScope::forApp(new AppId($appId)), $this->fixture->timers, dispatcher: $this->fixture->dispatcher);
+        $scheduler = WorkerSchedulerFixture::createWorkerScheduler($this->fixture->schedules, new UnlocatedSunCalendar(), new NullLogger(), ResourceScope::forApp(new AppId($appId)), $this->fixture->timers, $this->fixture->states, $this->fixture->dispatcher, $this->fixture->entityTimes);
 
         return $scheduler->runEvery(Duration::seconds(10), function (): void {
             ++$this->runs;

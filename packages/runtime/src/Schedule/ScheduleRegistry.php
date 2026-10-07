@@ -31,9 +31,15 @@ final class ScheduleRegistry
     /** @param Closure(ScheduledRun): void $handler */
     public function arm(ResourceScope $scope, WallClockSchedule|ElapsedSchedule $schedule, LoggerInterface $logger, Closure $handler): ScheduledTask
     {
+        return $this->armUnderTaskId($this->claimTaskId(), $scope, $schedule, $logger, $handler);
+    }
+
+    /** @param Closure(ScheduledRun): void $handler */
+    public function armUnderTaskId(string $taskId, ResourceScope $scope, WallClockSchedule|ElapsedSchedule $schedule, LoggerInterface $logger, Closure $handler): ScheduledTask
+    {
         $trigger = $this->triggers->createTriggerFor($schedule);
         $entry = new ScheduleEntry(
-            new ScheduleOrigin($scope, $this->claimTaskId(), $trigger->describe()),
+            new ScheduleOrigin($scope, $taskId, $trigger->describe()),
             $trigger,
             $logger,
             $this->context,
@@ -154,9 +160,12 @@ final class ScheduleRegistry
         }
     }
 
-    private function forgetEntry(string $taskId): void
+    private function forgetEntry(ScheduleEntry $entry): void
     {
-        unset($this->entries[$taskId]);
+        // A re-armed entity time reuses its task id, so only the entry still registered under it is removed.
+        if (($this->entries[$entry->origin->taskId] ?? null) === $entry) {
+            unset($this->entries[$entry->origin->taskId]);
+        }
     }
 
     /** @return array<string, ScheduleEntry> */

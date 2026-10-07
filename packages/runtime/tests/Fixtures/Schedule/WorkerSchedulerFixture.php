@@ -29,10 +29,12 @@ final class WorkerSchedulerFixture
         ManualTimers $timers = new ManualTimers(),
         StateCache $states = new StateCache(),
         ?LocalDispatcher $dispatcher = null,
+        ?EntityTimeScheduler $entityTimes = null,
     ): WorkerScheduler {
         $registryCache = new RegistryCache();
         $streams = new DispatchStreams($dispatcher ?? RecordingDispatchListener::createDispatcher('w0', 10, $registryCache), $timers, $states, $registryCache);
+        $entityTimes ??= new EntityTimeScheduler($registry, $states, $streams, $timers->clock);
 
-        return new WorkerScheduler($registry, $sunCalendar, new EntityTimeScheduler($registry, $states, $streams, $timers->clock), $logger, $scope);
+        return new WorkerScheduler($registry, $sunCalendar, $entityTimes, $logger, $scope);
     }
 }

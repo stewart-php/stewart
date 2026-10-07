@@ -20,10 +20,12 @@ use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Schedule\EntityTimeScheduler;
 use Stewart\Runtime\Schedule\EntityTimeTask;
+use Stewart\Runtime\Schedule\ScheduleOrigin;
 use Stewart\Runtime\Schedule\WorkerScheduler;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Tests\Fixtures\Schedule\WorkerSchedulerFixture;
 use Stewart\Runtime\Tests\Fixtures\Worker\AppResourcesFixture;
+use Stewart\Runtime\Tests\Fixtures\Worker\RecordingScheduleListener;
 use Stewart\Sun\UnlocatedSunCalendar;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Logging\RecordingLogger;
@@ -48,6 +50,8 @@ final class WorkerSchedulerEntityTimeTest extends TestCase
 
     private AppResourcesFixture $fixture;
 
+    private RecordingScheduleListener $scheduleListener;
+
     private StateCache $states;
 
     private RecordingLogger $logger;
@@ -62,8 +66,9 @@ final class WorkerSchedulerEntityTimeTest extends TestCase
     protected function setUp(): void
     {
         $this->timers = new ManualTimers(new VirtualClock(new DateTimeImmutable('2026-06-01 06:00:00', new DateTimeZone('Europe/Budapest'))));
-        $this->fixture = new AppResourcesFixture($this->timers);
-        $this->states = new StateCache();
+        $this->scheduleListener = new RecordingScheduleListener();
+        $this->fixture = new AppResourcesFixture($this->timers, scheduleListener: $this->scheduleListener);
+        $this->states = $this->fixture->states;
         $this->logger = new RecordingLogger();
         $this->scope = ResourceScope::forApp(new AppId('alarm'));
         $this->fixture->resources->activateScope($this->scope);
@@ -75,6 +80,7 @@ final class WorkerSchedulerEntityTimeTest extends TestCase
             $this->timers,
             $this->states,
             $this->fixture->dispatcher,
+            $this->fixture->entityTimes,
         );
         $this->runs = [];
     }
@@ -121,13 +127,14 @@ final class WorkerSchedulerEntityTimeTest extends TestCase
         self::assertCount(1, $this->runs);
     }
 
-    public function testPastMomentStaysInactiveWithoutWarning(): void
+    public function testPastMomentWaitsWithoutRunOrWarning(): void
     {
         $this->changeWakeUp('2026-06-01 05:00:00', self::DATE_AND_TIME);
 
         $task = $this->scheduleWakeUp();
 
-        self::assertFalse($task->isActive());
+        self::assertTrue($task->isActive());
+        self::assertNull($task->getNextRunAt());
         self::assertSame([], $this->logger->listMessagesAt(LogLevel::WARNING));
     }
 
@@ -136,11 +143,36 @@ final class WorkerSchedulerEntityTimeTest extends TestCase
         $this->changeWakeUp(EntityState::UNAVAILABLE);
         $task = $this->scheduleWakeUp();
 
-        self::assertFalse($task->isActive());
+        self::assertNull($task->getNextRunAt());
 
         $this->changeWakeUp('2026-06-01 07:30:00', self::DATE_AND_TIME);
 
-        self::assertTrue($task->isActive());
+        self::assertNotNull($task->getNextRunAt());
+    }
+
+    public function testResumeArmsTimeChangedWhilePaused(): void
+    {
+        $this->changeWakeUp(EntityState::UNAVAILABLE);
+        $this->scheduleWakeUp();
+
+        $this->fixture->resources->pauseScope($this->scope);
+        $this->changeWakeUp('2026-06-01 07:30:00', self::DATE_AND_TIME);
+        $this->fixture->resources->resumeScope($this->scope);
+
+        $this->timers->delay(Duration::minutes(90));
+
+        self::assertCount(1, $this->runs);
+    }
+
+    public function testRunsReportEntityTaskId(): void
+    {
+        $this->changeWakeUp('2026-06-01 07:30:00', self::DATE_AND_TIME);
+        $task = $this->scheduleWakeUp();
+        $this->changeWakeUp('2026-06-01 08:00:00', self::DATE_AND_TIME);
+
+        $this->timers->delay(Duration::hours(2));
+
+        self::assertSame([$task->getId()], array_map(static fn(ScheduleOrigin $origin): string => $origin->taskId, $this->scheduleListener->started));
     }
 
     public function testStaleTimeIsSkippedAtFireTime(): void
@@ -171,6 +203,7 @@ final class WorkerSchedulerEntityTimeTest extends TestCase
         self::assertFalse($task->isActive());
         self::assertSame(0, $this->fixture->schedules->countFor($this->scope));
         self::assertSame(0, $this->fixture->dispatcher->countFor($this->scope));
+        self::assertSame(0, $this->fixture->entityTimes->countFor($this->scope));
         self::assertCount(0, $this->runs);
     }
 

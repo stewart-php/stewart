@@ -24,24 +24,23 @@ final readonly class EntityTime
     private const string TIME_ONLY_PATTERN = '/\A\d{2}:\d{2}:\d{2}\z/';
 
     private function __construct(
-        public EntityTimeKind $kind,
         public ?TimeOfDay $dailyAt = null,
         public ?Instant $moment = null,
     ) {}
 
     public static function none(): self
     {
-        return new self(EntityTimeKind::None);
+        return new self();
     }
 
     public static function forDailyTime(TimeOfDay $time): self
     {
-        return new self(EntityTimeKind::Daily, dailyAt: $time);
+        return new self(dailyAt: $time);
     }
 
     public static function forMoment(Instant $moment): self
     {
-        return new self(EntityTimeKind::Moment, moment: $moment);
+        return new self(moment: $moment);
     }
 
     /** @throws ScheduleException */
@@ -67,9 +66,14 @@ final readonly class EntityTime
 
     public function equals(self $other): bool
     {
-        return $this->kind === $other->kind
-            && $this->dailyAt?->format() === $other->dailyAt?->format()
-            && $this->moment?->toEpochMicroseconds() === $other->moment?->toEpochMicroseconds();
+        $sameDailyAt = $this->dailyAt === null || $other->dailyAt === null
+            ? $this->dailyAt === $other->dailyAt
+            : $this->dailyAt->equals($other->dailyAt);
+        $sameMoment = $this->moment === null || $other->moment === null
+            ? $this->moment === $other->moment
+            : $this->moment->equals($other->moment);
+
+        return $sameDailyAt && $sameMoment;
     }
 
     private static function fromInputDatetime(EntityState $state, DateTimeZone $zone): self
@@ -82,7 +86,9 @@ final readonly class EntityTime
         }
 
         if ($hasDate !== true && $hasTime !== false && preg_match(self::TIME_ONLY_PATTERN, $state->state) === 1) {
-            return self::forDailyTime(TimeOfDay::parse($state->state));
+            $time = self::tryParseTimeOfDay($state->state);
+
+            return $time === null ? self::none() : self::forDailyTime($time);
         }
 
         return self::none();
@@ -91,9 +97,24 @@ final readonly class EntityTime
     private static function fromLocalDateAndTime(string $date, string $time, DateTimeZone $zone): self
     {
         $day = DateTimeImmutable::createFromFormat('!Y-m-d', $date, $zone);
-        $moment = $day === false ? null : TimeOfDay::parse($time)->resolveOnDay($day, $zone);
+        $timeOfDay = self::tryParseTimeOfDay($time);
+
+        if ($day === false || $day->format('Y-m-d') !== $date || $timeOfDay === null) {
+            return self::none();
+        }
+
+        $moment = $timeOfDay->resolveOnDay($day, $zone);
 
         return $moment === null ? self::none() : self::forMoment(Instant::fromDateTime($moment));
+    }
+
+    private static function tryParseTimeOfDay(string $time): ?TimeOfDay
+    {
+        try {
+            return TimeOfDay::parse($time);
+        } catch (ScheduleException) {
+            return null;
+        }
     }
 
     private static function fromTimestampSensor(EntityState $state): self

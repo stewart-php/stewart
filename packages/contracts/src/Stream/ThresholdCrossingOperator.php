@@ -34,6 +34,10 @@ final readonly class ThresholdCrossingOperator implements StreamSource
     ) {
         $window?->requireAtLeastOneMillisecond($direction->describeUsage());
 
+        if (!is_finite($threshold)) {
+            throw StateException::thresholdNotFinite($direction->describeUsage(), $threshold);
+        }
+
         if (is_nan($hysteresis) || $hysteresis < 0.0) {
             throw StateException::thresholdHysteresisNegative($direction->describeUsage(), $hysteresis);
         }

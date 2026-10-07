@@ -187,6 +187,12 @@ final class ThresholdCrossingTest extends TestCase
         $this->assertThrowsReason(StateError::ThresholdHysteresisNegative, fn() => $this->stream->whenBelow(25.0, hysteresis: \NAN));
     }
 
+    public function testNonFiniteThresholdThrows(): void
+    {
+        $this->assertThrowsReason(StateError::ThresholdNotFinite, fn() => $this->stream->whenAbove(\NAN));
+        $this->assertThrowsReason(StateError::ThresholdNotFinite, fn() => $this->stream->whenBelow(-\INF));
+    }
+
     private function listen(StateChangeStream $stream): void
     {
         $stream->subscribe(function (StateChange $change): void {

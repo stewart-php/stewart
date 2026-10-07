@@ -14,8 +14,8 @@ section says what to change.
   and `hysteresis:`
 - `startWithCurrentState()` on state streams emits the matching entities' current states first, marked
   `StateChange::isInitial()`
-- `Scheduler::runAtEntityTime()` runs at the time an `input_datetime` or timestamp sensor holds and re-arms when it
-  changes
+- `Scheduler::runAtEntityTime()` runs at the time an `input_datetime` or timestamp sensor holds, re-arms when it
+  changes and re-reads it when a paused app resumes
 - `RecordingHaContext::seedState()` takes a `changedAt:` instant, and `pushState()` stamps `lastChangedAt` on a new value
 
 ### Upgrading

@@ -32,16 +32,20 @@ final class EntityTimeTask implements ScheduledTask
 
     private bool $cancelled = false;
 
-    /** @param Closure(ScheduledRun): void $handler */
+    /**
+     * @param Closure(ScheduledRun): void $handler
+     * @param Closure(self): void $onCancel
+     */
     public function __construct(
         private readonly string $id,
         private readonly EntityId $entityId,
-        private readonly ResourceScope $scope,
+        public readonly ResourceScope $scope,
         private readonly LoggerInterface $logger,
         private readonly Closure $handler,
         private readonly ScheduleRegistry $registry,
         private readonly StateCache $states,
         private readonly Clock $clock,
+        private readonly Closure $onCancel,
     ) {
         $this->armedTime = EntityTime::none();
     }
@@ -53,19 +57,29 @@ final class EntityTimeTask implements ScheduledTask
 
     public function cancel(): void
     {
+        if ($this->cancelled) {
+            return;
+        }
+
         $this->cancelled = true;
         $this->inner?->cancel();
         $this->following?->unsubscribe();
+        ($this->onCancel)($this);
     }
 
     public function isActive(): bool
     {
-        return !$this->cancelled && ($this->inner?->isActive() ?? false);
+        return !$this->cancelled;
     }
 
     public function getNextRunAt(): ?Instant
     {
         return $this->cancelled ? null : $this->inner?->getNextRunAt();
+    }
+
+    public function rearmFromCache(): void
+    {
+        $this->rearmFor($this->states->find($this->entityId));
     }
 
     public function rearmFor(?EntityState $state): void
@@ -87,7 +101,7 @@ final class EntityTimeTask implements ScheduledTask
             return;
         }
 
-        $this->inner = $this->registry->arm($this->scope, $schedule, $this->logger, $this->runIfTimeIsCurrent(...));
+        $this->inner = $this->registry->armUnderTaskId($this->id, $this->scope, $schedule, $this->logger, $this->runIfTimeIsCurrent(...));
     }
 
     public function startFollowing(StateChangeStream $changes): void
