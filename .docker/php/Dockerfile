@@ -40,7 +40,7 @@ COPY --chmod=755 .docker/runtime/entrypoint.sh /usr/local/bin/stewart-entrypoint
 
 ENV HOME=/tmp \
     COMPOSER_HOME=/tmp/composer \
-    PATH=/app/vendor/bin:$PATH
+    PATH=/app/current/vendor/bin:/app/vendor/bin:$PATH
 
 LABEL org.opencontainers.image.title="Stewart runtime" \
       org.opencontainers.image.description="PHP, extensions and an entrypoint for running a Stewart project" \

@@ -30,7 +30,7 @@ helm install home oci://ghcr.io/stewart-php/charts/stewart \
 | `code.mode` | The pod runs | Needs |
 |---|---|---|
 | `image` (default) | Your project's image, built by the skeleton's `image.yml` | `code.image.repository`, `code.image.tag` |
-| `git` | `ghcr.io/stewart-php/runtime`; an init container clones `code.git.url` at `code.git.ref` and installs dependencies on every start | `code.git.url`; `code.git.tokenSecret` or `code.git.sshKeySecret` for a private repository |
+| `git` | `ghcr.io/stewart-php/runtime`; the container fetches `code.git.url` at `code.git.ref` into a release directory and installs its dependencies on start | `code.git.url`; `code.git.tokenSecret` or `code.git.sshKeySecret` for a private repository |
 | `volume` | `ghcr.io/stewart-php/runtime` over a checkout in an existing PVC; dependencies are installed on start | `code.volume.claimName` |
 
 `code.generateOnStart: true` regenerates the entity and service classes from Home Assistant before the daemon starts.
