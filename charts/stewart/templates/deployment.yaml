@@ -91,6 +91,8 @@ spec:
               value: {{ required "code.git.url is required when code.mode is git" .Values.code.git.url | quote }}
             - name: STEWART_BOOT_GIT_REF
               value: {{ .Values.code.git.ref | quote }}
+            - name: STEWART_DEPLOY__GIT__POLL
+              value: {{ .Values.code.git.poll | quote }}
             {{- if .Values.code.git.tokenSecret.name }}
             - name: STEWART_BOOT_GIT_TOKEN_FILE
               value: /run/secrets/stewart/git-token

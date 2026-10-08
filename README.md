@@ -16,9 +16,9 @@ composer create-project stewart-php/skeleton my-home   # or "Use this template" 
 ```
 
 The skeleton's README covers development, generated classes and deployment: a checkout on a server, an image built by
-CI, a clone on every start, or Kubernetes through the Helm chart (`oci://ghcr.io/stewart-php/charts/stewart`). Each
-runs `ghcr.io/stewart-php/runtime`, which holds PHP and an entrypoint; the framework version comes from the project's
-`composer.lock`.
+CI, a clone that deploys each pushed commit, or Kubernetes through the Helm chart
+(`oci://ghcr.io/stewart-php/charts/stewart`). Each runs `ghcr.io/stewart-php/runtime`, which holds PHP and an
+entrypoint; the framework version comes from the project's `composer.lock`.
 
 ## Configuration
 

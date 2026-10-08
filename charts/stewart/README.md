@@ -30,7 +30,7 @@ helm install home oci://ghcr.io/stewart-php/charts/stewart \
 | `code.mode` | The pod runs | Needs |
 |---|---|---|
 | `image` (default) | Your project's image, built by the skeleton's `image.yml` | `code.image.repository`, `code.image.tag` |
-| `git` | `ghcr.io/stewart-php/runtime`; the container fetches `code.git.url` at `code.git.ref` into a release directory and installs its dependencies on start | `code.git.url`; `code.git.tokenSecret` or `code.git.sshKeySecret` for a private repository |
+| `git` | `ghcr.io/stewart-php/runtime`; the container fetches `code.git.url` at `code.git.ref` into a release directory and installs its dependencies on start, then deploys each new commit without a pod restart | `code.git.url`; `code.git.tokenSecret` or `code.git.sshKeySecret` for a private repository |
 | `volume` | `ghcr.io/stewart-php/runtime` over a checkout in an existing PVC; dependencies are installed on start | `code.volume.claimName` |
 
 `code.generateOnStart: true` regenerates the entity and service classes from Home Assistant before the daemon starts.
@@ -44,6 +44,7 @@ classes are rewritten inside the image.
 | `code.mode` | `image` | `image`, `git` or `volume`; see above |
 | `code.image.repository`, `.tag`, `.pullPolicy` | `""`, `main`, `IfNotPresent` | Your project's image |
 | `code.git.url`, `.ref` | `""`, `main` | Repository and branch, tag or commit to clone |
+| `code.git.poll` | `1m` | How often new commits are fetched and deployed; `off` deploys only on pod start |
 | `code.git.tokenSecret.name`, `.key` | `""`, `token` | Secret with an HTTPS token that can read the repository |
 | `code.git.sshKeySecret.name`, `.key` | `""`, `ssh-privatekey` | Secret with an SSH deploy key, for `git@` URLs |
 | `code.volume.claimName` | `""` | PVC holding a checkout |
@@ -81,8 +82,12 @@ classes are rewritten inside the image.
 kubectl logs -f deployment/home-stewart
 kubectl exec deployment/home-stewart -- stewart status
 kubectl exec deployment/home-stewart -- stewart app:pause porch   # app:resume to undo, app:reset to let config decide; kept across restarts with persistence.url
-kubectl rollout restart deployment/home-stewart   # git mode: deploy the latest commit of code.git.ref
 ```
+
+In `git` mode the daemon fetches `code.git.ref` every `code.git.poll`. A new commit is installed beside the running
+one and must pass `stewart check`; only then does the daemon stop gracefully and start again on it, in the same pod.
+A commit that fails the check is logged, shown by `stewart status` and counted in `stewart_deploy_failures_total`, and
+never tried again; the running commit stays. To go back, set `code.git.ref` to a commit.
 
 With `adminApi.enabled`, the same pause commands work over HTTP:
 

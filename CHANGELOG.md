@@ -4,6 +4,52 @@ Every package, the `ghcr.io/stewart-php/runtime` image, the Helm chart and the s
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). On 0.x, a minor release may break; its "Upgrading"
 section says what to change.
 
+## [Unreleased]
+
+A git deployment now follows its branch. The daemon fetches the ref every minute, installs a new commit beside the
+running one, checks it with `stewart check`, and only then restarts itself on it, without a pod restart. A commit that
+fails the check is never deployed.
+
+### Highlights
+
+- **Deploys without restarts.** In git mode (`code.mode: git`, `deploy/compose.git.yaml`) each push reaches the daemon
+  within `deploy.git.poll`; dependencies are copied from the running release when `composer.lock` is unchanged.
+- **A bad commit stays out.** A commit whose configuration or `apps/` files do not load is rejected, logged, shown by
+  `stewart status` and counted in `stewart_deploy_failures_total`; the running release keeps going.
+- **`stewart check`.** The same validation runs from the command line, for CI or before a deploy.
+
+### Added
+
+- `stewart check` fails when the configuration does not load or a file in `apps/` cannot be loaded
+- `deploy.git.poll` (`off` by default) and `deploy.git.prepare_timeout` (`10m`) settings
+- The runtime image keeps git releases in `/app/releases/<sha>` with `/app/current` pointing at the running one, keeps
+  the three newest, and records rejected commits so they are not checked again
+- `stewart-entrypoint release-prepare`, `release-check` and `release-stage`, which the daemon runs while it polls
+- `stewart run` exits with 75 when it stops to start again on a staged release; the entrypoint restarts it
+- `stewart status` shows the deployed commit, the last poll and the last rejected commit with its reason
+- Metrics `stewart_deploy_info{commit}` and `stewart_deploy_failures_total`
+- Chart value `code.git.poll` (`1m`)
+
+### Changed
+
+- The chart's git mode fetches in the daemon container; the `checkout` init container is gone
+- `code.generateOnStart` applies in git mode through the daemon container
+- In git mode the entrypoint keeps PHP as its child and forwards SIGTERM and SIGINT to it
+- Restarting a git deployment checks a new head before running it, instead of running it unchecked
+- `STEWART_BOOT_*` variables stay set in git mode, so the daemon can run the entrypoint's release commands
+- The control protocol is version 24: snapshots carry `deploy`
+- `stewart-php/runtime` requires `amphp/process` directly
+
+### Upgrading
+
+1. Run `make upgrade VERSION=0.8`. Broker, workers and `stewart` commands must all run 0.8; `stewart status` against
+   a 0.7 daemon is refused (control protocol 24).
+2. A git deployment whose `composer.lock` still holds runtime 0.7 sets `code.git.poll: off` (or drops
+   `STEWART_DEPLOY__GIT__POLL` from `compose.git.yaml`) until it upgrades; 0.7 stops on the unknown variable.
+3. A compose git volume from 0.7 is converted on the first start: the old checkout is removed and the release layout
+   created, with one full dependency install.
+4. Code calling `BrokerLifecycle::run()` directly gets a `BrokerStopOutcome` back instead of nothing.
+
 ## [0.7.0] - 2026-10-07
 
 Automations need less glue. State streams can start from the current state and react to numeric thresholds, a

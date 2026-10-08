@@ -11,6 +11,9 @@ code:
   git:
     url: ""
     ref: main
+    # How often the daemon fetches ref and deploys a new commit that passes `stewart check`, without a pod restart;
+    # "off" deploys only on pod start. Needs stewart-php/runtime 0.8 or later in the project's composer.lock.
+    poll: 1m
     # A Secret holding an HTTPS token with read access, for a private repository.
     tokenSecret:
       name: ""
