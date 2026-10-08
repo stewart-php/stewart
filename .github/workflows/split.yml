@@ -1,4 +1,5 @@
-# Mirrors every package and the skeleton into its read-only repository under stewart-php, on main and on every tag.
+# Mirrors every package, the skeleton and the Home Assistant integration into its read-only repository under
+# stewart-php, on main and on every tag.
 # Needs a GitHub App installed on those repositories (vars.SPLIT_APP_CLIENT_ID, secrets.SPLIT_APP_PRIVATE_KEY).
 name: Split
 
@@ -33,6 +34,7 @@ jobs:
           - { directory: packages/support, repository: support }
           - { directory: packages/testing, repository: testing }
           - { directory: skeleton, repository: skeleton }
+          - { directory: integrations/home-assistant, repository: hass-stewart }
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -55,6 +57,40 @@ jobs:
           tag: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
           user_name: stewart-split[bot]
           user_email: stewart-split[bot]@users.noreply.github.com
+
+  # HACS installs from hass-stewart's releases, so a tag gets a release there with the zip hacs.json names.
+  hacs:
+    needs: split
+    if: vars.SPLIT_APP_CLIENT_ID != ''
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.SPLIT_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SPLIT_APP_PRIVATE_KEY }}
+          owner: stewart-php
+          repositories: hass-stewart
+      - name: Publish the HACS release
+        if: github.ref_type == 'tag'
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          (cd integrations/home-assistant/custom_components/stewart && zip -qr "$RUNNER_TEMP/stewart.zip" .)
+          awk -v heading="## [$version]" 'index($0, heading) == 1 { found = 1; next } found && /^## \[/ { exit } found' CHANGELOG.md > notes.md
+          gh release create "$GITHUB_REF_NAME" "$RUNNER_TEMP/stewart.zip" --repo stewart-php/hass-stewart \
+            --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+      - name: Validate for HACS
+        uses: hacs/action@1ebf01c408f29afcb6406bd431bc98fd8cbb15aa # main
+        with:
+          category: integration
+          repository: stewart-php/hass-stewart
+          # Not in the HACS brands repository yet; issues live in this repository.
+          ignore: brands issues
+          comment: false
+          github_token: ${{ steps.token.outputs.token }}
 
   packagist:
     needs: split

@@ -33,6 +33,11 @@ jobs:
           grep -q "ghcr.io/stewart-php/runtime:$MINOR-dev\$" skeleton/compose.dev.yaml
         env:
           MINOR: ${{ steps.version.outputs.minor }}
+      - name: The Home Assistant integration carries the version
+        run: |
+          grep -q "\"version\": \"$VERSION\"" integrations/home-assistant/custom_components/stewart/manifest.json
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
       - name: The changelog has the release
         run: grep -q "^## \[$VERSION\]" CHANGELOG.md
         env:

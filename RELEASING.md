@@ -6,15 +6,16 @@ This repository is the only place Stewart is developed. Everything else is publi
 |---|---|---|
 | `stewart-php/{contracts,support,client,store,store-redis,mqtt,sun,runtime,codegen,testing}` | Read-only `stewart-php/<name>` repositories, Packagist | `split.yml` |
 | `stewart-php/skeleton` | Read-only `stewart-php/skeleton` (a GitHub template repository), Packagist | `split.yml` |
+| Home Assistant integration | Read-only `stewart-php/hass-stewart`, its releases carry `stewart.zip` for HACS | `split.yml` |
 | `ghcr.io/stewart-php/runtime`, `…-dev` | GHCR, linux/amd64 and linux/arm64 | `release.yml`, `rebuild.yml` via `runtime-image.yml` |
 | `oci://ghcr.io/stewart-php/charts/stewart` | GHCR | `release.yml` |
 | Release notes | GitHub releases | `release.yml`, from `CHANGELOG.md` |
 
 ## Versioning
 
-- **Lockstep.** One version for every package, the image, the chart and the skeleton. A tag `vX.Y.Z` releases all of
-  them, even the ones that did not change. Packages require each other with `self.version`, so an installation
-  never mixes versions.
+- **Lockstep.** One version for every package, the image, the chart, the skeleton and the Home Assistant
+  integration. A tag `vX.Y.Z` releases all of them, even the ones that did not change. Packages require each other
+  with `self.version`, so an installation never mixes versions.
 - **Semver from 1.0.** On 0.x a minor release (`0.2.0`) may break, and its changelog section has an "Upgrading" part. A
   patch never breaks. From 1.0, the public surface is what apps code against: `stewart-php/contracts`, the generated
   classes, configuration keys, environment variables, console commands and the image entrypoint settings.
@@ -44,9 +45,11 @@ minor release, after `make check` is green on that PHP in CI, and say so in the 
    `skeleton/composer.json`, and `ghcr.io/stewart-php/runtime:X.Y` (`X.Y-dev` in `compose.dev.yaml`) in
    `skeleton/Dockerfile`, `skeleton/compose.yaml`, `skeleton/compose.dev.yaml` and `skeleton/deploy/*.yaml`.
    `release.yml` refuses a tag that does not match.
-3. Commit, then tag and push: `git tag -s vX.Y.Z -m vX.Y.Z && git push origin main vX.Y.Z`.
-4. Watch `Split` and `Release`. When they are green, `composer create-project stewart-php/skeleton` in a scratch
-   directory should install `X.Y.Z`.
+3. Set `version` in `integrations/home-assistant/custom_components/stewart/manifest.json` to `X.Y.Z`; `release.yml`
+   refuses a tag that does not match.
+4. Commit, then tag and push: `git tag -s vX.Y.Z -m vX.Y.Z && git push origin main vX.Y.Z`.
+5. Watch `Split` and `Release`. When they are green, `composer create-project stewart-php/skeleton` in a scratch
+   directory should install `X.Y.Z`, and `stewart-php/hass-stewart` should have an `X.Y.Z` release with `stewart.zip`.
 
 A broken release is fixed by a new patch release, never by moving or deleting a tag.
 
@@ -55,20 +58,23 @@ A broken release is fixed by a new patch release, never by moving or deleting a 
 Done once, by an owner of the `stewart-php` organization, before `v0.1.0`.
 
 1. **Repositories.** Create `client`, `codegen`, `contracts`, `mqtt`, `runtime`, `store`, `store-redis`, `sun`,
-   `support`, `testing` and `skeleton` under `stewart-php`, each empty, with issues, wiki and projects off. Their description
-   says they are read-only splits. Mark `skeleton` as a template repository.
+   `support`, `testing`, `skeleton` and `hass-stewart` under `stewart-php`, each empty, with issues, wiki and projects
+   off. Their description says they are read-only splits. Mark `skeleton` as a template repository. Give
+   `hass-stewart` the topics `home-assistant`, `hacs` and `integration`, which HACS validation checks.
 2. **Split token.** Create a GitHub App owned by `stewart-php` with *Contents* and *Workflows: read and write* (every
-   split carries `.github/workflows`), install it on those eleven repositories, then add its client ID as the variable
+   split carries `.github/workflows`), install it on those twelve repositories, then add its client ID as the variable
    `SPLIT_APP_CLIENT_ID` and its private key as the secret `SPLIT_APP_PRIVATE_KEY` in this repository. Until the
    variable exists, `Split` is skipped.
-3. **Packagist.** Run `Split` from the Actions tab so it fills the repositories. Then submit each of the eleven on
-   packagist.org under the `stewart-php` vendor and enable the GitHub hook. Optionally, add `PACKAGIST_USERNAME`
-   (variable) and `PACKAGIST_TOKEN` (secret) so `split.yml` also triggers an update itself.
+3. **Packagist.** Run `Split` from the Actions tab so it fills the repositories. Then submit each of the eleven PHP
+   ones on packagist.org under the `stewart-php` vendor and enable the GitHub hook. Optionally, add
+   `PACKAGIST_USERNAME` (variable) and `PACKAGIST_TOKEN` (secret) so `split.yml` also triggers an update itself.
 4. **GHCR.** After the first release, open the `runtime` and `charts/stewart` packages in the organization's
    packages, make them public, and link them to this repository.
 5. **Runners.** `ubuntu-24.04-arm` runners must be available to the organization; they are free for public
    repositories.
-6. **Optional.** List the chart on Artifact Hub (`oci://ghcr.io/stewart-php/charts/stewart`).
+6. **HACS.** Until `hass-stewart` is in the HACS default store, users add it as a custom repository (category
+   *Integration*); its README says how.
+7. **Optional.** List the chart on Artifact Hub (`oci://ghcr.io/stewart-php/charts/stewart`).
 
 ## Verifying a published release
 
