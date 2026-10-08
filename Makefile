@@ -156,6 +156,7 @@ test-skeleton: ## Install skeleton/ against this checkout and run a new project'
 # HA=min tests against the oldest supported Home Assistant, HA=latest (default) against the newest pinned one.
 export HA ?= latest
 HA_RUN := $(DC) run --rm ha
+HASSFEST_IMAGE := ghcr.io/home-assistant/hassfest@sha256:c79061c27ff0b4c43534d9a0ae67b19fe320261be8c0aded32b117e0272237e3
 
 .PHONY: ha-build
 ha-build: ## Build the integration's Python toolchain image [HA=min|latest]
@@ -168,6 +169,10 @@ ha-sh: ## Shell in the integration's toolchain [HA=min|latest]
 .PHONY: ha-check
 ha-check: ## Lint, type-check and test the Home Assistant integration [HA=min|latest]
 	$(HA_RUN) sh -c 'ruff check && ruff format --check && mypy && pytest'
+
+.PHONY: ha-hassfest
+ha-hassfest: ## Validate the integration with Home Assistant's hassfest
+	$(DOCKER) run --rm -v "$(CURDIR)/integrations/home-assistant:/github/workspace:ro" $(HASSFEST_IMAGE)
 
 # --- demo -----------------------------------------------------------------
 
