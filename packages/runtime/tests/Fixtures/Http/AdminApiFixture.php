@@ -19,11 +19,13 @@ use Stewart\Runtime\Broker\AppPauseService;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\ConnectionTracker;
 use Stewart\Runtime\Broker\DaemonStartTime;
+use Stewart\Runtime\Broker\Deploy\DeployState;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Broker\WorkerSlotRegistry;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
 use Stewart\Runtime\Control\Assembler\BrokerStatsBuilder;
 use Stewart\Runtime\Control\Assembler\DaemonInfoBuilder;
+use Stewart\Runtime\Control\Assembler\DeployStatusBuilder;
 use Stewart\Runtime\Control\Assembler\RegistrationInfoBuilder;
 use Stewart\Runtime\Control\Assembler\StoreHealthBuilder;
 use Stewart\Runtime\Control\Assembler\WorkerStatusBuilder;
@@ -98,6 +100,7 @@ final readonly class AdminApiFixture
             registrationInfos: new RegistrationInfoBuilder($broker->registry),
             storeHealth: new StoreHealthBuilder($broker->pools->slots, storeConfigured: false),
             appStatuses: new AppStatusBuilder($metrics, $this->registry),
+            deployStatus: new DeployStatusBuilder(new DeployState()),
             connection: new ConnectionTracker($this->clock),
             clock: $this->clock,
         );
