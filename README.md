@@ -24,6 +24,7 @@ runs `ghcr.io/stewart-php/runtime`, which holds PHP and an entrypoint; the frame
 
 A project's `stewart.yaml` holds only what differs from the defaults. `vendor/bin/stewart config:reference` prints
 every setting with its default; `vendor/bin/stewart config:dump` prints what is in effect, secrets masked.
+`vendor/bin/stewart check` fails when the configuration or any file in `apps/` does not load, for CI or before a deploy.
 
 Every setting can also come from the environment: the `STEWART_` prefix, then the keys uppercased and joined by a
 **double** underscore. A single underscore is part of a key name.
