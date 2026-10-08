@@ -1,0 +1,4 @@
+# Home Assistant 2026.4, the oldest release the integration supports.
+pytest-homeassistant-custom-component==0.13.325
+ruff==0.16.9
+mypy==2.3.1

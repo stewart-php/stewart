@@ -1,3 +1,4 @@
-# The images copy only .docker/; everything else stays out of the build context.
+# The images copy only .docker/ and the integration's requirements; everything else stays out of the build context.
 *
 !.docker/
+!integrations/home-assistant/requirements/

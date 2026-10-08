@@ -21,7 +21,7 @@ help: ## Show this help
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
 
 .PHONY: setup
-setup: build install doctor ## First run: build the image, install dependencies, verify the container
+setup: build ha-build install doctor ## First run: build the images, install dependencies, verify the container
 
 .PHONY: build
 build: ## Build the dev image
@@ -86,7 +86,7 @@ docs-preview: ## Serve the built documentation site
 # --- quality --------------------------------------------------------------
 
 .PHONY: check
-check: stan cs test test-integration test-process test-persistence test-architecture ## Run every check
+check: stan cs test test-integration test-process test-persistence test-architecture ha-check ## Run every check
 
 .PHONY: stan
 stan: ## PHPStan at max level and dependency check (phpat)
@@ -150,6 +150,24 @@ chart-lint: ## Lint the Helm chart and validate what it renders for each charts/
 .PHONY: test-skeleton
 test-skeleton: ## Install skeleton/ against this checkout and run a new project's first steps
 	$(RUN) sh bin/test-skeleton.sh
+
+# --- home assistant integration -------------------------------------------
+
+# HA=min tests against the oldest supported Home Assistant, HA=latest (default) against the newest pinned one.
+export HA ?= latest
+HA_RUN := $(DC) run --rm ha
+
+.PHONY: ha-build
+ha-build: ## Build the integration's Python toolchain image [HA=min|latest]
+	$(DC) build ha
+
+.PHONY: ha-sh
+ha-sh: ## Shell in the integration's toolchain [HA=min|latest]
+	$(HA_RUN) sh
+
+.PHONY: ha-check
+ha-check: ## Lint, type-check and test the Home Assistant integration [HA=min|latest]
+	$(HA_RUN) sh -c 'ruff check && ruff format --check && mypy && pytest'
 
 # --- demo -----------------------------------------------------------------
 

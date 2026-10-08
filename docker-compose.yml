@@ -42,6 +42,18 @@ services:
       retries: 15
     init: true
 
+  ha:
+    build:
+      context: .
+      dockerfile: .docker/ha/Dockerfile
+      args:
+        HA: "${HA:-latest}"
+    image: "stewart-ha:${HA:-latest}"
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - .:/app
+    init: true
+
   docs:
     image: node:24-alpine
     user: "${UID:-1000}:${GID:-1000}"

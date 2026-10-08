@@ -1,0 +1,36 @@
+[tool.ruff]
+target-version = "py314"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "COM812",  # conflicts with the formatter
+    "CPY",     # no per-file copyright headers
+    "D",       # docstrings
+    "ISC001",  # conflicts with the formatter
+    "TC",      # Home Assistant resolves annotations at runtime
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ARG001", "PLR2004", "S101"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["custom_components", "tests"]
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+files = ["custom_components", "tests"]
+explicit_package_bases = true
+
+[[tool.mypy.overrides]]
+module = "pytest_homeassistant_custom_component.*"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-p no:cacheprovider"

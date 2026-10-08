@@ -1,0 +1,12 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "description": "Lets Stewart create and drive its own entities. Stewart connects with an administrator's token and finds the integration by itself."
+            }
+        },
+        "abort": {
+            "single_instance_allowed": "[%key:common::config_flow::abort::single_instance_allowed%]"
+        }
+    }
+}
