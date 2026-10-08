@@ -131,7 +131,7 @@ run Valkey for you. Its README lists every value, including `code.mode=git`, whi
 
 ```bash
 make update               # composer update within the current release line; commit composer.lock
-make upgrade VERSION=0.7  # move to another release line: requirements, image tags, pull, install
+make upgrade VERSION=0.8  # move to another release line: requirements, image tags, pull, install
 ```
 
 Dependabot proposes Stewart releases and runtime image tags. A minor release on 0.x may break; read its "Upgrading"

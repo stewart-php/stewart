@@ -2,7 +2,7 @@
 # docker compose -f compose.git.yaml up -d. A push is deployed within a minute once it passes `stewart check`.
 services:
   stewart:
-    image: ghcr.io/stewart-php/runtime:0.7
+    image: ghcr.io/stewart-php/runtime:0.8
     env_file: .env
     environment:
       STEWART_BOOT_GIT_URL: https://github.com/OWNER/REPOSITORY.git
