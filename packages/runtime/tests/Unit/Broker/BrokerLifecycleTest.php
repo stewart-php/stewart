@@ -76,6 +76,7 @@ use Stewart\Runtime\Kernel\SyntheticServices;
 use Stewart\Runtime\Lifecycle\AppFailurePhase;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
 use Stewart\Runtime\Lifecycle\AppState;
+use Stewart\Runtime\Lifecycle\BrokerStopOutcome;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
@@ -491,6 +492,40 @@ final class BrokerLifecycleTest extends TestCase
         self::assertSame(0, $this->slots?->countLiveWorkers());
     }
 
+    public function testPlainStopEndsWithStoppedOutcome(): void
+    {
+        $this->startBroker();
+
+        $this->broker->run->stop('test');
+
+        self::assertSame(BrokerStopOutcome::Stopped, $this->awaitRunOutcome());
+    }
+
+    public function testRestartStopEndsWithRestartOutcome(): void
+    {
+        $this->startBroker();
+
+        $this->broker->run->stopToRestart('new release');
+
+        self::assertSame(BrokerStopOutcome::RestartRequested, $this->awaitRunOutcome());
+        self::assertSame(0, $this->slots?->countLiveWorkers());
+    }
+
+    public function testRestartDuringAStopKeepsFirstOutcome(): void
+    {
+        $this->spawner = new FakeWorkerSpawner(joinLatch: new Latch());
+        $this->broker = $this->createBroker();
+        $this->startBroker();
+
+        $stopping = async(fn() => $this->broker->run->stop('signal'));
+        EventLoopTicks::settleUntil(fn(): bool => $this->broker->run->isStopping());
+        $this->broker->run->stopToRestart('new release');
+        $this->broker->run->killWorkersNow();
+        $stopping->await();
+
+        self::assertSame(BrokerStopOutcome::Stopped, $this->awaitRunOutcome());
+    }
+
     public function testKillingWorkersNowEndsAStopEarly(): void
     {
         $this->spawner = new FakeWorkerSpawner(joinLatch: new Latch());
@@ -693,6 +728,15 @@ final class BrokerLifecycleTest extends TestCase
     {
         $this->running = async($this->broker->lifecycle->run(...));
         EventLoopTicks::settle();
+    }
+
+    private function awaitRunOutcome(): BrokerStopOutcome
+    {
+        $outcome = $this->running?->await();
+        $this->running = null;
+        self::assertInstanceOf(BrokerStopOutcome::class, $outcome);
+
+        return $outcome;
     }
 
     private function crashAndRestart(int $workerId): void

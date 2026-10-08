@@ -11,13 +11,14 @@ use Psr\Log\LoggerInterface;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Broker\Mqtt\MqttLink;
 use Stewart\Runtime\Lifecycle\BrokerRunPhase;
+use Stewart\Runtime\Lifecycle\BrokerStopOutcome;
 use Throwable;
 
 final class BrokerRun
 {
     private BrokerRunPhase $phase = BrokerRunPhase::Idle;
 
-    /** @var DeferredFuture<null> */
+    /** @var DeferredFuture<BrokerStopOutcome> */
     private DeferredFuture $runFinished;
 
     public function __construct(
@@ -49,19 +50,24 @@ final class BrokerRun
         return $this->phase === BrokerRunPhase::Stopping;
     }
 
-    public function awaitStopped(): void
+    public function awaitStopped(): BrokerStopOutcome
     {
-        $this->runFinished->getFuture()->await();
+        return $this->runFinished->getFuture()->await();
     }
 
     public function stop(string $reason): void
     {
-        $this->stopRun($reason, null);
+        $this->stopRun($reason, BrokerStopOutcome::Stopped, null);
+    }
+
+    public function stopToRestart(string $reason): void
+    {
+        $this->stopRun($reason, BrokerStopOutcome::RestartRequested, null);
     }
 
     public function stopWithError(string $reason, Throwable $error): void
     {
-        $this->stopRun($reason, $error);
+        $this->stopRun($reason, BrokerStopOutcome::Stopped, $error);
     }
 
     public function killWorkersNow(): void
@@ -74,7 +80,7 @@ final class BrokerRun
         $this->pool->terminateWorkers();
     }
 
-    private function stopRun(string $reason, ?Throwable $error): void
+    private function stopRun(string $reason, BrokerStopOutcome $outcome, ?Throwable $error): void
     {
         if (!$this->isRunning()) {
             return;
@@ -89,7 +95,7 @@ final class BrokerRun
         $this->moveTo(BrokerRunPhase::Stopped);
 
         if ($failure === null) {
-            $this->runFinished->complete();
+            $this->runFinished->complete($outcome);
         } else {
             $this->runFinished->error($failure);
         }

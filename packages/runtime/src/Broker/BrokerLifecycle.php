@@ -8,6 +8,7 @@ use Psr\Log\LoggerInterface;
 use Stewart\Runtime\Broker\Http\Collection\HttpListenerCollection;
 use Stewart\Runtime\Broker\Mqtt\MqttLink;
 use Stewart\Runtime\Broker\Mqtt\MqttMessageRouter;
+use Stewart\Runtime\Lifecycle\BrokerStopOutcome;
 use Stewart\Runtime\Time\ProcessTimeZone;
 use Stewart\Store\StoreBackend;
 use Throwable;
@@ -34,7 +35,7 @@ final readonly class BrokerLifecycle
     ) {}
 
     /** @throws Throwable */
-    public function run(): void
+    public function run(): BrokerStopOutcome
     {
         $this->loopErrors->install();
         $this->run->start();
@@ -63,7 +64,7 @@ final readonly class BrokerLifecycle
                 $this->workers->startWorkers();
             }
 
-            $this->run->awaitStopped();
+            return $this->run->awaitStopped();
         } catch (Throwable $e) {
             $this->run->stop('fatal error');
 

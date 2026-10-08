@@ -16,6 +16,7 @@ use Stewart\Runtime\App\AppSelection;
 use Stewart\Runtime\App\DiscoveryResult;
 use Stewart\Runtime\Config\ConfigLoader;
 use Stewart\Runtime\Kernel\BrokerKernel;
+use Stewart\Runtime\Lifecycle\BrokerStopOutcome;
 use Stewart\Runtime\Logging\LogFormat;
 use Stewart\Runtime\Logging\LoggerFactory;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -29,6 +30,9 @@ use Throwable;
 final class RunCommand extends StewartCommand
 {
     public const string NAME = 'run';
+
+    // sysexits EX_TEMPFAIL: the container entrypoint starts the daemon again on the staged release.
+    public const int RESTART_EXIT_CODE = 75;
 
     public function __construct(
         private readonly ConfigLoader $config,
@@ -60,14 +64,17 @@ final class RunCommand extends StewartCommand
         }
 
         try {
-            $daemon->broker->run();
+            $outcome = $daemon->broker->run();
         } catch (Throwable $e) {
             $daemon->logger->error('Stewart stopped', ['exception' => $e]);
 
             return Command::FAILURE;
         }
 
-        return Command::SUCCESS;
+        return match ($outcome) {
+            BrokerStopOutcome::Stopped => Command::SUCCESS,
+            BrokerStopOutcome::RestartRequested => self::RESTART_EXIT_CODE,
+        };
     }
 
     /** @throws StewartException */
