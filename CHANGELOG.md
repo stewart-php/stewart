@@ -1,8 +1,8 @@
 # Changelog
 
-Every package, the `ghcr.io/stewart-php/runtime` image, the Helm chart and the skeleton share one version. The format
-follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). On 0.x, a minor release may break; its "Upgrading"
-section says what to change.
+Every package, the `ghcr.io/stewart-php/runtime` image, the Helm chart, the skeleton and the Home Assistant
+integration share one version. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). On 0.x, a
+minor release may break; its "Upgrading" section says what to change.
 
 ## [Unreleased]
 
@@ -10,6 +10,11 @@ section says what to change.
 
 - The protocol between Stewart and its Home Assistant integration, `integrations/home-assistant/PROTOCOL.md`, with
   JSON goldens for every message in `integrations/home-assistant/tests/protocol/`
+- The `stewart` Home Assistant integration, installed through HACS from `stewart-php/hass-stewart` or by unpacking
+  `stewart.zip` from its releases; Home Assistant 2026.4 or newer. It has a config flow, `stewart/version` and
+  `stewart/session/subscribe`; entities follow in later releases
+- `make ha-check` (ruff, mypy, pytest; `HA=min` for Home Assistant 2026.4) as part of `make check`, and
+  `make ha-hassfest`
 
 ## [0.8.0] - 2026-10-08
 
