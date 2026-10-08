@@ -12,6 +12,8 @@ use Stewart\Runtime\Control\Protocol\Status\AppStatus;
 use Stewart\Runtime\Control\Protocol\Status\BrokerStats;
 use Stewart\Runtime\Control\Protocol\Status\ConnectionState;
 use Stewart\Runtime\Control\Protocol\Status\DaemonInfo;
+use Stewart\Runtime\Control\Protocol\Status\DeployFailure;
+use Stewart\Runtime\Control\Protocol\Status\DeployStatus;
 use Stewart\Runtime\Control\Protocol\Status\FailureReport;
 use Stewart\Runtime\Control\Protocol\Status\LatencyHistogram;
 use Stewart\Runtime\Control\Protocol\Status\OutboxStatus;
@@ -82,6 +84,12 @@ final class StubSnapshotSource
             )],
             subscriptions: [new RegistrationInfo('w0:0', 0, 'porch', SubscriptionKind::Event, 'doorbell', true)],
             store: new StoreHealth(true, 'timed out', Instant::fromIso('2026-09-26T10:45:00Z')),
+            deploy: new DeployStatus(
+                commit: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+                lastPolledAt: Instant::fromIso('2026-09-26T10:59:30Z'),
+                failures: 1,
+                lastFailure: new DeployFailure('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', 'apps/Porch.php failed to load: syntax error', Instant::fromIso('2026-09-26T10:50:00Z')),
+            ),
         );
     }
 }

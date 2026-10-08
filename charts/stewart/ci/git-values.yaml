@@ -3,6 +3,7 @@ code:
   git:
     url: https://github.com/example/home.git
     ref: main
+    poll: 30s
     tokenSecret:
       name: stewart-git
   generateOnStart: true

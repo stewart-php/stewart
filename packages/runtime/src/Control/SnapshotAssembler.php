@@ -9,6 +9,7 @@ use Stewart\Runtime\Broker\ConnectionTracker;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
 use Stewart\Runtime\Control\Assembler\BrokerStatsBuilder;
 use Stewart\Runtime\Control\Assembler\DaemonInfoBuilder;
+use Stewart\Runtime\Control\Assembler\DeployStatusBuilder;
 use Stewart\Runtime\Control\Assembler\RegistrationInfoBuilder;
 use Stewart\Runtime\Control\Assembler\StoreHealthBuilder;
 use Stewart\Runtime\Control\Assembler\WorkerStatusBuilder;
@@ -23,6 +24,7 @@ final readonly class SnapshotAssembler
         private RegistrationInfoBuilder $registrationInfos,
         private StoreHealthBuilder $storeHealth,
         private AppStatusBuilder $appStatuses,
+        private DeployStatusBuilder $deployStatus,
         private ConnectionTracker $connection,
         private Clock $clock,
     ) {}
@@ -38,6 +40,7 @@ final readonly class SnapshotAssembler
             apps: $this->appStatuses->buildAppStatuses()->listValues(),
             subscriptions: $this->registrationInfos->buildRegistrationInfos()->listValues(),
             store: $this->storeHealth->buildStoreHealth(),
+            deploy: $this->deployStatus->buildDeployStatus(),
         );
     }
 }

@@ -16,6 +16,8 @@ use Stewart\Runtime\Control\Protocol\Status\AppStatus;
 use Stewart\Runtime\Control\Protocol\Status\BrokerStats;
 use Stewart\Runtime\Control\Protocol\Status\ConnectionState;
 use Stewart\Runtime\Control\Protocol\Status\DaemonInfo;
+use Stewart\Runtime\Control\Protocol\Status\DeployFailure;
+use Stewart\Runtime\Control\Protocol\Status\DeployStatus;
 use Stewart\Runtime\Control\Protocol\Status\FailureReport;
 use Stewart\Runtime\Control\Protocol\Status\LatencyHistogram;
 use Stewart\Runtime\Control\Protocol\Status\OutboxStatus;
@@ -73,6 +75,12 @@ final class StatusRendererTest extends TestCase
             ],
             subscriptions: [],
             store: new StoreHealth(false, 'connection refused', self::createInstantAt($now - 20.0)),
+            deploy: new DeployStatus(
+                str_repeat('a', 40),
+                self::createInstantAt($now - 15.0),
+                2,
+                new DeployFailure(str_repeat('b', 40), 'apps/Porch.php failed to load: syntax error', self::createInstantAt($now - 120.0)),
+            ),
         );
 
         $output = new BufferedOutput();

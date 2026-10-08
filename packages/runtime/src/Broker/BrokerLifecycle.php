@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker;
 
 use Psr\Log\LoggerInterface;
+use Stewart\Runtime\Broker\Deploy\ReleasePoller;
 use Stewart\Runtime\Broker\Http\Collection\HttpListenerCollection;
 use Stewart\Runtime\Broker\Mqtt\MqttLink;
 use Stewart\Runtime\Broker\Mqtt\MqttMessageRouter;
+use Stewart\Runtime\Lifecycle\BrokerStopOutcome;
 use Stewart\Runtime\Time\ProcessTimeZone;
 use Stewart\Store\StoreBackend;
 use Throwable;
@@ -29,12 +31,13 @@ final readonly class BrokerLifecycle
         private MqttLink $mqtt,
         private MqttMessageRouter $mqttRouter,
         private AppPauseService $pauses,
+        private ReleasePoller $releases,
         private LoggerInterface $logger,
         private ?StoreBackend $store = null,
     ) {}
 
     /** @throws Throwable */
-    public function run(): void
+    public function run(): BrokerStopOutcome
     {
         $this->loopErrors->install();
         $this->run->start();
@@ -61,14 +64,16 @@ final readonly class BrokerLifecycle
                 $this->connection->markConnected();
                 $this->drift->warnIfGeneratedCodeDrifted();
                 $this->workers->startWorkers();
+                $this->releases->startPolling();
             }
 
-            $this->run->awaitStopped();
+            return $this->run->awaitStopped();
         } catch (Throwable $e) {
             $this->run->stop('fatal error');
 
             throw $e;
         } finally {
+            $this->releases->stopPolling();
             $this->stopHttpListeners();
             $this->stopControlPlane();
             $this->signals->removeAll();

@@ -1,17 +1,18 @@
 Daemon
-                                                                      
-version        0.1.0-test                                             
-pid            42                                                     
-up             1h 02m                                                 
-memory         12.0 MiB                                               
-home assistant connected since 30s ago, version 2026.8.1              
-reconnects     1, last outage 4s                                      
-store          down, last failure 20s ago: connection refused         
-entities       2000                                                   
-time zone      Europe/Budapest                                        
-workers        1 live of 2                                            
-service calls  1 in flight, 0 refused                                 
-routing        2 subscriptions, 1 patterns, cache 100 hits / 7 misses 
+                                                                                                                         
+version        0.1.0-test                                                                                                
+pid            42                                                                                                        
+up             1h 02m                                                                                                    
+memory         12.0 MiB                                                                                                  
+home assistant connected since 30s ago, version 2026.8.1                                                                 
+reconnects     1, last outage 4s                                                                                         
+store          down, last failure 20s ago: connection refused                                                            
+deploy         aaaaaaa, polled 15s ago, 2 rejected, last bbbbbbb 2m 00s ago: apps/Porch.php failed to load: syntax error 
+entities       2000                                                                                                      
+time zone      Europe/Budapest                                                                                           
+workers        1 live of 2                                                                                               
+service calls  1 in flight, 0 refused                                                                                    
+routing        2 subscriptions, 1 patterns, cache 100 hits / 7 misses                                                    
 
 Workers
 worker phase                   pid  ready apps lag    memory  pong   missed restarts          queued dropped batches          calls 

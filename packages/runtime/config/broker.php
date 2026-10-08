@@ -13,6 +13,8 @@ use Stewart\Runtime\Broker\BrokerStoreBackendOpener;
 use Stewart\Runtime\Broker\BrokerSubscriptionListener;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\ControlPlane;
+use Stewart\Runtime\Broker\Deploy\AmpExternalCommandRunner;
+use Stewart\Runtime\Broker\Deploy\ExternalCommandRunner;
 use Stewart\Runtime\Broker\EventRouter;
 use Stewart\Runtime\Broker\HaSession;
 use Stewart\Runtime\Broker\Http\Collection\HttpListenerCollection;
@@ -68,6 +70,7 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(ProcessContextFactory::class)->autowire(false)->arg('$ipcHub', inline_service(LocalIpcHub::class));
     $services->alias(WorkerSpawner::class, ProcessWorkerSpawner::class);
+    $services->alias(ExternalCommandRunner::class, AmpExternalCommandRunner::class);
 
     $services->set(AppPlacement::class)->factory([service(AppPlacementFactory::class), 'createPlacementForHost']);
     $services->set(WorkerSlotCollection::class)->factory([service(AppPlacement::class), 'planWorkerSlots']);

@@ -219,6 +219,16 @@ codegen:
             # Keys or globs that never get one, known or included.
             exclude:              []
 
+# Deploying new commits while running; needs the runtime image cloning the project (STEWART_BOOT_GIT_URL).
+deploy:
+    git:
+
+        # How often to fetch the tracked ref and deploy a new commit that passes `stewart check`. "off" disables it.
+        poll:                 'off'
+
+        # Longest a fetch, dependency install and check of one commit may take.
+        prepare_timeout:      10m
+
 # Per-app overrides, keyed by the ID in the automation's #[Automation] attribute. Automations are found by scanning, not listed here.
 apps:
 

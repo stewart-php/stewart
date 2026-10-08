@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Console;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\Control\Protocol\Status\AppStatus;
 use Stewart\Runtime\Control\Protocol\Status\ConnectionState;
+use Stewart\Runtime\Control\Protocol\Status\DeployStatus;
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
 use Stewart\Runtime\Control\Protocol\Status\WorkerStatus;
 use Stewart\Runtime\Model\ServiceCallOutcome;
@@ -17,6 +18,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 final readonly class StatusRenderer
 {
     private const float LATENCY_QUANTILE = 0.95;
+
+    private const int SHORT_COMMIT_LENGTH = 7;
 
     public function __construct(private StatusFormatter $formatter) {}
 
@@ -45,6 +48,7 @@ final readonly class StatusRenderer
             ['home assistant', $this->describeConnection($snapshot, $now)],
             ['reconnects', $this->describeReconnects($connection)],
             ['store', $this->describeStoreHealth($snapshot->store, $now)],
+            ['deploy', $this->describeDeploy($snapshot->deploy, $now)],
             ['entities', (string) $daemon->entities],
             ['time zone', $daemon->timeZone],
             ['workers', \sprintf('%d live of %d', $broker->liveWorkers, $broker->workers)],
@@ -173,6 +177,32 @@ final readonly class StatusRenderer
         return $health->lastFailureAt === null
             ? \sprintf('%s, last failure: %s', $state, $health->lastFailure)
             : \sprintf('%s, last failure %s: %s', $state, $this->formatter->formatTimeAgo($health->lastFailureAt, $now), $health->lastFailure);
+    }
+
+    private function describeDeploy(?DeployStatus $deploy, Instant $now): string
+    {
+        if ($deploy === null) {
+            return 'not polling';
+        }
+
+        $description = \sprintf(
+            '%s, polled %s',
+            substr($deploy->commit, 0, self::SHORT_COMMIT_LENGTH),
+            $this->formatter->formatTimeAgo($deploy->lastPolledAt, $now),
+        );
+
+        if ($deploy->lastFailure === null) {
+            return $description;
+        }
+
+        return \sprintf(
+            '%s, %d rejected, last %s %s: %s',
+            $description,
+            $deploy->failures,
+            substr($deploy->lastFailure->commit, 0, self::SHORT_COMMIT_LENGTH),
+            $this->formatter->formatTimeAgo($deploy->lastFailure->failedAt, $now),
+            $deploy->lastFailure->reason,
+        );
     }
 
     private function formatCalls(AppStatus $app): string

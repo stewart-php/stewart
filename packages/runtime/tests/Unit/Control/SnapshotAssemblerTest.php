@@ -14,9 +14,11 @@ use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\BrokerSubscription;
 use Stewart\Runtime\Broker\ConnectionTracker;
 use Stewart\Runtime\Broker\DaemonStartTime;
+use Stewart\Runtime\Broker\Deploy\DeployState;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
 use Stewart\Runtime\Control\Assembler\BrokerStatsBuilder;
 use Stewart\Runtime\Control\Assembler\DaemonInfoBuilder;
+use Stewart\Runtime\Control\Assembler\DeployStatusBuilder;
 use Stewart\Runtime\Control\Assembler\RegistrationInfoBuilder;
 use Stewart\Runtime\Control\Assembler\StoreHealthBuilder;
 use Stewart\Runtime\Control\Assembler\WorkerStatusBuilder;
@@ -107,6 +109,7 @@ final class SnapshotAssemblerTest extends TestCase
         self::assertFalse($snapshot->subscriptions[1]->exact);
         self::assertSame('glob:demo.*', $snapshot->subscriptions[1]->selector);
         self::assertNull($snapshot->store, 'Without persistence there is no store to report.');
+        self::assertNull($snapshot->deploy, 'Without polling there is no deploy to report.');
     }
 
     private function createAssembler(): SnapshotAssembler
@@ -122,6 +125,7 @@ final class SnapshotAssemblerTest extends TestCase
             registrationInfos: new RegistrationInfoBuilder($broker->registry),
             storeHealth: new StoreHealthBuilder($broker->pools->slots, storeConfigured: false),
             appStatuses: new AppStatusBuilder($broker->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock()))),
+            deployStatus: new DeployStatusBuilder(new DeployState()),
             connection: $connection,
             clock: $broker->timers->clock,
         );

@@ -1,7 +1,7 @@
 # Where the project code comes from.
 code:
   # image: your project's image (built by the skeleton's image workflow), which includes vendor/.
-  # git: an init container clones code.git.url and installs dependencies into an emptyDir on every start.
+  # git: the container fetches code.git.url into a release directory of an emptyDir and installs its dependencies.
   # volume: an existing PersistentVolumeClaim holding a checkout; dependencies are installed on start.
   mode: image
   image:
@@ -11,6 +11,9 @@ code:
   git:
     url: ""
     ref: main
+    # How often the daemon fetches ref and deploys a new commit that passes `stewart check`, without a pod restart;
+    # "off" deploys only on pod start. Needs stewart-php/runtime 0.8 or later in the project's composer.lock.
+    poll: 1m
     # A Secret holding an HTTPS token with read access, for a private repository.
     tokenSecret:
       name: ""
@@ -25,7 +28,7 @@ code:
   # In image mode this turns off readOnlyRootFilesystem, since the classes are rewritten inside the image's /app.
   generateOnStart: false
 
-# PHP and the entrypoint; runs the code in git and volume modes, and the git init container.
+# PHP and the entrypoint; runs the code in git and volume modes.
 runtimeImage:
   repository: ghcr.io/stewart-php/runtime
   # Defaults to the chart's appVersion major.minor, such as 0.1.

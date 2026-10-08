@@ -2376,7 +2376,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/runtime",
-                "reference": "a4a058a8cbdfcba1e821aa3b85b63d27e7da248e"
+                "reference": "d91b0718d7ab99e74da650d73a2e20f384032df5"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2384,6 +2384,7 @@
                 "amphp/http": "^2.1",
                 "amphp/http-server": "^3.4",
                 "amphp/parallel": "^2.4",
+                "amphp/process": "^2.0.3",
                 "amphp/socket": "^2.4",
                 "amphp/sync": "^2.3",
                 "composer-runtime-api": "^2.2",
@@ -2407,9 +2408,6 @@
                 "symfony/finder": "^7.4 || ^8.0",
                 "symfony/process": "^7.4 || ^8.0",
                 "symfony/yaml": "^7.4 || ^8.0"
-            },
-            "conflict": {
-                "amphp/process": "<2.0.3"
             },
             "require-dev": {
                 "phpunit/phpunit": "^13.3",

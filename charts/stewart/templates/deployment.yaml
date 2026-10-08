@@ -58,10 +58,8 @@ spec:
       {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      {{- if or $waitForValkey (eq $mode "git") }}
-      initContainers:
-      {{- end }}
       {{- if $waitForValkey }}
+      initContainers:
         # The daemon stops when the store is unreachable at start; on a first install Valkey may still be starting.
         - name: wait-for-valkey
           image: {{ include "stewart.codeImage" . }}
@@ -78,42 +76,6 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- end }}
-      {{- if eq $mode "git" }}
-        - name: checkout
-          image: {{ include "stewart.runtimeImage" . }}
-          imagePullPolicy: {{ .Values.runtimeImage.pullPolicy }}
-          args: [prepare]
-          env:
-            - name: STEWART_BOOT_GIT_URL
-              value: {{ required "code.git.url is required when code.mode is git" .Values.code.git.url | quote }}
-            - name: STEWART_BOOT_GIT_REF
-              value: {{ .Values.code.git.ref | quote }}
-            {{- if .Values.code.git.tokenSecret.name }}
-            - name: STEWART_BOOT_GIT_TOKEN_FILE
-              value: /run/secrets/stewart/git-token
-            {{- end }}
-            {{- if .Values.code.git.sshKeySecret.name }}
-            - name: STEWART_BOOT_GIT_SSH_KEY_FILE
-              value: /run/secrets/stewart/git-ssh-key
-            {{- end }}
-            - name: STEWART_BOOT_COMPOSER
-              value: auto
-            - name: STEWART_BOOT_GENERATE
-              value: {{ ternary "1" "0" .Values.code.generateOnStart | quote }}
-            {{- include "stewart.env" (dict "root" . "homeAssistantToken" $homeAssistantToken "persistenceUrl" $persistenceUrl "controlToken" $controlToken) | nindent 12 }}
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-          volumeMounts:
-            - name: app
-              mountPath: /app
-            - name: tmp
-              mountPath: /tmp
-            - name: secrets
-              mountPath: /run/secrets/stewart
-              readOnly: true
-      {{- end }}
       containers:
         - name: stewart
           image: {{ include "stewart.codeImage" . }}
@@ -124,10 +86,26 @@ spec:
             - --config=/etc/stewart/stewart.yaml
             {{- end }}
           env:
+            {{- if eq $mode "git" }}
+            - name: STEWART_BOOT_GIT_URL
+              value: {{ required "code.git.url is required when code.mode is git" .Values.code.git.url | quote }}
+            - name: STEWART_BOOT_GIT_REF
+              value: {{ .Values.code.git.ref | quote }}
+            - name: STEWART_DEPLOY__GIT__POLL
+              value: {{ .Values.code.git.poll | quote }}
+            {{- if .Values.code.git.tokenSecret.name }}
+            - name: STEWART_BOOT_GIT_TOKEN_FILE
+              value: /run/secrets/stewart/git-token
+            {{- end }}
+            {{- if .Values.code.git.sshKeySecret.name }}
+            - name: STEWART_BOOT_GIT_SSH_KEY_FILE
+              value: /run/secrets/stewart/git-ssh-key
+            {{- end }}
+            {{- end }}
             - name: STEWART_BOOT_COMPOSER
-              value: {{ ternary "auto" "never" (eq $mode "volume") }}
+              value: {{ ternary "never" "auto" (eq $mode "image") }}
             - name: STEWART_BOOT_GENERATE
-              value: {{ ternary "1" "0" (and .Values.code.generateOnStart (ne $mode "git")) | quote }}
+              value: {{ ternary "1" "0" .Values.code.generateOnStart | quote }}
             {{- include "stewart.env" (dict "root" . "homeAssistantToken" $homeAssistantToken "persistenceUrl" $persistenceUrl "controlToken" $controlToken) | nindent 12 }}
             {{- if eq .Values.probes.mode "http" }}
             - name: STEWART_HTTP__LISTEN

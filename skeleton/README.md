@@ -95,15 +95,20 @@ make deploy             # later: git pull, restart; changed dependencies are ins
 push to `main` and every `v*` tag. Copy `deploy/compose.image.yaml` and a filled-in `.env` to the server, set the
 image, and `docker compose -f compose.image.yaml up -d`. Kubernetes runs the same image (below).
 
-### A clone on every start
+### A clone that follows a branch
 
 Copy `deploy/compose.git.yaml` and a filled-in `.env` to the server, set the repository URL, and
-`docker compose -f compose.git.yaml up -d`. Every start fetches the ref and installs what changed; restart the service
-to deploy. A private repository needs a read-only token (see the comments in the file).
+`docker compose -f compose.git.yaml up -d`. A private repository needs a read-only token (see the comments in the
+file).
+
+Every minute (`deploy.git.poll`) the daemon fetches the ref. A new commit is installed into its own directory beside
+the running one, dependencies copied when `composer.lock` is unchanged, and must pass `stewart check`; then the daemon
+stops gracefully and starts again on it. A commit that fails the check is logged, shown by `stewart status`, and never
+tried again, so the running commit stays until a fixed one is pushed. A restart applies the same check.
 
 | Entrypoint variable | Meaning |
 |---|---|
-| `STEWART_BOOT_GIT_URL` | Clone or fetch this repository into `/app` before starting |
+| `STEWART_BOOT_GIT_URL` | Fetch this repository into a release directory under `/app` before starting |
 | `STEWART_BOOT_GIT_REF` | Branch, tag or commit; `main` by default |
 | `STEWART_BOOT_GIT_TOKEN_FILE` | File holding an HTTPS token for a private repository |
 | `STEWART_BOOT_GIT_SSH_KEY_FILE` | File holding an SSH deploy key, for `git@…` URLs |
@@ -120,7 +125,7 @@ helm install home oci://ghcr.io/stewart-php/charts/stewart \
 ```
 
 The chart runs one replica (two would both run every automation), probes the daemon with `stewart status`, and can
-run Valkey for you. Its README lists every value, including `code.mode=git` for a clone on every start.
+run Valkey for you. Its README lists every value, including `code.mode=git`, which follows a branch the same way.
 
 ## Upgrading
 

@@ -27,5 +27,6 @@ final readonly class RuntimeSnapshot
         #[ListOf(RegistrationInfo::class)]
         public array $subscriptions,
         public ?StoreHealth $store = null,
+        public ?DeployStatus $deploy = null,
     ) {}
 }

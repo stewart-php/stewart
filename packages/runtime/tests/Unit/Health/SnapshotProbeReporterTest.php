@@ -10,9 +10,11 @@ use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\ConnectionTracker;
 use Stewart\Runtime\Broker\DaemonStartTime;
+use Stewart\Runtime\Broker\Deploy\DeployState;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
 use Stewart\Runtime\Control\Assembler\BrokerStatsBuilder;
 use Stewart\Runtime\Control\Assembler\DaemonInfoBuilder;
+use Stewart\Runtime\Control\Assembler\DeployStatusBuilder;
 use Stewart\Runtime\Control\Assembler\RegistrationInfoBuilder;
 use Stewart\Runtime\Control\Assembler\StoreHealthBuilder;
 use Stewart\Runtime\Control\Assembler\WorkerStatusBuilder;
@@ -76,6 +78,7 @@ final class SnapshotProbeReporterTest extends TestCase
             registrationInfos: new RegistrationInfoBuilder($broker->registry),
             storeHealth: new StoreHealthBuilder($broker->pools->slots, storeConfigured: false),
             appStatuses: new AppStatusBuilder($broker->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), $startTime)),
+            deployStatus: new DeployStatusBuilder(new DeployState()),
             connection: $this->connection,
             clock: $broker->timers->clock,
         );

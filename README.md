@@ -16,14 +16,15 @@ composer create-project stewart-php/skeleton my-home   # or "Use this template" 
 ```
 
 The skeleton's README covers development, generated classes and deployment: a checkout on a server, an image built by
-CI, a clone on every start, or Kubernetes through the Helm chart (`oci://ghcr.io/stewart-php/charts/stewart`). Each
-runs `ghcr.io/stewart-php/runtime`, which holds PHP and an entrypoint; the framework version comes from the project's
-`composer.lock`.
+CI, a clone that deploys each pushed commit, or Kubernetes through the Helm chart
+(`oci://ghcr.io/stewart-php/charts/stewart`). Each runs `ghcr.io/stewart-php/runtime`, which holds PHP and an
+entrypoint; the framework version comes from the project's `composer.lock`.
 
 ## Configuration
 
 A project's `stewart.yaml` holds only what differs from the defaults. `vendor/bin/stewart config:reference` prints
 every setting with its default; `vendor/bin/stewart config:dump` prints what is in effect, secrets masked.
+`vendor/bin/stewart check` fails when the configuration or any file in `apps/` does not load, for CI or before a deploy.
 
 Every setting can also come from the environment: the `STEWART_` prefix, then the keys uppercased and joined by a
 **double** underscore. A single underscore is part of a key name.

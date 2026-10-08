@@ -1,5 +1,5 @@
-# Clones this repository on every start, so the server needs only this file and a filled-in .env. Set the URL below,
-# then: docker compose -f compose.git.yaml up -d. Redeploy after a push: docker compose -f compose.git.yaml restart stewart
+# Clones this repository, so the server needs only this file and a filled-in .env. Set the URL below, then:
+# docker compose -f compose.git.yaml up -d. A push is deployed within a minute once it passes `stewart check`.
 services:
   stewart:
     image: ghcr.io/stewart-php/runtime:0.7
@@ -8,6 +8,7 @@ services:
       STEWART_BOOT_GIT_URL: https://github.com/OWNER/REPOSITORY.git
       STEWART_BOOT_GIT_REF: main
       STEWART_BOOT_COMPOSER: auto
+      STEWART_DEPLOY__GIT__POLL: 1m
       # A private repository: a token with read access in ./git-token, readable by uid 10001.
       # STEWART_BOOT_GIT_TOKEN_FILE: /run/secrets/git_token
     # secrets:
