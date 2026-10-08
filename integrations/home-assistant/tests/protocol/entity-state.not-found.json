@@ -1,0 +1,14 @@
+{
+    "protocol": 1,
+    "request": {
+        "type": "stewart/entity/state",
+        "instance": "default",
+        "app": "lights",
+        "key": "night_mode",
+        "available": false
+    },
+    "error": {
+        "code": "not_found",
+        "message": "Instance default has no entity lights/night_mode."
+    }
+}

@@ -1,0 +1,35 @@
+{
+    "protocol": 1,
+    "request": {
+        "type": "stewart/entity/upsert",
+        "instance": "default",
+        "app": "climate",
+        "key": "average_temperature",
+        "platform": "sensor",
+        "config": {
+            "name": "Average temperature",
+            "device_class": "temperature",
+            "unit_of_measurement": "°C",
+            "state_class": "measurement",
+            "suggested_display_precision": 1
+        },
+        "state": 21.4,
+        "attributes": {
+            "sources": [
+                "sensor.kitchen_temperature",
+                "sensor.hall_temperature"
+            ]
+        }
+    },
+    "result": {
+        "entity_id": "sensor.stewart_climate_average_temperature",
+        "state": 21.4,
+        "attributes": {
+            "sources": [
+                "sensor.kitchen_temperature",
+                "sensor.hall_temperature"
+            ]
+        },
+        "available": true
+    }
+}

@@ -1,0 +1,21 @@
+{
+    "protocol": 1,
+    "request": {
+        "type": "stewart/entity/upsert",
+        "instance": "default",
+        "app": "presence",
+        "key": "anyone_home",
+        "platform": "binary_sensor",
+        "config": {
+            "name": "Anyone home",
+            "device_class": "occupancy"
+        },
+        "state": false
+    },
+    "result": {
+        "entity_id": "binary_sensor.stewart_presence_anyone_home",
+        "state": false,
+        "attributes": {},
+        "available": true
+    }
+}

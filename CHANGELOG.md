@@ -4,6 +4,13 @@ Every package, the `ghcr.io/stewart-php/runtime` image, the Helm chart and the s
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). On 0.x, a minor release may break; its "Upgrading"
 section says what to change.
 
+## [Unreleased]
+
+### Added
+
+- The protocol between Stewart and its Home Assistant integration, `integrations/home-assistant/PROTOCOL.md`, with
+  JSON goldens for every message in `integrations/home-assistant/tests/protocol/`
+
 ## [0.8.0] - 2026-10-08
 
 A git deployment now follows its branch. The daemon fetches the ref every minute, installs a new commit beside the

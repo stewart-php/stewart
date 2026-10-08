@@ -1,0 +1,11 @@
+{
+    "protocol": 1,
+    "request": {
+        "type": "stewart/session/subscribe",
+        "instance": "default",
+        "protocol": 1,
+        "stewart_version": "0.9.0",
+        "command_timeout": 5.0
+    },
+    "result": null
+}
