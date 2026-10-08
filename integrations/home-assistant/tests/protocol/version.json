@@ -1,0 +1,10 @@
+{
+    "protocol": 1,
+    "request": {
+        "type": "stewart/version"
+    },
+    "result": {
+        "component_version": "0.9.0",
+        "protocol": 1
+    }
+}
