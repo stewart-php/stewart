@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker;
 
 use Psr\Log\LoggerInterface;
+use Stewart\Runtime\Broker\Deploy\ReleasePoller;
 use Stewart\Runtime\Broker\Http\Collection\HttpListenerCollection;
 use Stewart\Runtime\Broker\Mqtt\MqttLink;
 use Stewart\Runtime\Broker\Mqtt\MqttMessageRouter;
@@ -30,6 +31,7 @@ final readonly class BrokerLifecycle
         private MqttLink $mqtt,
         private MqttMessageRouter $mqttRouter,
         private AppPauseService $pauses,
+        private ReleasePoller $releases,
         private LoggerInterface $logger,
         private ?StoreBackend $store = null,
     ) {}
@@ -62,6 +64,7 @@ final readonly class BrokerLifecycle
                 $this->connection->markConnected();
                 $this->drift->warnIfGeneratedCodeDrifted();
                 $this->workers->startWorkers();
+                $this->releases->startPolling();
             }
 
             return $this->run->awaitStopped();
@@ -70,6 +73,7 @@ final readonly class BrokerLifecycle
 
             throw $e;
         } finally {
+            $this->releases->stopPolling();
             $this->stopHttpListeners();
             $this->stopControlPlane();
             $this->signals->removeAll();

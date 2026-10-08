@@ -45,6 +45,7 @@ final class StewartConfigSchema implements ConfigurationInterface
         $this->addControlSection($root);
         $this->addHttpSection($root);
         $this->addCodegenSection($root);
+        $this->addDeploySection($root);
         $this->addAppsSection($root);
 
         return $treeBuilder;
@@ -314,6 +315,26 @@ final class StewartConfigSchema implements ConfigurationInterface
                         ->append($this->createPatternListNode('include', 'Entity selectors that get classes. Exact IDs or globs (* and ?).', ['*']))
                         ->append($this->createPatternListNode('exclude', 'Entity selectors that do not, whatever include says.', []))
                         ->append($this->createDomainAttributesNode())
+                    ->end()
+                ->end()
+            ->end();
+    }
+
+    private function addDeploySection(ArrayNodeDefinition $root): void
+    {
+        $root
+            ->children()
+                ->arrayNode('deploy')
+                    ->info('Deploying new commits while running; needs the runtime image cloning the project (STEWART_BOOT_GIT_URL).')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->arrayNode('git')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->append($this->createDurationNode('poll', 'How often to fetch the tracked ref and deploy a new commit that passes `stewart check`. "off" disables it.', self::OFF))
+                                ->append($this->createDurationNode('prepare_timeout', 'Longest a fetch, dependency install and check of one commit may take.', '10m'))
+                            ->end()
+                        ->end()
                     ->end()
                 ->end()
             ->end();

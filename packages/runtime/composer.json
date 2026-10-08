@@ -13,6 +13,7 @@
         "amphp/http": "^2.1",
         "amphp/http-server": "^3.4",
         "amphp/parallel": "^2.4",
+        "amphp/process": "^2.0.3",
         "amphp/socket": "^2.4",
         "amphp/sync": "^2.3",
         "composer-runtime-api": "^2.2",
@@ -41,9 +42,6 @@
         "psr/container": "^2.0",
         "stewart-php/store-redis": "self.version",
         "stewart-php/testing": "self.version"
-    },
-    "conflict": {
-        "amphp/process": "<2.0.3"
     },
     "suggest": {
         "stewart-php/codegen": "Adds the generate command, for development or for generating when a container starts"

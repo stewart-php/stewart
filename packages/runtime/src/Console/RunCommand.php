@@ -99,7 +99,7 @@ final class RunCommand extends StewartCommand
             $logger->notice('Running only the automations named by --only.', ['apps' => $selection->onlyIds->toStrings()]);
         }
 
-        return new PreparedDaemon($this->brokers->createBroker($config, $apps, $logger), $logger);
+        return new PreparedDaemon($this->brokers->createBroker($config, $apps, $logger, $this->findConfigOption($input)), $logger);
     }
 
     private function warnAboutDiscovery(DiscoveryResult $discovered, AppCatalog $apps, string $configPath, LoggerInterface $logger): void
