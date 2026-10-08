@@ -28,6 +28,15 @@ explicit_package_bases = true
 module = "pytest_homeassistant_custom_component.*"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "homeassistant.*"
+implicit_reexport = true
+
+# Home Assistant 2026.10 swaps voluptuous for probatio at import; mypy would check against the original.
+[[tool.mypy.overrides]]
+module = "voluptuous.*"
+follow_imports = "skip"
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
