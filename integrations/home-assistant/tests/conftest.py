@@ -4,8 +4,10 @@ from pathlib import Path
 import pytest
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.typing import MockHAClientWebSocket, WebSocketGenerator
 
 from custom_components.stewart.const import DOMAIN
+from tests.exchange import subscribe
 
 MANIFEST = Path(__file__).parent.parent / "custom_components" / DOMAIN / "manifest.json"
 
@@ -32,3 +34,12 @@ async def loaded_entry(hass: HomeAssistant, config_entry: MockConfigEntry) -> Mo
 def manifest_version() -> str:
     version: str = json.loads(MANIFEST.read_text())["version"]
     return version
+
+
+@pytest.fixture
+async def session_client(
+    hass: HomeAssistant, hass_ws_client: WebSocketGenerator, loaded_entry: MockConfigEntry
+) -> MockHAClientWebSocket:
+    client = await hass_ws_client(hass)
+    assert (await subscribe(client))["success"]
+    return client

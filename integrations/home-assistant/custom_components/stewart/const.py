@@ -1,7 +1,12 @@
 from typing import Final
 
+from homeassistant.const import Platform
+
 DOMAIN: Final = "stewart"
 PROTOCOL: Final = 1
+MANUFACTURER: Final = "Stewart"
+DEFAULT_INSTANCE: Final = "default"
+PLATFORMS: Final = (Platform.SENSOR,)
 
 INSTANCE_PATTERN: Final = r"\A[a-z][a-z0-9_]{0,63}\Z"
 APP_PATTERN: Final = r"\A[a-z][a-z0-9_-]*\Z"

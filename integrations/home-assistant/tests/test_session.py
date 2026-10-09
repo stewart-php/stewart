@@ -7,13 +7,8 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.typing import MockHAClientWebSocket, WebSocketGenerator
 
 from custom_components.stewart.const import SIGNAL_SESSION_CHANGED
+from tests.exchange import subscribe
 from tests.golden import Golden
-
-
-async def subscribe(client: MockHAClientWebSocket) -> dict[str, Any]:
-    await client.send_json_auto_id(Golden.load("session-subscribe").request)
-    response: dict[str, Any] = await client.receive_json()
-    return response
 
 
 async def assert_next_frame_is_pong(client: MockHAClientWebSocket) -> None:

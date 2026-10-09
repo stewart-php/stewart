@@ -1,16 +1,23 @@
 from homeassistant.core import HomeAssistant
 
+from .const import PLATFORMS
+from .devices import DeviceDirectory
+from .exposure import ExposedEntities
 from .runtime import StewartConfigEntry, StewartRuntime
 from .session import SessionRegistry
 from .websocket import async_register_commands
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: StewartConfigEntry) -> bool:
-    entry.runtime_data = StewartRuntime(sessions=SessionRegistry(hass))
+    sessions = SessionRegistry(hass)
+    entry.runtime_data = StewartRuntime(
+        sessions=sessions, entities=ExposedEntities(sessions, DeviceDirectory(hass, entry.entry_id))
+    )
     async_register_commands(hass)
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: StewartConfigEntry) -> bool:  # noqa: ARG001
+async def async_unload_entry(hass: HomeAssistant, entry: StewartConfigEntry) -> bool:
     entry.runtime_data.sessions.end_all_sessions()
-    return True
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
