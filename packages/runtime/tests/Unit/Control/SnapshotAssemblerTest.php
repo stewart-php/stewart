@@ -6,17 +6,21 @@ namespace Stewart\Runtime\Tests\Unit\Control;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Stewart\Client\Component\ComponentInstance;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\BrokerSubscription;
+use Stewart\Runtime\Broker\Component\ComponentTracker;
 use Stewart\Runtime\Broker\ConnectionTracker;
 use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\Deploy\DeployState;
+use Stewart\Runtime\Config\ExposeConfig;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
 use Stewart\Runtime\Control\Assembler\BrokerStatsBuilder;
+use Stewart\Runtime\Control\Assembler\ComponentStatusBuilder;
 use Stewart\Runtime\Control\Assembler\DaemonInfoBuilder;
 use Stewart\Runtime\Control\Assembler\DeployStatusBuilder;
 use Stewart\Runtime\Control\Assembler\RegistrationInfoBuilder;
@@ -30,6 +34,7 @@ use Stewart\Runtime\Ipc\Message\AppActivityReport;
 use Stewart\Runtime\Ipc\Message\Pong;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Lifecycle\AppState;
+use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
 use Stewart\Runtime\Model\CorrelationId;
@@ -110,6 +115,7 @@ final class SnapshotAssemblerTest extends TestCase
         self::assertSame('glob:demo.*', $snapshot->subscriptions[1]->selector);
         self::assertNull($snapshot->store, 'Without persistence there is no store to report.');
         self::assertNull($snapshot->deploy, 'Without polling there is no deploy to report.');
+        self::assertSame(ComponentState::Unchecked, $snapshot->component?->state);
     }
 
     private function createAssembler(): SnapshotAssembler
@@ -126,6 +132,7 @@ final class SnapshotAssemblerTest extends TestCase
             storeHealth: new StoreHealthBuilder($broker->pools->slots, storeConfigured: false),
             appStatuses: new AppStatusBuilder($broker->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock()))),
             deployStatus: new DeployStatusBuilder(new DeployState()),
+            componentStatus: new ComponentStatusBuilder(new ComponentTracker($broker->timers->clock), new ExposeConfig(ComponentInstance::parse('default'))),
             connection: $connection,
             clock: $broker->timers->clock,
         );

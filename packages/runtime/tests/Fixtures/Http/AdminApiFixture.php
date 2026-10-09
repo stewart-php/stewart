@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Tests\Fixtures\Http;
 
 use Psr\Log\NullLogger;
+use Stewart\Client\Component\ComponentInstance;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Runtime\App\AppCatalog;
@@ -17,13 +18,16 @@ use Stewart\Runtime\Broker\AppPauseOverrideStore;
 use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\AppPauseService;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
+use Stewart\Runtime\Broker\Component\ComponentTracker;
 use Stewart\Runtime\Broker\ConnectionTracker;
 use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\Deploy\DeployState;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Broker\WorkerSlotRegistry;
+use Stewart\Runtime\Config\ExposeConfig;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
 use Stewart\Runtime\Control\Assembler\BrokerStatsBuilder;
+use Stewart\Runtime\Control\Assembler\ComponentStatusBuilder;
 use Stewart\Runtime\Control\Assembler\DaemonInfoBuilder;
 use Stewart\Runtime\Control\Assembler\DeployStatusBuilder;
 use Stewart\Runtime\Control\Assembler\RegistrationInfoBuilder;
@@ -101,6 +105,7 @@ final readonly class AdminApiFixture
             storeHealth: new StoreHealthBuilder($broker->pools->slots, storeConfigured: false),
             appStatuses: new AppStatusBuilder($metrics, $this->registry),
             deployStatus: new DeployStatusBuilder(new DeployState()),
+            componentStatus: new ComponentStatusBuilder(new ComponentTracker($this->clock), new ExposeConfig(ComponentInstance::parse('default'))),
             connection: new ConnectionTracker($this->clock),
             clock: $this->clock,
         );

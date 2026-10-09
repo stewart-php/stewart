@@ -106,6 +106,11 @@ final class HaClientException extends StewartException
         return self::createForReason(HaClientError::UrlInvalid, ['url' => $url]);
     }
 
+    public static function componentInstanceInvalid(string $instance): self
+    {
+        return self::createForReason(HaClientError::ComponentInstanceInvalid, ['instance' => $instance]);
+    }
+
     public function findDetail(): ?string
     {
         return $this->findContextString('detail');

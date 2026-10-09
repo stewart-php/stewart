@@ -7,6 +7,8 @@ namespace Stewart\Runtime\Tests\Unit\Broker;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use Stewart\Client\Component\ComponentEventDecoder;
+use Stewart\Client\Component\ComponentInstance;
 use Stewart\Client\Connection\ConnectionConfig;
 use Stewart\Client\Connection\HaConnection;
 use Stewart\Client\Connection\HomeAssistantUrl;
@@ -20,10 +22,14 @@ use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Contracts\Trigger\TriggerSpec;
+use Stewart\Runtime\Broker\Component\ComponentLink;
+use Stewart\Runtime\Broker\Component\ComponentTracker;
 use Stewart\Runtime\Broker\Reconnector;
 use Stewart\Runtime\Broker\Trigger\HaTriggerLink;
 use Stewart\Runtime\Broker\WebsocketHaSession;
 use Stewart\Runtime\Config\BackoffPolicy;
+use Stewart\Runtime\Config\ExposeConfig;
+use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Tests\Fixtures\Broker\RecordingSessionListener;
@@ -67,6 +73,8 @@ final class WebsocketHaSessionTest extends TestCase
 
     private ?WebsocketHaSession $session = null;
 
+    private ?ComponentTracker $componentTracker = null;
+
     protected function setUp(): void
     {
         $this->timers = new ManualTimers();
@@ -85,7 +93,7 @@ final class WebsocketHaSessionTest extends TestCase
         $socket = self::createHaSocket(['hall' => 'off', 'porch' => 'on']);
         $session = $this->open($socket);
 
-        self::assertSame(['auth', 'subscribe_events', 'get_config', 'auth/current_user', 'get_states', ...self::REGISTRY_COMMANDS], array_column($socket->sent, 'type'));
+        self::assertSame(['auth', 'subscribe_events', 'stewart/version', 'get_config', 'auth/current_user', 'get_states', ...self::REGISTRY_COMMANDS], array_column($socket->sent, 'type'));
         self::assertTrue($session->isConnected());
         self::assertSame(self::HA_USER_ID, $session->getHaUserId());
         self::assertSame('Europe/Budapest', $session->getTimeZone()->getName());
@@ -188,7 +196,7 @@ final class WebsocketHaSessionTest extends TestCase
         EventLoopTicks::settleUntil(static fn(): bool => $session->isConnected());
 
         self::assertTrue($session->isConnected());
-        self::assertSame(['auth', 'subscribe_events', 'get_states', ...self::REGISTRY_COMMANDS], array_column($second->sent, 'type'), 'The time zone and user are asked for once.');
+        self::assertSame(['auth', 'subscribe_events', 'stewart/version', 'get_states', ...self::REGISTRY_COMMANDS], array_column($second->sent, 'type'), 'The time zone and user are asked for once.');
         self::assertEquals([Duration::seconds(1)], $this->listener->outages, 'One failed attempt, then one backoff.');
         self::assertSame(2, $session->snapshotStateCache()->revision);
     }
@@ -267,6 +275,7 @@ final class WebsocketHaSessionTest extends TestCase
     {
         $first = FakeWebsocketConnector::createAuthenticatedConnection();
         $first->replyWhenSent('subscribe_events', ['type' => 'result', 'success' => true, 'result' => null]);
+        $first->replyWhenSent('stewart/version', ['type' => 'result', 'success' => false, 'error' => ['code' => 'unknown_command', 'message' => 'Unknown command.']]);
         $first->replyWhenSent('get_config', ['type' => 'result', 'success' => true, 'result' => ['time_zone' => 'Europe/Budapest']]);
         $second = self::createHaSocket(['hall' => 'on']);
         $session = $this->createSession($first, $second);
@@ -279,7 +288,7 @@ final class WebsocketHaSessionTest extends TestCase
 
         self::assertTrue($session->isConnected());
         self::assertSame([], $this->listener->lost);
-        self::assertSame(['auth', 'subscribe_events', 'auth/current_user', 'get_states', ...self::REGISTRY_COMMANDS], array_column($second->sent, 'type'), 'The user was never answered, so it is asked again.');
+        self::assertSame(['auth', 'subscribe_events', 'stewart/version', 'auth/current_user', 'get_states', ...self::REGISTRY_COMMANDS], array_column($second->sent, 'type'), 'The user was never answered, so it is asked again.');
         self::assertSame(1, $session->snapshotStateCache()->revision);
     }
 
@@ -306,7 +315,21 @@ final class WebsocketHaSessionTest extends TestCase
         $session->subscribeTrigger(self::createSunsetSpec());
         $session->open($this->listener);
 
-        self::assertSame(['auth', 'subscribe_events', 'subscribe_trigger', 'get_config', 'auth/current_user', 'get_states', ...self::REGISTRY_COMMANDS], array_column($socket->sent, 'type'));
+        self::assertSame(['auth', 'subscribe_events', 'subscribe_trigger', 'stewart/version', 'get_config', 'auth/current_user', 'get_states', ...self::REGISTRY_COMMANDS], array_column($socket->sent, 'type'));
+    }
+
+    public function testComponentSessionReopensAfterReconnect(): void
+    {
+        $first = self::createHaSocket(['hall' => 'off'], withComponent: true);
+        $second = self::createHaSocket(['hall' => 'on'], withComponent: true);
+        $session = $this->createSession($first, $second);
+        $session->open($this->listener);
+
+        $first->close(1001, 'restarting');
+        EventLoopTicks::settleUntil(static fn(): bool => $session->isConnected() && $second->listSentOfType('config/entity_registry/list') !== []);
+
+        self::assertCount(1, $second->listSentOfType('stewart/session/subscribe'));
+        self::assertSame(ComponentState::Active, $this->componentTracker?->detection->state);
     }
 
     public function testTriggersAreReissuedAfterReconnect(): void
@@ -322,7 +345,7 @@ final class WebsocketHaSessionTest extends TestCase
         $second->queueFrame(self::createTriggerFrame(self::findTriggerSubscriptionId($second)));
         EventLoopTicks::settleUntil(fn(): bool => $this->listener->firedTriggers !== []);
 
-        self::assertSame(['auth', 'subscribe_events', 'subscribe_trigger', 'get_states', ...self::REGISTRY_COMMANDS], array_column($second->sent, 'type'));
+        self::assertSame(['auth', 'subscribe_events', 'subscribe_trigger', 'stewart/version', 'get_states', ...self::REGISTRY_COMMANDS], array_column($second->sent, 'type'));
         self::assertCount(1, $this->listener->firedTriggers);
     }
 
@@ -384,7 +407,7 @@ final class WebsocketHaSessionTest extends TestCase
         self::authenticate($second);
         EventLoopTicks::settleUntil(static fn(): bool => $session->isConnected());
 
-        self::assertSame(['auth', 'subscribe_events', 'get_states', ...self::REGISTRY_COMMANDS], array_column($second->sent, 'type'));
+        self::assertSame(['auth', 'subscribe_events', 'stewart/version', 'get_states', ...self::REGISTRY_COMMANDS], array_column($second->sent, 'type'));
         self::assertSame([], $first->listSentOfType('unsubscribe_events'));
     }
 
@@ -411,7 +434,7 @@ final class WebsocketHaSessionTest extends TestCase
             new FakeWebsocketConnector(...$sockets),
         );
 
-        $client = new HaClient($connection, new EventDecoder(new EntityStateDecoder()), new EntityStateDecoder(), new RegistryDecoder(), new NullLogger());
+        $client = new HaClient($connection, new EventDecoder(new EntityStateDecoder()), new EntityStateDecoder(), new RegistryDecoder(), new ComponentEventDecoder(), new NullLogger());
 
         return $this->session = new WebsocketHaSession(
             $client,
@@ -425,6 +448,7 @@ final class WebsocketHaSessionTest extends TestCase
             new StateCache(),
             new RegistryCache(),
             new HaTriggerLink($client, new NullLogger()),
+            new ComponentLink($client, new NullLogger(), $this->componentTracker = new ComponentTracker($this->timers->clock), new ExposeConfig(ComponentInstance::parse('default')), '0.9.0'),
         );
     }
 
@@ -438,6 +462,7 @@ final class WebsocketHaSessionTest extends TestCase
         array $during = [],
         bool $authenticated = true,
         array $triggerReply = ['type' => 'result', 'success' => true, 'result' => null],
+        bool $withComponent = false,
     ): FakeWebsocketConnection {
         $socket = $authenticated ? FakeWebsocketConnector::createAuthenticatedConnection() : new FakeWebsocketConnection();
         $states = [];
@@ -448,6 +473,10 @@ final class WebsocketHaSessionTest extends TestCase
 
         $socket->replyWhenSent('subscribe_events', ['type' => 'result', 'success' => true, 'result' => null]);
         $socket->replyWhenSent('subscribe_trigger', $triggerReply);
+        $socket->replyWhenSent('stewart/version', $withComponent
+            ? ['type' => 'result', 'success' => true, 'result' => ['component_version' => '0.9.0', 'protocol' => 1]]
+            : ['type' => 'result', 'success' => false, 'error' => ['code' => 'unknown_command', 'message' => 'Unknown command.']]);
+        $socket->replyWhenSent('stewart/session/subscribe', ['type' => 'result', 'success' => true, 'result' => null]);
         $socket->replyWhenSent('get_config', ['type' => 'result', 'success' => true, 'result' => [
             'time_zone' => 'Europe/Budapest',
             'latitude' => self::LATITUDE,

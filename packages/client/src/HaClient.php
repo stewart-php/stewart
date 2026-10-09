@@ -9,7 +9,13 @@ use Closure;
 use DateTimeZone;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Stewart\Client\Component\ComponentEventDecoder;
+use Stewart\Client\Component\ComponentSessionEvent;
+use Stewart\Client\Component\ComponentSessionRequest;
+use Stewart\Client\Component\ComponentVersion;
 use Stewart\Client\Connection\Command\CallService;
+use Stewart\Client\Connection\Command\Component\GetComponentVersion;
+use Stewart\Client\Connection\Command\Component\SubscribeComponentSession;
 use Stewart\Client\Connection\Command\FireEvent;
 use Stewart\Client\Connection\Command\GetAreaRegistry;
 use Stewart\Client\Connection\Command\GetConfig;
@@ -69,6 +75,7 @@ final class HaClient
         private readonly EventDecoder $decoder,
         private readonly EntityStateDecoder $states,
         private readonly RegistryDecoder $registries,
+        private readonly ComponentEventDecoder $componentEvents,
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {}
 
@@ -80,7 +87,7 @@ final class HaClient
     ): self {
         $states = new EntityStateDecoder($logger);
 
-        return new self(new HaConnection($config, $deadlines, $logger, $connector), new EventDecoder($states), $states, new RegistryDecoder($logger), $logger);
+        return new self(new HaConnection($config, $deadlines, $logger, $connector), new EventDecoder($states), $states, new RegistryDecoder($logger), new ComponentEventDecoder(), $logger);
     }
 
     public function connect(): void
@@ -329,6 +336,42 @@ final class HaClient
             }
 
             $onTrigger($decoded);
+        });
+    }
+
+    /** @throws HaClientException */
+    public function findComponentVersion(): ?ComponentVersion
+    {
+        try {
+            return ComponentVersion::fromVersionResult($this->connection->send(new GetComponentVersion()));
+        } catch (HaClientException $e) {
+            if ($e->reason === HaClientError::CommandRejected && $e->findErrorCode() === self::UNKNOWN_COMMAND_CODE) {
+                return null;
+            }
+
+            throw $e;
+        }
+    }
+
+    /**
+     * @param Closure(ComponentSessionEvent): void $onEvent
+     * @throws HaClientException
+     */
+    public function subscribeComponentSession(ComponentSessionRequest $request, Closure $onEvent): int
+    {
+        $decoder = $this->componentEvents;
+        $logger = $this->logger;
+
+        return $this->subscribe(new SubscribeComponentSession($request), static function (array $event) use ($decoder, $logger, $onEvent): void {
+            $decoded = $decoder->decodeSessionEvent($event);
+
+            if ($decoded === null) {
+                $logger->debug('Skipped a Stewart component event of an unknown type', ['type' => $event['type'] ?? null]);
+
+                return;
+            }
+
+            $onEvent($decoded);
         });
     }
 

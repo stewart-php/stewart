@@ -25,6 +25,7 @@ use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\MonotonicTime;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Contracts\Trigger\TriggerSpec;
+use Stewart\Runtime\Broker\Component\ComponentLink;
 use Stewart\Runtime\Broker\Trigger\HaTriggerLink;
 use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
 use Stewart\Runtime\Ipc\Wire\RegistryFragment;
@@ -67,6 +68,7 @@ final class WebsocketHaSession implements HaSession
         private readonly StateCache $states,
         private readonly RegistryCache $registry,
         private readonly HaTriggerLink $triggers,
+        private readonly ComponentLink $component,
     ) {
         $this->stop = new DeferredCancellation();
     }
@@ -213,6 +215,7 @@ final class WebsocketHaSession implements HaSession
     {
         // Subscribe before seeding and buffer changes in between, so no change is lost.
         $this->triggers->markLinkLost();
+        $this->component->markLinkLost();
         $this->client->close();
         $this->client->connect();
         $this->establishing = true;
@@ -220,6 +223,7 @@ final class WebsocketHaSession implements HaSession
         try {
             $this->client->subscribeAllEvents($this->onStateChanged(...), $this->onEventFired(...));
             $this->triggers->resubscribeAll();
+            $this->component->establishLink();
             $this->siteSettings ??= $this->client->getSiteSettings();
             $this->haUserId ??= $this->client->getCurrentUserId();
             $states = $this->client->getStates();
@@ -288,6 +292,7 @@ final class WebsocketHaSession implements HaSession
         }
 
         $this->triggers->markLinkLost();
+        $this->component->markLinkLost();
 
         $this->reconnecting = true;
         $startedAt = $this->clock->getMonotonicTime();

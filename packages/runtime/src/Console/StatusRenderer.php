@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Console;
 
+use Stewart\Client\Component\ComponentProtocol;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\Control\Protocol\Status\AppStatus;
+use Stewart\Runtime\Control\Protocol\Status\ComponentStatus;
 use Stewart\Runtime\Control\Protocol\Status\ConnectionState;
 use Stewart\Runtime\Control\Protocol\Status\DeployStatus;
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
 use Stewart\Runtime\Control\Protocol\Status\WorkerStatus;
+use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Store\StoreHealth;
 use Symfony\Component\Console\Helper\Table;
@@ -47,6 +50,7 @@ final readonly class StatusRenderer
             ['memory', $this->formatter->formatBytes($daemon->memoryBytes)],
             ['home assistant', $this->describeConnection($snapshot, $now)],
             ['reconnects', $this->describeReconnects($connection)],
+            ['component', $this->describeComponent($snapshot->component, $now)],
             ['store', $this->describeStoreHealth($snapshot->store, $now)],
             ['deploy', $this->describeDeploy($snapshot->deploy, $now)],
             ['entities', (string) $daemon->entities],
@@ -160,6 +164,27 @@ final readonly class StatusRenderer
         }
 
         return \sprintf('%d, last outage %s', $connection->reconnects, $this->formatter->formatDuration($connection->lastOutage));
+    }
+
+    private function describeComponent(?ComponentStatus $component, Instant $now): string
+    {
+        if ($component === null) {
+            return 'unknown';
+        }
+
+        $description = \sprintf('%s since %s', str_replace('_', ' ', $component->state->value), $this->formatter->formatTimeAgo($component->since, $now));
+
+        if ($component->version !== null) {
+            $description .= ', version ' . $component->version;
+        }
+
+        return match ($component->state) {
+            ComponentState::Missing => $description . ', install the stewart integration in Home Assistant',
+            ComponentState::ProtocolMismatch => \sprintf('%s, protocol %d where Stewart speaks %d', $description, $component->protocol ?? 0, ComponentProtocol::VERSION),
+            ComponentState::Refused => $description . ', see the daemon log',
+            ComponentState::Replaced => \sprintf('%s, another Stewart uses expose.instance "%s"', $description, $component->instance),
+            ComponentState::Unchecked, ComponentState::Active => $description,
+        };
     }
 
     private function describeStoreHealth(?StoreHealth $health, Instant $now): string

@@ -34,6 +34,7 @@ final readonly class StewartConfig
         public HttpConfig $http,
         public CodegenConfig $codegen,
         public GitDeployConfig $gitDeploy,
+        public ExposeConfig $expose,
         public AppOverrideCollection $apps,
     ) {}
 
@@ -63,6 +64,7 @@ final readonly class StewartConfig
             http: HttpConfig::fromSection($config->readSection('http')),
             codegen: CodegenConfig::fromSection($config->readSection('codegen')),
             gitDeploy: GitDeployConfig::fromSection($config->readSection('deploy')->readSection('git')),
+            expose: ExposeConfig::fromSection($config->readSection('expose')),
             apps: AppOverrideCollection::keyedByAppId($config->readSection('apps')->mapSubsections(AppOverride::fromSection(...))),
         );
     }

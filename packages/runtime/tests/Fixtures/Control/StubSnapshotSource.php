@@ -10,6 +10,7 @@ use Stewart\Runtime\Control\Protocol\Status\AppCounters;
 use Stewart\Runtime\Control\Protocol\Status\AppPauseStatus;
 use Stewart\Runtime\Control\Protocol\Status\AppStatus;
 use Stewart\Runtime\Control\Protocol\Status\BrokerStats;
+use Stewart\Runtime\Control\Protocol\Status\ComponentStatus;
 use Stewart\Runtime\Control\Protocol\Status\ConnectionState;
 use Stewart\Runtime\Control\Protocol\Status\DaemonInfo;
 use Stewart\Runtime\Control\Protocol\Status\DeployFailure;
@@ -24,6 +25,7 @@ use Stewart\Runtime\Control\Protocol\Status\WorkerStatus;
 use Stewart\Runtime\Lifecycle\AppFailurePhase;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
 use Stewart\Runtime\Lifecycle\AppState;
+use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
 use Stewart\Runtime\Model\RoutingStats;
@@ -90,6 +92,7 @@ final class StubSnapshotSource
                 failures: 1,
                 lastFailure: new DeployFailure('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', 'apps/Porch.php failed to load: syntax error', Instant::fromIso('2026-09-26T10:50:00Z')),
             ),
+            component: new ComponentStatus(ComponentState::Active, $startedAt, 'default', '0.9.0', 1),
         );
     }
 }

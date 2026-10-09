@@ -12,6 +12,7 @@ use Stewart\Runtime\Broker\BrokerLifecycle;
 use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Config\CodegenConfig;
 use Stewart\Runtime\Config\ControlConfig;
+use Stewart\Runtime\Config\ExposeConfig;
 use Stewart\Runtime\Config\GitDeployConfig;
 use Stewart\Runtime\Config\HttpConfig;
 use Stewart\Runtime\Config\ProjectRoot;
@@ -57,6 +58,7 @@ final readonly class BrokerKernel
             ->withService(ProjectRoot::class, $this->projectRoot)
             ->withService(CodegenConfig::class, $config->codegen)
             ->withService(GitDeployConfig::class, $config->gitDeploy)
+            ->withService(ExposeConfig::class, $config->expose)
             ->withService(OutboxLimits::class, new OutboxLimits($config->workerEventBuffer, $config->workerStateBatch));
     }
 
@@ -64,6 +66,7 @@ final readonly class BrokerKernel
     {
         return new NamedArguments()
             ->withArgument('daemonVersion', $this->daemonVersion)
+            ->withArgument('componentSessionStewartVersion', $this->daemonVersion)
             ->withArgument('reconnectBackoff', $config->reconnectBackoff)
             ->withArgument('userServicesFile', $this->userServicesFile)
             ->withArgument('brokerShutdownGrace', $config->shutdownGrace)
