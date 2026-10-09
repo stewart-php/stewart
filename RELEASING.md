@@ -72,7 +72,7 @@ Done once, by an owner of the `stewart-php` organization, before `v0.1.0`.
    packages, make them public, and link them to this repository.
 5. **Docker Hub.** Create a read-only Docker Hub access token, then add the username as the variable
    `DOCKERHUB_USERNAME` and the token as the secret `DOCKERHUB_TOKEN`; image builds log in with them so Docker Hub's
-   anonymous rate limit does not fail them. Split's action image is built before any step and stays anonymous.
+   anonymous rate limit does not fail them.
 6. **Runners.** `ubuntu-24.04-arm` runners must be available to the organization; they are free for public
    repositories.
 7. **HACS.** Until `hass-stewart` is in the HACS default store, users add it as a custom repository (category
