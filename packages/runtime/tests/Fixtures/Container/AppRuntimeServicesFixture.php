@@ -21,7 +21,11 @@ use Stewart\Runtime\Tests\Fixtures\Worker\AppResourcesFixture;
 use Stewart\Runtime\Tests\Fixtures\Worker\WorkerHaContextFixture;
 use Stewart\Runtime\Worker\AppActivityCounters;
 use Stewart\Runtime\Worker\Context\DispatchStreams;
+use Stewart\Runtime\Worker\CorrelationIdSequence;
+use Stewart\Runtime\Worker\Exposure\ExposureRequester;
+use Stewart\Runtime\Worker\PendingRequests;
 use Stewart\Runtime\Worker\StderrFallback;
+use Stewart\Runtime\Worker\WorkerEntityExposure;
 use Stewart\Runtime\Worker\WorkerLogger;
 use Stewart\Runtime\Worker\WorkerMqtt;
 use Stewart\Store\DisabledStores;
@@ -71,6 +75,11 @@ final class AppRuntimeServicesFixture
                 new DispatchStreams($resources->dispatcher, $timers, $stateCache, new RegistryCache()),
                 new AppActivityCounters(),
                 $mqttEnabled,
+                ResourceScope::shared(),
+            ),
+            exposure: new WorkerEntityExposure(
+                new ExposureRequester($transport, new PendingRequests(new CorrelationIdSequence(new WorkerId(0))), $timers, Duration::seconds(30)),
+                $resources->exposedHandles,
                 ResourceScope::shared(),
             ),
             identity: $identity,

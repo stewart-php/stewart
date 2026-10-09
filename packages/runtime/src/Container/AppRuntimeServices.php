@@ -9,6 +9,7 @@ use Stewart\Contracts\Sun\SunCalendar;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Runtime\App\GeneratedRoots;
 use Stewart\Runtime\Schedule\WorkerScheduler;
+use Stewart\Runtime\Worker\WorkerEntityExposure;
 use Stewart\Runtime\Worker\WorkerHaContext;
 use Stewart\Runtime\Worker\WorkerLogger;
 use Stewart\Runtime\Worker\WorkerMqtt;
@@ -25,6 +26,7 @@ final readonly class AppRuntimeServices
         public WorkerHaContext $context,
         public Stores $stores,
         public WorkerMqtt $mqtt,
+        public WorkerEntityExposure $exposure,
         public StewartIdentity $identity,
         public SunCalendar $sunCalendar,
         public ?GeneratedRoots $generated = null,

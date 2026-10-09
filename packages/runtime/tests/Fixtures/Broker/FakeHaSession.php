@@ -99,6 +99,9 @@ final class FakeHaSession implements HaSession
 
     public ?ExposureException $exposureFailure = null;
 
+    /** @var DeferredFuture<ExposedStateChange>|null */
+    private ?DeferredFuture $nextExposedUpdate = null;
+
     private bool $open = false;
 
     /** @var DeferredFuture<TriggerSpec>|null */
@@ -308,6 +311,16 @@ final class FakeHaSession implements HaSession
     {
         $address = $appId . '/' . $key;
         $this->exposedEntities[$address] = ($this->exposedEntities[$address] ?? new ExposedStateChange())->withLaterChange($change);
+
+        $updated = $this->nextExposedUpdate;
+        $this->nextExposedUpdate = null;
+        $updated?->complete($this->exposedEntities[$address]);
+    }
+
+    /** @return Future<ExposedStateChange> */
+    public function waitForNextExposedUpdate(): Future
+    {
+        return ($this->nextExposedUpdate ??= new DeferredFuture())->getFuture();
     }
 
     public function removeExposedEntity(AppId $appId, ExposedEntityKey $key): void
