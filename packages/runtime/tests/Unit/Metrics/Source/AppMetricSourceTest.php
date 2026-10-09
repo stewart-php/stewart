@@ -20,7 +20,7 @@ final class AppMetricSourceTest extends TestCase
     public function testSharedScopeKeepsCountersButIsNoApp(): void
     {
         $stub = new StubSnapshotSource()->takeSnapshot();
-        $shared = new AppStatus(ResourceScope::shared()->wireValue(), '', 1, null, null, null, null, 0, 0, new AppCounters(publishes: 3), [], null);
+        $shared = new AppStatus(ResourceScope::shared()->wireValue(), '', 1, null, null, null, null, 0, 0, 0, new AppCounters(publishes: 3), [], null);
         $snapshot = new RuntimeSnapshot($stub->takenAt, $stub->daemon, $stub->connection, $stub->broker, [], [$shared], []);
 
         $text = new PrometheusTextEncoder()->encodeFamilies(new AppMetricSource()->collectMetrics($snapshot));

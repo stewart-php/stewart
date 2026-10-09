@@ -77,6 +77,7 @@ final class StubSnapshotSource
                 reportedAt: Instant::fromIso('2026-09-26T10:59:55Z'),
                 subscriptions: 2,
                 schedules: 1,
+                exposedEntities: 3,
                 counters: new AppCounters(delivered: 30, subscriptionDropped: 1, scheduleRuns: 4, publishes: 2, failures: 1, suppressed: 6),
                 serviceCalls: [
                     new ServiceCallStats(ServiceCallOutcome::Succeeded, 10, new LatencyHistogram([5, 10, 25], [2, 9, 10], 10, Duration::milliseconds(80))),

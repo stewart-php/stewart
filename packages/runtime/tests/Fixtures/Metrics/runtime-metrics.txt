@@ -122,6 +122,9 @@ stewart_app_subscriptions{app="porch",worker="0"} 2
 # HELP stewart_app_schedules Schedules the app holds.
 # TYPE stewart_app_schedules gauge
 stewart_app_schedules{app="porch",worker="0"} 1
+# HELP stewart_app_exposed_entities Home Assistant entities the app exposes, unavailable ones included.
+# TYPE stewart_app_exposed_entities gauge
+stewart_app_exposed_entities{app="porch",worker="0"} 3
 # HELP stewart_app_events_delivered_total Events delivered to the app handlers.
 # TYPE stewart_app_events_delivered_total counter
 stewart_app_events_delivered_total{app="porch",worker="0"} 30

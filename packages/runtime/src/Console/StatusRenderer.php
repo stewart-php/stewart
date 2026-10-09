@@ -91,7 +91,7 @@ final readonly class StatusRenderer
         $this->renderTable(
             $output,
             'Apps',
-            ['app', 'worker', 'state', 'reported', 'subs', 'schedules', 'delivered', 'dropped', 'suppressed', 'runs', 'publishes', 'calls ok/failed', 'p95', 'failures'],
+            ['app', 'worker', 'state', 'reported', 'subs', 'schedules', 'exposed', 'delivered', 'dropped', 'suppressed', 'runs', 'publishes', 'calls ok/failed', 'p95', 'failures'],
             array_map(fn(AppStatus $app): array => [
                 $app->id,
                 $app->workerId === null ? '-' : (string) $app->workerId,
@@ -99,6 +99,7 @@ final readonly class StatusRenderer
                 $this->formatter->formatTimeAgo($app->reportedAt, $now),
                 (string) $app->subscriptions,
                 (string) $app->schedules,
+                (string) $app->exposedEntities,
                 (string) $app->counters->delivered,
                 (string) $app->counters->subscriptionDropped,
                 (string) $app->counters->suppressed,

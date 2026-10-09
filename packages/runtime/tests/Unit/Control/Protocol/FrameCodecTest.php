@@ -255,6 +255,7 @@ final class FrameCodecTest extends TestCase
                     reportedAt: self::createInstantAt(1700000000.0),
                     subscriptions: 2,
                     schedules: 1,
+                    exposedEntities: 1,
                     counters: new AppCounters(3, 1, 1, 1, 0),
                     serviceCalls: [
                         new ServiceCallStats(ServiceCallOutcome::Succeeded, 4, new LatencyHistogram([5, 10], [1, 4], 4, Duration::microseconds(18_250))),
@@ -272,11 +273,12 @@ final class FrameCodecTest extends TestCase
                     reportedAt: self::createInstantAt(1700000000.0),
                     subscriptions: 0,
                     schedules: 0,
+                    exposedEntities: 0,
                     counters: new AppCounters(failures: 1),
                     serviceCalls: [],
                     lastFailure: new FailureReport(AppFailurePhase::Initialize, 'RuntimeException', 'boom', null, 'timed_out', self::createInstantAt(1700000000.1)),
                 ),
-                new AppStatus('other', 'Other', 1, null, null, null, null, 0, 0, new AppCounters(), [], null),
+                new AppStatus('other', 'Other', 1, null, null, null, null, 0, 0, 0, new AppCounters(), [], null),
             ],
             subscriptions: [
                 new RegistrationInfo('w0:0', 0, 'demo', SubscriptionKind::StateChange, 'exact:light.hall', true),

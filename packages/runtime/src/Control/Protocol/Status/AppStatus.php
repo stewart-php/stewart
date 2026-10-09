@@ -21,6 +21,7 @@ final readonly class AppStatus
         public ?Instant $reportedAt,
         public int $subscriptions,
         public int $schedules,
+        public int $exposedEntities,
         public AppCounters $counters,
         #[ListOf(ServiceCallStats::class)]
         public array $serviceCalls,

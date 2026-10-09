@@ -201,6 +201,15 @@ final class ExposureLinkTest extends TestCase
         self::assertSame('climate', $states[0]['app'] ?? null);
     }
 
+    public function testCountIncludesOrphans(): void
+    {
+        $this->exposeTemperature(21.4);
+        $this->link->orphanExposuresOfApp(new AppId('climate'));
+
+        self::assertSame(1, $this->link->countExposuresOfApp(new AppId('climate')));
+        self::assertSame(0, $this->link->countExposuresOfApp(new AppId('lights')));
+    }
+
     public function testDeletedEntityIsUpsertedAgain(): void
     {
         $this->activateComponent();

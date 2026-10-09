@@ -126,6 +126,11 @@ final class ExposureLink
         $this->orphanExposures(static fn(LiveExposure $live): bool => $live->isOwnedBy($workerId));
     }
 
+    public function countExposuresOfApp(AppId $appId): int
+    {
+        return \count(array_filter($this->exposuresByAddress, static fn(LiveExposure $live): bool => $live->address->appId->equals($appId)));
+    }
+
     public function listKeptAddresses(): ExposedEntityAddressCollection
     {
         return ExposedEntityAddressCollection::fromAddresses(array_map(static fn(LiveExposure $live) => $live->address, array_values($this->exposuresByAddress)));

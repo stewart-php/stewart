@@ -24,6 +24,7 @@ final readonly class AppMetricSource implements RuntimeMetricSource
         $paused = new MetricFamily('stewart_app_paused', 'Whether the app is paused; 1 or 0.', MetricType::Gauge);
         $subscriptions = new MetricFamily('stewart_app_subscriptions', 'Subscriptions the app holds.', MetricType::Gauge);
         $schedules = new MetricFamily('stewart_app_schedules', 'Schedules the app holds.', MetricType::Gauge);
+        $exposedEntities = new MetricFamily('stewart_app_exposed_entities', 'Home Assistant entities the app exposes, unavailable ones included.', MetricType::Gauge);
         $delivered = new MetricFamily('stewart_app_events_delivered_total', 'Events delivered to the app handlers.', MetricType::Counter);
         $subscriptionDropped = new MetricFamily('stewart_app_subscription_dropped_total', 'Events dropped because a subscription queue was full.', MetricType::Counter);
         $scheduleRuns = new MetricFamily('stewart_app_schedule_runs_total', 'Scheduled handler runs.', MetricType::Counter);
@@ -49,6 +50,7 @@ final readonly class AppMetricSource implements RuntimeMetricSource
 
             $subscriptions->recordSample($labels, $app->subscriptions);
             $schedules->recordSample($labels, $app->schedules);
+            $exposedEntities->recordSample($labels, $app->exposedEntities);
             $delivered->recordSample($labels, $app->counters->delivered);
             $subscriptionDropped->recordSample($labels, $app->counters->subscriptionDropped);
             $scheduleRuns->recordSample($labels, $app->counters->scheduleRuns);
@@ -71,7 +73,7 @@ final readonly class AppMetricSource implements RuntimeMetricSource
         }
 
         return MetricFamilyCollection::fromFamilies([
-            $info, $states, $paused, $subscriptions, $schedules, $delivered, $subscriptionDropped, $scheduleRuns, $publishes,
+            $info, $states, $paused, $subscriptions, $schedules, $exposedEntities, $delivered, $subscriptionDropped, $scheduleRuns, $publishes,
             $failures, $suppressed, $lastFailure, $serviceCalls, $serviceCallDuration,
         ]);
     }
