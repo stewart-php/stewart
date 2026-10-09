@@ -40,6 +40,7 @@ use Stewart\Contracts\Registry\Collection\LabelCollection;
 use Stewart\Contracts\Registry\Collection\RegisteredEntityCollection;
 use Stewart\Contracts\Registry\Device;
 use Stewart\Contracts\Registry\DeviceId;
+use Stewart\Contracts\Registry\EntityAlias;
 use Stewart\Contracts\Registry\Floor;
 use Stewart\Contracts\Registry\FloorId;
 use Stewart\Contracts\Registry\IndexedRegistry;
@@ -258,7 +259,15 @@ final class IpcMessageSamples
             FloorCollection::keyedByFloorId([new Floor(new FloorId('ground'), 'Ground', 0)]),
             LabelCollection::keyedByLabelId([new Label($night, 'Night', 'indigo')]),
             DeviceCollection::keyedByDeviceId([new Device($bulb, 'Bulb', 'Ceiling', $kitchen, [], 'Signify', 'LCA001')]),
-            RegisteredEntityCollection::keyedByEntityId([new RegisteredEntity(new EntityId('light.ceiling'), $bulb, null, [$night], 'Ceiling', null, null, null)]),
+            RegisteredEntityCollection::keyedByEntityId([new RegisteredEntity(
+                new EntityId('light.ceiling'),
+                $bulb,
+                null,
+                [$night],
+                'Ceiling',
+                icon: 'mdi:ceiling-light',
+                aliases: [EntityAlias::named('Top light'), EntityAlias::entityName()],
+            )]),
         ));
     }
 

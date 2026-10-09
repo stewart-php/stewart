@@ -8,12 +8,16 @@ use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Registry\AreaId;
 use Stewart\Contracts\Registry\DeviceId;
+use Stewart\Contracts\Registry\EntityAlias;
 use Stewart\Contracts\Registry\LabelId;
 use Stewart\Contracts\Registry\RegisteredEntity;
 
 final readonly class EntityRegistryEntry
 {
-    /** @param list<string> $labelIds */
+    /**
+     * @param list<string> $labelIds
+     * @param list<string|null>|null $aliases
+     */
     public function __construct(
         public EntityId $entityId,
         public ?string $disabledBy = null,
@@ -23,6 +27,8 @@ final readonly class EntityRegistryEntry
         public ?string $deviceId = null,
         public array $labelIds = [],
         public ?string $entityCategory = null,
+        public ?string $icon = null,
+        public ?array $aliases = null,
     ) {}
 
     public function isDisabled(): bool
@@ -50,10 +56,12 @@ final readonly class EntityRegistryEntry
             deviceId: RegistryRow::readString($raw, 'device_id'),
             labelIds: RegistryRow::readStrings($raw, 'labels'),
             entityCategory: RegistryRow::readString($raw, 'entity_category'),
+            icon: RegistryRow::readString($raw, 'icon'),
+            aliases: RegistryRow::readAliasPhrases($raw),
         );
     }
 
-    /** @return array<string, string|list<string>|null> */
+    /** @return array<string, string|list<string|null>|null> */
     public function toArray(): array
     {
         return [
@@ -65,6 +73,8 @@ final readonly class EntityRegistryEntry
             'device_id' => $this->deviceId,
             'labels' => $this->labelIds,
             'entity_category' => $this->entityCategory,
+            ...($this->icon === null ? [] : ['icon' => $this->icon]),
+            ...($this->aliases === null ? [] : ['aliases' => $this->aliases]),
         ];
     }
 
@@ -79,6 +89,8 @@ final readonly class EntityRegistryEntry
             entityCategory: $this->entityCategory,
             hiddenBy: $this->hiddenBy,
             disabledBy: $this->disabledBy,
+            icon: $this->icon,
+            aliases: $this->aliases === null ? null : array_map(static fn(?string $phrase): EntityAlias => new EntityAlias($phrase), $this->aliases),
         );
     }
 }

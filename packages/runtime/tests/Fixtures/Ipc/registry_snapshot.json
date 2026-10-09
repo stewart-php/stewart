@@ -57,7 +57,16 @@
                     "name": "Ceiling",
                     "entity_category": null,
                     "hidden_by": null,
-                    "disabled_by": null
+                    "disabled_by": null,
+                    "icon": "mdi:ceiling-light",
+                    "aliases": [
+                        {
+                            "phrase": "Top light"
+                        },
+                        {
+                            "phrase": null
+                        }
+                    ]
                 }
             ]
         },

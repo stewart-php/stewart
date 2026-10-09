@@ -10,7 +10,10 @@ use Stewart\Contracts\Wire\ListOf;
 
 final readonly class RegisteredEntity
 {
-    /** @param list<LabelId> $labelIds */
+    /**
+     * @param list<LabelId> $labelIds
+     * @param list<EntityAlias>|null $aliases
+     */
     public function __construct(
         public EntityId $entityId,
         public ?DeviceId $deviceId = null,
@@ -21,6 +24,10 @@ final readonly class RegisteredEntity
         public ?string $entityCategory = null,
         public ?string $hiddenBy = null,
         public ?string $disabledBy = null,
+        public ?string $icon = null,
+        // Home Assistant's registry list leaves aliases out, so the mirror holds null.
+        #[ListOf(EntityAlias::class)]
+        public ?array $aliases = null,
     ) {}
 
     public function listLabelIds(): LabelIdCollection

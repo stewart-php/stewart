@@ -7,6 +7,7 @@ namespace Stewart\Client\Tests\Unit\Registry;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Client\Registry\EntityRegistryEntry;
+use Stewart\Contracts\Registry\EntityAlias;
 
 #[CoversClass(EntityRegistryEntry::class)]
 final class EntityRegistryEntryTest extends TestCase
@@ -55,6 +56,25 @@ final class EntityRegistryEntryTest extends TestCase
         self::assertNull($entity->areaId);
         self::assertNull($entity->deviceId);
         self::assertSame([], $entity->labelIds);
+    }
+
+    public function testCarriesIconAndAliases(): void
+    {
+        $entry = EntityRegistryEntry::fromArray([
+            'entity_id' => 'light.hall',
+            'icon' => 'mdi:lamp',
+            'aliases' => ['Hall lamp', null, '', 7],
+        ]);
+        $entity = $entry->toRegisteredEntity();
+
+        self::assertSame($entry->toArray(), EntityRegistryEntry::fromArray($entry->toArray())->toArray());
+        self::assertSame('mdi:lamp', $entity->icon);
+        self::assertEquals([EntityAlias::named('Hall lamp'), EntityAlias::entityName()], $entity->aliases);
+    }
+
+    public function testListRowWithoutAliasesLeavesThemUnknown(): void
+    {
+        self::assertNull(EntityRegistryEntry::fromArray(['entity_id' => 'light.hall'])->toRegisteredEntity()->aliases);
     }
 
     public function testEmptyStringIsNoValue(): void
