@@ -32,6 +32,21 @@ final readonly class RegistryRow
         return array_values(array_filter($values, static fn(mixed $value): bool => \is_string($value) && $value !== ''));
     }
 
+    /**
+     * @param array<array-key, mixed> $raw
+     * @return list<string|null>|null
+     */
+    public static function readAliasPhrases(array $raw): ?array
+    {
+        $values = $raw['aliases'] ?? null;
+
+        if (!\is_array($values)) {
+            return null;
+        }
+
+        return array_values(array_filter($values, static fn(mixed $value): bool => $value === null || (\is_string($value) && $value !== '')));
+    }
+
     /** @param array<array-key, mixed> $raw */
     public static function readLabelIds(array $raw): LabelIdCollection
     {

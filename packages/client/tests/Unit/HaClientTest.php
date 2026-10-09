@@ -26,10 +26,12 @@ use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\Exception\EventFireError;
 use Stewart\Contracts\Exception\HistoryError;
+use Stewart\Contracts\Exception\RegistryEditError;
 use Stewart\Contracts\Exception\ServiceCallError;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
+use Stewart\Contracts\Registry\Update\EntityRegistryUpdate;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
@@ -440,6 +442,73 @@ final class HaClientTest extends TestCase
         self::assertCount(2, $registry);
         self::assertFalse($registry->find(new EntityId('light.hall'))?->isDisabled());
         self::assertTrue($registry->find(new EntityId('light.attic'))?->isDisabled());
+    }
+
+    public function testRegistryUpdateReturnsUpdatedEntry(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('config/entity_registry/update', ['type' => 'result', 'success' => true, 'result' => [
+            'entity_entry' => ['entity_id' => 'light.hall', 'name' => 'Hall', 'hidden_by' => 'user', 'aliases' => [null]],
+        ]]);
+
+        $entry = $client->updateEntityRegistryEntry(new EntityId('light.hall'), new EntityRegistryUpdate()->withName('Hall')->withHidden(true));
+
+        self::assertSame('Hall', $entry->name);
+        self::assertTrue($entry->isHidden());
+        self::assertSame([null], $entry->aliases);
+        self::assertSame('Hall', $socket->listSentOfType('config/entity_registry/update')[0]['name'] ?? null);
+    }
+
+    public function testRegistryEntryLookupReadsExtendedEntry(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('config/entity_registry/get', ['type' => 'result', 'success' => true, 'result' => [
+            'entity_id' => 'light.hall',
+            'labels' => ['night'],
+            'aliases' => ['Hall lamp'],
+        ]]);
+
+        self::assertSame(['Hall lamp'], $client->getEntityRegistryEntry(new EntityId('light.hall'))->aliases);
+    }
+
+    public function testRegistryEditOfUnknownEntityIsNotFound(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('config/entity_registry/get', ['type' => 'result', 'success' => false, 'error' => ['code' => 'not_found', 'message' => 'Entity not found']]);
+
+        $this->assertThrowsReason(RegistryEditError::NotFound, static fn() => $client->getEntityRegistryEntry(new EntityId('light.gone')));
+    }
+
+    public function testRegistryUpdateRejectionCarriesDetail(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('config/entity_registry/update', ['type' => 'result', 'success' => false, 'error' => ['code' => 'invalid_info', 'message' => 'Device is disabled']]);
+
+        $this->assertThrowsReason(
+            RegistryEditError::Rejected,
+            static fn() => $client->updateEntityRegistryEntry(new EntityId('light.hall'), new EntityRegistryUpdate()->withDisabled(false)),
+        );
+    }
+
+    public function testRegistryUpdateWithoutEntryViolatesProtocol(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('config/entity_registry/update', ['type' => 'result', 'success' => true, 'result' => []]);
+
+        $this->assertThrowsReason(
+            RegistryEditError::Unreachable,
+            static fn() => $client->updateEntityRegistryEntry(new EntityId('light.hall'), new EntityRegistryUpdate()->withName('Hall')),
+        );
     }
 
     public function testRegistryJoinsAllFiveRegistries(): void

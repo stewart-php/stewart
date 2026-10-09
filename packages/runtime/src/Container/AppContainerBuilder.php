@@ -13,6 +13,7 @@ use Stewart\Contracts\Exposure\EntityExposure;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\Identity\StewartIdentity;
 use Stewart\Contracts\Mqtt\Mqtt;
+use Stewart\Contracts\Registry\RegistryEditor;
 use Stewart\Contracts\Schedule\Scheduler;
 use Stewart\Contracts\Store\ReadableStore;
 use Stewart\Contracts\Store\Store;
@@ -31,6 +32,7 @@ use Stewart\Runtime\Worker\WorkerEntityExposure;
 use Stewart\Runtime\Worker\WorkerHaContext;
 use Stewart\Runtime\Worker\WorkerLogger;
 use Stewart\Runtime\Worker\WorkerMqtt;
+use Stewart\Runtime\Worker\WorkerRegistryEditor;
 use Stewart\Store\ReadOnlyStore;
 use Stewart\Store\ScopedStore;
 use Symfony\Component\Config\FileLocator;
@@ -56,6 +58,8 @@ final readonly class AppContainerBuilder
 
     public const string EXPOSURE = '.stewart.exposure';
 
+    public const string REGISTRY_EDITOR = '.stewart.registry_editor';
+
     public const string GLOBAL_STORE = '.stewart.store.global';
 
     public const string READ_ONLY_GLOBAL_STORE = '.stewart.store.global.read_only';
@@ -77,6 +81,8 @@ final readonly class AppContainerBuilder
     private const string MQTT_SUFFIX = '.mqtt';
 
     private const string EXPOSURE_SUFFIX = '.exposure';
+
+    private const string REGISTRY_EDITOR_SUFFIX = '.registry_editor';
 
     private const string ENTITIES_SUFFIX = '.entities';
 
@@ -185,6 +191,7 @@ final readonly class AppContainerBuilder
             self::STORES => $runtime->stores,
             self::MQTT => $runtime->mqtt,
             self::EXPOSURE => $runtime->exposure,
+            self::REGISTRY_EDITOR => $runtime->registryEditor,
         ];
 
         $this->registerFrameworkServices($container, array_keys($synthetics), $runtime->generated);
@@ -243,6 +250,7 @@ final readonly class AppContainerBuilder
         $container->setAlias(ReadableStore::class, self::READ_ONLY_GLOBAL_STORE)->setPublic(true);
         $container->setAlias(Mqtt::class, self::MQTT)->setPublic(true);
         $container->setAlias(EntityExposure::class, self::EXPOSURE)->setPublic(true);
+        $container->setAlias(RegistryEditor::class, self::REGISTRY_EDITOR)->setPublic(true);
 
         $this->registerSharedGeneratedRoots($container, $generated);
     }
@@ -331,6 +339,10 @@ final readonly class AppContainerBuilder
             ->setFactory([new Reference(self::EXPOSURE), 'forApp'])
             ->addArgument($appId);
 
+        $container->register($serviceId . self::REGISTRY_EDITOR_SUFFIX, WorkerRegistryEditor::class)
+            ->setFactory([new Reference(self::REGISTRY_EDITOR), 'forApp'])
+            ->addArgument($appId);
+
         if ($generated === null) {
             return;
         }
@@ -353,6 +365,7 @@ final readonly class AppContainerBuilder
             ReadableStore::class => $serviceId . self::READ_ONLY_STORE_SUFFIX,
             Mqtt::class => $serviceId . self::MQTT_SUFFIX,
             EntityExposure::class => $serviceId . self::EXPOSURE_SUFFIX,
+            RegistryEditor::class => $serviceId . self::REGISTRY_EDITOR_SUFFIX,
         ];
 
         if ($generated !== null) {

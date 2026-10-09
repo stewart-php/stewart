@@ -1,0 +1,42 @@
+{
+    "t": "registry_entity_update_request",
+    "m": {
+        "correlation_id": "w0:7",
+        "scope": "demo",
+        "entity_id": "light.hall",
+        "update": {
+            "name": {
+                "name": "Hall"
+            },
+            "icon": {
+                "icon": null
+            },
+            "area": {
+                "area_id": "hall"
+            },
+            "labels": {
+                "replacement": null,
+                "added": [
+                    "night"
+                ],
+                "removed": [
+                    "hue"
+                ]
+            },
+            "aliases": {
+                "replacement": [
+                    {
+                        "phrase": "Hall lamp"
+                    },
+                    {
+                        "phrase": null
+                    }
+                ],
+                "added": [],
+                "removed": []
+            },
+            "hidden": true,
+            "disabled": false
+        }
+    }
+}

@@ -24,6 +24,7 @@ use Stewart\Runtime\Worker\WorkerEntityExposure;
 use Stewart\Runtime\Worker\WorkerHaContext;
 use Stewart\Runtime\Worker\WorkerLogger;
 use Stewart\Runtime\Worker\WorkerMqtt;
+use Stewart\Runtime\Worker\WorkerRegistryEditor;
 use Stewart\Runtime\Worker\WorkerSession;
 use Stewart\Runtime\Worker\WorkerStoresFactory;
 use Stewart\Runtime\Worker\WorkerSunCalendarFactory;
@@ -56,6 +57,7 @@ return static function (ContainerConfigurator $container): void {
     $services->set(WorkerScheduler::class)->arg('$resourceScope', inline_service(ResourceScope::class)->factory([ResourceScope::class, 'shared']));
     $services->set(WorkerMqtt::class)->arg('$resourceScope', inline_service(ResourceScope::class)->factory([ResourceScope::class, 'shared']));
     $services->set(WorkerEntityExposure::class)->arg('$resourceScope', inline_service(ResourceScope::class)->factory([ResourceScope::class, 'shared']));
+    $services->set(WorkerRegistryEditor::class)->arg('$resourceScope', inline_service(ResourceScope::class)->factory([ResourceScope::class, 'shared']));
     $services->set(BrokerMessageDispatcher::class)->arg('$handlers', tagged_iterator('stewart.broker_message_handler'));
 
     $services->alias(LoggerInterface::class, WorkerLogger::class);

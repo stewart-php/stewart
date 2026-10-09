@@ -21,16 +21,19 @@ use Stewart\Runtime\Tests\Fixtures\Schedule\WorkerSchedulerFixture;
 use Stewart\Runtime\Tests\Fixtures\Worker\AppResourcesFixture;
 use Stewart\Runtime\Tests\Fixtures\Worker\WorkerHaContextFixture;
 use Stewart\Runtime\Worker\AppActivityCounters;
+use Stewart\Runtime\Worker\ConnectionStatus;
 use Stewart\Runtime\Worker\Context\DispatchStreams;
 use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\Exposure\ExposedCommandSettlements;
 use Stewart\Runtime\Worker\Exposure\ExposedCommandStreams;
 use Stewart\Runtime\Worker\Exposure\ExposureRequester;
 use Stewart\Runtime\Worker\PendingRequests;
+use Stewart\Runtime\Worker\Registry\RegistryEditRequester;
 use Stewart\Runtime\Worker\StderrFallback;
 use Stewart\Runtime\Worker\WorkerEntityExposure;
 use Stewart\Runtime\Worker\WorkerLogger;
 use Stewart\Runtime\Worker\WorkerMqtt;
+use Stewart\Runtime\Worker\WorkerRegistryEditor;
 use Stewart\Store\DisabledStores;
 use Stewart\Store\Stores;
 use Stewart\Sun\LocatedSunCalendar;
@@ -84,6 +87,10 @@ final class AppRuntimeServicesFixture
                 new ExposureRequester($transport, new PendingRequests(new CorrelationIdSequence(new WorkerId(0))), $timers, Duration::seconds(30)),
                 $resources->exposedHandles,
                 new ExposedCommandStreams($resources->dispatcher, $timers, new ExposedCommandSettlements($transport, new NullLogger())),
+                ResourceScope::shared(),
+            ),
+            registryEditor: new WorkerRegistryEditor(
+                new RegistryEditRequester($transport, new PendingRequests(new CorrelationIdSequence(new WorkerId(0))), new ConnectionStatus(), $timers, Duration::seconds(30)),
                 ResourceScope::shared(),
             ),
             identity: $identity,

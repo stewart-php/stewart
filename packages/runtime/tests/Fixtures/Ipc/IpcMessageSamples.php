@@ -12,6 +12,7 @@ use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exception\HistoryException;
+use Stewart\Contracts\Exception\RegistryEditException;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exposure\Command\SwitchAction;
 use Stewart\Contracts\Exposure\Command\SwitchCommand;
@@ -40,12 +41,14 @@ use Stewart\Contracts\Registry\Collection\LabelCollection;
 use Stewart\Contracts\Registry\Collection\RegisteredEntityCollection;
 use Stewart\Contracts\Registry\Device;
 use Stewart\Contracts\Registry\DeviceId;
+use Stewart\Contracts\Registry\EntityAlias;
 use Stewart\Contracts\Registry\Floor;
 use Stewart\Contracts\Registry\FloorId;
 use Stewart\Contracts\Registry\IndexedRegistry;
 use Stewart\Contracts\Registry\Label;
 use Stewart\Contracts\Registry\LabelId;
 use Stewart\Contracts\Registry\RegisteredEntity;
+use Stewart\Contracts\Registry\Update\EntityRegistryUpdate;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
@@ -91,6 +94,9 @@ use Stewart\Runtime\Ipc\Message\Ping;
 use Stewart\Runtime\Ipc\Message\Pong;
 use Stewart\Runtime\Ipc\Message\Publish;
 use Stewart\Runtime\Ipc\Message\ReconfigureExposedEntityRequest;
+use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateFailed;
+use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateRequest;
+use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateResult;
 use Stewart\Runtime\Ipc\Message\RegistrySnapshot;
 use Stewart\Runtime\Ipc\Message\RemoveExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallFailed;
@@ -157,6 +163,11 @@ final class IpcMessageSamples
             'service_call_error' => IpcMessageSample::createRoundTrip(ServiceCallFailed::fromException(new CorrelationId('w0:2'), ServiceCallException::rejected('light', 'turn_on', 'Service not found', 'not_found'))),
             'event_fire_result' => IpcMessageSample::createRoundTrip(new EventFireResult(new CorrelationId('w0:6'), new EventContext('fire-1', null, 'stewart-user'))),
             'event_fire_error' => IpcMessageSample::createRoundTrip(EventFireFailed::fromException(new CorrelationId('w0:6'), EventFireException::rejected('doorbell_pressed', 'Unauthorized', 'unauthorized'))),
+            'registry_entity_update_result' => IpcMessageSample::createRoundTrip(new RegistryEntityUpdateResult(
+                new CorrelationId('w0:7'),
+                new RegisteredEntity(new EntityId('light.hall'), areaId: new AreaId('hall'), name: 'Hall', hiddenBy: 'user', aliases: [EntityAlias::entityName()]),
+            )),
+            'registry_entity_update_error' => IpcMessageSample::createRoundTrip(RegistryEntityUpdateFailed::fromException(new CorrelationId('w0:7'), RegistryEditException::notFound(new EntityId('light.gone')))),
             'subscription_ack' => IpcMessageSample::createRoundTrip(new SubscriptionAck(new SubscriptionId('w0:1'), false, 'refused')),
             'ping' => IpcMessageSample::createRoundTrip(new Ping(42, $at)),
             'shutdown' => IpcMessageSample::createRoundTrip(new Shutdown('stopping', Duration::seconds(5))),
@@ -174,6 +185,20 @@ final class IpcMessageSamples
             'history_result' => new IpcMessageSample(self::createHistoryResult($at), self::createHistoryResult($at)),
             'history_error' => IpcMessageSample::createRoundTrip(HistoryFailed::fromException(new CorrelationId('w0:3'), HistoryException::recorderUnavailable(new EntityId('light.hall')))),
             'service_call_request' => IpcMessageSample::createRoundTrip(new ServiceCallRequest(new CorrelationId('w0:2'), $demo, 'light', 'turn_on', ['transition' => 1.5], new ServiceTarget(entityIds: [new EntityId('light.hall')], areaIds: ['hall']), false)),
+            'registry_entity_update_request' => IpcMessageSample::createRoundTrip(new RegistryEntityUpdateRequest(
+                new CorrelationId('w0:7'),
+                $demo,
+                new EntityId('light.hall'),
+                new EntityRegistryUpdate()
+                    ->withName('Hall')
+                    ->withoutIcon()
+                    ->withArea('hall')
+                    ->withAddedLabels('night')
+                    ->withRemovedLabels('hue')
+                    ->withAliases('Hall lamp', EntityAlias::entityName())
+                    ->withHidden(true)
+                    ->withDisabled(false),
+            )),
             'event_fire_request' => IpcMessageSample::createRoundTrip(new EventFireRequest(new CorrelationId('w0:6'), $demo, 'doorbell_pressed', ['button' => 'front', 'pressure' => 0.8, 'note' => null])),
             'publish' => IpcMessageSample::createRoundTrip(new Publish('demo.triggered', ['state' => 'on', 'nested' => [1.0, null]], $demo, $at)),
             'log_record' => IpcMessageSample::createRoundTrip(new LogRecord($demo, LogLevel::Warning, 'Something odd', ['to' => 'on', 'count' => 3], null)),
@@ -258,7 +283,15 @@ final class IpcMessageSamples
             FloorCollection::keyedByFloorId([new Floor(new FloorId('ground'), 'Ground', 0)]),
             LabelCollection::keyedByLabelId([new Label($night, 'Night', 'indigo')]),
             DeviceCollection::keyedByDeviceId([new Device($bulb, 'Bulb', 'Ceiling', $kitchen, [], 'Signify', 'LCA001')]),
-            RegisteredEntityCollection::keyedByEntityId([new RegisteredEntity(new EntityId('light.ceiling'), $bulb, null, [$night], 'Ceiling', null, null, null)]),
+            RegisteredEntityCollection::keyedByEntityId([new RegisteredEntity(
+                new EntityId('light.ceiling'),
+                $bulb,
+                null,
+                [$night],
+                'Ceiling',
+                icon: 'mdi:ceiling-light',
+                aliases: [EntityAlias::named('Top light'), EntityAlias::entityName()],
+            )]),
         ));
     }
 

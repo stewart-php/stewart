@@ -36,6 +36,7 @@ minor release may break; its "Upgrading" section says what to change.
   read back the entity ID and the state Home Assistant restored. Exposed entities are sent again after every
   reconnect; without a compatible integration, `expose*()` throws `ExposureException`
 - `Stewart\Testing\Exposure\RecordingEntityExposure` for unit tests of apps that expose entities
+- `Stewart\Testing\Registry\RecordingRegistryEditor` records registry edits and applies them to an `InMemoryRegistry`
 - The skeleton's `HelloApp` exposes `sensor.stewart_hello_changes_seen`; without the integration it logs why and keeps
   running
 - `make test-ha-e2e` (`HA=min|latest`) boots a real Home Assistant with the integration and checks that the skeleton's
@@ -62,6 +63,13 @@ minor release may break; its "Upgrading" section says what to change.
   value. The `RecordingExposed*` handles push them in unit tests
 - Every exposed handle has `getConfig()` and `updateConfig()`, which changes the entity's name, icon, options or
   limits in place and keeps its device; Home Assistant drops a value that no longer fits to unknown
+- `RegisteredEntity` carries the entity's `icon`, and `aliases` as `EntityAlias` where Home Assistant sends them; the
+  mirrored registry has none, so it holds `null` there
+- Apps edit Home Assistant entity registry entries through an injected `RegistryEditor`: `updateEntity()` takes an
+  `EntityRegistryUpdate` that renames, sets the icon, area, labels and aliases, hides or disables an entity, and
+  returns the updated `RegisteredEntity`. Added and removed labels and aliases merge with the entry Home Assistant
+  holds. Edits share the service-call budget and follow `service_calls.dry_run`; failures throw
+  `RegistryEditException`. Editing an entity that a Stewart app exposes logs a warning naming the app and key
 
 ### Changed
 
@@ -69,7 +77,7 @@ minor release may break; its "Upgrading" section says what to change.
   of keeping their last state as if live
 - The control protocol is version 28: snapshots carry `component` and each app's `exposed_entities` and
   `exposed_commands`
-- IPC protocol 25; broker and workers must run the same version
+- IPC protocol 26; broker and workers must run the same version
 
 ## [0.8.0] - 2026-10-08
 

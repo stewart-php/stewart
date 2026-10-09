@@ -1,0 +1,22 @@
+{
+    "t": "registry_entity_update_result",
+    "m": {
+        "correlation_id": "w0:7",
+        "entity": {
+            "entity_id": "light.hall",
+            "device_id": null,
+            "area_id": "hall",
+            "label_ids": [],
+            "name": "Hall",
+            "entity_category": null,
+            "hidden_by": "user",
+            "disabled_by": null,
+            "icon": null,
+            "aliases": [
+                {
+                    "phrase": null
+                }
+            ]
+        }
+    }
+}

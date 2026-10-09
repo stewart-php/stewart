@@ -12,6 +12,7 @@ use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exception\HistoryException;
+use Stewart\Contracts\Exception\RegistryEditException;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
@@ -19,6 +20,8 @@ use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
+use Stewart\Contracts\Registry\RegisteredEntity;
+use Stewart\Contracts\Registry\Update\EntityRegistryUpdate;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\EventContext;
@@ -70,6 +73,12 @@ interface HaSession
 
     /** @throws EventFireException */
     public function fireEvent(EventPayload $payload): EventContext;
+
+    /** @throws RegistryEditException */
+    public function getEntityRegistryEntry(EntityId $entityId): RegisteredEntity;
+
+    /** @throws RegistryEditException */
+    public function updateEntityRegistryEntry(EntityId $entityId, EntityRegistryUpdate $update): RegisteredEntity;
 
     /** @throws HistoryException */
     public function fetchHistory(EntityId $entityId, HistoryWindow $window, HistoryDetail $detail): EntityStateHistory;

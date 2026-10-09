@@ -20,6 +20,7 @@ use Stewart\Client\HaClient;
 use Stewart\Client\Registry\RegistryDecoder;
 use Stewart\Client\State\EntityStateDecoder;
 use Stewart\Contracts\App\AppId;
+use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\ExposureError;
 use Stewart\Contracts\Exposure\ButtonConfig;
 use Stewart\Contracts\Exposure\Command\ButtonPress;
@@ -109,6 +110,23 @@ final class ExposureLinkTest extends TestCase
 
         self::assertSame(self::ENTITY_ID, $this->exposeTemperature(21.4)?->entityId->value);
         self::assertSame(21.4, $this->socket->listSentOfType('stewart/entity/upsert')[0]['state'] ?? null);
+    }
+
+    public function testUpsertedEntityIsFoundByEntityId(): void
+    {
+        $this->activateComponent();
+        $this->replyToUpsert();
+        $this->exposeTemperature(21.4);
+
+        self::assertSame('average_temperature', $this->link->findAddressByEntityId(new EntityId(self::ENTITY_ID))?->key->value);
+        self::assertNull($this->link->findAddressByEntityId(new EntityId('sensor.other')));
+    }
+
+    public function testPendingExposureHasNoEntityId(): void
+    {
+        $this->exposeTemperature(21.4);
+
+        self::assertNull($this->link->findAddressByEntityId(new EntityId(self::ENTITY_ID)));
     }
 
     public function testRejectedConfigIsNotReplayed(): void

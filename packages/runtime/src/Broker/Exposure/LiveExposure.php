@@ -6,11 +6,14 @@ namespace Stewart\Runtime\Broker\Exposure;
 
 use Stewart\Client\Component\ExposedEntityAddress;
 use Stewart\Client\Component\ExposedEntityDefinition;
+use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Runtime\Model\WorkerId;
 
 final class LiveExposure
 {
+    public private(set) ?EntityId $entityId = null;
+
     public function __construct(
         public private(set) ?WorkerId $owner,
         public readonly ExposedEntityAddress $address,
@@ -28,6 +31,11 @@ final class LiveExposure
     {
         $this->definition = $definition;
         $this->latestChange = new ExposedStateChange(attributes: $this->latestChange->attributes, available: $this->latestChange->available);
+    }
+
+    public function recordEntityId(EntityId $entityId): void
+    {
+        $this->entityId = $entityId;
     }
 
     public function markOrphaned(): void
