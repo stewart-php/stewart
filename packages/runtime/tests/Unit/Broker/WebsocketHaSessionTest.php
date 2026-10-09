@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Tests\Unit\Broker;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use Stewart\Client\Component\ComponentEventDecoder;
 use Stewart\Client\Connection\ConnectionConfig;
 use Stewart\Client\Connection\HaConnection;
 use Stewart\Client\Connection\HomeAssistantUrl;
@@ -411,7 +412,7 @@ final class WebsocketHaSessionTest extends TestCase
             new FakeWebsocketConnector(...$sockets),
         );
 
-        $client = new HaClient($connection, new EventDecoder(new EntityStateDecoder()), new EntityStateDecoder(), new RegistryDecoder(), new NullLogger());
+        $client = new HaClient($connection, new EventDecoder(new EntityStateDecoder()), new EntityStateDecoder(), new RegistryDecoder(), new ComponentEventDecoder(), new NullLogger());
 
         return $this->session = new WebsocketHaSession(
             $client,

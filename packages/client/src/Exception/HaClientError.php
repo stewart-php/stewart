@@ -27,6 +27,7 @@ enum HaClientError: string implements ExceptionReason
     case EventBacklogExceeded = 'event_backlog_exceeded';
     case EventQueueReentered = 'event_queue_reentered';
     case UrlInvalid = 'url_invalid';
+    case ComponentInstanceInvalid = 'component_instance_invalid';
 
     public function messageTemplate(): string
     {
@@ -49,6 +50,7 @@ enum HaClientError: string implements ExceptionReason
             self::EventBacklogExceeded => 'Event handlers are more than {limit} events behind; dropping the connection.',
             self::EventQueueReentered => 'An event callback cannot wait for the event queue it is being delivered by.',
             self::UrlInvalid => '"{url}" is not a Home Assistant URL; use http://, https://, ws:// or wss:// and a host.',
+            self::ComponentInstanceInvalid => '"{instance}" is not an instance name; use lowercase letters, digits and underscores, starting with a letter, up to 64 characters.',
         };
     }
 

@@ -8,6 +8,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use Stewart\Client\Component\ComponentEventDecoder;
+use Stewart\Client\Component\ComponentInstance;
+use Stewart\Client\Component\ComponentSessionEvent;
+use Stewart\Client\Component\ComponentSessionRequest;
+use Stewart\Client\Component\SessionReplaced;
 use Stewart\Client\Connection\ConnectionConfig;
 use Stewart\Client\Connection\HaConnection;
 use Stewart\Client\Connection\HomeAssistantUrl;
@@ -175,6 +180,67 @@ final class HaClientTest extends TestCase
         $this->assertThrowsReason(
             HaClientError::AdministratorRequired,
             fn() => $client->subscribeTrigger(HaTriggerCollection::fromTriggers([HaTrigger::onSunset()]), [], static function (): void {}),
+        );
+    }
+
+    public function testComponentVersionIsRead(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('stewart/version', ['type' => 'result', 'success' => true, 'result' => ['component_version' => '0.9.0', 'protocol' => 1]]);
+
+        self::assertSame('0.9.0', $client->findComponentVersion()?->componentVersion);
+    }
+
+    public function testMissingComponentHasNoVersion(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('stewart/version', [
+            'type' => 'result',
+            'success' => false,
+            'error' => ['code' => 'unknown_command', 'message' => 'Unknown command.'],
+        ]);
+
+        self::assertNull($client->findComponentVersion());
+    }
+
+    public function testComponentSessionDeliversOnlyKnownEvents(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+        $events = [];
+
+        $socket->replyWhenSent('stewart/session/subscribe', ['type' => 'result', 'success' => true, 'result' => null]);
+        $id = $client->subscribeComponentSession(self::createSessionRequest(), static function (ComponentSessionEvent $event) use (&$events): void {
+            $events[] = $event;
+        });
+
+        $socket->queueFrame(['id' => $id, 'type' => 'event', 'event' => ['type' => 'sentence']]);
+        $socket->queueFrame(['id' => $id, 'type' => 'event', 'event' => ['type' => 'session_replaced']]);
+        EventLoopTicks::settle();
+        $client->flushEvents();
+
+        self::assertCount(1, $events);
+        self::assertInstanceOf(SessionReplaced::class, $events[0]);
+    }
+
+    public function testNonAdminComponentSessionIsReported(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('stewart/session/subscribe', [
+            'type' => 'result',
+            'success' => false,
+            'error' => ['code' => 'unauthorized', 'message' => 'Unauthorized'],
+        ]);
+
+        $this->assertThrowsReason(
+            HaClientError::AdministratorRequired,
+            static fn() => $client->subscribeComponentSession(self::createSessionRequest(), static function (): void {}),
         );
     }
 
@@ -482,6 +548,11 @@ final class HaClientTest extends TestCase
         return new HistoryWindow(Instant::fromEpochMicroseconds(1_789_999_000_000_000), Instant::fromEpochMicroseconds(1_790_001_000_000_000));
     }
 
+    private static function createSessionRequest(): ComponentSessionRequest
+    {
+        return new ComponentSessionRequest(ComponentInstance::parse('default'), '0.9.0', Duration::seconds(5));
+    }
+
     private static function connect(FakeWebsocketConnection $socket, ?Duration $commandTimeout = null, ManualTimers $timers = new ManualTimers()): HaClient
     {
         $connection = new HaConnection(
@@ -497,7 +568,7 @@ final class HaClientTest extends TestCase
             new FakeWebsocketConnector($socket),
         );
 
-        $client = new HaClient($connection, new EventDecoder(new EntityStateDecoder()), new EntityStateDecoder(), new RegistryDecoder(), new NullLogger());
+        $client = new HaClient($connection, new EventDecoder(new EntityStateDecoder()), new EntityStateDecoder(), new RegistryDecoder(), new ComponentEventDecoder(), new NullLogger());
         $client->connect();
 
         return $client;
