@@ -39,3 +39,5 @@ jobs:
       ref: ${{ needs.latest.outputs.tag }}
       version: ${{ needs.latest.outputs.version }}
       rolling-only: true
+    secrets:
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}

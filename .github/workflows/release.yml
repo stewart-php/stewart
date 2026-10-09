@@ -53,6 +53,8 @@ jobs:
     with:
       ref: ${{ github.ref }}
       version: ${{ needs.verify.outputs.version }}
+    secrets:
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
   chart:
     needs: [verify, image]
