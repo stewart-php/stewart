@@ -13,6 +13,7 @@ use Stewart\Runtime\Control\Protocol\Status\FailureReport;
 use Stewart\Runtime\Ipc\Message\AppActivityReport;
 use Stewart\Runtime\Ipc\Message\AppFailed;
 use Stewart\Runtime\Ipc\Message\Pong;
+use Stewart\Runtime\Model\ExposedCommandOutcome;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\WorkerId;
@@ -63,6 +64,11 @@ final class AppMetrics
     public function recordRefusedCall(WorkerId $workerId, ResourceScope $scope): void
     {
         $this->findOrCreateRunningTotals($workerId, $scope)->recordCall(ServiceCallOutcome::Refused, null);
+    }
+
+    public function recordExposedCommand(AppId $appId, ExposedCommandOutcome $outcome): void
+    {
+        $this->findAppRunningTotals($appId)?->recordExposedCommand($outcome);
     }
 
     public function recordLastFailure(WorkerId $workerId, AppFailed $failure): void

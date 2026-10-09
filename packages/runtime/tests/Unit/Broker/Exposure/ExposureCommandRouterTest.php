@@ -16,7 +16,9 @@ use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
+use Stewart\Runtime\Broker\AppMetrics;
 use Stewart\Runtime\Broker\AppPauseRegistry;
+use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\Exposure\ExposedEntityCommand;
 use Stewart\Runtime\Broker\Exposure\ExposureCommandRouter;
@@ -26,10 +28,13 @@ use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Broker\WorkerSlotRegistry;
 use Stewart\Runtime\Config\ExposeConfig;
+use Stewart\Runtime\Control\Protocol\Status\ExposedCommandStats;
 use Stewart\Runtime\Ipc\Message\ExposedCommandAnswered;
 use Stewart\Runtime\Ipc\Message\ExposedEntityCommanded;
+use Stewart\Runtime\Model\ExposedCommandOutcome;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
+use Stewart\Runtime\Tests\Fixtures\Broker\ExposureLinkFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerProcess;
 use Stewart\Runtime\Tests\Fixtures\Broker\RecordingPoolListener;
@@ -51,12 +56,15 @@ final class ExposureCommandRouterTest extends TestCase
 
     private WorkerHandle $worker;
 
+    private AppMetrics $metrics;
+
     protected function setUp(): void
     {
         $this->session = new FakeHaSession();
         $this->clock = new VirtualClock();
         $this->slots = new WorkerSlotRegistry();
         $slot = new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)]));
+        $this->metrics = new AppMetrics(WorkerSlotCollection::fromWorkerSlots([$slot]), $this->clock);
         $this->worker = new WorkerHandle(new WorkerId(0), new FakeWorkerProcess(), $slot, new NullLogger(), new OutboxLimits(100, 256));
         $state = $this->slots->findOrCreateSlotState($slot, new RecordingPoolListener());
         $state->beginSpawn();
@@ -72,6 +80,31 @@ final class ExposureCommandRouterTest extends TestCase
         self::assertSame(self::COMMAND_ID, $sent[0]->commandId);
         self::assertSame('demo', $sent[0]->scope->appId?->value);
         self::assertSame([], $this->session->commandAnswers);
+    }
+
+    public function testCommandOfOrphanIsRefused(): void
+    {
+        $this->createRouter()->routeCommand(self::createCommand(null));
+
+        self::assertSame('App demo is not running.', $this->session->commandAnswers[0]->rejection ?? null);
+    }
+
+    public function testOutcomesAreCounted(): void
+    {
+        $router = $this->createRouter();
+        $router->routeCommand(self::createCommand());
+        $router->completeCommand($this->worker, new ExposedCommandAnswered(self::COMMAND_ID, true));
+        $router->routeCommand(self::createCommand(new WorkerId(3)));
+
+        $stats = $this->metrics->findAppRunningTotals(new AppId('demo'))?->buildAppStatus(
+            new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime($this->clock)),
+            ExposureLinkFixture::createWithoutExposures(),
+        )->exposedCommands ?? [];
+
+        self::assertSame(
+            [[ExposedCommandOutcome::Accepted, 1], [ExposedCommandOutcome::Refused, 1]],
+            array_map(static fn(ExposedCommandStats $stat): array => [$stat->outcome, $stat->count], $stats),
+        );
     }
 
     public function testPausedAppIsRefused(): void
@@ -153,10 +186,10 @@ final class ExposureCommandRouterTest extends TestCase
         );
         $pending = new PendingExposureCommands($this->clock, new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10)));
 
-        return new ExposureCommandRouter($this->session, $this->slots, $pauses, $pending);
+        return new ExposureCommandRouter($this->session, $this->slots, $pauses, $pending, $this->metrics);
     }
 
-    private static function createCommand(WorkerId $owner = new WorkerId(0)): ExposedEntityCommand
+    private static function createCommand(?WorkerId $owner = new WorkerId(0)): ExposedEntityCommand
     {
         return new ExposedEntityCommand(self::COMMAND_ID, $owner, new AppId('demo'), new ExposedEntityKey('night_mode'), self::createSwitchCommand());
     }

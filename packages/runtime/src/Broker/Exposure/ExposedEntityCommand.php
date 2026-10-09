@@ -13,7 +13,7 @@ final readonly class ExposedEntityCommand
 {
     public function __construct(
         public string $commandId,
-        public WorkerId $owner,
+        public ?WorkerId $owner,
         public AppId $appId,
         public ExposedEntityKey $key,
         public ExposedCommand $command,

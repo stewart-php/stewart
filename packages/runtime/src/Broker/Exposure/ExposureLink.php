@@ -69,10 +69,8 @@ final class ExposureLink
     {
         $live = $this->findLive($command->appId, $command->key);
 
-        if ($live?->owner === null) {
-            $reason = $live === null
-                ? \sprintf('Entity %s of app %s is not exposed by a running app.', $command->key, $command->appId)
-                : \sprintf('App %s is not running.', $command->appId);
+        if ($live === null) {
+            $reason = \sprintf('Entity %s of app %s is not exposed by a running app.', $command->key, $command->appId);
             $this->sendCommandAnswer(ComponentCommandAnswer::reject($command->commandId, $reason));
 
             return;

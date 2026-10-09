@@ -285,16 +285,15 @@ final class ExposureLinkTest extends TestCase
         self::assertSame([], $this->commanded);
     }
 
-    public function testCommandForOrphanIsRejected(): void
+    public function testCommandForOrphanHasNoOwner(): void
     {
         $this->exposeNightMode(false);
         $this->link->orphanExposuresOfApp(new AppId('lights'));
-        $this->socket->replyWhenSent('stewart/command/result', ['type' => 'result', 'success' => true, 'result' => null]);
 
         $this->link->receiveCommand(self::createComponentCommand(ComponentCommandAction::TurnOn));
-        EventLoopTicks::settle();
 
-        self::assertSame('App lights is not running.', $this->socket->listSentOfType('stewart/command/result')[0]['message'] ?? null);
+        self::assertCount(1, $this->commanded);
+        self::assertNull($this->commanded[0]->owner);
     }
 
     public function testCommandReachesOwningWorker(): void
@@ -304,7 +303,7 @@ final class ExposureLinkTest extends TestCase
         $this->link->receiveCommand(self::createComponentCommand(ComponentCommandAction::TurnOff));
 
         self::assertCount(1, $this->commanded);
-        self::assertTrue($this->commanded[0]->owner->equals(new WorkerId(1)));
+        self::assertTrue($this->commanded[0]->owner?->equals(new WorkerId(1)));
         self::assertInstanceOf(SwitchCommand::class, $this->commanded[0]->command);
         self::assertFalse($this->commanded[0]->command->isTurnOn());
         self::assertSame('user-1', $this->commanded[0]->command->getContext()->userId);

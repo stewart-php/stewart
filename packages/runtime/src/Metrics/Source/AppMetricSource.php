@@ -33,6 +33,7 @@ final readonly class AppMetricSource implements RuntimeMetricSource
         $suppressed = new MetricFamily('stewart_app_suppressed_total', 'Work skipped while the app was paused.', MetricType::Counter);
         $lastFailure = new MetricFamily('stewart_app_last_failure_timestamp_seconds', 'Unix time of the last app failure.', MetricType::Gauge);
         $serviceCalls = new MetricFamily('stewart_app_service_calls_total', 'Home Assistant calls of the app by outcome.', MetricType::Counter);
+        $exposedCommands = new MetricFamily('stewart_app_exposed_commands_total', 'Home Assistant commands on the app\'s exposed entities by outcome.', MetricType::Counter);
         $serviceCallDuration = new MetricFamily('stewart_app_service_call_duration_seconds', 'Home Assistant call latency of the app by outcome.', MetricType::Histogram);
 
         foreach ($snapshot->apps as $app) {
@@ -62,6 +63,10 @@ final readonly class AppMetricSource implements RuntimeMetricSource
                 $lastFailure->recordSample($labels, PrometheusNumber::convertToEpochSeconds($app->lastFailure->at));
             }
 
+            foreach ($app->exposedCommands as $commands) {
+                $exposedCommands->recordSample($labels->withLabel('outcome', $commands->outcome->value), $commands->count);
+            }
+
             foreach ($app->serviceCalls as $calls) {
                 $outcomeLabels = $labels->withLabel('outcome', $calls->outcome->value);
                 $serviceCalls->recordSample($outcomeLabels, $calls->count);
@@ -74,7 +79,7 @@ final readonly class AppMetricSource implements RuntimeMetricSource
 
         return MetricFamilyCollection::fromFamilies([
             $info, $states, $paused, $subscriptions, $schedules, $exposedEntities, $delivered, $subscriptionDropped, $scheduleRuns, $publishes,
-            $failures, $suppressed, $lastFailure, $serviceCalls, $serviceCallDuration,
+            $failures, $suppressed, $lastFailure, $serviceCalls, $serviceCallDuration, $exposedCommands,
         ]);
     }
 }

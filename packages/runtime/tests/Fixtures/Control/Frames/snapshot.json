@@ -112,7 +112,8 @@
                     "origin": "subscription w0:1",
                     "reason": "entity_not_found",
                     "at": "2026-09-26T10:30:00.000000Z"
-                }
+                },
+                "exposed_commands": []
             }
         ],
         "subscriptions": [

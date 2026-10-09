@@ -40,12 +40,26 @@ minor release may break; its "Upgrading" section says what to change.
   running
 - `make test-ha-e2e` (`HA=min|latest`) boots a real Home Assistant with the integration and checks that the skeleton's
   sensor appears, updates and turns unavailable when the daemon stops; CI runs it on both versions
+- The `stewart` integration creates `switch` and `button` entities. Their service calls send a `command` event, with
+  the call's context, on the session and wait for `stewart/command/result`; a refusal, a timeout or the session
+  ending fails the call
+- Apps expose switches and buttons with `exposeSwitch()` and `exposeButton()`. `watchCommands()` streams
+  `SwitchCommand` and `ButtonPress`; a handler that returns accepts the command, `CommandException::rejected()`
+  fails it with its message. Commands for paused or stopped apps fail at once, and a worker dying mid-command fails
+  it without waiting for the timeout
+- `expose.command_timeout` setting (`10s`, at most `300s`): how long Home Assistant waits for an app's answer
+- Metric `stewart_app_exposed_commands_total{outcome}` (`accepted`, `rejected`, `refused`, `lost`)
+- `RecordingExposedSwitch::pushCommand()` and `RecordingExposedButton::pushCommand()` run an app's command handlers in
+  unit tests
+- The skeleton's `HelloApp` exposes `switch.stewart_hello_counting`, which pauses its change counter; the e2e smoke
+  test turns it off and on
 
 ### Changed
 
 - Entities of an app that fails, stops or loses its worker turn unavailable until the app exposes them again, instead
   of keeping their last state as if live
-- The control protocol is version 26: snapshots carry `component` and each app's `exposed_entities`
+- The control protocol is version 28: snapshots carry `component` and each app's `exposed_entities` and
+  `exposed_commands`
 - IPC protocol 24; broker and workers must run the same version
 
 ## [0.8.0] - 2026-10-08
