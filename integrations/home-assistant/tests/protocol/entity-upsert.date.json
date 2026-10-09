@@ -1,0 +1,21 @@
+{
+    "protocol": 1,
+    "request": {
+        "type": "stewart/entity/upsert",
+        "instance": "default",
+        "app": "garden",
+        "key": "next_mowing",
+        "platform": "date",
+        "config": {
+            "name": "Next mowing",
+            "icon": "mdi:mower"
+        },
+        "state": "2026-10-12"
+    },
+    "result": {
+        "entity_id": "date.stewart_garden_next_mowing",
+        "state": "2026-10-12",
+        "attributes": {},
+        "available": true
+    }
+}

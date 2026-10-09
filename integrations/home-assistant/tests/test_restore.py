@@ -20,6 +20,10 @@ SWITCH_ENTITY_ID = "switch.stewart_lights_night_mode"
 BUTTON_ENTITY_ID = "button.stewart_lights_all_off"
 NUMBER_ENTITY_ID = "number.stewart_climate_target_offset"
 SELECT_ENTITY_ID = "select.stewart_heating_mode"
+TEXT_ENTITY_ID = "text.stewart_notify_greeting"
+TIME_ENTITY_ID = "time.stewart_wakeup_alarm"
+DATE_ENTITY_ID = "date.stewart_garden_next_mowing"
+DATETIME_ENTITY_ID = "datetime.stewart_garden_last_watered"
 LAST_PRESS = "2026-10-09T12:00:00+00:00"
 STORED_ATTRIBUTES = {"sources": ["sensor.attic_temperature"]}
 
@@ -153,6 +157,31 @@ class StoredStateCase:
         ),
         StoredStateCase(
             golden="entity-upsert.select", entity_id=SELECT_ENTITY_ID, stored_state="boost", restored_state=None
+        ),
+        StoredStateCase(golden="entity-upsert.text", entity_id=TEXT_ENTITY_ID, stored_state="Hi", restored_state="Hi"),
+        StoredStateCase(
+            golden="entity-upsert.text", entity_id=TEXT_ENTITY_ID, stored_state="Hi 2", restored_state=None
+        ),
+        StoredStateCase(
+            golden="entity-upsert.time", entity_id=TIME_ENTITY_ID, stored_state="05:30:00", restored_state="05:30:00"
+        ),
+        StoredStateCase(
+            golden="entity-upsert.date",
+            entity_id=DATE_ENTITY_ID,
+            stored_state="2026-11-01",
+            restored_state="2026-11-01",
+        ),
+        StoredStateCase(
+            golden="entity-upsert.datetime",
+            entity_id=DATETIME_ENTITY_ID,
+            stored_state="2026-10-08T20:00:00+00:00",
+            restored_state="2026-10-08T20:00:00+00:00",
+        ),
+        StoredStateCase(
+            golden="entity-upsert.datetime",
+            entity_id=DATETIME_ENTITY_ID,
+            stored_state="2026-10-08",
+            restored_state=None,
         ),
     ],
 )

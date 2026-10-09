@@ -15,13 +15,13 @@ from homeassistant.const import MAX_LENGTH_STATE_STATE, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback, async_get_current_platform
-from homeassistant.util import dt as dt_util
 
 from .change import JsonValue
 from .config import ConfigReader, EntityConfig
 from .entity import StewartEntity
 from .errors import InvalidStateError
 from .identity import EntityAddress
+from .moments import read_day, read_moment
 from .runtime import StewartConfigEntry
 from .session import SessionRegistry
 
@@ -104,15 +104,13 @@ def _convert_option(config: SensorConfig, state: JsonValue) -> str:
 
 
 def _convert_moment(state: JsonValue) -> datetime:
-    moment = dt_util.parse_datetime(state) if isinstance(state, str) else None
-    if moment is None or moment.tzinfo is None:
+    if (moment := read_moment(state)) is None:
         raise InvalidStateError("A sensor state must be an ISO 8601 date and time with an offset.")
     return moment
 
 
 def _convert_day(state: JsonValue) -> date:
-    day = dt_util.parse_date(state) if isinstance(state, str) else None
-    if day is None:
+    if (day := read_day(state)) is None:
         raise InvalidStateError("A sensor state must be an ISO 8601 date.")
     return day
 
