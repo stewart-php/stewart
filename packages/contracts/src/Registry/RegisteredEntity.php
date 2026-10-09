@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Contracts\Registry;
 
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Registry\Collection\EntityAliasCollection;
 use Stewart\Contracts\Registry\Collection\LabelIdCollection;
 use Stewart\Contracts\Wire\ListOf;
 
@@ -33,6 +34,11 @@ final readonly class RegisteredEntity
     public function listLabelIds(): LabelIdCollection
     {
         return LabelIdCollection::fromIds($this->labelIds);
+    }
+
+    public function listAliases(): ?EntityAliasCollection
+    {
+        return $this->aliases === null ? null : EntityAliasCollection::fromAliases($this->aliases);
     }
 
     public function isHidden(): bool

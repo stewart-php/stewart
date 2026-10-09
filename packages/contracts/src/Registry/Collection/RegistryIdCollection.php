@@ -31,6 +31,24 @@ abstract readonly class RegistryIdCollection extends ListCollection
         return $other->containsWhere($this->contains(...));
     }
 
+    /** @param static $ids */
+    public function withAddedMembers(self $ids): static
+    {
+        $merged = $this;
+
+        foreach ($ids as $id) {
+            $merged = $merged->contains($id) ? $merged : $merged->withAppendedElement($id);
+        }
+
+        return $merged;
+    }
+
+    /** @param static $ids */
+    public function withoutMembers(self $ids): static
+    {
+        return $this->filter(static fn(RegistryId $id): bool => !$ids->contains($id));
+    }
+
     /** @return list<string> */
     public function toStrings(): array
     {

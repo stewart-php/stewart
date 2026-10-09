@@ -66,4 +66,14 @@ final class RegistryCollectionsTest extends TestCase
         self::assertSame(['d1'], DeviceIdCollection::fromIds([new DeviceId('d1')])->toStrings());
         self::assertSame(['night'], LabelIdCollection::fromIds([new LabelId('night')])->toStrings());
     }
+
+    public function testIdCollectionAddsOnlyMissingMembers(): void
+    {
+        $labels = LabelIdCollection::fromIds([new LabelId('night')]);
+
+        $merged = $labels->withAddedMembers(LabelIdCollection::fromIds([new LabelId('night'), new LabelId('hue'), new LabelId('hue')]));
+
+        self::assertSame(['night', 'hue'], $merged->toStrings());
+        self::assertSame(['hue'], $merged->withoutMembers($labels)->toStrings());
+    }
 }
