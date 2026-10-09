@@ -1,0 +1,22 @@
+{
+    "protocol": 1,
+    "request": {
+        "type": "stewart/entity/upsert",
+        "instance": "default",
+        "app": "lights",
+        "key": "night_mode",
+        "platform": "switch",
+        "config": {
+            "name": "Night mode",
+            "icon": "mdi:weather-night",
+            "entity_category": "config"
+        },
+        "state": true
+    },
+    "result": {
+        "entity_id": "switch.stewart_lights_night_mode",
+        "state": true,
+        "attributes": {},
+        "available": true
+    }
+}

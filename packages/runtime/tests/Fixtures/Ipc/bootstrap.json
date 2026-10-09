@@ -1,7 +1,7 @@
 {
     "t": "bootstrap",
     "m": {
-        "protocol": 23,
+        "protocol": 24,
         "worker_id": 1,
         "time_zone": "Europe/Budapest",
         "location": {
@@ -10,8 +10,18 @@
             "elevation_meters": 96.0
         },
         "apps": [
-            {"id": "demo", "class": "Stewart\\Runtime\\Tests\\Fixtures\\Apps\\Demo", "options": {"watch": "input_boolean.hall"}},
-            {"id": "echo", "class": "Stewart\\Runtime\\Tests\\Fixtures\\Apps\\Relay", "options": {}}
+            {
+                "id": "demo",
+                "class": "Stewart\\Runtime\\Tests\\Fixtures\\Apps\\Demo",
+                "options": {
+                    "watch": "input_boolean.hall"
+                }
+            },
+            {
+                "id": "echo",
+                "class": "Stewart\\Runtime\\Tests\\Fixtures\\Apps\\Relay",
+                "options": {}
+            }
         ],
         "settings": {
             "log_level": "info",
@@ -29,8 +39,13 @@
             "timeout_us": 5000000,
             "recovery_interval_us": 5000000
         },
-        "known_app_ids": ["demo", "echo"],
-        "paused_app_ids": ["echo"],
+        "known_app_ids": [
+            "demo",
+            "echo"
+        ],
+        "paused_app_ids": [
+            "echo"
+        ],
         "ha_user_id": "stewart-user"
     }
 }

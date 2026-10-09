@@ -8,11 +8,15 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Client\Component\ExposedEntityDefinition;
 use Stewart\Contracts\Exposure\BinarySensorConfig;
+use Stewart\Contracts\Exposure\ButtonConfig;
+use Stewart\Contracts\Exposure\ButtonDeviceClass;
 use Stewart\Contracts\Exposure\DeviceInfo;
 use Stewart\Contracts\Exposure\EntityCategory;
 use Stewart\Contracts\Exposure\ExposedPlatform;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SensorDeviceClass;
+use Stewart\Contracts\Exposure\SwitchConfig;
+use Stewart\Contracts\Exposure\SwitchDeviceClass;
 
 #[CoversClass(ExposedEntityDefinition::class)]
 final class ExposedEntityDefinitionTest extends TestCase
@@ -46,6 +50,20 @@ final class ExposedEntityDefinitionTest extends TestCase
         $definition = ExposedEntityDefinition::fromConfig(new BinarySensorConfig(), null);
 
         self::assertSame(['platform' => 'binary_sensor', 'config' => []], $definition->toMessageFields());
+    }
+
+    public function testSwitchEncodesDeviceClass(): void
+    {
+        $definition = ExposedEntityDefinition::fromConfig(new SwitchConfig(SwitchDeviceClass::Outlet), null);
+
+        self::assertSame(['platform' => 'switch', 'config' => ['device_class' => 'outlet']], $definition->toMessageFields());
+    }
+
+    public function testButtonEncodesDeviceClass(): void
+    {
+        $definition = ExposedEntityDefinition::fromConfig(new ButtonConfig(ButtonDeviceClass::Identify), null);
+
+        self::assertSame(['platform' => 'button', 'config' => ['device_class' => 'identify']], $definition->toMessageFields());
     }
 
     public function testDeviceKeepsOnlySetFields(): void

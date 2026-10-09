@@ -12,12 +12,14 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\ExposureError;
 use Stewart\Contracts\Exception\ExposureException;
+use Stewart\Contracts\Exposure\ButtonConfig;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SensorDeviceClass;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Runtime\Ipc\Message\ExposeEntityRequest;
 use Stewart\Runtime\Ipc\Message\RemoveExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\UpdateExposedEntityRequest;
 use Stewart\Runtime\Model\ResourceScope;
@@ -27,8 +29,10 @@ use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\Exposure\ExposedHandleRegistry;
 use Stewart\Runtime\Worker\Exposure\ExposureRequester;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedBinarySensor;
+use Stewart\Runtime\Worker\Exposure\WorkerExposedButton;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedEntity;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedSensor;
+use Stewart\Runtime\Worker\Exposure\WorkerExposedSwitch;
 use Stewart\Runtime\Worker\PendingRequests;
 use Stewart\Runtime\Worker\WorkerEntityExposure;
 use Stewart\Testing\Exception\AssertsReason;
@@ -38,6 +42,8 @@ use Stewart\Testing\Time\ManualTimers;
 #[CoversClass(WorkerExposedEntity::class)]
 #[CoversClass(WorkerExposedSensor::class)]
 #[CoversClass(WorkerExposedBinarySensor::class)]
+#[CoversClass(WorkerExposedSwitch::class)]
+#[CoversClass(WorkerExposedButton::class)]
 final class WorkerEntityExposureTest extends TestCase
 {
     use AssertsReason;
@@ -108,6 +114,29 @@ final class WorkerEntityExposureTest extends TestCase
         self::assertTrue($presence->getValue());
         self::assertFalse($presence->isAvailable());
         self::assertFalse($this->broker->listSentOfType(UpdateExposedEntityRequest::class)[1]->change->available);
+    }
+
+    public function testSwitchSendsBooleans(): void
+    {
+        $heater = $this->createClimateExposure()->exposeSwitch('heater');
+
+        $heater->setOn();
+        $heater->setOff();
+
+        self::assertFalse($heater->getValue());
+        self::assertSame([true, false], array_map(
+            static fn(UpdateExposedEntityRequest $update) => $update->change->state?->value,
+            $this->broker->listSentOfType(UpdateExposedEntityRequest::class),
+        ));
+    }
+
+    public function testButtonIsExposedWithoutState(): void
+    {
+        $this->createClimateExposure()->exposeButton('boost', new ButtonConfig(name: 'Boost'));
+
+        $request = $this->broker->listSentOfType(ExposeEntityRequest::class)[0];
+        self::assertInstanceOf(ButtonConfig::class, $request->config);
+        self::assertNull($request->change->state);
     }
 
     public function testSameKeyTwiceIsTaken(): void

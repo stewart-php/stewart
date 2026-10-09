@@ -40,7 +40,9 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Exposure\BinarySensorConfig;
 use Stewart\Contracts\Exposure\BinarySensorDeviceClass;
+use Stewart\Contracts\Exposure\ButtonConfig;
 use Stewart\Contracts\Exposure\DeviceInfo;
+use Stewart\Contracts\Exposure\EntityCategory;
 use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
@@ -49,6 +51,7 @@ use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SensorDeviceClass;
 use Stewart\Contracts\Exposure\SensorStateClass;
+use Stewart\Contracts\Exposure\SwitchConfig;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Support\Time\RevoltTimers;
 use Stewart\Testing\Exception\AssertsReason;
@@ -220,6 +223,36 @@ final class ComponentGoldenTest extends TestCase
 
         self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/upsert'));
         self::assertFalse($snapshot->state->value);
+    }
+
+    public function testSwitchUpsertMatchesGolden(): void
+    {
+        $golden = ComponentGolden::loadGolden('entity-upsert.switch');
+        $this->server->replayGolden($golden);
+
+        $snapshot = $this->connectClient()->upsertExposedEntity(
+            self::createAddress('lights', 'night_mode'),
+            ExposedEntityDefinition::fromConfig(new SwitchConfig(name: 'Night mode', icon: 'mdi:weather-night', entityCategory: EntityCategory::Config), null),
+            new ExposedStateChange(new ExposedState(true)),
+        );
+
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/upsert'));
+        self::assertTrue($snapshot->state->value);
+    }
+
+    public function testButtonUpsertMatchesGolden(): void
+    {
+        $golden = ComponentGolden::loadGolden('entity-upsert.button');
+        $this->server->replayGolden($golden);
+
+        $snapshot = $this->connectClient()->upsertExposedEntity(
+            self::createAddress('lights', 'all_off'),
+            ExposedEntityDefinition::fromConfig(new ButtonConfig(name: 'All off', icon: 'mdi:lightbulb-group-off'), null),
+            new ExposedStateChange(),
+        );
+
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/upsert'));
+        self::assertNull($snapshot->state->value);
     }
 
     public function testDeviceOverrideUpsertMatchesGolden(): void
