@@ -1,0 +1,14 @@
+{
+    "t": "registry_entity_update_error",
+    "m": {
+        "correlation_id": "w0:7",
+        "message": "Entity light.gone is not in the Home Assistant entity registry.",
+        "details": {
+            "class": "Stewart\\Contracts\\Exception\\RegistryEditException",
+            "reason": "registry_edit_not_found",
+            "context": {
+                "entityId": "light.gone"
+            }
+        }
+    }
+}

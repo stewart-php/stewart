@@ -13,6 +13,7 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\Exception\ExposureException;
+use Stewart\Contracts\Exception\RegistryEditException;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedStateChange;
@@ -21,6 +22,8 @@ use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Registry\IndexedRegistry;
+use Stewart\Contracts\Registry\RegisteredEntity;
+use Stewart\Contracts\Registry\Update\EntityRegistryUpdate;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
@@ -79,6 +82,12 @@ final class FakeHaSession implements HaSession
 
     public bool $connected = true;
 
+    /** @var array<string, RegisteredEntity> */
+    public array $registryEntries = [];
+
+    /** @var list<EntityRegistryUpdate> */
+    public array $sentRegistryUpdates = [];
+
     /** @var list<string> */
     public array $entityIds = ['light.hall'];
 
@@ -111,6 +120,9 @@ final class FakeHaSession implements HaSession
 
     /** @var DeferredFuture<AnsweredExposedCommand>|null */
     private ?DeferredFuture $nextCommandAnswer = null;
+
+    /** @var DeferredFuture<RegisteredEntity>|null */
+    private ?DeferredFuture $nextRegistryUpdate = null;
 
     private bool $open = false;
 
@@ -260,6 +272,35 @@ final class FakeHaSession implements HaSession
         $this->callLatch?->waitUntilOpen();
 
         return new EventContext(self::FIRE_CONTEXT_PREFIX . \count($this->receivedEventFires), userId: self::HA_USER_ID);
+    }
+
+    public function seedRegistryEntry(RegisteredEntity $entity): void
+    {
+        $this->registryEntries[$entity->entityId->value] = $entity;
+    }
+
+    public function getEntityRegistryEntry(EntityId $entityId): RegisteredEntity
+    {
+        return $this->registryEntries[$entityId->value] ?? throw RegistryEditException::notFound($entityId);
+    }
+
+    public function updateEntityRegistryEntry(EntityId $entityId, EntityRegistryUpdate $update): RegisteredEntity
+    {
+        $this->sentRegistryUpdates[] = $update;
+        $this->callLatch?->waitUntilOpen();
+        $updated = $this->registryEntries[$entityId->value] = $update->applyTo($this->getEntityRegistryEntry($entityId));
+
+        $next = $this->nextRegistryUpdate;
+        $this->nextRegistryUpdate = null;
+        $next?->complete($updated);
+
+        return $updated;
+    }
+
+    /** @return Future<RegisteredEntity> */
+    public function waitForNextRegistryUpdate(): Future
+    {
+        return ($this->nextRegistryUpdate ??= new DeferredFuture())->getFuture();
     }
 
     public function fetchHistory(EntityId $entityId, HistoryWindow $window, HistoryDetail $detail): EntityStateHistory

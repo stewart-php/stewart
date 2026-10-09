@@ -21,6 +21,8 @@ use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
+use Stewart\Contracts\Registry\RegisteredEntity;
+use Stewart\Contracts\Registry\Update\EntityRegistryUpdate;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\EventContext;
@@ -208,6 +210,16 @@ final class WebsocketHaSession implements HaSession
     public function fireEvent(EventPayload $payload): EventContext
     {
         return $this->client->fireEvent($payload);
+    }
+
+    public function getEntityRegistryEntry(EntityId $entityId): RegisteredEntity
+    {
+        return $this->client->getEntityRegistryEntry($entityId)->toRegisteredEntity();
+    }
+
+    public function updateEntityRegistryEntry(EntityId $entityId, EntityRegistryUpdate $update): RegisteredEntity
+    {
+        return $this->client->updateEntityRegistryEntry($entityId, $update)->toRegisteredEntity();
     }
 
     public function fetchHistory(EntityId $entityId, HistoryWindow $window, HistoryDetail $detail): EntityStateHistory

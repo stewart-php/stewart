@@ -13,6 +13,7 @@ use Stewart\Runtime\Worker\WorkerEntityExposure;
 use Stewart\Runtime\Worker\WorkerHaContext;
 use Stewart\Runtime\Worker\WorkerLogger;
 use Stewart\Runtime\Worker\WorkerMqtt;
+use Stewart\Runtime\Worker\WorkerRegistryEditor;
 use Stewart\Store\Stores;
 use Stewart\Support\Time\Deadlines;
 
@@ -27,6 +28,7 @@ final readonly class AppRuntimeServices
         public Stores $stores,
         public WorkerMqtt $mqtt,
         public WorkerEntityExposure $exposure,
+        public WorkerRegistryEditor $registryEditor,
         public StewartIdentity $identity,
         public SunCalendar $sunCalendar,
         public ?GeneratedRoots $generated = null,

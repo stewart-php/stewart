@@ -66,6 +66,7 @@ final readonly class WorkerKernel
             ->withArgument('historyQueryTimeout', $bootstrap->settings->callTimeout)
             ->withArgument('eventFireTimeout', $bootstrap->settings->callTimeout)
             ->withArgument('exposureRequestTimeout', $bootstrap->settings->callTimeout)
+            ->withArgument('registryEditTimeout', $bootstrap->settings->callTimeout)
             ->withArgument('workerShutdownGrace', $bootstrap->settings->shutdownGrace)
             ->withArgument('generatedNamespace', $bootstrap->settings->generatedNamespace)
             ->withArgument('workerStoreSettings', $bootstrap->store)
