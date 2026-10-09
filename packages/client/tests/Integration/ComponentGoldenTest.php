@@ -7,6 +7,7 @@ namespace Stewart\Client\Tests\Integration;
 use Amp\DeferredFuture;
 use Amp\TimeoutCancellation;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Stewart\Client\Component\Collection\ExposedEntityAddressCollection;
 use Stewart\Client\Component\ComponentCommand;
@@ -163,6 +164,27 @@ final class ComponentGoldenTest extends TestCase
         self::assertSame(ComponentCommandAction::Press, $command->action);
     }
 
+    /** @param array<string, mixed> $data */
+    #[DataProvider('provideValueCommandGoldens')]
+    public function testValueCommandGoldenIsDecoded(string $golden, ComponentCommandAction $action, array $data): void
+    {
+        $command = $this->receiveCommandGolden($golden);
+
+        self::assertSame($action, $command->action);
+        self::assertSame($data, $command->data);
+    }
+
+    /** @return iterable<string, array{string, ComponentCommandAction, array<string, mixed>}> */
+    public static function provideValueCommandGoldens(): iterable
+    {
+        yield 'number' => ['event-command.number', ComponentCommandAction::SetValue, ['value' => 1.5]];
+        yield 'select' => ['event-command.select', ComponentCommandAction::SelectOption, ['option' => 'comfort']];
+        yield 'text' => ['event-command.text', ComponentCommandAction::SetValue, ['value' => 'Good morning']];
+        yield 'time' => ['event-command.time', ComponentCommandAction::SetValue, ['value' => '07:00:00']];
+        yield 'date' => ['event-command.date', ComponentCommandAction::SetValue, ['value' => '2026-10-15']];
+        yield 'datetime' => ['event-command.datetime', ComponentCommandAction::SetValue, ['value' => '2026-10-09T18:30:00+00:00']];
+    }
+
     public function testAcceptedAnswerMatchesGolden(): void
     {
         $golden = ComponentGolden::loadGolden('command-result.ok');
@@ -316,6 +338,22 @@ final class ComponentGoldenTest extends TestCase
         );
 
         self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/state'));
+    }
+
+    public function testButtonStateIsInvalid(): void
+    {
+        $golden = ComponentGolden::loadGolden('entity-state.button');
+        $this->server->replayGolden($golden);
+        $client = $this->connectClient();
+
+        $exception = $this->assertThrowsReason(
+            HaClientError::CommandRejected,
+            static fn() => $client->updateExposedEntityState(self::createAddress('lights', 'all_off'), new ExposedStateChange(new ExposedState(null))),
+        );
+
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/state'));
+        self::assertInstanceOf(HaClientException::class, $exception);
+        self::assertSame(ComponentErrorCode::InvalidState, ComponentErrorCode::tryFromException($exception));
     }
 
     public function testStateUpdateOfUnknownEntityIsNotFound(): void

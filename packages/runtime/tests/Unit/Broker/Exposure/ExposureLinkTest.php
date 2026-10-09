@@ -285,6 +285,20 @@ final class ExposureLinkTest extends TestCase
         self::assertSame([], $this->commanded);
     }
 
+    public function testCommandOfUnsupportedActionIsRejected(): void
+    {
+        $this->exposeNightMode(false);
+        $this->socket->replyWhenSent('stewart/command/result', ['type' => 'result', 'success' => true, 'result' => null]);
+
+        $this->link->receiveCommand(self::createComponentCommand(ComponentCommandAction::SetValue));
+        EventLoopTicks::settle();
+
+        $answer = $this->socket->listSentOfType('stewart/command/result')[0] ?? [];
+        self::assertFalse($answer['ok'] ?? null);
+        self::assertSame('Entity night_mode of app lights does not take set_value commands.', $answer['message'] ?? null);
+        self::assertSame([], $this->commanded);
+    }
+
     public function testCommandForOrphanHasNoOwner(): void
     {
         $this->exposeNightMode(false);

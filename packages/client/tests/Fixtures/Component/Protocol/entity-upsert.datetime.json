@@ -1,0 +1,21 @@
+{
+    "protocol": 1,
+    "request": {
+        "type": "stewart/entity/upsert",
+        "instance": "default",
+        "app": "garden",
+        "key": "last_watered",
+        "platform": "datetime",
+        "config": {
+            "name": "Last watered",
+            "icon": "mdi:watering-can"
+        },
+        "state": "2026-10-09T07:15:00+02:00"
+    },
+    "result": {
+        "entity_id": "datetime.stewart_garden_last_watered",
+        "state": "2026-10-09T07:15:00+02:00",
+        "attributes": {},
+        "available": true
+    }
+}

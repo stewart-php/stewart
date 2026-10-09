@@ -1,0 +1,14 @@
+{
+    "protocol": 1,
+    "request": {
+        "type": "stewart/entity/state",
+        "instance": "default",
+        "app": "lights",
+        "key": "all_off",
+        "state": null
+    },
+    "error": {
+        "code": "invalid_state",
+        "message": "A button takes no state."
+    }
+}

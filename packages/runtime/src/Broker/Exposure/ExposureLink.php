@@ -76,7 +76,16 @@ final class ExposureLink
             return;
         }
 
-        ($this->onCommanded)(new ExposedEntityCommand($command->commandId, $live->owner, $command->appId, $command->key, $this->createExposedCommand($command)));
+        $exposedCommand = $this->createExposedCommand($command);
+
+        if ($exposedCommand === null) {
+            $reason = \sprintf('Entity %s of app %s does not take %s commands.', $command->key, $command->appId, $command->action->value);
+            $this->sendCommandAnswer(ComponentCommandAnswer::reject($command->commandId, $reason));
+
+            return;
+        }
+
+        ($this->onCommanded)(new ExposedEntityCommand($command->commandId, $live->owner, $command->appId, $command->key, $exposedCommand));
     }
 
     public function acceptCommand(ExposedEntityCommand $command): void
@@ -290,12 +299,13 @@ final class ExposureLink
         }
     }
 
-    private function createExposedCommand(ComponentCommand $command): ExposedCommand
+    private function createExposedCommand(ComponentCommand $command): ?ExposedCommand
     {
         return match ($command->action) {
             ComponentCommandAction::TurnOn => new SwitchCommand(SwitchAction::TurnOn, $command->context),
             ComponentCommandAction::TurnOff => new SwitchCommand(SwitchAction::TurnOff, $command->context),
             ComponentCommandAction::Press => new ButtonPress($command->context),
+            ComponentCommandAction::SetValue, ComponentCommandAction::SelectOption => null,
         };
     }
 
