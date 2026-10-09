@@ -16,6 +16,7 @@ use Amp\Websocket\WebsocketClient;
 use LogicException;
 use Psr\Log\NullLogger;
 use Stewart\Client\Connection\HomeAssistantUrl;
+use Stewart\Client\Tests\Fixtures\Component\ComponentGolden;
 use Stewart\Support\Json\JsonDecoder;
 use Stewart\Support\Json\JsonEncoder;
 
@@ -77,6 +78,11 @@ final class FakeHaServer implements WebsocketClientHandler
     public function answerCommand(string $type, array $result): void
     {
         $this->replies[$type] = ['type' => 'result', 'success' => true, 'result' => $result];
+    }
+
+    public function replayGolden(ComponentGolden $golden): void
+    {
+        $this->replies[$golden->requireRequestType()] = $golden->requireReply();
     }
 
     public function rejectCommand(string $type, string $code, string $message): void

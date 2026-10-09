@@ -1,0 +1,6 @@
+{
+    "protocol": 1,
+    "event": {
+        "type": "session_replaced"
+    }
+}
