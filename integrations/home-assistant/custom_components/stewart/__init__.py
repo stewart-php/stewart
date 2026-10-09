@@ -1,4 +1,5 @@
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 
 from .const import PLATFORMS
 from .devices import DeviceDirectory
@@ -11,7 +12,8 @@ from .websocket import async_register_commands
 async def async_setup_entry(hass: HomeAssistant, entry: StewartConfigEntry) -> bool:
     sessions = SessionRegistry(hass)
     entry.runtime_data = StewartRuntime(
-        sessions=sessions, entities=ExposedEntities(sessions, DeviceDirectory(hass, entry.entry_id))
+        sessions=sessions,
+        entities=ExposedEntities(sessions, DeviceDirectory(hass, entry.entry_id), er.async_get(hass)),
     )
     async_register_commands(hass)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
