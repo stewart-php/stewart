@@ -36,6 +36,7 @@ use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Ipc\Message\ExposedCommandAnswered;
 use Stewart\Runtime\Ipc\Message\ExposedEntityCommanded;
 use Stewart\Runtime\Ipc\Message\ExposeEntityRequest;
+use Stewart\Runtime\Ipc\Message\ReconfigureExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\RemoveExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\UpdateExposedEntityRequest;
 use Stewart\Runtime\Model\ResourceScope;
@@ -284,6 +285,48 @@ final class WorkerEntityExposureTest extends TestCase
         $this->handles->releaseHandlesOf(ResourceScope::forApp(new AppId('climate')));
 
         $this->assertThrowsReason(ExposureError::Removed, static fn() => $sensor->setValue(3));
+    }
+
+    public function testUpdatedConfigIsSentAndKept(): void
+    {
+        $sensor = $this->createClimateExposure()->exposeSensor('level', new SensorConfig(unit: '%'));
+
+        $sensor->updateConfig(new SensorConfig(unit: '%', name: 'Tank level'));
+
+        $request = $this->broker->listSentOfType(ReconfigureExposedEntityRequest::class)[0];
+        self::assertSame('Tank level', $request->config->name);
+        self::assertSame('Tank level', $sensor->getConfig()->name);
+    }
+
+    public function testRefusedConfigKeepsPreviousOne(): void
+    {
+        $offset = $this->createClimateExposure()->exposeNumber('target_offset', new NumberConfig(min: -3, max: 3));
+        $this->broker->failure = ExposureException::configInvalid('The unit does not fit.');
+
+        $this->assertThrowsReason(ExposureError::ConfigInvalid, static fn() => $offset->updateConfig(new NumberConfig(min: 0, max: 10)));
+
+        self::assertSame(3, $offset->getConfig()->max);
+    }
+
+    public function testReconfigureSnapshotDropsUnfitValue(): void
+    {
+        $mode = $this->createClimateExposure()->exposeSelect('mode', new SelectConfig(['eco', 'comfort']));
+        $mode->setOption('comfort');
+        $this->broker->snapshot = new ExposedEntitySnapshot(new EntityId('select.stewart_climate_mode'), new ExposedState(null), [], true);
+
+        $mode->updateConfig(new SelectConfig(['eco']));
+
+        self::assertNull($mode->getOption());
+        self::assertSame('select.stewart_climate_mode', $mode->getEntityId()?->value);
+    }
+
+    public function testRemovedHandleRefusesReconfigure(): void
+    {
+        $button = $this->createClimateExposure()->exposeButton('boost');
+        $button->remove();
+
+        $this->assertThrowsReason(ExposureError::Removed, static fn() => $button->updateConfig(new ButtonConfig(name: 'Boost')));
+        self::assertSame([], $this->broker->listSentOfType(ReconfigureExposedEntityRequest::class));
     }
 
     public function testAcceptedCommandSetsSwitchValue(): void

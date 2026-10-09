@@ -17,6 +17,7 @@ use Stewart\Runtime\Ipc\Message\ExposeEntityRequest;
 use Stewart\Runtime\Ipc\Message\ExposeEntityResult;
 use Stewart\Runtime\Ipc\Message\ExposureAcknowledged;
 use Stewart\Runtime\Ipc\Message\ExposureFailed;
+use Stewart\Runtime\Ipc\Message\ReconfigureExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\RemoveExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\UpdateExposedEntityRequest;
 use Stewart\Runtime\Model\CorrelationId;
@@ -38,6 +39,16 @@ final readonly class ExposureProxy
             $appId = $this->requireAppId($request->scope, $request->key);
             $definition = ExposedEntityDefinition::fromConfig($request->config, $request->device);
             $snapshot = $this->session->exposeEntity($handle->id, $appId, $request->key, $definition, $request->change);
+
+            return new ExposeEntityResult($request->correlationId, $snapshot);
+        });
+    }
+
+    public function forwardReconfigure(WorkerHandle $handle, ReconfigureExposedEntityRequest $request): void
+    {
+        $this->answerInBackground($handle, $request->correlationId, function () use ($request): BrokerMessage {
+            $appId = $this->requireAppId($request->scope, $request->key);
+            $snapshot = $this->session->reconfigureExposedEntity($appId, $request->key, ExposedEntityDefinition::fromConfig($request->config, null));
 
             return new ExposeEntityResult($request->correlationId, $snapshot);
         });

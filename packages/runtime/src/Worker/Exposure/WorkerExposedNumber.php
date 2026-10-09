@@ -13,6 +13,7 @@ use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\NumberConfig;
 use Stewart\Runtime\Model\ResourceScope;
 
+/** @extends WorkerExposedEntity<NumberConfig> */
 final class WorkerExposedNumber extends WorkerExposedEntity implements ExposedNumber
 {
     public function __construct(
@@ -20,10 +21,20 @@ final class WorkerExposedNumber extends WorkerExposedEntity implements ExposedNu
         ExposedHandleRegistry $handles,
         ResourceScope $scope,
         ExposedEntityKey $key,
-        private readonly NumberConfig $config,
+        NumberConfig $config,
         private readonly ExposedCommandStreams $commandStreams,
     ) {
-        parent::__construct($requester, $handles, $scope, $key);
+        parent::__construct($requester, $handles, $scope, $key, $config);
+    }
+
+    public function getConfig(): NumberConfig
+    {
+        return $this->findConfig();
+    }
+
+    public function updateConfig(NumberConfig $config): void
+    {
+        $this->sendReconfiguration($config);
     }
 
     public function watchCommands(): EventStream
@@ -41,6 +52,6 @@ final class WorkerExposedNumber extends WorkerExposedEntity implements ExposedNu
 
     public function setValue(int|float|null $value, ?array $attributes = null): void
     {
-        $this->sendChange(new ExposedStateChange(new ExposedState($this->config->formatState($value)), $attributes));
+        $this->sendChange(new ExposedStateChange(new ExposedState($this->getConfig()->formatState($value)), $attributes));
     }
 }

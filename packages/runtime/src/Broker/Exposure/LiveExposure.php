@@ -14,13 +14,20 @@ final class LiveExposure
     public function __construct(
         public private(set) ?WorkerId $owner,
         public readonly ExposedEntityAddress $address,
-        public readonly ExposedEntityDefinition $definition,
+        public private(set) ExposedEntityDefinition $definition,
         public private(set) ExposedStateChange $latestChange,
     ) {}
 
     public function recordChange(ExposedStateChange $change): void
     {
         $this->latestChange = $this->latestChange->withLaterChange($change);
+    }
+
+    // The kept state may not fit the new config, so the component keeps or drops its own on the next upsert.
+    public function recordDefinition(ExposedEntityDefinition $definition): void
+    {
+        $this->definition = $definition;
+        $this->latestChange = new ExposedStateChange(attributes: $this->latestChange->attributes, available: $this->latestChange->available);
     }
 
     public function markOrphaned(): void

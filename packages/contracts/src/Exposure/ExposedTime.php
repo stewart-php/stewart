@@ -12,6 +12,11 @@ use Stewart\Contracts\Schedule\TimeOfDay;
 /** @phpstan-import-type ExposedAttributes from ExposedEntity */
 interface ExposedTime extends ExposedEntity
 {
+    public function getConfig(): TimeConfig;
+
+    /** @throws ExposureException */
+    public function updateConfig(TimeConfig $config): void;
+
     public function getValue(): ?TimeOfDay;
 
     /**

@@ -21,10 +21,21 @@ final class RecordingExposedDateTime extends RecordingExposedEntity implements E
 {
     public function __construct(
         ExposedEntityKey $key,
-        public readonly DateTimeConfig $config,
+        public private(set) DateTimeConfig $config,
         ?ExposedEntitySnapshot $seeded,
     ) {
         parent::__construct($key, $seeded);
+    }
+
+    public function getConfig(): DateTimeConfig
+    {
+        return $this->config;
+    }
+
+    public function updateConfig(DateTimeConfig $config): void
+    {
+        $this->assertNotRemoved();
+        $this->config = $config;
     }
 
     public function getValue(): ?DateTimeImmutable

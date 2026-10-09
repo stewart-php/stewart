@@ -88,6 +88,9 @@ interface HaSession
     ): ?ExposedEntitySnapshot;
 
     /** @throws ExposureException */
+    public function reconfigureExposedEntity(AppId $appId, ExposedEntityKey $key, ExposedEntityDefinition $definition): ?ExposedEntitySnapshot;
+
+    /** @throws ExposureException */
     public function updateExposedEntity(AppId $appId, ExposedEntityKey $key, ExposedStateChange $change): void;
 
     public function removeExposedEntity(AppId $appId, ExposedEntityKey $key): void;

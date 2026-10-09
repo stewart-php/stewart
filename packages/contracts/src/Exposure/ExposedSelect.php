@@ -11,6 +11,11 @@ use Stewart\Contracts\Exposure\Command\SelectCommand;
 /** @phpstan-import-type ExposedAttributes from ExposedEntity */
 interface ExposedSelect extends ExposedEntity
 {
+    public function getConfig(): SelectConfig;
+
+    /** @throws ExposureException */
+    public function updateConfig(SelectConfig $config): void;
+
     public function getOption(): ?string;
 
     /**

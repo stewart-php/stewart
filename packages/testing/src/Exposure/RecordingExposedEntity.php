@@ -121,7 +121,7 @@ abstract class RecordingExposedEntity implements ExposedEntity
     }
 
     /** @throws ExposureException */
-    private function assertNotRemoved(): void
+    protected function assertNotRemoved(): void
     {
         if ($this->removed) {
             throw ExposureException::removed($this->key);

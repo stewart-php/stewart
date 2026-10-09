@@ -18,10 +18,21 @@ final class RecordingExposedSwitch extends RecordingExposedEntity implements Exp
 {
     public function __construct(
         ExposedEntityKey $key,
-        public readonly SwitchConfig $config,
+        public private(set) SwitchConfig $config,
         ?ExposedEntitySnapshot $seeded,
     ) {
         parent::__construct($key, $seeded);
+    }
+
+    public function getConfig(): SwitchConfig
+    {
+        return $this->config;
+    }
+
+    public function updateConfig(SwitchConfig $config): void
+    {
+        $this->assertNotRemoved();
+        $this->config = $config;
     }
 
     public function getValue(): ?bool

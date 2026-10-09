@@ -13,6 +13,11 @@ use Stewart\Contracts\Exposure\Command\DateCommand;
 /** @phpstan-import-type ExposedAttributes from ExposedEntity */
 interface ExposedDate extends ExposedEntity
 {
+    public function getConfig(): DateConfig;
+
+    /** @throws ExposureException */
+    public function updateConfig(DateConfig $config): void;
+
     public function getValue(): ?DateTimeImmutable;
 
     /**

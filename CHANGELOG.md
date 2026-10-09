@@ -59,6 +59,8 @@ minor release may break; its "Upgrading" section says what to change.
   `exposeText()`, `exposeTime()`, `exposeDate()` and `exposeDateTime()`. Times are `TimeOfDay`, dates and datetimes
   `DateTimeImmutable`. `watchCommands()` streams a typed command per platform; an accepted command sets the handle's
   value. The `RecordingExposed*` handles push them in unit tests
+- Every exposed handle has `getConfig()` and `updateConfig()`, which changes the entity's name, icon, options or
+  limits in place and keeps its device; Home Assistant drops a value that no longer fits to unknown
 
 ### Changed
 
@@ -66,7 +68,7 @@ minor release may break; its "Upgrading" section says what to change.
   of keeping their last state as if live
 - The control protocol is version 28: snapshots carry `component` and each app's `exposed_entities` and
   `exposed_commands`
-- IPC protocol 24; broker and workers must run the same version
+- IPC protocol 25; broker and workers must run the same version
 
 ## [0.8.0] - 2026-10-08
 

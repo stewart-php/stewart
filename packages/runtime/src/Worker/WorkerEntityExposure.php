@@ -75,21 +75,21 @@ final readonly class WorkerEntityExposure implements EntityExposure
     ): ExposedBinarySensor {
         $key = $this->claimKey($key);
 
-        return $this->exposeHandle(new WorkerExposedBinarySensor($this->requester, $this->handles, $this->resourceScope, $key), $config, $device);
+        return $this->exposeHandle(new WorkerExposedBinarySensor($this->requester, $this->handles, $this->resourceScope, $key, $config), $config, $device);
     }
 
     public function exposeSwitch(ExposedEntityKey|string $key, SwitchConfig $config = new SwitchConfig(), ?DeviceInfo $device = null): ExposedSwitch
     {
         $key = $this->claimKey($key);
 
-        return $this->exposeHandle(new WorkerExposedSwitch($this->requester, $this->handles, $this->resourceScope, $key, $this->commandStreams), $config, $device);
+        return $this->exposeHandle(new WorkerExposedSwitch($this->requester, $this->handles, $this->resourceScope, $key, $config, $this->commandStreams), $config, $device);
     }
 
     public function exposeButton(ExposedEntityKey|string $key, ButtonConfig $config = new ButtonConfig(), ?DeviceInfo $device = null): ExposedButton
     {
         $key = $this->claimKey($key);
 
-        return $this->exposeHandle(new WorkerExposedButton($this->requester, $this->handles, $this->resourceScope, $key, $this->commandStreams), $config, $device);
+        return $this->exposeHandle(new WorkerExposedButton($this->requester, $this->handles, $this->resourceScope, $key, $config, $this->commandStreams), $config, $device);
     }
 
     public function exposeNumber(ExposedEntityKey|string $key, NumberConfig $config, ?DeviceInfo $device = null): ExposedNumber
@@ -103,35 +103,35 @@ final readonly class WorkerEntityExposure implements EntityExposure
     {
         $key = $this->claimKey($key);
 
-        return $this->exposeHandle(new WorkerExposedSelect($this->requester, $this->handles, $this->resourceScope, $key, $this->commandStreams), $config, $device);
+        return $this->exposeHandle(new WorkerExposedSelect($this->requester, $this->handles, $this->resourceScope, $key, $config, $this->commandStreams), $config, $device);
     }
 
     public function exposeText(ExposedEntityKey|string $key, TextConfig $config = new TextConfig(), ?DeviceInfo $device = null): ExposedText
     {
         $key = $this->claimKey($key);
 
-        return $this->exposeHandle(new WorkerExposedText($this->requester, $this->handles, $this->resourceScope, $key, $this->commandStreams), $config, $device);
+        return $this->exposeHandle(new WorkerExposedText($this->requester, $this->handles, $this->resourceScope, $key, $config, $this->commandStreams), $config, $device);
     }
 
     public function exposeTime(ExposedEntityKey|string $key, TimeConfig $config = new TimeConfig(), ?DeviceInfo $device = null): ExposedTime
     {
         $key = $this->claimKey($key);
 
-        return $this->exposeHandle(new WorkerExposedTime($this->requester, $this->handles, $this->resourceScope, $key, $this->commandStreams), $config, $device);
+        return $this->exposeHandle(new WorkerExposedTime($this->requester, $this->handles, $this->resourceScope, $key, $config, $this->commandStreams), $config, $device);
     }
 
     public function exposeDate(ExposedEntityKey|string $key, DateConfig $config = new DateConfig(), ?DeviceInfo $device = null): ExposedDate
     {
         $key = $this->claimKey($key);
 
-        return $this->exposeHandle(new WorkerExposedDate($this->requester, $this->handles, $this->resourceScope, $key, $this->commandStreams), $config, $device);
+        return $this->exposeHandle(new WorkerExposedDate($this->requester, $this->handles, $this->resourceScope, $key, $config, $this->commandStreams), $config, $device);
     }
 
     public function exposeDateTime(ExposedEntityKey|string $key, DateTimeConfig $config = new DateTimeConfig(), ?DeviceInfo $device = null): ExposedDateTime
     {
         $key = $this->claimKey($key);
 
-        return $this->exposeHandle(new WorkerExposedDateTime($this->requester, $this->handles, $this->resourceScope, $key, $this->commandStreams), $config, $device);
+        return $this->exposeHandle(new WorkerExposedDateTime($this->requester, $this->handles, $this->resourceScope, $key, $config, $this->commandStreams), $config, $device);
     }
 
     /** @throws ExposureException */
@@ -148,7 +148,7 @@ final readonly class WorkerEntityExposure implements EntityExposure
     }
 
     /**
-     * @template THandle of WorkerExposedEntity
+     * @template THandle of WorkerExposedEntity<covariant ExposedEntityConfig>
      *
      * @param THandle $handle
      * @return THandle

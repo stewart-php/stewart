@@ -7,13 +7,18 @@ namespace Stewart\Runtime\Worker\Exposure;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exposure\ExposedEntity;
+use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Runtime\Model\ResourceScope;
 
-/** @phpstan-import-type ExposedAttributes from ExposedEntity */
+/**
+ * @phpstan-import-type ExposedAttributes from ExposedEntity
+ *
+ * @template TConfig of ExposedEntityConfig
+ */
 abstract class WorkerExposedEntity implements ExposedEntity, ExposedHandle
 {
     private ?EntityId $entityId = null;
@@ -27,11 +32,13 @@ abstract class WorkerExposedEntity implements ExposedEntity, ExposedHandle
 
     private bool $released = false;
 
+    /** @param TConfig $config */
     public function __construct(
         private readonly ExposureRequester $requester,
         private readonly ExposedHandleRegistry $handles,
         protected readonly ResourceScope $scope,
         protected readonly ExposedEntityKey $key,
+        private ExposedEntityConfig $config,
     ) {}
 
     public function getKey(): ExposedEntityKey
@@ -93,6 +100,27 @@ abstract class WorkerExposedEntity implements ExposedEntity, ExposedHandle
     public function markReleased(): void
     {
         $this->released = true;
+    }
+
+    /** @return TConfig */
+    protected function findConfig(): ExposedEntityConfig
+    {
+        return $this->config;
+    }
+
+    /**
+     * @param TConfig $config
+     * @throws ExposureException
+     */
+    protected function sendReconfiguration(ExposedEntityConfig $config): void
+    {
+        $this->assertNotReleased();
+        $snapshot = $this->requester->requestReconfiguration($this->scope, $this->key, $config);
+        $this->config = $config;
+
+        if ($snapshot !== null) {
+            $this->applySnapshot($snapshot);
+        }
     }
 
     /** @throws ExposureException */

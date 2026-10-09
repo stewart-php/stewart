@@ -18,10 +18,21 @@ final class RecordingExposedText extends RecordingExposedEntity implements Expos
 {
     public function __construct(
         ExposedEntityKey $key,
-        public readonly TextConfig $config,
+        public private(set) TextConfig $config,
         ?ExposedEntitySnapshot $seeded,
     ) {
         parent::__construct($key, $seeded);
+    }
+
+    public function getConfig(): TextConfig
+    {
+        return $this->config;
+    }
+
+    public function updateConfig(TextConfig $config): void
+    {
+        $this->assertNotRemoved();
+        $this->config = $config;
     }
 
     public function getValue(): ?string

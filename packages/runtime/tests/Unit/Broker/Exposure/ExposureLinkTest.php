@@ -25,6 +25,7 @@ use Stewart\Contracts\Exposure\ButtonConfig;
 use Stewart\Contracts\Exposure\Command\ButtonPress;
 use Stewart\Contracts\Exposure\Command\NumberCommand;
 use Stewart\Contracts\Exposure\Command\SwitchCommand;
+use Stewart\Contracts\Exposure\DeviceInfo;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
@@ -141,6 +142,84 @@ final class ExposureLinkTest extends TestCase
         self::assertSame(22.0, $this->socket->listSentOfType('stewart/entity/upsert')[0]['state'] ?? null);
         self::assertCount(1, $this->synced);
         self::assertSame(self::ENTITY_ID, $this->synced[0]->snapshot->entityId->value);
+    }
+
+    public function testReconfigureKeepsDeviceAndSendsNoState(): void
+    {
+        $this->activateComponent();
+        $this->replyToUpsert();
+        $this->link->exposeEntity(
+            new WorkerId(0),
+            new AppId('climate'),
+            new ExposedEntityKey('average_temperature'),
+            ExposedEntityDefinition::fromConfig(new SensorConfig(unit: '°C'), new DeviceInfo('attic', 'Attic')),
+            new ExposedStateChange(new ExposedState(21.4)),
+        );
+        $this->replyToUpsert();
+
+        $this->reconfigureTemperature(new SensorConfig(unit: '°C', name: 'Attic temperature'));
+
+        $upsert = $this->socket->listSentOfType('stewart/entity/upsert')[1];
+        self::assertSame('Attic temperature', $this->requireUpsertConfig(1)['name'] ?? null);
+        self::assertSame(['identifier' => 'attic', 'name' => 'Attic'], $upsert['device'] ?? null);
+        self::assertArrayNotHasKey('state', $upsert);
+    }
+
+    public function testDroppedStateIsReplayedAfterReconfigure(): void
+    {
+        $this->activateComponent();
+        $this->replyToUpsert();
+        $this->exposeTemperature(21.4);
+        $this->socket->replyWhenSent('stewart/entity/upsert', ['type' => 'result', 'success' => true, 'result' => [
+            'entity_id' => self::ENTITY_ID,
+            'state' => null,
+            'attributes' => [],
+            'available' => true,
+        ]]);
+
+        self::assertNull($this->reconfigureTemperature(new SensorConfig(unit: '°C', displayPrecision: 0))?->state->value);
+        $this->replyToUpsert();
+        $this->link->replayAll();
+
+        $replayed = $this->socket->listSentOfType('stewart/entity/upsert')[2];
+        self::assertArrayHasKey('state', $replayed);
+        self::assertNull($replayed['state']);
+        self::assertSame(0, $this->requireUpsertConfig(2)['suggested_display_precision'] ?? null);
+    }
+
+    public function testRefusedReconfigureKeepsDefinition(): void
+    {
+        $this->activateComponent();
+        $this->replyToUpsert();
+        $this->exposeTemperature(21.4);
+        $this->socket->replyWhenSent('stewart/entity/upsert', self::createRejection('invalid_config'));
+
+        $this->assertThrowsReason(ExposureError::ConfigInvalid, fn() => $this->reconfigureTemperature(new SensorConfig(unit: 'K')));
+        $this->replyToUpsert();
+        $this->link->replayAll();
+
+        $replayed = $this->socket->listSentOfType('stewart/entity/upsert')[2];
+        self::assertSame('°C', $this->requireUpsertConfig(2)['unit_of_measurement'] ?? null);
+        self::assertSame(21.4, $replayed['state'] ?? null);
+    }
+
+    public function testPendingReconfigureIsReplayedWithoutState(): void
+    {
+        $this->exposeTemperature(21.4);
+
+        self::assertNull($this->reconfigureTemperature(new SensorConfig(unit: 'K')));
+        $this->activateComponent();
+        $this->replyToUpsert();
+        $this->link->replayAll();
+
+        $replayed = $this->socket->listSentOfType('stewart/entity/upsert')[0];
+        self::assertSame('K', $this->requireUpsertConfig(0)['unit_of_measurement'] ?? null);
+        self::assertArrayNotHasKey('state', $replayed);
+    }
+
+    public function testReconfigureOfUnknownEntityIsRemoved(): void
+    {
+        $this->assertThrowsReason(ExposureError::Removed, fn() => $this->reconfigureTemperature(new SensorConfig()));
     }
 
     public function testExposureIsSentAvailable(): void
@@ -415,6 +494,20 @@ final class ExposureLinkTest extends TestCase
             ExposedEntityDefinition::fromConfig(new SensorConfig(unit: '°C'), null),
             new ExposedStateChange(new ExposedState($state)),
         );
+    }
+
+    /** @return array<array-key, mixed> */
+    private function requireUpsertConfig(int $index): array
+    {
+        $config = $this->socket->listSentOfType('stewart/entity/upsert')[$index]['config'] ?? null;
+        self::assertIsArray($config);
+
+        return $config;
+    }
+
+    private function reconfigureTemperature(SensorConfig $config): ?ExposedEntitySnapshot
+    {
+        return $this->link->reconfigureEntity(new AppId('climate'), new ExposedEntityKey('average_temperature'), ExposedEntityDefinition::fromConfig($config, null));
     }
 
     private function activateComponent(): void

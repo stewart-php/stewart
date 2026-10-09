@@ -11,6 +11,11 @@ use Stewart\Contracts\Exposure\Command\NumberCommand;
 /** @phpstan-import-type ExposedAttributes from ExposedEntity */
 interface ExposedNumber extends ExposedEntity
 {
+    public function getConfig(): NumberConfig;
+
+    /** @throws ExposureException */
+    public function updateConfig(NumberConfig $config): void;
+
     public function getValue(): int|float|null;
 
     /**

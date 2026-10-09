@@ -20,10 +20,21 @@ final class RecordingExposedTime extends RecordingExposedEntity implements Expos
 {
     public function __construct(
         ExposedEntityKey $key,
-        public readonly TimeConfig $config,
+        public private(set) TimeConfig $config,
         ?ExposedEntitySnapshot $seeded,
     ) {
         parent::__construct($key, $seeded);
+    }
+
+    public function getConfig(): TimeConfig
+    {
+        return $this->config;
+    }
+
+    public function updateConfig(TimeConfig $config): void
+    {
+        $this->assertNotRemoved();
+        $this->config = $config;
     }
 
     public function getValue(): ?TimeOfDay

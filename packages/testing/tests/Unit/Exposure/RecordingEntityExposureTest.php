@@ -24,6 +24,7 @@ use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\NumberConfig;
 use Stewart\Contracts\Exposure\SelectConfig;
 use Stewart\Contracts\Exposure\SensorConfig;
+use Stewart\Contracts\Exposure\SwitchConfig;
 use Stewart\Contracts\Schedule\TimeOfDay;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Testing\Exception\AssertsReason;
@@ -173,6 +174,23 @@ final class RecordingEntityExposureTest extends TestCase
         $exposure->requireDate('next_mowing')->pushCommand(new DateCommand(new DateTimeImmutable('2026-10-15'), new EventContext('context-1')));
 
         self::assertSame('2026-10-15', $mowing->getValue()?->format('Y-m-d'));
+    }
+
+    public function testUpdatedConfigIsKept(): void
+    {
+        $exposure = new RecordingEntityExposure();
+        $exposure->exposeNumber('target_offset', new NumberConfig(min: -3, max: 3))->updateConfig(new NumberConfig(min: -3, max: 10));
+
+        self::assertSame(10, $exposure->requireNumber('target_offset')->getConfig()->max);
+    }
+
+    public function testRemovedHandleRefusesConfig(): void
+    {
+        $exposure = new RecordingEntityExposure();
+        $switch = $exposure->exposeSwitch('heater');
+        $switch->remove();
+
+        $this->assertThrowsReason(ExposureError::Removed, static fn() => $switch->updateConfig(new SwitchConfig(name: 'Heater')));
     }
 
     public function testButtonIsRecorded(): void

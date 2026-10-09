@@ -18,10 +18,21 @@ final class RecordingExposedSelect extends RecordingExposedEntity implements Exp
 {
     public function __construct(
         ExposedEntityKey $key,
-        public readonly SelectConfig $config,
+        public private(set) SelectConfig $config,
         ?ExposedEntitySnapshot $seeded,
     ) {
         parent::__construct($key, $seeded);
+    }
+
+    public function getConfig(): SelectConfig
+    {
+        return $this->config;
+    }
+
+    public function updateConfig(SelectConfig $config): void
+    {
+        $this->assertNotRemoved();
+        $this->config = $config;
     }
 
     public function getOption(): ?string

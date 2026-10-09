@@ -75,6 +75,11 @@ final readonly class ExposedEntityDefinition
         );
     }
 
+    public function withConfigOf(self $other): self
+    {
+        return new self($other->platform, $other->config, $this->device);
+    }
+
     /** @return array<string, mixed> */
     public function toMessageFields(): array
     {
