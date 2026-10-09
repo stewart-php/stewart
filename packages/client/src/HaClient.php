@@ -34,6 +34,7 @@ use Stewart\Client\Connection\Command\GetConfig;
 use Stewart\Client\Connection\Command\GetCurrentUser;
 use Stewart\Client\Connection\Command\GetDeviceRegistry;
 use Stewart\Client\Connection\Command\GetEntityRegistry;
+use Stewart\Client\Connection\Command\GetEntityRegistryEntry;
 use Stewart\Client\Connection\Command\GetFloorRegistry;
 use Stewart\Client\Connection\Command\GetHistoryDuringPeriod;
 use Stewart\Client\Connection\Command\GetLabelRegistry;
@@ -43,6 +44,7 @@ use Stewart\Client\Connection\Command\HaCommand;
 use Stewart\Client\Connection\Command\SubscribeEvents;
 use Stewart\Client\Connection\Command\SubscribeTrigger;
 use Stewart\Client\Connection\Command\SubscriptionCommand;
+use Stewart\Client\Connection\Command\UpdateEntityRegistryEntry;
 use Stewart\Client\Connection\ConnectionConfig;
 use Stewart\Client\Connection\HaConnection;
 use Stewart\Client\Event\EventDecoder;
@@ -59,6 +61,7 @@ use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\IdentifierException;
+use Stewart\Contracts\Exception\RegistryEditException;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedStateChange;
@@ -71,6 +74,7 @@ use Stewart\Contracts\Registry\Collection\DeviceCollection;
 use Stewart\Contracts\Registry\Collection\FloorCollection;
 use Stewart\Contracts\Registry\Collection\LabelCollection;
 use Stewart\Contracts\Registry\IndexedRegistry;
+use Stewart\Contracts\Registry\Update\EntityRegistryUpdate;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
@@ -84,6 +88,8 @@ use Stewart\Support\Time\Deadlines;
 final class HaClient
 {
     private const string UNKNOWN_COMMAND_CODE = 'unknown_command';
+
+    private const string NOT_FOUND_CODE = 'not_found';
 
     public function __construct(
         private readonly HaConnection $connection,
@@ -168,6 +174,28 @@ final class HaClient
         }
 
         return EntityRegistryCollection::keyedByEntityId($entries);
+    }
+
+    /** @throws RegistryEditException */
+    public function getEntityRegistryEntry(EntityId $entityId): EntityRegistryEntry
+    {
+        try {
+            return $this->readEntityRegistryEntry($this->connection->send(new GetEntityRegistryEntry($entityId)), 'config/entity_registry/get');
+        } catch (HaClientException $e) {
+            throw $this->toRegistryEditException($entityId, $e);
+        }
+    }
+
+    /** @throws RegistryEditException */
+    public function updateEntityRegistryEntry(EntityId $entityId, EntityRegistryUpdate $update): EntityRegistryEntry
+    {
+        try {
+            $result = $this->connection->send(new UpdateEntityRegistryEntry($entityId, $update));
+
+            return $this->readEntityRegistryEntry($result['entity_entry'] ?? null, 'config/entity_registry/update');
+        } catch (HaClientException $e) {
+            throw $this->toRegistryEditException($entityId, $e);
+        }
     }
 
     public function getAreaRegistry(): AreaCollection
@@ -501,6 +529,31 @@ final class HaClient
             HaClientError::CommandUnencodable => HistoryException::rejected($entityId, $e->findDetail() ?? $e->getMessage(), $e->findErrorCode(), $e),
             HaClientError::CommandTimedOut => HistoryException::timedOut($entityId, $e->getMessage(), $e),
             default => HistoryException::unreachable($entityId, $e->getMessage(), $e),
+        };
+    }
+
+    /** @throws HaClientException */
+    private function readEntityRegistryEntry(mixed $row, string $command): EntityRegistryEntry
+    {
+        try {
+            return \is_array($row) ? EntityRegistryEntry::fromArray($row) : throw HaClientException::protocolViolation(\sprintf('a %s result without an entity entry', $command));
+        } catch (IdentifierException $e) {
+            throw HaClientException::protocolViolation(\sprintf('a %s result without a valid entity id', $command), $e);
+        }
+    }
+
+    private function toRegistryEditException(EntityId $entityId, HaClientException $e): RegistryEditException
+    {
+        if ($e->reason === HaClientError::CommandRejected && $e->findErrorCode() === self::NOT_FOUND_CODE) {
+            return RegistryEditException::notFound($entityId);
+        }
+
+        return match ($e->reason) {
+            HaClientError::CommandRejected,
+            HaClientError::CommandUnauthorized,
+            HaClientError::CommandUnencodable => RegistryEditException::rejected($entityId, $e->findDetail() ?? $e->getMessage(), $e->findErrorCode(), $e),
+            HaClientError::CommandTimedOut => RegistryEditException::timedOut($entityId, $e->getMessage(), $e),
+            default => RegistryEditException::unreachable($entityId, $e->getMessage(), $e),
         };
     }
 

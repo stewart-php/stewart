@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Client\Tests\Unit\Connection;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Client\Component\ComponentInstance;
@@ -13,15 +14,19 @@ use Stewart\Client\Connection\Command\CallService;
 use Stewart\Client\Connection\Command\Component\SubscribeComponentSession;
 use Stewart\Client\Connection\Command\FireEvent;
 use Stewart\Client\Connection\Command\GetCurrentUser;
+use Stewart\Client\Connection\Command\GetEntityRegistryEntry;
 use Stewart\Client\Connection\Command\GetHistoryDuringPeriod;
 use Stewart\Client\Connection\Command\GetStates;
 use Stewart\Client\Connection\Command\SubscribeEvents;
 use Stewart\Client\Connection\Command\SubscribeTrigger;
 use Stewart\Client\Connection\Command\UnsubscribeEvents;
+use Stewart\Client\Connection\Command\UpdateEntityRegistryEntry;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
+use Stewart\Contracts\Registry\EntityAlias;
+use Stewart\Contracts\Registry\Update\EntityRegistryUpdate;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
@@ -38,6 +43,8 @@ use Stewart\Contracts\Trigger\HaTrigger;
 #[CoversClass(GetCurrentUser::class)]
 #[CoversClass(FireEvent::class)]
 #[CoversClass(SubscribeComponentSession::class)]
+#[CoversClass(GetEntityRegistryEntry::class)]
+#[CoversClass(UpdateEntityRegistryEntry::class)]
 final class HaCommandTest extends TestCase
 {
     public function testServiceCallOmitsEmptyParts(): void
@@ -202,5 +209,51 @@ final class HaCommandTest extends TestCase
             new HistoryWindow(Instant::fromIso('2026-10-04T11:00:00Z'), Instant::fromIso('2026-10-04T12:00:00Z')),
             $detail,
         );
+    }
+
+    public function testRegistryEntryLookupNamesEntity(): void
+    {
+        self::assertSame(
+            ['type' => 'config/entity_registry/get', 'entity_id' => 'light.hall'],
+            new GetEntityRegistryEntry(new EntityId('light.hall'))->toMessage(),
+        );
+    }
+
+    public function testRegistryUpdateSendsOnlyTouchedFields(): void
+    {
+        $update = new EntityRegistryUpdate()->withName('Hall')->withoutArea()->withHidden(true);
+
+        self::assertSame(
+            ['type' => 'config/entity_registry/update', 'entity_id' => 'light.hall', 'name' => 'Hall', 'area_id' => null, 'hidden_by' => 'user'],
+            new UpdateEntityRegistryEntry(new EntityId('light.hall'), $update)->toMessage(),
+        );
+    }
+
+    public function testRegistryUpdateSendsFullLists(): void
+    {
+        $update = new EntityRegistryUpdate()
+            ->withLabels('night')
+            ->withAliases('Hall lamp', EntityAlias::entityName())
+            ->withoutIcon()
+            ->withDisabled(false);
+
+        self::assertSame(
+            [
+                'type' => 'config/entity_registry/update',
+                'entity_id' => 'light.hall',
+                'icon' => null,
+                'labels' => ['night'],
+                'aliases' => ['Hall lamp', null],
+                'disabled_by' => null,
+            ],
+            new UpdateEntityRegistryEntry(new EntityId('light.hall'), $update)->toMessage(),
+        );
+    }
+
+    public function testRegistryUpdateRefusesUnresolvedListEdits(): void
+    {
+        $this->expectException(LogicException::class);
+
+        new UpdateEntityRegistryEntry(new EntityId('light.hall'), new EntityRegistryUpdate()->withAddedLabels('night'));
     }
 }

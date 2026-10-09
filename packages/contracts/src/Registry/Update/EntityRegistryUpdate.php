@@ -15,7 +15,7 @@ use Stewart\Contracts\Registry\RegisteredEntity;
 // A null field leaves that part of the registry entry as it is.
 final readonly class EntityRegistryUpdate
 {
-    private const string CHANGED_BY_USER = 'user';
+    public const string CHANGED_BY_USER = 'user';
 
     public function __construct(
         public ?EntityNameChange $name = null,
