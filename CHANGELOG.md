@@ -36,6 +36,7 @@ minor release may break; its "Upgrading" section says what to change.
   read back the entity ID and the state Home Assistant restored. Exposed entities are sent again after every
   reconnect; without a compatible integration, `expose*()` throws `ExposureException`
 - `Stewart\Testing\Exposure\RecordingEntityExposure` for unit tests of apps that expose entities
+- `Stewart\Testing\Registry\RecordingRegistryEditor` records registry edits and applies them to an `InMemoryRegistry`
 - The skeleton's `HelloApp` exposes `sensor.stewart_hello_changes_seen`; without the integration it logs why and keeps
   running
 - `make test-ha-e2e` (`HA=min|latest`) boots a real Home Assistant with the integration and checks that the skeleton's
