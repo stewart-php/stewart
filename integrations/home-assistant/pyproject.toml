@@ -8,8 +8,10 @@ ignore = [
     "COM812",  # conflicts with the formatter
     "CPY",     # no per-file copyright headers
     "D",       # docstrings
+    "EM",      # protocol error messages are built where they are raised
     "ISC001",  # conflicts with the formatter
     "TC",      # Home Assistant resolves annotations at runtime
+    "TRY003",  # see EM
 ]
 
 [tool.ruff.lint.per-file-ignores]
