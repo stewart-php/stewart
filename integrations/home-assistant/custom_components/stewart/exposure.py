@@ -1,15 +1,16 @@
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any
 
-from homeassistant.core import callback
+from homeassistant.core import Event, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import EntityPlatform
 
-from .change import EntityUpsert
+from .change import EntityChange, EntityUpsert
 from .const import DOMAIN
 from .devices import DeviceDirectory, DeviceTarget
 from .entity import PlatformConfig, StewartEntity
-from .errors import InvalidConfigError
+from .errors import EntityNotFoundError, InvalidConfigError
 from .identity import EntityAddress
 from .platforms import ExposurePlatform
 from .session import SessionRegistry
@@ -50,6 +51,28 @@ class ExposedEntities:
         tracked.entity.publish()
         return tracked.entity.take_snapshot()
 
+    @callback
+    def update_state(self, address: EntityAddress, change: EntityChange) -> None:
+        if (tracked := self._entities.get(address.unique_id)) is None:
+            raise EntityNotFoundError.for_address(address)
+        tracked.entity.apply_change(change)
+        tracked.entity.publish()
+
+    @callback
+    def remove(self, address: EntityAddress) -> bool:
+        tracked = self._entities.pop(address.unique_id, None)
+        removed_entry = self._remove_registry_entries(address, self._platforms.values())
+        return tracked is not None or removed_entry
+
+    # A user may delete an entity in Home Assistant; it stays deleted until Stewart upserts it again.
+    @callback
+    def forget_removed_entry(self, event: Event[er.EventEntityRegistryUpdatedData]) -> None:
+        if event.data["action"] != "remove":
+            return
+        for unique_id, tracked in list(self._entities.items()):
+            if tracked.entity.entity_id == event.data["entity_id"]:
+                del self._entities[unique_id]
+
     async def _add_entity(
         self, platform: AttachedPlatform, upsert: EntityUpsert, config: PlatformConfig
     ) -> EntitySnapshot:
@@ -59,20 +82,22 @@ class ExposedEntities:
             address=address, config=config, sessions=self._sessions, device_info=device.device_info
         )
         entity.apply_change(upsert.change)
-        self._remove_from_other_platforms(platform, address)
+        others = [other for other in self._platforms.values() if other is not platform]
+        self._remove_registry_entries(address, others)
         self._devices.ensure_device(device)
         self._entities[address.unique_id] = TrackedEntity(platform=platform, entity=entity)
         await platform.entity_platform.async_add_entities([entity])
         return entity.take_snapshot()
 
     # The registry, not memory, so an entry left from before a Home Assistant restart goes too.
-    def _remove_from_other_platforms(self, platform: AttachedPlatform, address: EntityAddress) -> None:
-        for other in self._platforms.values():
-            if other is platform:
-                continue
-            entity_id = self._entity_registry.async_get_entity_id(other.exposure.domain, DOMAIN, address.unique_id)
-            if entity_id is not None:
+    def _remove_registry_entries(self, address: EntityAddress, platforms: Iterable[AttachedPlatform]) -> bool:
+        removed = False
+        for platform in platforms:
+            domain = platform.exposure.domain
+            if (entity_id := self._entity_registry.async_get_entity_id(domain, DOMAIN, address.unique_id)) is not None:
                 self._entity_registry.async_remove(entity_id)
+                removed = True
+        return removed
 
     def _find_platform(self, domain: str) -> AttachedPlatform:
         if (platform := self._platforms.get(domain)) is None:

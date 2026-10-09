@@ -7,7 +7,7 @@ from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.loader import async_get_integration
 
-from .change import EntityUpsert
+from .change import EntityChange, EntityUpsert
 from .const import (
     APP_PATTERN,
     DOMAIN,
@@ -18,6 +18,7 @@ from .const import (
     PROTOCOL,
 )
 from .errors import ExposureError
+from .identity import EntityAddress
 from .runtime import StewartConfigEntry, StewartRuntime
 from .session import Session
 
@@ -51,6 +52,8 @@ def async_register_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_version)
     websocket_api.async_register_command(hass, websocket_session_subscribe)
     websocket_api.async_register_command(hass, websocket_entity_upsert)
+    websocket_api.async_register_command(hass, websocket_entity_state)
+    websocket_api.async_register_command(hass, websocket_entity_remove)
 
 
 @websocket_api.websocket_command({vol.Required("type"): "stewart/version"})
@@ -119,6 +122,30 @@ def websocket_session_subscribe(
 @_exposure_command
 async def websocket_entity_upsert(runtime: StewartRuntime, msg: dict[str, Any]) -> dict[str, Any]:
     return (await runtime.entities.upsert(EntityUpsert.from_message(msg))).as_result()
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "stewart/entity/state",
+        **ENTITY_ADDRESS_SCHEMA,
+        vol.Optional("state"): object,
+        vol.Optional("attributes"): dict,
+        vol.Optional("available"): bool,
+    }
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+@_exposure_command
+async def websocket_entity_state(runtime: StewartRuntime, msg: dict[str, Any]) -> None:
+    runtime.entities.update_state(EntityAddress.from_message(msg), EntityChange.from_message(msg))
+
+
+@websocket_api.websocket_command({vol.Required("type"): "stewart/entity/remove", **ENTITY_ADDRESS_SCHEMA})
+@websocket_api.require_admin
+@websocket_api.async_response
+@_exposure_command
+async def websocket_entity_remove(runtime: StewartRuntime, msg: dict[str, Any]) -> dict[str, Any]:
+    return {"removed": runtime.entities.remove(EntityAddress.from_message(msg))}
 
 
 # Commands outlive an unload; answering like a missing integration lets Stewart detect both the same way.
