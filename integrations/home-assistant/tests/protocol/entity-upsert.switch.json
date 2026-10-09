@@ -10,7 +10,8 @@
             "name": "Night mode",
             "icon": "mdi:weather-night",
             "entity_category": "config"
-        }
+        },
+        "state": true
     },
     "result": {
         "entity_id": "switch.stewart_lights_night_mode",

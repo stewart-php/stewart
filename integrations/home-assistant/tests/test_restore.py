@@ -15,6 +15,9 @@ from tests.golden import Golden
 
 SENSOR_ENTITY_ID = "sensor.stewart_climate_average_temperature"
 BINARY_SENSOR_ENTITY_ID = "binary_sensor.stewart_presence_anyone_home"
+SWITCH_ENTITY_ID = "switch.stewart_lights_night_mode"
+BUTTON_ENTITY_ID = "button.stewart_lights_all_off"
+LAST_PRESS = "2026-10-09T12:00:00+00:00"
 STORED_ATTRIBUTES = {"sources": ["sensor.attic_temperature"]}
 
 
@@ -111,6 +114,37 @@ async def test_binary_sensor_restores_stored_state(
     response = await send_request(client, request)
 
     assert response["result"]["state"] is stored_state
+
+
+async def test_switch_restores_stored_state(
+    hass: HomeAssistant, hass_ws_client: WebSocketGenerator, loaded_entry: MockConfigEntry
+) -> None:
+    store_extra_data(hass, SWITCH_ENTITY_ID, {"state": False, "attributes": {}})
+    client = await hass_ws_client(hass)
+    await subscribe(client)
+    request = dict(Golden.load("entity-upsert.switch").request)
+    del request["state"]
+
+    response = await send_request(client, request)
+
+    assert response["result"]["state"] is False
+
+
+async def test_button_restores_last_press(
+    hass: HomeAssistant, hass_ws_client: WebSocketGenerator, loaded_entry: MockConfigEntry
+) -> None:
+    mock_restore_cache_with_extra_data(
+        hass, ((State(BUTTON_ENTITY_ID, LAST_PRESS), {"state": None, "attributes": {}}),)
+    )
+    client = await hass_ws_client(hass)
+    await subscribe(client)
+
+    response = await send_request(client, Golden.load("entity-upsert.button").request)
+
+    assert response["result"]["state"] is None
+    state = hass.states.get(BUTTON_ENTITY_ID)
+    assert state is not None
+    assert state.state == LAST_PRESS
 
 
 async def test_unavailable_entity_stores_state_and_attributes(

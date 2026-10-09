@@ -161,7 +161,7 @@ Every platform takes these config keys:
 | `sensor` | number \| string \| null | `device_class`, `unit_of_measurement`, `state_class` (`measurement`, `total`, `total_increasing`), `suggested_display_precision`, `options` (with `device_class: enum`) | — |
 | `binary_sensor` | bool \| null | `device_class` | — |
 | `switch` | bool \| null | `device_class` (`outlet`, `switch`) | `turn_on`, `turn_off` |
-| `button` | none; `state` must be absent | `device_class` (`identify`, `restart`, `update`) | `press` |
+| `button` | none; `state` must be absent and reads back as `null` | `device_class` (`identify`, `restart`, `update`) | `press` |
 | `number` | number \| null | `min`, `max`, `step` (required), `mode` (`auto`, `box`, `slider`), `device_class`, `unit_of_measurement` | `set_value {value: number}` |
 | `select` | string \| null | `options` (required, non-empty list of strings) | `select_option {option: string}` |
 | `text` | string \| null | `min` (default 0), `max` (default 255), `pattern`, `mode` (`text`, `password`) | `set_value {value: string}` |

@@ -1,0 +1,20 @@
+{
+    "protocol": 1,
+    "request": {
+        "type": "stewart/entity/upsert",
+        "instance": "default",
+        "app": "lights",
+        "key": "all_off",
+        "platform": "button",
+        "config": {
+            "name": "All off",
+            "icon": "mdi:lightbulb-group-off"
+        }
+    },
+    "result": {
+        "entity_id": "button.stewart_lights_all_off",
+        "state": null,
+        "attributes": {},
+        "available": true
+    }
+}

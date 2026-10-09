@@ -51,6 +51,7 @@ class StewartEntity[ConfigT: PlatformConfig, NativeT](RestoreEntity):
     # Validates the whole upsert before changing anything, so a refused one leaves the entity as it was.
     @callback
     def apply_upsert(self, config: ConfigT, change: EntityChange) -> None:
+        self._check_change(change)
         state = self._wire_state if change.state is ABSENT else change.state
         try:
             native = self._convert_state(config, state)
@@ -73,6 +74,7 @@ class StewartEntity[ConfigT: PlatformConfig, NativeT](RestoreEntity):
 
     @callback
     def apply_change(self, change: EntityChange) -> None:
+        self._check_change(change)
         if change.state is not ABSENT:
             self._show_state(self._convert_state(self.config, change.state))
             self._wire_state = change.state
@@ -130,6 +132,9 @@ class StewartEntity[ConfigT: PlatformConfig, NativeT](RestoreEntity):
         self._attr_icon = config.entity.icon
         self._attr_entity_category = config.entity.entity_category
         self._attr_entity_registry_enabled_default = config.entity.enabled_by_default
+
+    def _check_change(self, change: EntityChange) -> None:  # noqa: ARG002
+        return
 
     def _convert_state(self, config: ConfigT, state: JsonValue) -> NativeT:
         raise NotImplementedError
