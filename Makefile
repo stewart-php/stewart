@@ -179,6 +179,10 @@ ha-check: ## Lint, type-check and test the Home Assistant integration [HA=min|la
 ha-hassfest: ## Validate the integration with Home Assistant's hassfest
 	$(DOCKER) run --rm -v "$(CURDIR)/integrations/home-assistant:/github/workspace:ro" $(HASSFEST_IMAGE)
 
+.PHONY: test-ha-e2e
+test-ha-e2e: ## Boot a real Home Assistant with the integration and smoke-test exposure [HA=min|latest]
+	HA_E2E_IMAGE=$(HA_E2E_IMAGE_$(HA)) sh bin/test-ha-e2e.sh
+
 # --- demo -----------------------------------------------------------------
 
 # var/demo is the skeleton linked to this checkout; package edits show up without reinstalling.
