@@ -16,6 +16,7 @@ CLIENT_ID = "http://stewart-e2e.local/"
 EXPOSED_SENSOR = "sensor.stewart_hello_changes_seen"
 EXPOSED_SENSOR_DEVICE = "Stewart · hello"
 EXPOSED_SWITCH = "switch.stewart_hello_counting"
+EXPOSED_NUMBER = "number.stewart_hello_step"
 WATCHED_ENTITY = "input_boolean.stewart_e2e"
 WAIT_SECONDS = 60.0
 POLL_SECONDS = 0.5
@@ -144,6 +145,30 @@ def switch_exposed_entity(ha: HomeAssistant, state: str) -> None:
         raise SmokeError(f"{EXPOSED_SWITCH} is {switched!r} after turn_{state}")
 
 
+def read_entity(ha: HomeAssistant, entity_id: str) -> dict[str, Json]:
+    return HomeAssistant.expect_success(ha.get(f"/api/states/{entity_id}"), entity_id).read_object()
+
+
+def set_step(ha: HomeAssistant, value: float) -> None:
+    ha.post_json("/api/services/number/set_value", {"entity_id": EXPOSED_NUMBER, "value": value})
+    step = read_text(read_entity(ha, EXPOSED_NUMBER), "state")
+    if float(step) != value:
+        raise SmokeError(f"{EXPOSED_NUMBER} is {step!r} after set_value {value}")
+
+
+def read_icon(ha: HomeAssistant, entity_id: str) -> Json:
+    attributes = read_entity(ha, entity_id).get("attributes")
+    return attributes.get("icon") if isinstance(attributes, dict) else None
+
+
+def await_step_icon(ha: HomeAssistant, expected: str) -> None:
+    deadline = time.monotonic() + WAIT_SECONDS
+    while (icon := read_icon(ha, EXPOSED_NUMBER)) != expected:
+        if time.monotonic() > deadline:
+            raise SmokeError(f"{EXPOSED_NUMBER} shows icon {icon!r}, expected {expected!r}")
+        time.sleep(POLL_SECONDS)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Drives the real Home Assistant of the e2e smoke test.")
     parser.add_argument("--token-file", type=Path, required=True)
@@ -152,6 +177,8 @@ def main() -> int:
     steps.add_parser("await-sensor").add_argument("state")
     steps.add_parser("toggle")
     steps.add_parser("switch").add_argument("state", choices=("on", "off"))
+    steps.add_parser("step").add_argument("value", type=float)
+    steps.add_parser("await-step-icon").add_argument("icon")
     arguments = parser.parse_args()
     token_file: Path = arguments.token_file
 
@@ -164,6 +191,10 @@ def main() -> int:
                 await_sensor(ha, arguments.state)
             elif arguments.step == "switch":
                 switch_exposed_entity(ha, arguments.state)
+            elif arguments.step == "step":
+                set_step(ha, arguments.value)
+            elif arguments.step == "await-step-icon":
+                await_step_icon(ha, arguments.icon)
             else:
                 toggle_watched_entity(ha)
     except SmokeError as failure:

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Smoke-tests exposure against a real Home Assistant: the skeleton's hello app publishes a sensor and a switch through the integration.
+# Smoke-tests exposure against a real Home Assistant: the skeleton's hello app publishes a sensor, a switch and a number through the integration.
 set -eu
 
 : "${HA_E2E_IMAGE:?set HA_E2E_IMAGE to the Home Assistant image under test}"
@@ -39,12 +39,19 @@ echo '--- a watched change updates the sensor'
 driver toggle
 driver await-sensor 1
 
-echo '--- a switch command waits for the app, which then stops counting'
+echo '--- a number command sets how much each change adds'
+driver step 2
+driver toggle
+driver await-sensor 3
+
+echo '--- a switch command waits for the app, which then stops counting and reconfigures the step'
 driver switch off
+driver await-step-icon mdi:pause-circle
 driver toggle
 driver switch on
+driver await-step-icon mdi:numeric
 driver toggle
-driver await-sensor 2
+driver await-sensor 5
 
 echo '--- the sensor turns unavailable when Stewart stops'
 e2e stop stewart
