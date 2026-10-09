@@ -16,8 +16,12 @@ use Stewart\Contracts\Exposure\ExposedButton;
 use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
+use Stewart\Contracts\Exposure\ExposedNumber;
+use Stewart\Contracts\Exposure\ExposedSelect;
 use Stewart\Contracts\Exposure\ExposedSensor;
 use Stewart\Contracts\Exposure\ExposedSwitch;
+use Stewart\Contracts\Exposure\NumberConfig;
+use Stewart\Contracts\Exposure\SelectConfig;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SwitchConfig;
 use Stewart\Testing\Exposure\Collection\RecordedExposureCollection;
@@ -81,6 +85,20 @@ final class RecordingEntityExposure implements EntityExposure
         return $this->handlesByKey[$key->value] = new RecordingExposedButton($key, $config, $this->seededByKey[$key->value] ?? null);
     }
 
+    public function exposeNumber(ExposedEntityKey|string $key, NumberConfig $config, ?DeviceInfo $device = null): ExposedNumber
+    {
+        $key = $this->claimKey($key, $config, $device);
+
+        return $this->handlesByKey[$key->value] = new RecordingExposedNumber($key, $config, $this->seededByKey[$key->value] ?? null);
+    }
+
+    public function exposeSelect(ExposedEntityKey|string $key, SelectConfig $config, ?DeviceInfo $device = null): ExposedSelect
+    {
+        $key = $this->claimKey($key, $config, $device);
+
+        return $this->handlesByKey[$key->value] = new RecordingExposedSelect($key, $config, $this->seededByKey[$key->value] ?? null);
+    }
+
     public function requireSensor(ExposedEntityKey|string $key): RecordingExposedSensor
     {
         $handle = $this->findHandle($key);
@@ -107,6 +125,20 @@ final class RecordingEntityExposure implements EntityExposure
         $handle = $this->findHandle($key);
 
         return $handle instanceof RecordingExposedButton ? $handle : throw new LogicException(\sprintf('No button was exposed as "%s".', $key));
+    }
+
+    public function requireNumber(ExposedEntityKey|string $key): RecordingExposedNumber
+    {
+        $handle = $this->findHandle($key);
+
+        return $handle instanceof RecordingExposedNumber ? $handle : throw new LogicException(\sprintf('No number was exposed as "%s".', $key));
+    }
+
+    public function requireSelect(ExposedEntityKey|string $key): RecordingExposedSelect
+    {
+        $handle = $this->findHandle($key);
+
+        return $handle instanceof RecordingExposedSelect ? $handle : throw new LogicException(\sprintf('No select was exposed as "%s".', $key));
     }
 
     /** @throws ExposureException */

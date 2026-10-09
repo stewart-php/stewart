@@ -10,4 +10,6 @@ enum ExposedPlatform: string
     case BinarySensor = 'binary_sensor';
     case Switch = 'switch';
     case Button = 'button';
+    case Number = 'number';
+    case Select = 'select';
 }

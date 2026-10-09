@@ -14,9 +14,13 @@ use Stewart\Contracts\Exposure\ExposedBinarySensor;
 use Stewart\Contracts\Exposure\ExposedButton;
 use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
+use Stewart\Contracts\Exposure\ExposedNumber;
+use Stewart\Contracts\Exposure\ExposedSelect;
 use Stewart\Contracts\Exposure\ExposedSensor;
 use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\ExposedSwitch;
+use Stewart\Contracts\Exposure\NumberConfig;
+use Stewart\Contracts\Exposure\SelectConfig;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SwitchConfig;
 use Stewart\Runtime\Model\ResourceScope;
@@ -26,6 +30,8 @@ use Stewart\Runtime\Worker\Exposure\ExposureRequester;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedBinarySensor;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedButton;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedEntity;
+use Stewart\Runtime\Worker\Exposure\WorkerExposedNumber;
+use Stewart\Runtime\Worker\Exposure\WorkerExposedSelect;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedSensor;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedSwitch;
 
@@ -72,6 +78,20 @@ final readonly class WorkerEntityExposure implements EntityExposure
         $key = $this->claimKey($key);
 
         return $this->exposeHandle(new WorkerExposedButton($this->requester, $this->handles, $this->resourceScope, $key, $this->commandStreams), $config, $device);
+    }
+
+    public function exposeNumber(ExposedEntityKey|string $key, NumberConfig $config, ?DeviceInfo $device = null): ExposedNumber
+    {
+        $key = $this->claimKey($key);
+
+        return $this->exposeHandle(new WorkerExposedNumber($this->requester, $this->handles, $this->resourceScope, $key, $config, $this->commandStreams), $config, $device);
+    }
+
+    public function exposeSelect(ExposedEntityKey|string $key, SelectConfig $config, ?DeviceInfo $device = null): ExposedSelect
+    {
+        $key = $this->claimKey($key);
+
+        return $this->exposeHandle(new WorkerExposedSelect($this->requester, $this->handles, $this->resourceScope, $key, $this->commandStreams), $config, $device);
     }
 
     /** @throws ExposureException */

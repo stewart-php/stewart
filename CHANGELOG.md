@@ -55,6 +55,9 @@ minor release may break; its "Upgrading" section says what to change.
   test turns it off and on
 - The `stewart` integration creates `number`, `select`, `text`, `time`, `date` and `datetime` entities; their
   `set_value` and `select_option` service calls send `set_value` and `select_option` commands
+- Apps expose numbers and selects with `exposeNumber()` and `exposeSelect()`. `watchCommands()` streams
+  `NumberCommand` and `SelectCommand`; an accepted command sets the handle's value. `RecordingExposedNumber` and
+  `RecordingExposedSelect` push them in unit tests
 
 ### Changed
 

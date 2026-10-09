@@ -10,6 +10,8 @@ use Stewart\Contracts\Exposure\ButtonConfig;
 use Stewart\Contracts\Exposure\DeviceInfo;
 use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedPlatform;
+use Stewart\Contracts\Exposure\NumberConfig;
+use Stewart\Contracts\Exposure\SelectConfig;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SwitchConfig;
 
@@ -36,6 +38,15 @@ final readonly class ExposedEntityDefinition
                 'options' => $config->options === [] ? null : $config->options,
             ],
             $config instanceof BinarySensorConfig, $config instanceof SwitchConfig, $config instanceof ButtonConfig => ['device_class' => $config->deviceClass?->value],
+            $config instanceof NumberConfig => [
+                'min' => $config->min,
+                'max' => $config->max,
+                'step' => $config->step,
+                'mode' => $config->mode->value,
+                'device_class' => $config->deviceClass?->value,
+                'unit_of_measurement' => $config->unit,
+            ],
+            $config instanceof SelectConfig => ['options' => $config->options],
             default => throw new LogicException(\sprintf('%s has no component encoding.', $config::class)),
         };
         $commonFields = [

@@ -8,7 +8,6 @@ use Closure;
 use Psr\Log\LoggerInterface;
 use Stewart\Client\Component\Collection\ExposedEntityAddressCollection;
 use Stewart\Client\Component\ComponentCommand;
-use Stewart\Client\Component\ComponentCommandAction;
 use Stewart\Client\Component\ComponentCommandAnswer;
 use Stewart\Client\Component\ComponentErrorCode;
 use Stewart\Client\Component\ExposedEntityAddress;
@@ -17,10 +16,6 @@ use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\ExposureException;
-use Stewart\Contracts\Exposure\Command\ButtonPress;
-use Stewart\Contracts\Exposure\Command\ExposedCommand;
-use Stewart\Contracts\Exposure\Command\SwitchAction;
-use Stewart\Contracts\Exposure\Command\SwitchCommand;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedStateChange;
@@ -76,7 +71,7 @@ final class ExposureLink
             return;
         }
 
-        $exposedCommand = $this->createExposedCommand($command);
+        $exposedCommand = $command->readExposedCommand($live->definition->platform);
 
         if ($exposedCommand === null) {
             $reason = \sprintf('Entity %s of app %s does not take %s commands.', $command->key, $command->appId, $command->action->value);
@@ -297,16 +292,6 @@ final class ExposureLink
                 ]);
             }
         }
-    }
-
-    private function createExposedCommand(ComponentCommand $command): ?ExposedCommand
-    {
-        return match ($command->action) {
-            ComponentCommandAction::TurnOn => new SwitchCommand(SwitchAction::TurnOn, $command->context),
-            ComponentCommandAction::TurnOff => new SwitchCommand(SwitchAction::TurnOff, $command->context),
-            ComponentCommandAction::Press => new ButtonPress($command->context),
-            ComponentCommandAction::SetValue, ComponentCommandAction::SelectOption => null,
-        };
     }
 
     private function sendCommandAnswer(ComponentCommandAnswer $answer): void

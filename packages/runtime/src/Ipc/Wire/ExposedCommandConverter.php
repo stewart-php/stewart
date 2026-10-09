@@ -8,6 +8,8 @@ use LogicException;
 use Stewart\Contracts\Exception\JsonShapeException;
 use Stewart\Contracts\Exposure\Command\ButtonPress;
 use Stewart\Contracts\Exposure\Command\ExposedCommand;
+use Stewart\Contracts\Exposure\Command\NumberCommand;
+use Stewart\Contracts\Exposure\Command\SelectCommand;
 use Stewart\Contracts\Exposure\Command\SwitchAction;
 use Stewart\Contracts\Exposure\Command\SwitchCommand;
 use Stewart\Contracts\Exposure\ExposedPlatform;
@@ -34,6 +36,8 @@ final readonly class ExposedCommandConverter implements ValueConverter
         $platformFields = match (true) {
             $value instanceof SwitchCommand => ['platform' => ExposedPlatform::Switch->value, 'action' => $value->action->value],
             $value instanceof ButtonPress => ['platform' => ExposedPlatform::Button->value],
+            $value instanceof NumberCommand => ['platform' => ExposedPlatform::Number->value, 'value' => $value->value],
+            $value instanceof SelectCommand => ['platform' => ExposedPlatform::Select->value, 'option' => $value->option],
             default => throw new LogicException(\sprintf('%s has no IPC encoding.', $value::class)),
         };
         $context = $value->getContext();
@@ -54,6 +58,8 @@ final readonly class ExposedCommandConverter implements ValueConverter
         return match ($platform) {
             ExposedPlatform::Switch => new SwitchCommand($this->readSwitchAction($value, $path), $context),
             ExposedPlatform::Button => new ButtonPress($context),
+            ExposedPlatform::Number => new NumberCommand($this->readNumber($value, $path), $context),
+            ExposedPlatform::Select => new SelectCommand($this->readString($value, 'option', $path), $context),
             default => throw JsonShapeException::unexpectedValue($path . '.platform', 'a platform that takes commands', $value['platform'] ?? null),
         };
     }
@@ -68,5 +74,27 @@ final readonly class ExposedCommandConverter implements ValueConverter
 
         return (\is_string($raw) ? SwitchAction::tryFrom($raw) : null)
             ?? throw JsonShapeException::unexpectedValue($path . '.action', 'a switch action', $raw);
+    }
+
+    /**
+     * @param array<array-key, mixed> $fields
+     * @throws JsonShapeException
+     */
+    private function readNumber(array $fields, string $path): int|float
+    {
+        $raw = $fields['value'] ?? null;
+
+        return \is_int($raw) || \is_float($raw) ? $raw : throw JsonShapeException::wrongType($path . '.value', 'a number', get_debug_type($raw));
+    }
+
+    /**
+     * @param array<array-key, mixed> $fields
+     * @throws JsonShapeException
+     */
+    private function readString(array $fields, string $key, string $path): string
+    {
+        $raw = $fields[$key] ?? null;
+
+        return \is_string($raw) ? $raw : throw JsonShapeException::wrongType($path . '.' . $key, 'a string', get_debug_type($raw));
     }
 }

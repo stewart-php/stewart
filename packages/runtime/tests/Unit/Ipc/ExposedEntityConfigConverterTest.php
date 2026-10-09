@@ -12,6 +12,10 @@ use Stewart\Contracts\Exposure\BinarySensorDeviceClass;
 use Stewart\Contracts\Exposure\ButtonConfig;
 use Stewart\Contracts\Exposure\ButtonDeviceClass;
 use Stewart\Contracts\Exposure\EntityCategory;
+use Stewart\Contracts\Exposure\NumberConfig;
+use Stewart\Contracts\Exposure\NumberDeviceClass;
+use Stewart\Contracts\Exposure\NumberMode;
+use Stewart\Contracts\Exposure\SelectConfig;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SensorDeviceClass;
 use Stewart\Contracts\Exposure\SwitchConfig;
@@ -52,6 +56,22 @@ final class ExposedEntityConfigConverterTest extends TestCase
     {
         $converter = new ExposedEntityConfigConverter();
         $config = new SensorConfig(SensorDeviceClass::Enum, options: ['low', 'high']);
+
+        self::assertEquals($config, $converter->decodeValue($converter->encodeValue($config), 'config'));
+    }
+
+    public function testNumberConfigRoundTrips(): void
+    {
+        $converter = new ExposedEntityConfigConverter();
+        $config = new NumberConfig(-3, 3, 0.5, NumberMode::Slider, NumberDeviceClass::Temperature, '°C', name: 'Target offset');
+
+        self::assertEquals($config, $converter->decodeValue($converter->encodeValue($config), 'config'));
+    }
+
+    public function testSelectConfigRoundTrips(): void
+    {
+        $converter = new ExposedEntityConfigConverter();
+        $config = new SelectConfig(['eco', 'comfort'], icon: 'mdi:radiator');
 
         self::assertEquals($config, $converter->decodeValue($converter->encodeValue($config), 'config'));
     }

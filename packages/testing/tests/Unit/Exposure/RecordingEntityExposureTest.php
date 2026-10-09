@@ -11,12 +11,16 @@ use Stewart\Contracts\Exception\CommandError;
 use Stewart\Contracts\Exception\CommandException;
 use Stewart\Contracts\Exception\ExposureError;
 use Stewart\Contracts\Exception\ExposureException;
+use Stewart\Contracts\Exposure\Command\NumberCommand;
+use Stewart\Contracts\Exposure\Command\SelectCommand;
 use Stewart\Contracts\Exposure\Command\SwitchAction;
 use Stewart\Contracts\Exposure\Command\SwitchCommand;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
+use Stewart\Contracts\Exposure\NumberConfig;
+use Stewart\Contracts\Exposure\SelectConfig;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Testing\Exception\AssertsReason;
@@ -24,6 +28,8 @@ use Stewart\Testing\Exposure\RecordingEntityExposure;
 use Stewart\Testing\Exposure\RecordingExposedBinarySensor;
 use Stewart\Testing\Exposure\RecordingExposedButton;
 use Stewart\Testing\Exposure\RecordingExposedEntity;
+use Stewart\Testing\Exposure\RecordingExposedNumber;
+use Stewart\Testing\Exposure\RecordingExposedSelect;
 use Stewart\Testing\Exposure\RecordingExposedSensor;
 use Stewart\Testing\Exposure\RecordingExposedSwitch;
 
@@ -33,6 +39,8 @@ use Stewart\Testing\Exposure\RecordingExposedSwitch;
 #[CoversClass(RecordingExposedBinarySensor::class)]
 #[CoversClass(RecordingExposedSwitch::class)]
 #[CoversClass(RecordingExposedButton::class)]
+#[CoversClass(RecordingExposedNumber::class)]
+#[CoversClass(RecordingExposedSelect::class)]
 final class RecordingEntityExposureTest extends TestCase
 {
     use AssertsReason;
@@ -103,6 +111,33 @@ final class RecordingEntityExposureTest extends TestCase
 
         $this->assertThrowsReason(CommandError::Rejected, static fn() => $heater->pushCommand(new SwitchCommand(SwitchAction::TurnOn, new EventContext('context-1'))));
         self::assertNull($heater->getValue());
+    }
+
+    public function testAcceptedCommandSetsNumberValue(): void
+    {
+        $exposure = new RecordingEntityExposure();
+        $offset = $exposure->exposeNumber('target_offset', new NumberConfig(min: -3, max: 3, step: 0.5));
+        $received = [];
+        $offset->watchCommands()->subscribe(static function (NumberCommand $command) use (&$received): void {
+            $received[] = $command->value;
+        });
+
+        $exposure->requireNumber('target_offset')->pushCommand(new NumberCommand(1.5, new EventContext('context-1')));
+
+        self::assertSame([1.5], $received);
+        self::assertSame(1.5, $offset->getValue());
+    }
+
+    public function testAcceptedCommandSetsSelectOption(): void
+    {
+        $exposure = new RecordingEntityExposure();
+        $mode = $exposure->exposeSelect('mode', new SelectConfig(['eco', 'comfort']));
+        $mode->setOption('eco');
+
+        $exposure->requireSelect('mode')->pushCommand(new SelectCommand('comfort', new EventContext('context-1')));
+
+        self::assertSame('comfort', $mode->getOption());
+        self::assertSame(['eco'], $exposure->requireSelect('mode')->changes->mapToList(static fn(ExposedStateChange $change) => $change->state?->value));
     }
 
     public function testButtonIsRecorded(): void

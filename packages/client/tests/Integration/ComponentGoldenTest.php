@@ -49,6 +49,10 @@ use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
+use Stewart\Contracts\Exposure\NumberConfig;
+use Stewart\Contracts\Exposure\NumberDeviceClass;
+use Stewart\Contracts\Exposure\NumberMode;
+use Stewart\Contracts\Exposure\SelectConfig;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SensorDeviceClass;
 use Stewart\Contracts\Exposure\SensorStateClass;
@@ -230,6 +234,37 @@ final class ComponentGoldenTest extends TestCase
         self::assertSame('sensor.stewart_climate_average_temperature', $snapshot->entityId->value);
         self::assertSame(21.4, $snapshot->state->value);
         self::assertTrue($snapshot->available);
+    }
+
+    public function testNumberUpsertMatchesGolden(): void
+    {
+        $golden = ComponentGolden::loadGolden('entity-upsert.number');
+        $this->server->replayGolden($golden);
+        $config = new NumberConfig(-3, 3, 0.5, NumberMode::Slider, NumberDeviceClass::Temperature, '°C', name: 'Target offset', icon: 'mdi:thermometer-plus');
+
+        $snapshot = $this->connectClient()->upsertExposedEntity(
+            self::createAddress('climate', 'target_offset'),
+            ExposedEntityDefinition::fromConfig($config, null),
+            new ExposedStateChange(new ExposedState(0.5)),
+        );
+
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/upsert'));
+        self::assertSame('number.stewart_climate_target_offset', $snapshot->entityId->value);
+    }
+
+    public function testSelectUpsertMatchesGolden(): void
+    {
+        $golden = ComponentGolden::loadGolden('entity-upsert.select');
+        $this->server->replayGolden($golden);
+
+        $snapshot = $this->connectClient()->upsertExposedEntity(
+            self::createAddress('heating', 'mode'),
+            ExposedEntityDefinition::fromConfig(new SelectConfig(['eco', 'comfort', 'away'], name: 'Mode', icon: 'mdi:radiator'), null),
+            new ExposedStateChange(new ExposedState('eco')),
+        );
+
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/upsert'));
+        self::assertSame('eco', $snapshot->state->value);
     }
 
     public function testBinarySensorUpsertMatchesGolden(): void

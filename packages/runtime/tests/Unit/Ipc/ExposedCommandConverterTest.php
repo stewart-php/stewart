@@ -8,6 +8,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Exception\JsonShapeError;
 use Stewart\Contracts\Exposure\Command\ButtonPress;
+use Stewart\Contracts\Exposure\Command\NumberCommand;
+use Stewart\Contracts\Exposure\Command\SelectCommand;
 use Stewart\Contracts\Exposure\Command\SwitchAction;
 use Stewart\Contracts\Exposure\Command\SwitchCommand;
 use Stewart\Contracts\State\EventContext;
@@ -33,6 +35,30 @@ final class ExposedCommandConverterTest extends TestCase
         $command = new ButtonPress(new EventContext('context-1'));
 
         self::assertEquals($command, $converter->decodeValue($converter->encodeValue($command), 'command'));
+    }
+
+    public function testNumberCommandRoundTrips(): void
+    {
+        $converter = new ExposedCommandConverter();
+        $command = new NumberCommand(2.5, new EventContext('context-1'));
+
+        self::assertEquals($command, $converter->decodeValue($converter->encodeValue($command), 'command'));
+    }
+
+    public function testSelectCommandRoundTrips(): void
+    {
+        $converter = new ExposedCommandConverter();
+        $command = new SelectCommand('comfort', new EventContext('context-1'));
+
+        self::assertEquals($command, $converter->decodeValue($converter->encodeValue($command), 'command'));
+    }
+
+    public function testNumberCommandWithoutValueIsRejected(): void
+    {
+        $this->assertThrowsReason(
+            JsonShapeError::WrongType,
+            static fn() => new ExposedCommandConverter()->decodeValue(['platform' => 'number', 'value' => '2', 'context' => ['id' => 'context-1']], 'command'),
+        );
     }
 
     public function testPlatformWithoutCommandsIsRejected(): void

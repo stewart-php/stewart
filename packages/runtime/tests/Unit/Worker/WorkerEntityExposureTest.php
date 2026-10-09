@@ -17,11 +17,15 @@ use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exposure\ButtonConfig;
 use Stewart\Contracts\Exposure\Command\ButtonPress;
 use Stewart\Contracts\Exposure\Command\ExposedCommand;
+use Stewart\Contracts\Exposure\Command\NumberCommand;
+use Stewart\Contracts\Exposure\Command\SelectCommand;
 use Stewart\Contracts\Exposure\Command\SwitchAction;
 use Stewart\Contracts\Exposure\Command\SwitchCommand;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
+use Stewart\Contracts\Exposure\NumberConfig;
+use Stewart\Contracts\Exposure\SelectConfig;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SensorDeviceClass;
 use Stewart\Contracts\State\EventContext;
@@ -45,6 +49,8 @@ use Stewart\Runtime\Worker\Exposure\SettlingCommandStream;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedBinarySensor;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedButton;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedEntity;
+use Stewart\Runtime\Worker\Exposure\WorkerExposedNumber;
+use Stewart\Runtime\Worker\Exposure\WorkerExposedSelect;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedSensor;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedSwitch;
 use Stewart\Runtime\Worker\Message\ExposedEntityCommandedHandler;
@@ -60,6 +66,8 @@ use Stewart\Testing\Time\ManualTimers;
 #[CoversClass(WorkerExposedBinarySensor::class)]
 #[CoversClass(WorkerExposedSwitch::class)]
 #[CoversClass(WorkerExposedButton::class)]
+#[CoversClass(WorkerExposedNumber::class)]
+#[CoversClass(WorkerExposedSelect::class)]
 #[CoversClass(ExposedCommandSettlements::class)]
 #[CoversClass(ExposedCommandStreams::class)]
 #[CoversClass(SettlingCommandStream::class)]
@@ -159,6 +167,31 @@ final class WorkerEntityExposureTest extends TestCase
         ));
     }
 
+    public function testNumberSendsItsValue(): void
+    {
+        $offset = $this->createClimateExposure()->exposeNumber('target_offset', new NumberConfig(min: -3, max: 3));
+
+        $offset->setValue(2);
+
+        self::assertSame(2, $offset->getValue());
+        self::assertSame(2, $this->broker->listSentOfType(UpdateExposedEntityRequest::class)[0]->change->state?->value);
+        $this->assertThrowsReason(ExposureError::StateInvalid, static fn() => $offset->setValue(INF));
+    }
+
+    public function testSelectSendsItsOption(): void
+    {
+        $mode = $this->createClimateExposure()->exposeSelect('mode', new SelectConfig(['eco', 'comfort']));
+
+        $mode->setOption('eco');
+        $mode->setOption(null);
+
+        self::assertNull($mode->getOption());
+        self::assertSame(['eco', null], array_map(
+            static fn(UpdateExposedEntityRequest $update) => $update->change->state?->value,
+            $this->broker->listSentOfType(UpdateExposedEntityRequest::class),
+        ));
+    }
+
     public function testButtonIsExposedWithoutState(): void
     {
         $this->createClimateExposure()->exposeButton('boost', new ButtonConfig(name: 'Boost'));
@@ -241,6 +274,27 @@ final class WorkerEntityExposureTest extends TestCase
         self::assertFalse($answer->accepted);
         self::assertSame('Alarm is armed.', $answer->rejection);
         self::assertNull($heater->getValue());
+    }
+
+    public function testAcceptedCommandSetsNumberValue(): void
+    {
+        $offset = $this->createClimateExposure()->exposeNumber('target_offset', new NumberConfig(min: -3, max: 3, step: 0.5));
+
+        $this->deliverCommand('target_offset', new NumberCommand(1.5, new EventContext('context-1')));
+
+        self::assertTrue($this->requireOnlyAnswer()->accepted);
+        self::assertSame(1.5, $offset->getValue());
+    }
+
+    public function testAcceptedCommandSetsSelectOption(): void
+    {
+        $mode = $this->createClimateExposure()->exposeSelect('mode', new SelectConfig(['eco', 'comfort']));
+        $mode->watchCommands()->subscribe(static function (): void {});
+
+        $this->deliverCommand('mode', new SelectCommand('comfort', new EventContext('context-1')));
+
+        self::assertTrue($this->requireOnlyAnswer()->accepted);
+        self::assertSame('comfort', $mode->getOption());
     }
 
     public function testCommandWithoutSubscriberIsAccepted(): void

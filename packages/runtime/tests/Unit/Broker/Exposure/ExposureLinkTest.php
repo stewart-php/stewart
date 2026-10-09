@@ -21,12 +21,15 @@ use Stewart\Client\Registry\RegistryDecoder;
 use Stewart\Client\State\EntityStateDecoder;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\ExposureError;
+use Stewart\Contracts\Exposure\ButtonConfig;
 use Stewart\Contracts\Exposure\Command\ButtonPress;
+use Stewart\Contracts\Exposure\Command\NumberCommand;
 use Stewart\Contracts\Exposure\Command\SwitchCommand;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
+use Stewart\Contracts\Exposure\NumberConfig;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SwitchConfig;
 use Stewart\Contracts\State\EventContext;
@@ -299,6 +302,22 @@ final class ExposureLinkTest extends TestCase
         self::assertSame([], $this->commanded);
     }
 
+    public function testNumberValueReachesWorkerAsNumberCommand(): void
+    {
+        $this->link->exposeEntity(
+            new WorkerId(1),
+            new AppId('lights'),
+            new ExposedEntityKey('night_mode'),
+            ExposedEntityDefinition::fromConfig(new NumberConfig(min: 0, max: 3), null),
+            new ExposedStateChange(),
+        );
+
+        $this->link->receiveCommand(self::createComponentCommand(ComponentCommandAction::SetValue, ['value' => 1.5]));
+
+        self::assertCount(1, $this->commanded);
+        self::assertEquals(new NumberCommand(1.5, new EventContext('context-1', null, 'user-1')), $this->commanded[0]->command);
+    }
+
     public function testCommandForOrphanHasNoOwner(): void
     {
         $this->exposeNightMode(false);
@@ -325,7 +344,13 @@ final class ExposureLinkTest extends TestCase
 
     public function testPressBecomesButtonPress(): void
     {
-        $this->exposeNightMode(null);
+        $this->link->exposeEntity(
+            new WorkerId(1),
+            new AppId('lights'),
+            new ExposedEntityKey('night_mode'),
+            ExposedEntityDefinition::fromConfig(new ButtonConfig(), null),
+            new ExposedStateChange(),
+        );
 
         $this->link->receiveCommand(self::createComponentCommand(ComponentCommandAction::Press));
 
@@ -375,9 +400,10 @@ final class ExposureLinkTest extends TestCase
         );
     }
 
-    private static function createComponentCommand(ComponentCommandAction $action): ComponentCommand
+    /** @param array<string, mixed> $data */
+    private static function createComponentCommand(ComponentCommandAction $action, array $data = []): ComponentCommand
     {
-        return new ComponentCommand('3f2b9c0e8d7a4f61', new AppId('lights'), new ExposedEntityKey('night_mode'), $action, [], new EventContext('context-1', null, 'user-1'));
+        return new ComponentCommand('3f2b9c0e8d7a4f61', new AppId('lights'), new ExposedEntityKey('night_mode'), $action, $data, new EventContext('context-1', null, 'user-1'));
     }
 
     private function exposeTemperature(float $state): ?ExposedEntitySnapshot
