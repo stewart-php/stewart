@@ -21,7 +21,9 @@ use Stewart\Runtime\Config\ExposeConfig;
 use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Model\WorkerId;
 
-// Holds every exposed entity with its latest state, so each new session can upsert them again.
+use function Amp\async;
+
+// Keeps every exposure for the next session; a gone app's entities stay, unavailable, until it exposes them again.
 final class ExposureLink
 {
     /** @var array<string, LiveExposure> */
@@ -55,7 +57,7 @@ final class ExposureLink
     ): ?ExposedEntitySnapshot {
         $this->assertComponentUsable($key);
 
-        $live = new LiveExposure($owner, $this->createAddress($appId, $key), $definition, $change);
+        $live = new LiveExposure($owner, $this->createAddress($appId, $key), $definition, new ExposedStateChange(available: true)->withLaterChange($change));
         $this->exposuresByAddress[$live->address->describe()] = $live;
 
         if (!$this->tracker->isActive()) {
@@ -113,14 +115,14 @@ final class ExposureLink
         }
     }
 
-    public function forgetExposuresOfApp(AppId $appId): void
+    public function orphanExposuresOfApp(AppId $appId): void
     {
-        $this->exposuresByAddress = array_filter($this->exposuresByAddress, static fn(LiveExposure $live): bool => !$live->address->appId->equals($appId));
+        $this->orphanExposures(static fn(LiveExposure $live): bool => $live->address->appId->equals($appId));
     }
 
-    public function forgetExposuresOfWorker(WorkerId $workerId): void
+    public function orphanExposuresOfWorker(WorkerId $workerId): void
     {
-        $this->exposuresByAddress = array_filter($this->exposuresByAddress, static fn(LiveExposure $live): bool => !$live->owner->equals($workerId));
+        $this->orphanExposures(static fn(LiveExposure $live): bool => $live->isOwnedBy($workerId));
     }
 
     /** @throws HaClientException */
@@ -140,7 +142,7 @@ final class ExposureLink
             }
 
             if ($snapshot !== null && $this->findLive($live->address->appId, $live->address->key) === $live) {
-                ($this->onSynced)(new ExposedEntitySync($live->owner, $live->address->appId, $live->address->key, $snapshot));
+                $this->syncOwner($live, $snapshot);
             }
         }
     }
@@ -160,7 +162,7 @@ final class ExposureLink
     private function sendUpsert(LiveExposure $live): ?ExposedEntitySnapshot
     {
         try {
-            return $this->client->upsertExposedEntity($live->address, $live->definition, $live->latestChange);
+            return $this->client->upsertExposedEntity($live->address, $live->definition, $live->buildUpsertChange());
         } catch (HaClientException $e) {
             $this->throwIfAppCaused($e);
             $this->logger->debug('Exposed entity waits for the next stewart integration session', ['entity' => $live->address->describe(), 'exception' => $e]);
@@ -194,6 +196,45 @@ final class ExposureLink
         $snapshot = $this->sendUpsert($live);
 
         if ($snapshot !== null) {
+            $this->syncOwner($live, $snapshot);
+        }
+    }
+
+    /** @param Closure(LiveExposure): bool $belongs */
+    private function orphanExposures(Closure $belongs): void
+    {
+        $orphaned = [];
+
+        foreach ($this->exposuresByAddress as $live) {
+            if (!$live->isOrphaned() && $belongs($live)) {
+                $live->markOrphaned();
+                $orphaned[] = $live;
+            }
+        }
+
+        if ($orphaned !== [] && $this->tracker->isActive()) {
+            async($this->sendUnavailable(...), $orphaned);
+        }
+    }
+
+    /** @param list<LiveExposure> $orphaned */
+    private function sendUnavailable(array $orphaned): void
+    {
+        foreach ($orphaned as $live) {
+            try {
+                $this->client->updateExposedEntityState($live->address, new ExposedStateChange(available: false));
+            } catch (HaClientException $e) {
+                $this->logger->debug('Orphaned exposed entity turns unavailable with the next stewart integration session', [
+                    'entity' => $live->address->describe(),
+                    'exception' => $e,
+                ]);
+            }
+        }
+    }
+
+    private function syncOwner(LiveExposure $live, ExposedEntitySnapshot $snapshot): void
+    {
+        if ($live->owner !== null) {
             ($this->onSynced)(new ExposedEntitySync($live->owner, $live->address->appId, $live->address->key, $snapshot));
         }
     }

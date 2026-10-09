@@ -240,14 +240,14 @@ final class WebsocketHaSession implements HaSession
         $this->exposures->removeEntity($appId, $key);
     }
 
-    public function forgetExposuresOfApp(AppId $appId): void
+    public function orphanExposuresOfApp(AppId $appId): void
     {
-        $this->exposures->forgetExposuresOfApp($appId);
+        $this->exposures->orphanExposuresOfApp($appId);
     }
 
-    public function forgetExposuresOfWorker(WorkerId $workerId): void
+    public function orphanExposuresOfWorker(WorkerId $workerId): void
     {
-        $this->exposures->forgetExposuresOfWorker($workerId);
+        $this->exposures->orphanExposuresOfWorker($workerId);
     }
 
     private function connectSubscribeAndSeed(): void

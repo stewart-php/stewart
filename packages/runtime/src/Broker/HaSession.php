@@ -91,7 +91,7 @@ interface HaSession
 
     public function removeExposedEntity(AppId $appId, ExposedEntityKey $key): void;
 
-    public function forgetExposuresOfApp(AppId $appId): void;
+    public function orphanExposuresOfApp(AppId $appId): void;
 
-    public function forgetExposuresOfWorker(WorkerId $workerId): void;
+    public function orphanExposuresOfWorker(WorkerId $workerId): void;
 }

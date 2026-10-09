@@ -328,14 +328,14 @@ final class FakeHaSession implements HaSession
         unset($this->exposedEntities[$appId . '/' . $key]);
     }
 
-    public function forgetExposuresOfApp(AppId $appId): void
+    public function orphanExposuresOfApp(AppId $appId): void
     {
-        $this->exposedEntities = array_filter(
-            $this->exposedEntities,
-            static fn(string $address): bool => !str_starts_with($address, $appId . '/'),
-            \ARRAY_FILTER_USE_KEY,
-        );
+        foreach ($this->exposedEntities as $address => $change) {
+            if (str_starts_with($address, $appId . '/')) {
+                $this->exposedEntities[$address] = $change->withLaterChange(new ExposedStateChange(available: false));
+            }
+        }
     }
 
-    public function forgetExposuresOfWorker(WorkerId $workerId): void {}
+    public function orphanExposuresOfWorker(WorkerId $workerId): void {}
 }

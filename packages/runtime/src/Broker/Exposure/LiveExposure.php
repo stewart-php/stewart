@@ -12,7 +12,7 @@ use Stewart\Runtime\Model\WorkerId;
 final class LiveExposure
 {
     public function __construct(
-        public readonly WorkerId $owner,
+        public private(set) ?WorkerId $owner,
         public readonly ExposedEntityAddress $address,
         public readonly ExposedEntityDefinition $definition,
         public private(set) ExposedStateChange $latestChange,
@@ -21,5 +21,25 @@ final class LiveExposure
     public function recordChange(ExposedStateChange $change): void
     {
         $this->latestChange = $this->latestChange->withLaterChange($change);
+    }
+
+    public function markOrphaned(): void
+    {
+        $this->owner = null;
+    }
+
+    public function isOrphaned(): bool
+    {
+        return $this->owner === null;
+    }
+
+    public function isOwnedBy(WorkerId $workerId): bool
+    {
+        return $this->owner?->equals($workerId) === true;
+    }
+
+    public function buildUpsertChange(): ExposedStateChange
+    {
+        return $this->isOrphaned() ? $this->latestChange->withLaterChange(new ExposedStateChange(available: false)) : $this->latestChange;
     }
 }

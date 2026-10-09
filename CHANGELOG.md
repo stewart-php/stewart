@@ -39,6 +39,8 @@ minor release may break; its "Upgrading" section says what to change.
 
 ### Changed
 
+- Entities of an app that fails, stops or loses its worker turn unavailable until the app exposes them again, instead
+  of keeping their last state as if live
 - The control protocol is version 25: snapshots carry `component`
 - IPC protocol 23; broker and workers must run the same version
 
