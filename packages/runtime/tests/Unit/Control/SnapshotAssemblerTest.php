@@ -133,7 +133,7 @@ final class SnapshotAssemblerTest extends TestCase
             storeHealth: new StoreHealthBuilder($broker->pools->slots, storeConfigured: false),
             appStatuses: new AppStatusBuilder($broker->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock())), ExposureLinkFixture::createWithoutExposures()),
             deployStatus: new DeployStatusBuilder(new DeployState()),
-            componentStatus: new ComponentStatusBuilder(new ComponentTracker($broker->timers->clock), new ExposeConfig(ComponentInstance::parse('default'))),
+            componentStatus: new ComponentStatusBuilder(new ComponentTracker($broker->timers->clock), new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10))),
             connection: $connection,
             clock: $broker->timers->clock,
         );

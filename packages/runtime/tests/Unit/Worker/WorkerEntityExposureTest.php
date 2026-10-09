@@ -8,34 +8,50 @@ use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use RuntimeException;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Exception\CommandException;
 use Stewart\Contracts\Exception\ExposureError;
 use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exposure\ButtonConfig;
+use Stewart\Contracts\Exposure\Command\ButtonPress;
+use Stewart\Contracts\Exposure\Command\ExposedCommand;
+use Stewart\Contracts\Exposure\Command\SwitchAction;
+use Stewart\Contracts\Exposure\Command\SwitchCommand;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SensorDeviceClass;
+use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Runtime\Ipc\Message\ExposedCommandAnswered;
+use Stewart\Runtime\Ipc\Message\ExposedEntityCommanded;
 use Stewart\Runtime\Ipc\Message\ExposeEntityRequest;
 use Stewart\Runtime\Ipc\Message\RemoveExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\UpdateExposedEntityRequest;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
+use Stewart\Runtime\Scope\ScopeLifecycle;
 use Stewart\Runtime\Tests\Fixtures\Worker\ExposureBrokerStub;
+use Stewart\Runtime\Tests\Fixtures\Worker\RecordingDispatchListener;
 use Stewart\Runtime\Worker\CorrelationIdSequence;
+use Stewart\Runtime\Worker\Exposure\ExposedCommandSettlements;
+use Stewart\Runtime\Worker\Exposure\ExposedCommandStreams;
 use Stewart\Runtime\Worker\Exposure\ExposedHandleRegistry;
 use Stewart\Runtime\Worker\Exposure\ExposureRequester;
+use Stewart\Runtime\Worker\Exposure\SettlingCommandStream;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedBinarySensor;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedButton;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedEntity;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedSensor;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedSwitch;
+use Stewart\Runtime\Worker\Message\ExposedEntityCommandedHandler;
 use Stewart\Runtime\Worker\PendingRequests;
 use Stewart\Runtime\Worker\WorkerEntityExposure;
 use Stewart\Testing\Exception\AssertsReason;
+use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
 
 #[CoversClass(WorkerEntityExposure::class)]
@@ -44,6 +60,10 @@ use Stewart\Testing\Time\ManualTimers;
 #[CoversClass(WorkerExposedBinarySensor::class)]
 #[CoversClass(WorkerExposedSwitch::class)]
 #[CoversClass(WorkerExposedButton::class)]
+#[CoversClass(ExposedCommandSettlements::class)]
+#[CoversClass(ExposedCommandStreams::class)]
+#[CoversClass(SettlingCommandStream::class)]
+#[CoversClass(ExposedEntityCommandedHandler::class)]
 final class WorkerEntityExposureTest extends TestCase
 {
     use AssertsReason;
@@ -54,14 +74,23 @@ final class WorkerEntityExposureTest extends TestCase
 
     private WorkerEntityExposure $shared;
 
+    private ExposedEntityCommandedHandler $commandHandler;
+
     protected function setUp(): void
     {
         $pending = new PendingRequests(new CorrelationIdSequence(new WorkerId(0)));
         $this->broker = new ExposureBrokerStub($pending);
         $this->handles = new ExposedHandleRegistry($this->broker, new NullLogger());
+        $timers = new ManualTimers();
+        $scopes = new ScopeLifecycle();
+        $scopes->activateScope(ResourceScope::forApp(new AppId('climate')));
+        $settlements = new ExposedCommandSettlements($this->broker, new NullLogger());
+        $commandStreams = new ExposedCommandStreams(RecordingDispatchListener::createDispatcher('w0', 10, scopes: $scopes), $timers, $settlements);
+        $this->commandHandler = new ExposedEntityCommandedHandler($this->handles, $commandStreams, $settlements);
         $this->shared = new WorkerEntityExposure(
-            new ExposureRequester($this->broker, $pending, new ManualTimers(), Duration::seconds(1)),
+            new ExposureRequester($this->broker, $pending, $timers, Duration::seconds(1)),
             $this->handles,
+            $commandStreams,
             ResourceScope::shared(),
         );
     }
@@ -182,6 +211,106 @@ final class WorkerEntityExposureTest extends TestCase
         $this->handles->releaseHandlesOf(ResourceScope::forApp(new AppId('climate')));
 
         $this->assertThrowsReason(ExposureError::Removed, static fn() => $sensor->setValue(3));
+    }
+
+    public function testAcceptedCommandSetsSwitchValue(): void
+    {
+        $heater = $this->createClimateExposure()->exposeSwitch('heater');
+        $received = [];
+        $heater->watchCommands()->subscribe(static function (SwitchCommand $command) use (&$received): void {
+            $received[] = $command;
+        });
+
+        $this->deliverCommand('heater', self::createSwitchCommand(SwitchAction::TurnOn));
+
+        self::assertCount(1, $received);
+        self::assertTrue($this->requireOnlyAnswer()->accepted);
+        self::assertTrue($heater->getValue());
+    }
+
+    public function testRejectedCommandKeepsReasonAndValue(): void
+    {
+        $heater = $this->createClimateExposure()->exposeSwitch('heater');
+        $heater->watchCommands()->subscribe(static function (): void {
+            throw CommandException::rejected('Alarm is armed.');
+        });
+
+        $this->deliverCommand('heater', self::createSwitchCommand(SwitchAction::TurnOn));
+
+        $answer = $this->requireOnlyAnswer();
+        self::assertFalse($answer->accepted);
+        self::assertSame('Alarm is armed.', $answer->rejection);
+        self::assertNull($heater->getValue());
+    }
+
+    public function testCommandWithoutSubscriberIsAccepted(): void
+    {
+        $this->createClimateExposure()->exposeButton('boost');
+
+        $this->deliverCommand('boost', new ButtonPress(new EventContext('context-1')));
+
+        self::assertTrue($this->requireOnlyAnswer()->accepted);
+    }
+
+    public function testFilteredCommandIsNotAnswered(): void
+    {
+        $heater = $this->createClimateExposure()->exposeSwitch('heater');
+        $heater->watchCommands()->filter(static fn(SwitchCommand $command): bool => !$command->isTurnOn())->subscribe(static function (): void {});
+
+        $this->deliverCommand('heater', self::createSwitchCommand(SwitchAction::TurnOn));
+
+        self::assertSame([], $this->broker->listSentOfType(ExposedCommandAnswered::class));
+    }
+
+    public function testFailingHandlerRejectsCommand(): void
+    {
+        $heater = $this->createClimateExposure()->exposeSwitch('heater');
+        $heater->watchCommands()->subscribe(static function (): void {
+            throw new RuntimeException('boom');
+        });
+
+        $this->deliverCommand('heater', self::createSwitchCommand(SwitchAction::TurnOff));
+
+        self::assertSame('The app failed to handle the command.', $this->requireOnlyAnswer()->rejection);
+    }
+
+    public function testFirstSubscriberAnswers(): void
+    {
+        $heater = $this->createClimateExposure()->exposeSwitch('heater');
+        $heater->watchCommands()->subscribe(static function (): void {});
+        $heater->watchCommands()->subscribe(static function (): void {
+            throw CommandException::rejected('Too late.');
+        });
+
+        $this->deliverCommand('heater', self::createSwitchCommand(SwitchAction::TurnOn));
+
+        self::assertTrue($this->requireOnlyAnswer()->accepted);
+    }
+
+    public function testCommandForUnknownKeyIsRefused(): void
+    {
+        $this->deliverCommand('heater', self::createSwitchCommand(SwitchAction::TurnOn));
+
+        self::assertSame('Entity heater is no longer exposed.', $this->requireOnlyAnswer()->rejection);
+    }
+
+    private function deliverCommand(string $key, ExposedCommand $command): void
+    {
+        $this->commandHandler->handle(new ExposedEntityCommanded('3f2b9c0e8d7a4f61', ResourceScope::forApp(new AppId('climate')), new ExposedEntityKey($key), $command));
+        EventLoopTicks::settle();
+    }
+
+    private function requireOnlyAnswer(): ExposedCommandAnswered
+    {
+        $answers = $this->broker->listSentOfType(ExposedCommandAnswered::class);
+        self::assertCount(1, $answers);
+
+        return $answers[0];
+    }
+
+    private static function createSwitchCommand(SwitchAction $action): SwitchCommand
+    {
+        return new SwitchCommand($action, new EventContext('context-1'));
     }
 
     private function createClimateExposure(): WorkerEntityExposure

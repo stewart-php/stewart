@@ -10,7 +10,9 @@ use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Contracts\Trigger\TriggerSpec;
+use Stewart\Runtime\Broker\Exposure\ExposedEntityCommand;
 use Stewart\Runtime\Broker\Exposure\ExposedEntitySync;
+use Stewart\Runtime\Broker\Exposure\ExposureCommandRouter;
 use Stewart\Runtime\Broker\Trigger\TriggerRejections;
 use Stewart\Runtime\Ipc\Message\ExposedEntitySynced;
 use Stewart\Runtime\Ipc\Message\HaConnectionLost;
@@ -28,6 +30,7 @@ final readonly class BrokerHaEvents implements HaSessionListener
         private BrokerRun $run,
         private TriggerRejections $triggerRejections,
         private RegistryRefresher $registryRefresher,
+        private ExposureCommandRouter $commandRouter,
     ) {}
 
     public function stateChanged(StateChange $change): void
@@ -54,6 +57,11 @@ final readonly class BrokerHaEvents implements HaSessionListener
     public function exposedEntitySynced(ExposedEntitySync $sync): void
     {
         $this->slots->findHandleForWorker($sync->owner)?->send(new ExposedEntitySynced(ResourceScope::forApp($sync->appId), $sync->key, $sync->snapshot));
+    }
+
+    public function exposedEntityCommanded(ExposedEntityCommand $command): void
+    {
+        $this->commandRouter->routeCommand($command);
     }
 
     public function connectionLost(string $reason, Instant $lostAt): void

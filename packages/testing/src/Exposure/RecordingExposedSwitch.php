@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Stewart\Testing\Exposure;
 
+use Stewart\Contracts\EventStream;
+use Stewart\Contracts\Exception\CommandException;
+use Stewart\Contracts\Exposure\Command\SwitchCommand;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
@@ -36,5 +39,17 @@ final class RecordingExposedSwitch extends RecordingExposedEntity implements Exp
     public function setOff(?array $attributes = null): void
     {
         $this->recordChange(new ExposedStateChange(new ExposedState(false), $attributes));
+    }
+
+    public function watchCommands(): EventStream
+    {
+        /** @var EventStream<SwitchCommand> */
+        return $this->watchPushedCommands();
+    }
+
+    /** @throws CommandException */
+    public function pushCommand(SwitchCommand $command): void
+    {
+        $this->deliverCommand($command);
     }
 }

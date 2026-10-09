@@ -40,4 +40,19 @@ final class ExposeConfigTest extends TestCase
     {
         self::assertFalse(ConfigFixture::createStewartConfig(['expose' => ['prune' => false]])->expose->prune);
     }
+
+    public function testCommandTimeoutIsTenSecondsByDefault(): void
+    {
+        self::assertSame(10.0, ConfigFixture::createStewartConfig()->expose->commandTimeout->toSeconds());
+    }
+
+    public function testCommandTimeoutIsRead(): void
+    {
+        self::assertSame(30.0, ConfigFixture::createStewartConfig(['expose' => ['command_timeout' => '30s']])->expose->commandTimeout->toSeconds());
+    }
+
+    public function testCommandTimeoutOverComponentLimitIsRefused(): void
+    {
+        self::assertThrowsReason(ConfigurationError::DurationTooLong, static fn() => ConfigFixture::createStewartConfig(['expose' => ['command_timeout' => '6m']]));
+    }
 }

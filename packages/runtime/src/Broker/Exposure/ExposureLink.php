@@ -7,6 +7,9 @@ namespace Stewart\Runtime\Broker\Exposure;
 use Closure;
 use Psr\Log\LoggerInterface;
 use Stewart\Client\Component\Collection\ExposedEntityAddressCollection;
+use Stewart\Client\Component\ComponentCommand;
+use Stewart\Client\Component\ComponentCommandAction;
+use Stewart\Client\Component\ComponentCommandAnswer;
 use Stewart\Client\Component\ComponentErrorCode;
 use Stewart\Client\Component\ExposedEntityAddress;
 use Stewart\Client\Component\ExposedEntityDefinition;
@@ -14,6 +17,10 @@ use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\ExposureException;
+use Stewart\Contracts\Exposure\Command\ButtonPress;
+use Stewart\Contracts\Exposure\Command\ExposedCommand;
+use Stewart\Contracts\Exposure\Command\SwitchAction;
+use Stewart\Contracts\Exposure\Command\SwitchCommand;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedStateChange;
@@ -33,6 +40,9 @@ final class ExposureLink
     /** @var Closure(ExposedEntitySync): void */
     private Closure $onSynced;
 
+    /** @var Closure(ExposedEntityCommand): void */
+    private Closure $onCommanded;
+
     public function __construct(
         private readonly HaClient $client,
         private readonly LoggerInterface $logger,
@@ -40,12 +50,51 @@ final class ExposureLink
         private readonly ExposeConfig $expose,
     ) {
         $this->onSynced = static function (): void {};
+        $this->onCommanded = static function (): void {};
     }
 
     /** @param Closure(ExposedEntitySync): void $handler */
     public function onEntitySynced(Closure $handler): void
     {
         $this->onSynced = $handler;
+    }
+
+    /** @param Closure(ExposedEntityCommand): void $handler */
+    public function onEntityCommanded(Closure $handler): void
+    {
+        $this->onCommanded = $handler;
+    }
+
+    public function receiveCommand(ComponentCommand $command): void
+    {
+        $live = $this->findLive($command->appId, $command->key);
+
+        if ($live?->owner === null) {
+            $reason = $live === null
+                ? \sprintf('Entity %s of app %s is not exposed by a running app.', $command->key, $command->appId)
+                : \sprintf('App %s is not running.', $command->appId);
+            $this->sendCommandAnswer(ComponentCommandAnswer::reject($command->commandId, $reason));
+
+            return;
+        }
+
+        ($this->onCommanded)(new ExposedEntityCommand($command->commandId, $live->owner, $command->appId, $command->key, $this->createExposedCommand($command)));
+    }
+
+    public function acceptCommand(ExposedEntityCommand $command): void
+    {
+        $requestedState = $command->command->getRequestedState();
+
+        if ($requestedState !== null) {
+            $this->findLive($command->appId, $command->key)?->recordChange(new ExposedStateChange($requestedState));
+        }
+
+        $this->sendCommandAnswer(ComponentCommandAnswer::accept($command->commandId));
+    }
+
+    public function rejectCommand(ExposedEntityCommand $command, string $reason): void
+    {
+        $this->sendCommandAnswer(ComponentCommandAnswer::reject($command->commandId, $reason));
     }
 
     /** @throws ExposureException */
@@ -241,6 +290,28 @@ final class ExposureLink
                 ]);
             }
         }
+    }
+
+    private function createExposedCommand(ComponentCommand $command): ExposedCommand
+    {
+        return match ($command->action) {
+            ComponentCommandAction::TurnOn => new SwitchCommand(SwitchAction::TurnOn, $command->context),
+            ComponentCommandAction::TurnOff => new SwitchCommand(SwitchAction::TurnOff, $command->context),
+            ComponentCommandAction::Press => new ButtonPress($command->context),
+        };
+    }
+
+    private function sendCommandAnswer(ComponentCommandAnswer $answer): void
+    {
+        async(function () use ($answer): void {
+            try {
+                if (!$this->client->answerComponentCommand($answer)) {
+                    $this->logger->debug('Home Assistant stopped waiting for an exposed entity command before it was answered', ['command' => $answer->commandId]);
+                }
+            } catch (HaClientException $e) {
+                $this->logger->debug('Could not answer an exposed entity command; Home Assistant times it out', ['command' => $answer->commandId, 'exception' => $e]);
+            }
+        })->ignore();
     }
 
     private function syncOwner(LiveExposure $live, ExposedEntitySnapshot $snapshot): void

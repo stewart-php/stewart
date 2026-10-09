@@ -20,6 +20,7 @@ use Stewart\Contracts\Exposure\ExposedSwitch;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SwitchConfig;
 use Stewart\Runtime\Model\ResourceScope;
+use Stewart\Runtime\Worker\Exposure\ExposedCommandStreams;
 use Stewart\Runtime\Worker\Exposure\ExposedHandleRegistry;
 use Stewart\Runtime\Worker\Exposure\ExposureRequester;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedBinarySensor;
@@ -33,12 +34,13 @@ final readonly class WorkerEntityExposure implements EntityExposure
     public function __construct(
         private ExposureRequester $requester,
         private ExposedHandleRegistry $handles,
+        private ExposedCommandStreams $commandStreams,
         private ResourceScope $resourceScope,
     ) {}
 
     public function forApp(AppId $appId): self
     {
-        return new self($this->requester, $this->handles, ResourceScope::forApp($appId));
+        return new self($this->requester, $this->handles, $this->commandStreams, ResourceScope::forApp($appId));
     }
 
     public function exposeSensor(ExposedEntityKey|string $key, SensorConfig $config = new SensorConfig(), ?DeviceInfo $device = null): ExposedSensor
@@ -62,14 +64,14 @@ final readonly class WorkerEntityExposure implements EntityExposure
     {
         $key = $this->claimKey($key);
 
-        return $this->exposeHandle(new WorkerExposedSwitch($this->requester, $this->handles, $this->resourceScope, $key), $config, $device);
+        return $this->exposeHandle(new WorkerExposedSwitch($this->requester, $this->handles, $this->resourceScope, $key, $this->commandStreams), $config, $device);
     }
 
     public function exposeButton(ExposedEntityKey|string $key, ButtonConfig $config = new ButtonConfig(), ?DeviceInfo $device = null): ExposedButton
     {
         $key = $this->claimKey($key);
 
-        return $this->exposeHandle(new WorkerExposedButton($this->requester, $this->handles, $this->resourceScope, $key), $config, $device);
+        return $this->exposeHandle(new WorkerExposedButton($this->requester, $this->handles, $this->resourceScope, $key, $this->commandStreams), $config, $device);
     }
 
     /** @throws ExposureException */

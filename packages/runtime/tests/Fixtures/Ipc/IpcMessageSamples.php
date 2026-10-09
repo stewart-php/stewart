@@ -13,6 +13,8 @@ use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\ServiceCallException;
+use Stewart\Contracts\Exposure\Command\SwitchAction;
+use Stewart\Contracts\Exposure\Command\SwitchCommand;
 use Stewart\Contracts\Exposure\DeviceInfo;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
@@ -66,6 +68,8 @@ use Stewart\Runtime\Ipc\Message\EventFired;
 use Stewart\Runtime\Ipc\Message\EventFireFailed;
 use Stewart\Runtime\Ipc\Message\EventFireRequest;
 use Stewart\Runtime\Ipc\Message\EventFireResult;
+use Stewart\Runtime\Ipc\Message\ExposedCommandAnswered;
+use Stewart\Runtime\Ipc\Message\ExposedEntityCommanded;
 use Stewart\Runtime\Ipc\Message\ExposedEntitySynced;
 use Stewart\Runtime\Ipc\Message\ExposeEntityRequest;
 use Stewart\Runtime\Ipc\Message\ExposeEntityResult;
@@ -186,6 +190,13 @@ final class IpcMessageSamples
             'exposure_acknowledged' => IpcMessageSample::createRoundTrip(new ExposureAcknowledged(new CorrelationId('w0:8'))),
             'exposure_error' => IpcMessageSample::createRoundTrip(ExposureFailed::fromException(new CorrelationId('w0:7'), ExposureException::configInvalid('The sensor unit does not fit.'))),
             'exposures_released' => IpcMessageSample::createRoundTrip(new ExposuresReleased($demo)),
+            'exposed_entity_commanded' => IpcMessageSample::createRoundTrip(new ExposedEntityCommanded(
+                '3f2b9c0e8d7a4f61',
+                $demo,
+                new ExposedEntityKey('night_mode'),
+                new SwitchCommand(SwitchAction::TurnOn, new EventContext('01J9ZK3YQ8T7C4M2N6P5R0VWXA', null, 'user-1')),
+            )),
+            'exposed_command_answered' => IpcMessageSample::createRoundTrip(new ExposedCommandAnswered('3f2b9c0e8d7a4f61', false, 'Night mode cannot start while the alarm is armed.')),
             'exposed_entity_synced' => IpcMessageSample::createRoundTrip(new ExposedEntitySynced($demo, new ExposedEntityKey('soil_moisture'), self::createExposedSnapshot())),
             'pong' => IpcMessageSample::createRoundTrip(new Pong(42, Duration::microseconds(1_250), 12_345_678, [new AppActivityReport($demo, AppState::Running, 2, 1, 30, 1, 4, 2, 3, 5)], new StoreHealth(false, 'timed out', Instant::fromEpochMicroseconds(1_700_000_000_000_000)))),
         ];

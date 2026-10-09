@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker;
 
 use Psr\Log\LoggerInterface;
+use Stewart\Runtime\Broker\Exposure\ExposureCommandRouter;
 use Stewart\Runtime\Broker\Exposure\ExposureReconciler;
 use Stewart\Runtime\Broker\Message\WorkerMessageDispatcher;
 use Stewart\Runtime\Ipc\Message\StateSnapshot;
@@ -19,6 +20,7 @@ final readonly class BrokerWorkerEvents implements WorkerPoolListener
         private WorkerMessageDispatcher $messages,
         private SubscriptionRegistry $registry,
         private ExposureReconciler $reconciler,
+        private ExposureCommandRouter $commandRouter,
         private BrokerRun $run,
         private LoggerInterface $logger,
     ) {}
@@ -45,6 +47,7 @@ final readonly class BrokerWorkerEvents implements WorkerPoolListener
     {
         $this->registry->removeWorkerSubscriptions($handle->id);
         $this->session->orphanExposuresOfWorker($handle->id);
+        $this->commandRouter->failCommandsOf($handle->id);
 
         if ($this->run->isRunning()) {
             $this->logger->error('Worker died', [

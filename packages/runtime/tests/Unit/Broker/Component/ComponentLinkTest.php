@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Tests\Unit\Broker\Component;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use Stewart\Client\Component\ComponentCommand;
 use Stewart\Client\Component\ComponentEventDecoder;
 use Stewart\Client\Component\ComponentInstance;
 use Stewart\Client\Connection\ConnectionConfig;
@@ -46,13 +47,19 @@ final class ComponentLinkTest extends TestCase
 
     private ComponentTracker $tracker;
 
+    /** @var list<ComponentCommand> */
+    private array $commands = [];
+
     protected function setUp(): void
     {
         $this->timers = new ManualTimers();
         $this->socket = FakeWebsocketConnector::createAuthenticatedConnection();
         $this->client = $this->createClient();
         $this->tracker = new ComponentTracker($this->timers->clock);
-        $this->link = new ComponentLink($this->client, new NullLogger(), $this->tracker, new ExposeConfig(ComponentInstance::parse('upstairs')), self::STEWART_VERSION);
+        $this->link = new ComponentLink($this->client, new NullLogger(), $this->tracker, new ExposeConfig(ComponentInstance::parse('upstairs'), Duration::seconds(12)), self::STEWART_VERSION);
+        $this->link->onCommand(function (ComponentCommand $command): void {
+            $this->commands[] = $command;
+        });
     }
 
     public function testLinkIsUncheckedBeforeFirstConnect(): void
@@ -82,6 +89,7 @@ final class ComponentLinkTest extends TestCase
         self::assertSame('0.9.1', $detection->version?->componentVersion);
         self::assertSame('upstairs', $subscribe['instance'] ?? null);
         self::assertSame(self::STEWART_VERSION, $subscribe['stewart_version'] ?? null);
+        self::assertSame(12.0, $subscribe['command_timeout'] ?? null);
     }
 
     public function testOtherProtocolOpensNoSession(): void
@@ -136,6 +144,30 @@ final class ComponentLinkTest extends TestCase
         self::assertSame('0.9.1', $detection->version?->componentVersion);
     }
 
+    public function testCommandIsHandedOn(): void
+    {
+        $this->replyWithVersion(1);
+        $this->replyToSessionSubscribe();
+        $this->connectAndEstablish();
+
+        $this->pushSessionEvent(self::createCommandEvent());
+
+        self::assertCount(1, $this->commands);
+        self::assertSame('night_mode', $this->commands[0]->key->value);
+    }
+
+    public function testCommandAfterLostLinkIsIgnored(): void
+    {
+        $this->replyWithVersion(1);
+        $this->replyToSessionSubscribe();
+        $this->connectAndEstablish();
+
+        $this->link->markLinkLost();
+        $this->pushSessionEvent(self::createCommandEvent());
+
+        self::assertSame([], $this->commands);
+    }
+
     private function connectAndEstablish(): void
     {
         $this->client->connect();
@@ -154,12 +186,32 @@ final class ComponentLinkTest extends TestCase
 
     private function pushSessionReplaced(): void
     {
+        $this->pushSessionEvent(['type' => 'session_replaced']);
+    }
+
+    /** @param array<string, mixed> $event */
+    private function pushSessionEvent(array $event): void
+    {
         $subscriptionId = $this->socket->listSentOfType('stewart/session/subscribe')[0]['id'] ?? null;
         self::assertIsInt($subscriptionId);
 
-        $this->socket->queueFrame(['id' => $subscriptionId, 'type' => 'event', 'event' => ['type' => 'session_replaced']]);
+        $this->socket->queueFrame(['id' => $subscriptionId, 'type' => 'event', 'event' => $event]);
         EventLoopTicks::settle();
         $this->client->flushEvents();
+    }
+
+    /** @return array<string, mixed> */
+    private static function createCommandEvent(): array
+    {
+        return [
+            'type' => 'command',
+            'command_id' => '3f2b9c0e8d7a4f61',
+            'app' => 'lights',
+            'key' => 'night_mode',
+            'action' => 'turn_on',
+            'data' => [],
+            'context' => ['id' => 'context-1', 'parent_id' => null, 'user_id' => null],
+        ];
     }
 
     /** @return array<string, mixed> */

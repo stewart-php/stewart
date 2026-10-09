@@ -49,6 +49,7 @@ final readonly class IpcCodec
             new ExceptionDetailsConverter(),
             new ExposedStateConverter(),
             new ExposedEntityConfigConverter(),
+            new ExposedCommandConverter(),
             StringIdentifierConverter::createForEntityIds(),
             StringIdentifierConverter::createForAppIds(),
             StringIdentifierConverter::createForAreaIds(),

@@ -60,7 +60,7 @@ final class ExposureReconcilerTest extends TestCase
         $this->socket = FakeWebsocketConnector::createAuthenticatedConnection();
         $this->client = $this->createClient();
         $this->tracker = new ComponentTracker($this->timers->clock);
-        $this->exposures = new ExposureLink($this->client, new NullLogger(), $this->tracker, new ExposeConfig(ComponentInstance::parse('default')));
+        $this->exposures = new ExposureLink($this->client, new NullLogger(), $this->tracker, new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10)));
         $this->client->connect();
         $this->socket->replyWhenSent('stewart/entity/reconcile', self::RECONCILED);
     }
@@ -196,7 +196,7 @@ final class ExposureReconcilerTest extends TestCase
             $this->exposures,
             $this->client,
             $this->tracker,
-            new ExposeConfig(ComponentInstance::parse('default')),
+            new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10)),
             $this->timers,
             new NullLogger(),
         );
@@ -215,7 +215,7 @@ final class ExposureReconcilerTest extends TestCase
             $this->exposures,
             $this->client,
             $this->tracker,
-            new ExposeConfig(ComponentInstance::parse('default'), $prune),
+            new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10), $prune),
             $this->timers,
             new NullLogger(),
         );

@@ -350,6 +350,7 @@ final class StewartConfigSchema implements ConfigurationInterface
                     ->addDefaultsIfNotSet()
                     ->children()
                         ->append($this->createScalarNode('instance', 'Name of this Stewart in Home Assistant, part of every exposed unique_id; daemons sharing one Home Assistant need different names.', 'default'))
+                        ->append($this->createDurationNode('command_timeout', 'How long Home Assistant waits for an app to answer a command on an exposed entity; at most 300s.', '10s'))
                         ->booleanNode('prune')
                             ->info('Remove this daemon\'s entities that no running app exposed shortly after startup; entities of failed apps stay.')
                             ->defaultTrue()

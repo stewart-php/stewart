@@ -31,6 +31,7 @@ use Stewart\Contracts\Time\MonotonicTime;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Broker\Component\ComponentLink;
+use Stewart\Runtime\Broker\Exposure\ExposedEntityCommand;
 use Stewart\Runtime\Broker\Exposure\ExposureLink;
 use Stewart\Runtime\Broker\Exposure\ExposureReconciler;
 use Stewart\Runtime\Broker\Trigger\HaTriggerLink;
@@ -90,6 +91,8 @@ final class WebsocketHaSession implements HaSession
         $this->triggers->onTriggerFired($this->onTriggerFired(...));
         $this->triggers->onTriggerRejected($this->onTriggerRejected(...));
         $this->exposures->onEntitySynced($listener->exposedEntitySynced(...));
+        $this->exposures->onEntityCommanded($listener->exposedEntityCommanded(...));
+        $this->component->onCommand($this->exposures->receiveCommand(...));
 
         $this->reconnector->retryUntilConnected($this->connectSubscribeAndSeed(...), $this->stop->getCancellation());
 
@@ -250,6 +253,16 @@ final class WebsocketHaSession implements HaSession
     public function orphanExposuresOfWorker(WorkerId $workerId): void
     {
         $this->exposures->orphanExposuresOfWorker($workerId);
+    }
+
+    public function acceptExposedEntityCommand(ExposedEntityCommand $command): void
+    {
+        $this->exposures->acceptCommand($command);
+    }
+
+    public function rejectExposedEntityCommand(ExposedEntityCommand $command, string $reason): void
+    {
+        $this->exposures->rejectCommand($command, $reason);
     }
 
     private function connectSubscribeAndSeed(): void

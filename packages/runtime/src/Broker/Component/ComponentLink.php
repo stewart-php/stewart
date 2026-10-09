@@ -4,23 +4,25 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Broker\Component;
 
+use Closure;
 use Psr\Log\LoggerInterface;
+use Stewart\Client\Component\ComponentCommand;
 use Stewart\Client\Component\ComponentProtocol;
 use Stewart\Client\Component\ComponentSessionEvent;
 use Stewart\Client\Component\ComponentSessionRequest;
 use Stewart\Client\Component\SessionReplaced;
 use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
-use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Config\ExposeConfig;
 use Stewart\Runtime\Lifecycle\ComponentState;
 
 // Session subscriptions live as long as one connection, so every connect detects the component again.
 final class ComponentLink
 {
-    private const int COMMAND_TIMEOUT_SECONDS = 5;
-
     private int $connectionGeneration = 0;
+
+    /** @var Closure(ComponentCommand): void */
+    private Closure $onCommand;
 
     public function __construct(
         private readonly HaClient $client,
@@ -28,7 +30,15 @@ final class ComponentLink
         private readonly ComponentTracker $tracker,
         private readonly ExposeConfig $expose,
         private readonly string $componentSessionStewartVersion,
-    ) {}
+    ) {
+        $this->onCommand = static function (): void {};
+    }
+
+    /** @param Closure(ComponentCommand): void $handler */
+    public function onCommand(Closure $handler): void
+    {
+        $this->onCommand = $handler;
+    }
 
     /** @throws HaClientException */
     public function establishLink(): void
@@ -58,7 +68,7 @@ final class ComponentLink
             }
 
             $this->client->subscribeComponentSession(
-                new ComponentSessionRequest($this->expose->instance, $this->componentSessionStewartVersion, Duration::seconds(self::COMMAND_TIMEOUT_SECONDS)),
+                new ComponentSessionRequest($this->expose->instance, $this->componentSessionStewartVersion, $this->expose->commandTimeout),
                 fn(ComponentSessionEvent $event) => $this->handleSessionEvent($event, $generation),
             );
         } catch (HaClientException $e) {
@@ -87,7 +97,17 @@ final class ComponentLink
 
     private function handleSessionEvent(ComponentSessionEvent $event, int $generation): void
     {
-        if ($generation !== $this->connectionGeneration || !$event instanceof SessionReplaced) {
+        if ($generation !== $this->connectionGeneration) {
+            return;
+        }
+
+        if ($event instanceof ComponentCommand) {
+            ($this->onCommand)($event);
+
+            return;
+        }
+
+        if (!$event instanceof SessionReplaced) {
             return;
         }
 

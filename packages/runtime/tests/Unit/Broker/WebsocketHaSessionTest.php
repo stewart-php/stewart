@@ -465,7 +465,7 @@ final class WebsocketHaSessionTest extends TestCase
         );
 
         $client = new HaClient($connection, new EventDecoder(new EntityStateDecoder()), new EntityStateDecoder(), new RegistryDecoder(), new ComponentEventDecoder(), new NullLogger());
-        $expose = new ExposeConfig(ComponentInstance::parse('default'));
+        $expose = new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10));
 
         return $this->session = new WebsocketHaSession(
             $client,

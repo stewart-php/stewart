@@ -29,6 +29,7 @@ use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\Sun\GeoLocation;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Contracts\Trigger\TriggerSpec;
+use Stewart\Runtime\Broker\Exposure\ExposedEntityCommand;
 use Stewart\Runtime\Broker\HaSession;
 use Stewart\Runtime\Broker\HaSessionListener;
 use Stewart\Runtime\Broker\RegistryCacheSnapshot;
@@ -99,8 +100,14 @@ final class FakeHaSession implements HaSession
 
     public ?ExposureException $exposureFailure = null;
 
+    /** @var list<AnsweredExposedCommand> */
+    public array $commandAnswers = [];
+
     /** @var DeferredFuture<ExposedStateChange>|null */
     private ?DeferredFuture $nextExposedUpdate = null;
+
+    /** @var DeferredFuture<AnsweredExposedCommand>|null */
+    private ?DeferredFuture $nextCommandAnswer = null;
 
     private bool $open = false;
 
@@ -338,4 +345,34 @@ final class FakeHaSession implements HaSession
     }
 
     public function orphanExposuresOfWorker(WorkerId $workerId): void {}
+
+    public function pushExposedEntityCommand(ExposedEntityCommand $command): void
+    {
+        $this->listener?->exposedEntityCommanded($command);
+    }
+
+    public function acceptExposedEntityCommand(ExposedEntityCommand $command): void
+    {
+        $this->recordCommandAnswer(new AnsweredExposedCommand($command, null));
+    }
+
+    public function rejectExposedEntityCommand(ExposedEntityCommand $command, string $reason): void
+    {
+        $this->recordCommandAnswer(new AnsweredExposedCommand($command, $reason));
+    }
+
+    /** @return Future<AnsweredExposedCommand> */
+    public function waitForNextCommandAnswer(): Future
+    {
+        return ($this->nextCommandAnswer ??= new DeferredFuture())->getFuture();
+    }
+
+    private function recordCommandAnswer(AnsweredExposedCommand $answer): void
+    {
+        $this->commandAnswers[] = $answer;
+
+        $answered = $this->nextCommandAnswer;
+        $this->nextCommandAnswer = null;
+        $answered?->complete($answer);
+    }
 }
