@@ -15,6 +15,7 @@ use Stewart\Client\Component\ExposedEntityDefinition;
 use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
 use Stewart\Contracts\App\AppId;
+use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
@@ -117,7 +118,7 @@ final class ExposureLink
         }
 
         try {
-            return $this->sendUpsert($live->address, $live->definition, $live->buildUpsertChange());
+            return $this->sendUpsert($live, $live->definition, $live->buildUpsertChange());
         } catch (ExposureException $e) {
             unset($this->exposuresByAddress[$live->address->describe()]);
 
@@ -137,7 +138,7 @@ final class ExposureLink
             return null;
         }
 
-        $snapshot = $this->sendUpsert($live->address, $definition, new ExposedStateChange());
+        $snapshot = $this->sendUpsert($live, $definition, new ExposedStateChange());
         $live->recordDefinition($definition);
 
         if ($snapshot !== null) {
@@ -204,6 +205,13 @@ final class ExposureLink
         return \count(array_filter($this->exposuresByAddress, static fn(LiveExposure $live): bool => $live->address->appId->equals($appId)));
     }
 
+    public function findAddressByEntityId(EntityId $entityId): ?ExposedEntityAddress
+    {
+        $live = array_find($this->exposuresByAddress, static fn(LiveExposure $live): bool => $live->entityId?->equals($entityId) === true);
+
+        return $live?->address;
+    }
+
     public function listKeptAddresses(): ExposedEntityAddressCollection
     {
         return ExposedEntityAddressCollection::fromAddresses(array_map(static fn(LiveExposure $live) => $live->address, array_values($this->exposuresByAddress)));
@@ -218,7 +226,7 @@ final class ExposureLink
 
         foreach ($this->exposuresByAddress as $live) {
             try {
-                $snapshot = $this->sendUpsert($live->address, $live->definition, $live->buildUpsertChange());
+                $snapshot = $this->sendUpsert($live, $live->definition, $live->buildUpsertChange());
             } catch (ExposureException $e) {
                 $this->logger->error('Home Assistant refused an exposed entity again', ['entity' => $live->address->describe(), 'exception' => $e]);
 
@@ -243,16 +251,20 @@ final class ExposureLink
     }
 
     /** @throws ExposureException */
-    private function sendUpsert(ExposedEntityAddress $address, ExposedEntityDefinition $definition, ExposedStateChange $change): ?ExposedEntitySnapshot
+    private function sendUpsert(LiveExposure $live, ExposedEntityDefinition $definition, ExposedStateChange $change): ?ExposedEntitySnapshot
     {
         try {
-            return $this->client->upsertExposedEntity($address, $definition, $change);
+            $snapshot = $this->client->upsertExposedEntity($live->address, $definition, $change);
         } catch (HaClientException $e) {
             $this->throwIfAppCaused($e);
-            $this->logger->debug('Exposed entity waits for the next stewart integration session', ['entity' => $address->describe(), 'exception' => $e]);
+            $this->logger->debug('Exposed entity waits for the next stewart integration session', ['entity' => $live->address->describe(), 'exception' => $e]);
 
             return null;
         }
+
+        $live->recordEntityId($snapshot->entityId);
+
+        return $snapshot;
     }
 
     /** @throws ExposureException */
@@ -277,7 +289,7 @@ final class ExposureLink
             return;
         }
 
-        $snapshot = $this->sendUpsert($live->address, $live->definition, $live->buildUpsertChange());
+        $snapshot = $this->sendUpsert($live, $live->definition, $live->buildUpsertChange());
 
         if ($snapshot !== null) {
             $this->syncOwner($live, $snapshot);

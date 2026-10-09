@@ -11,6 +11,7 @@ use Psr\Log\NullLogger;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\RegistryEditError;
+use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Registry\EntityAlias;
 use Stewart\Contracts\Registry\LabelId;
 use Stewart\Contracts\Registry\RegisteredEntity;
@@ -19,6 +20,7 @@ use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppMetrics;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
+use Stewart\Runtime\Broker\Exposure\ExposureLink;
 use Stewart\Runtime\Broker\HaCallSlots;
 use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Broker\RegistryEditProxy;
@@ -33,6 +35,7 @@ use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
+use Stewart\Runtime\Tests\Fixtures\Broker\ExposureLinkFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerProcess;
 use Stewart\Runtime\Tests\Fixtures\Ipc\FakeWorkerTransport;
@@ -91,6 +94,33 @@ final class RegistryEditProxyTest extends TestCase
         self::assertFalse($this->session->sentRegistryUpdates[0]->needsCurrentEntry());
     }
 
+    public function testEditOfExposedEntityWarnsAboutHandle(): void
+    {
+        $logger = new RecordingLogger();
+        $worker = $this->createHandle();
+        $exposures = ExposureLinkFixture::createWithExposedSensor(new AppId('climate'), new ExposedEntityKey('average'), new EntityId('light.hall'));
+
+        $this->createProxy(new ServiceCallPolicy(perWorker: 0, total: 0), $logger, $exposures)->forward($worker, self::createRequest(new EntityRegistryUpdate()->withName('Hallway')));
+
+        self::assertSame('Hallway', $this->awaitResult($worker)->entity->name);
+        self::assertSame(
+            ['Editing the registry entry of an entity a Stewart app exposes; its handle owns the name and icon'],
+            $logger->listMessagesAt(LogLevel::WARNING),
+        );
+    }
+
+    public function testEditOfOtherEntityDoesNotWarn(): void
+    {
+        $logger = new RecordingLogger();
+        $worker = $this->createHandle();
+        $exposures = ExposureLinkFixture::createWithExposedSensor(new AppId('climate'), new ExposedEntityKey('average'), new EntityId('sensor.average'));
+
+        $this->createProxy(new ServiceCallPolicy(perWorker: 0, total: 0), $logger, $exposures)->forward($worker, self::createRequest(new EntityRegistryUpdate()->withName('Hallway')));
+
+        $this->awaitResult($worker);
+        self::assertSame([], $logger->listMessagesAt(LogLevel::WARNING));
+    }
+
     public function testUnknownEntityFailsAsNotFound(): void
     {
         $worker = $this->createHandle();
@@ -134,11 +164,11 @@ final class RegistryEditProxyTest extends TestCase
         self::assertSame(['Registry entry not updated: service_calls.dry_run is on'], $logger->listMessagesAt(LogLevel::INFO));
     }
 
-    private function createProxy(ServiceCallPolicy $policy, ?RecordingLogger $logger = null): RegistryEditProxy
+    private function createProxy(ServiceCallPolicy $policy, ?RecordingLogger $logger = null, ?ExposureLink $exposures = null): RegistryEditProxy
     {
         $this->slots = new HaCallSlots($policy, new NullLogger());
 
-        return new RegistryEditProxy($this->session, $this->slots, $this->metrics, $policy, $this->timers->clock, $logger ?? new NullLogger());
+        return new RegistryEditProxy($this->session, $exposures ?? ExposureLinkFixture::createWithoutExposures(), $this->slots, $this->metrics, $policy, $this->timers->clock, $logger ?? new NullLogger());
     }
 
     private function awaitResult(WorkerHandle $worker): RegistryEntityUpdateResult

@@ -9,6 +9,7 @@ use Stewart\Contracts\Exception\RegistryEditException;
 use Stewart\Contracts\Registry\RegisteredEntity;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\MonotonicTime;
+use Stewart\Runtime\Broker\Exposure\ExposureLink;
 use Stewart\Runtime\Config\ServiceCallPolicy;
 use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateFailed;
 use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateRequest;
@@ -22,6 +23,7 @@ final readonly class RegistryEditProxy
 {
     public function __construct(
         private HaSession $session,
+        private ExposureLink $exposures,
         private HaCallSlots $slots,
         private AppMetrics $metrics,
         private ServiceCallPolicy $policy,
@@ -69,6 +71,8 @@ final readonly class RegistryEditProxy
                 throw RegistryEditException::unreachable($request->entityId, 'Home Assistant is disconnected');
             }
 
+            $this->warnIfExposed($request);
+
             return new RegistryEntityUpdateResult($request->correlationId, $this->policy->dryRun ? $this->previewUpdate($request) : $this->sendUpdate($request));
         } catch (RegistryEditException $e) {
             return RegistryEntityUpdateFailed::fromException($request->correlationId, $e);
@@ -78,6 +82,21 @@ final readonly class RegistryEditProxy
                 RegistryEditException::unreachable($request->entityId, $e->getMessage(), $e),
             );
         }
+    }
+
+    private function warnIfExposed(RegistryEntityUpdateRequest $request): void
+    {
+        $exposure = $this->exposures->findAddressByEntityId($request->entityId);
+
+        if ($exposure === null) {
+            return;
+        }
+
+        $this->logger->warning('Editing the registry entry of an entity a Stewart app exposes; its handle owns the name and icon', [
+            'entity' => $request->entityId->value,
+            'app' => $exposure->appId->value,
+            'key' => $exposure->key->value,
+        ]);
     }
 
     /** @throws RegistryEditException */

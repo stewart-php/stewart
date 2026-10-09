@@ -68,7 +68,7 @@ minor release may break; its "Upgrading" section says what to change.
   `EntityRegistryUpdate` that renames, sets the icon, area, labels and aliases, hides or disables an entity, and
   returns the updated `RegisteredEntity`. Added and removed labels and aliases merge with the entry Home Assistant
   holds. Edits share the service-call budget and follow `service_calls.dry_run`; failures throw
-  `RegistryEditException`
+  `RegistryEditException`. Editing an entity that a Stewart app exposes logs a warning naming the app and key
 
 ### Changed
 
