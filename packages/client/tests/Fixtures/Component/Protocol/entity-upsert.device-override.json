@@ -1,0 +1,28 @@
+{
+    "protocol": 1,
+    "request": {
+        "type": "stewart/entity/upsert",
+        "instance": "default",
+        "app": "garden",
+        "key": "soil_moisture",
+        "platform": "sensor",
+        "config": {
+            "name": "Soil moisture",
+            "device_class": "moisture",
+            "unit_of_measurement": "%",
+            "state_class": "measurement"
+        },
+        "device": {
+            "identifier": "greenhouse",
+            "name": "Greenhouse",
+            "manufacturer": "Stewart"
+        },
+        "state": 38
+    },
+    "result": {
+        "entity_id": "sensor.greenhouse_soil_moisture",
+        "state": 38,
+        "attributes": {},
+        "available": true
+    }
+}

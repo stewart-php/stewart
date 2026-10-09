@@ -1,0 +1,20 @@
+{
+    "protocol": 1,
+    "request": {
+        "type": "stewart/entity/upsert",
+        "instance": "default",
+        "app": "climate",
+        "key": "average_temperature",
+        "platform": "sensor",
+        "config": {
+            "name": "Average temperature",
+            "device_class": "temperature",
+            "state_class": "sometimes"
+        },
+        "state": 21.4
+    },
+    "error": {
+        "code": "invalid_config",
+        "message": "Sensor state_class sometimes is not one of measurement, total, total_increasing."
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "protocol": 1,
+    "request": {
+        "type": "stewart/entity/state",
+        "instance": "default",
+        "app": "climate",
+        "key": "average_temperature",
+        "state": 21.9,
+        "attributes": {
+            "sources": [
+                "sensor.kitchen_temperature"
+            ]
+        }
+    },
+    "result": null
+}

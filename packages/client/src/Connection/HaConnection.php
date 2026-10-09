@@ -147,7 +147,11 @@ final class HaConnection
     {
         unset($this->eventHandlers[$subscriptionId]);
 
-        $command = new UnsubscribeEvents($subscriptionId);
+        $this->sendIgnoringResult(new UnsubscribeEvents($subscriptionId));
+    }
+
+    public function sendIgnoringResult(HaCommand $command): void
+    {
         self::assertSuccess($this->sendAndAwaitResponse($this->correlator->nextId(), $command), $command);
     }
 
