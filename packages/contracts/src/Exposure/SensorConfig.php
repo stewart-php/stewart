@@ -52,8 +52,8 @@ final readonly class SensorConfig extends ExposedEntityConfig
     public function formatState(int|float|string|DateTimeInterface|null $value): int|float|string|null
     {
         return match (true) {
-            $value instanceof DateTimeInterface && $this->deviceClass?->takesDateTime() === true => $value->format(DateTimeInterface::ATOM),
-            $value instanceof DateTimeInterface && $this->deviceClass?->takesDate() === true => $value->format('Y-m-d'),
+            $value instanceof DateTimeInterface && $this->deviceClass?->takesDateTime() === true => CalendarStateFormat::formatDateTime($value),
+            $value instanceof DateTimeInterface && $this->deviceClass?->takesDate() === true => CalendarStateFormat::formatDate($value),
             $value instanceof DateTimeInterface => throw ExposureException::stateInvalid('A date or time needs the timestamp or date device class.'),
             \is_float($value) && !is_finite($value) => throw ExposureException::stateInvalid('A sensor state must be a finite number.'),
             default => $value,

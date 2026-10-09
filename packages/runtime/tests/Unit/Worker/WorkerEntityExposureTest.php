@@ -21,6 +21,7 @@ use Stewart\Contracts\Exposure\Command\NumberCommand;
 use Stewart\Contracts\Exposure\Command\SelectCommand;
 use Stewart\Contracts\Exposure\Command\SwitchAction;
 use Stewart\Contracts\Exposure\Command\SwitchCommand;
+use Stewart\Contracts\Exposure\Command\TimeCommand;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
@@ -28,6 +29,8 @@ use Stewart\Contracts\Exposure\NumberConfig;
 use Stewart\Contracts\Exposure\SelectConfig;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SensorDeviceClass;
+use Stewart\Contracts\Exposure\TextConfig;
+use Stewart\Contracts\Schedule\TimeOfDay;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Ipc\Message\ExposedCommandAnswered;
@@ -48,11 +51,15 @@ use Stewart\Runtime\Worker\Exposure\ExposureRequester;
 use Stewart\Runtime\Worker\Exposure\SettlingCommandStream;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedBinarySensor;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedButton;
+use Stewart\Runtime\Worker\Exposure\WorkerExposedDate;
+use Stewart\Runtime\Worker\Exposure\WorkerExposedDateTime;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedEntity;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedNumber;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedSelect;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedSensor;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedSwitch;
+use Stewart\Runtime\Worker\Exposure\WorkerExposedText;
+use Stewart\Runtime\Worker\Exposure\WorkerExposedTime;
 use Stewart\Runtime\Worker\Message\ExposedEntityCommandedHandler;
 use Stewart\Runtime\Worker\PendingRequests;
 use Stewart\Runtime\Worker\WorkerEntityExposure;
@@ -68,6 +75,10 @@ use Stewart\Testing\Time\ManualTimers;
 #[CoversClass(WorkerExposedButton::class)]
 #[CoversClass(WorkerExposedNumber::class)]
 #[CoversClass(WorkerExposedSelect::class)]
+#[CoversClass(WorkerExposedText::class)]
+#[CoversClass(WorkerExposedTime::class)]
+#[CoversClass(WorkerExposedDate::class)]
+#[CoversClass(WorkerExposedDateTime::class)]
 #[CoversClass(ExposedCommandSettlements::class)]
 #[CoversClass(ExposedCommandStreams::class)]
 #[CoversClass(SettlingCommandStream::class)]
@@ -192,6 +203,35 @@ final class WorkerEntityExposureTest extends TestCase
         ));
     }
 
+    public function testCalendarValuesAreSentAsIsoStrings(): void
+    {
+        $exposure = $this->createClimateExposure();
+        $alarm = $exposure->exposeTime('alarm');
+        $mowing = $exposure->exposeDate('next_mowing');
+        $watered = $exposure->exposeDateTime('last_watered');
+
+        $alarm->setValue(TimeOfDay::fromHourMinuteSecond(6, 45));
+        $mowing->setValue(new DateTimeImmutable('2026-10-12 21:00:00+02:00'));
+        $watered->setValue(new DateTimeImmutable('2026-10-09 07:15:00+02:00'));
+
+        self::assertSame(['06:45:00', '2026-10-12', '2026-10-09T07:15:00+02:00'], array_map(
+            static fn(UpdateExposedEntityRequest $update) => $update->change->state?->value,
+            $this->broker->listSentOfType(UpdateExposedEntityRequest::class),
+        ));
+        self::assertSame('06:45:00', $alarm->getValue()?->format());
+        self::assertSame('2026-10-12T00:00:00+00:00', $mowing->getValue()?->format(DATE_ATOM));
+        self::assertSame('2026-10-09T07:15:00+02:00', $watered->getValue()?->format(DATE_ATOM));
+    }
+
+    public function testTextSendsItsValue(): void
+    {
+        $greeting = $this->createClimateExposure()->exposeText('greeting', new TextConfig(max: 40));
+
+        $greeting->setValue('Hello');
+
+        self::assertSame('Hello', $greeting->getValue());
+    }
+
     public function testButtonIsExposedWithoutState(): void
     {
         $this->createClimateExposure()->exposeButton('boost', new ButtonConfig(name: 'Boost'));
@@ -295,6 +335,16 @@ final class WorkerEntityExposureTest extends TestCase
 
         self::assertTrue($this->requireOnlyAnswer()->accepted);
         self::assertSame('comfort', $mode->getOption());
+    }
+
+    public function testAcceptedCommandSetsTimeValue(): void
+    {
+        $alarm = $this->createClimateExposure()->exposeTime('alarm');
+
+        $this->deliverCommand('alarm', new TimeCommand(TimeOfDay::fromHourMinuteSecond(7, 0), new EventContext('context-1')));
+
+        self::assertTrue($this->requireOnlyAnswer()->accepted);
+        self::assertSame('07:00:00', $alarm->getValue()?->format());
     }
 
     public function testCommandWithoutSubscriberIsAccepted(): void

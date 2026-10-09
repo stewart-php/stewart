@@ -12,4 +12,8 @@ enum ExposedPlatform: string
     case Button = 'button';
     case Number = 'number';
     case Select = 'select';
+    case Text = 'text';
+    case Time = 'time';
+    case Date = 'date';
+    case DateTime = 'datetime';
 }

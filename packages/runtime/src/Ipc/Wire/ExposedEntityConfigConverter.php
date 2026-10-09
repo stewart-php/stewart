@@ -12,6 +12,8 @@ use Stewart\Contracts\Exposure\BinarySensorConfig;
 use Stewart\Contracts\Exposure\BinarySensorDeviceClass;
 use Stewart\Contracts\Exposure\ButtonConfig;
 use Stewart\Contracts\Exposure\ButtonDeviceClass;
+use Stewart\Contracts\Exposure\DateConfig;
+use Stewart\Contracts\Exposure\DateTimeConfig;
 use Stewart\Contracts\Exposure\EntityCategory;
 use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedPlatform;
@@ -24,6 +26,9 @@ use Stewart\Contracts\Exposure\SensorDeviceClass;
 use Stewart\Contracts\Exposure\SensorStateClass;
 use Stewart\Contracts\Exposure\SwitchConfig;
 use Stewart\Contracts\Exposure\SwitchDeviceClass;
+use Stewart\Contracts\Exposure\TextConfig;
+use Stewart\Contracts\Exposure\TextMode;
+use Stewart\Contracts\Exposure\TimeConfig;
 use Stewart\Runtime\Json\ValueConverter;
 
 final readonly class ExposedEntityConfigConverter implements ValueConverter
@@ -61,6 +66,8 @@ final readonly class ExposedEntityConfigConverter implements ValueConverter
                 'unit' => $value->unit,
             ],
             $value instanceof SelectConfig => ['options' => $value->options],
+            $value instanceof TextConfig => ['min' => $value->min, 'max' => $value->max, 'pattern' => $value->pattern, 'mode' => $value->mode->value],
+            $value instanceof TimeConfig, $value instanceof DateConfig, $value instanceof DateTimeConfig => [],
             default => throw new LogicException(\sprintf('%s has no IPC encoding.', $value::class)),
         };
 
@@ -136,6 +143,34 @@ final readonly class ExposedEntityConfigConverter implements ValueConverter
                     entityCategory: $this->readEnum($value, 'entity_category', EntityCategory::class, $path),
                     enabledByDefault: $this->readBool($value, 'enabled_by_default', $path),
                 ),
+                ExposedPlatform::Text => new TextConfig(
+                    min: $this->readInt($value, 'min', $path),
+                    max: $this->readInt($value, 'max', $path),
+                    pattern: $this->readOptionalString($value, 'pattern', $path),
+                    mode: $this->readEnum($value, 'mode', TextMode::class, $path) ?? throw JsonShapeException::missing($path . '.mode', 'a text mode'),
+                    name: $this->readOptionalString($value, 'name', $path),
+                    icon: $this->readOptionalString($value, 'icon', $path),
+                    entityCategory: $this->readEnum($value, 'entity_category', EntityCategory::class, $path),
+                    enabledByDefault: $this->readBool($value, 'enabled_by_default', $path),
+                ),
+                ExposedPlatform::Time => new TimeConfig(
+                    name: $this->readOptionalString($value, 'name', $path),
+                    icon: $this->readOptionalString($value, 'icon', $path),
+                    entityCategory: $this->readEnum($value, 'entity_category', EntityCategory::class, $path),
+                    enabledByDefault: $this->readBool($value, 'enabled_by_default', $path),
+                ),
+                ExposedPlatform::Date => new DateConfig(
+                    name: $this->readOptionalString($value, 'name', $path),
+                    icon: $this->readOptionalString($value, 'icon', $path),
+                    entityCategory: $this->readEnum($value, 'entity_category', EntityCategory::class, $path),
+                    enabledByDefault: $this->readBool($value, 'enabled_by_default', $path),
+                ),
+                ExposedPlatform::DateTime => new DateTimeConfig(
+                    name: $this->readOptionalString($value, 'name', $path),
+                    icon: $this->readOptionalString($value, 'icon', $path),
+                    entityCategory: $this->readEnum($value, 'entity_category', EntityCategory::class, $path),
+                    enabledByDefault: $this->readBool($value, 'enabled_by_default', $path),
+                ),
             };
         } catch (ExposureException $e) {
             throw JsonShapeException::unexpectedValue($path, 'a valid entity configuration', $e->getMessage());
@@ -177,6 +212,15 @@ final readonly class ExposedEntityConfigConverter implements ValueConverter
         $raw = $fields[$key] ?? null;
 
         return $raw === null || \is_int($raw) ? $raw : throw JsonShapeException::wrongType($path . '.' . $key, 'an integer', get_debug_type($raw));
+    }
+
+    /**
+     * @param array<array-key, mixed> $fields
+     * @throws JsonShapeException
+     */
+    private function readInt(array $fields, string $key, string $path): int
+    {
+        return $this->readOptionalInt($fields, $key, $path) ?? throw JsonShapeException::missing($path . '.' . $key, 'an integer');
     }
 
     /**

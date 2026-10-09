@@ -7,6 +7,8 @@ namespace Stewart\Client\Component;
 use LogicException;
 use Stewart\Contracts\Exposure\BinarySensorConfig;
 use Stewart\Contracts\Exposure\ButtonConfig;
+use Stewart\Contracts\Exposure\DateConfig;
+use Stewart\Contracts\Exposure\DateTimeConfig;
 use Stewart\Contracts\Exposure\DeviceInfo;
 use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedPlatform;
@@ -14,6 +16,8 @@ use Stewart\Contracts\Exposure\NumberConfig;
 use Stewart\Contracts\Exposure\SelectConfig;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SwitchConfig;
+use Stewart\Contracts\Exposure\TextConfig;
+use Stewart\Contracts\Exposure\TimeConfig;
 
 final readonly class ExposedEntityDefinition
 {
@@ -47,6 +51,8 @@ final readonly class ExposedEntityDefinition
                 'unit_of_measurement' => $config->unit,
             ],
             $config instanceof SelectConfig => ['options' => $config->options],
+            $config instanceof TextConfig => ['min' => $config->min, 'max' => $config->max, 'pattern' => $config->pattern, 'mode' => $config->mode->value],
+            $config instanceof TimeConfig, $config instanceof DateConfig, $config instanceof DateTimeConfig => [],
             default => throw new LogicException(\sprintf('%s has no component encoding.', $config::class)),
         };
         $commonFields = [

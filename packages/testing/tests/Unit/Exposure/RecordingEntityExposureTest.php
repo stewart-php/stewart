@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Testing\Tests\Unit\Exposure;
 
+use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Entity\EntityId;
@@ -11,6 +12,7 @@ use Stewart\Contracts\Exception\CommandError;
 use Stewart\Contracts\Exception\CommandException;
 use Stewart\Contracts\Exception\ExposureError;
 use Stewart\Contracts\Exception\ExposureException;
+use Stewart\Contracts\Exposure\Command\DateCommand;
 use Stewart\Contracts\Exposure\Command\NumberCommand;
 use Stewart\Contracts\Exposure\Command\SelectCommand;
 use Stewart\Contracts\Exposure\Command\SwitchAction;
@@ -22,16 +24,21 @@ use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\NumberConfig;
 use Stewart\Contracts\Exposure\SelectConfig;
 use Stewart\Contracts\Exposure\SensorConfig;
+use Stewart\Contracts\Schedule\TimeOfDay;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Exposure\RecordingEntityExposure;
 use Stewart\Testing\Exposure\RecordingExposedBinarySensor;
 use Stewart\Testing\Exposure\RecordingExposedButton;
+use Stewart\Testing\Exposure\RecordingExposedDate;
+use Stewart\Testing\Exposure\RecordingExposedDateTime;
 use Stewart\Testing\Exposure\RecordingExposedEntity;
 use Stewart\Testing\Exposure\RecordingExposedNumber;
 use Stewart\Testing\Exposure\RecordingExposedSelect;
 use Stewart\Testing\Exposure\RecordingExposedSensor;
 use Stewart\Testing\Exposure\RecordingExposedSwitch;
+use Stewart\Testing\Exposure\RecordingExposedText;
+use Stewart\Testing\Exposure\RecordingExposedTime;
 
 #[CoversClass(RecordingEntityExposure::class)]
 #[CoversClass(RecordingExposedEntity::class)]
@@ -41,6 +48,10 @@ use Stewart\Testing\Exposure\RecordingExposedSwitch;
 #[CoversClass(RecordingExposedButton::class)]
 #[CoversClass(RecordingExposedNumber::class)]
 #[CoversClass(RecordingExposedSelect::class)]
+#[CoversClass(RecordingExposedText::class)]
+#[CoversClass(RecordingExposedTime::class)]
+#[CoversClass(RecordingExposedDate::class)]
+#[CoversClass(RecordingExposedDateTime::class)]
 final class RecordingEntityExposureTest extends TestCase
 {
     use AssertsReason;
@@ -138,6 +149,30 @@ final class RecordingEntityExposureTest extends TestCase
 
         self::assertSame('comfort', $mode->getOption());
         self::assertSame(['eco'], $exposure->requireSelect('mode')->changes->mapToList(static fn(ExposedStateChange $change) => $change->state?->value));
+    }
+
+    public function testCalendarHandlesRecordIsoStrings(): void
+    {
+        $exposure = new RecordingEntityExposure();
+        $exposure->exposeText('greeting')->setValue('Hello');
+        $exposure->exposeTime('alarm')->setValue(TimeOfDay::fromHourMinuteSecond(6, 45));
+        $exposure->exposeDate('next_mowing')->setValue(new DateTimeImmutable('2026-10-12'));
+        $exposure->exposeDateTime('last_watered')->setValue(new DateTimeImmutable('2026-10-09T07:15:00+02:00'));
+
+        self::assertSame('Hello', $exposure->requireText('greeting')->getValue());
+        self::assertSame('06:45:00', $exposure->requireTime('alarm')->changes->getFirst()?->state?->value);
+        self::assertSame('2026-10-12', $exposure->requireDate('next_mowing')->changes->getFirst()?->state?->value);
+        self::assertSame('2026-10-09T07:15:00+02:00', $exposure->requireDateTime('last_watered')->getValue()?->format(DATE_ATOM));
+    }
+
+    public function testAcceptedCommandSetsDateValue(): void
+    {
+        $exposure = new RecordingEntityExposure();
+        $mowing = $exposure->exposeDate('next_mowing');
+
+        $exposure->requireDate('next_mowing')->pushCommand(new DateCommand(new DateTimeImmutable('2026-10-15'), new EventContext('context-1')));
+
+        self::assertSame('2026-10-15', $mowing->getValue()?->format('Y-m-d'));
     }
 
     public function testButtonIsRecorded(): void

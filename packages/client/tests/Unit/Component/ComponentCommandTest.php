@@ -11,12 +11,17 @@ use Stewart\Client\Component\ComponentCommand;
 use Stewart\Client\Component\ComponentCommandAction;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exposure\Command\ButtonPress;
+use Stewart\Contracts\Exposure\Command\DateCommand;
+use Stewart\Contracts\Exposure\Command\DateTimeCommand;
 use Stewart\Contracts\Exposure\Command\NumberCommand;
 use Stewart\Contracts\Exposure\Command\SelectCommand;
 use Stewart\Contracts\Exposure\Command\SwitchAction;
 use Stewart\Contracts\Exposure\Command\SwitchCommand;
+use Stewart\Contracts\Exposure\Command\TextCommand;
+use Stewart\Contracts\Exposure\Command\TimeCommand;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedPlatform;
+use Stewart\Contracts\Schedule\TimeOfDay;
 use Stewart\Contracts\State\EventContext;
 
 #[CoversClass(ComponentCommand::class)]
@@ -50,6 +55,36 @@ final class ComponentCommandTest extends TestCase
         self::assertEquals(new SelectCommand('comfort', self::createContext()), $command);
     }
 
+    public function testSetValueBecomesTextCommand(): void
+    {
+        $command = self::createCommand(ComponentCommandAction::SetValue, ['value' => 'Good morning'])->readExposedCommand(ExposedPlatform::Text);
+
+        self::assertEquals(new TextCommand('Good morning', self::createContext()), $command);
+    }
+
+    public function testSetValueBecomesTimeCommand(): void
+    {
+        $command = self::createCommand(ComponentCommandAction::SetValue, ['value' => '07:00:00'])->readExposedCommand(ExposedPlatform::Time);
+
+        self::assertEquals(new TimeCommand(TimeOfDay::fromHourMinuteSecond(7, 0), self::createContext()), $command);
+    }
+
+    public function testSetValueBecomesDateCommand(): void
+    {
+        $command = self::createCommand(ComponentCommandAction::SetValue, ['value' => '2026-10-15'])->readExposedCommand(ExposedPlatform::Date);
+
+        self::assertInstanceOf(DateCommand::class, $command);
+        self::assertSame('2026-10-15', $command->getRequestedState()->value);
+    }
+
+    public function testSetValueBecomesDateTimeCommand(): void
+    {
+        $command = self::createCommand(ComponentCommandAction::SetValue, ['value' => '2026-10-09T18:30:00+00:00'])->readExposedCommand(ExposedPlatform::DateTime);
+
+        self::assertInstanceOf(DateTimeCommand::class, $command);
+        self::assertSame('2026-10-09T18:30:00+00:00', $command->getRequestedState()->value);
+    }
+
     /** @param array<string, mixed> $data */
     #[DataProvider('provideUnfitCommands')]
     public function testUnfitCommandIsNull(ComponentCommandAction $action, array $data, ExposedPlatform $platform): void
@@ -68,6 +103,10 @@ final class ComponentCommandTest extends TestCase
         yield 'number with bool value' => [ComponentCommandAction::SetValue, ['value' => true], ExposedPlatform::Number];
         yield 'select with value' => [ComponentCommandAction::SetValue, ['value' => 'eco'], ExposedPlatform::Select];
         yield 'select without option' => [ComponentCommandAction::SelectOption, [], ExposedPlatform::Select];
+        yield 'text with number value' => [ComponentCommandAction::SetValue, ['value' => 5], ExposedPlatform::Text];
+        yield 'time with bad value' => [ComponentCommandAction::SetValue, ['value' => '25:00:00'], ExposedPlatform::Time];
+        yield 'date with bad value' => [ComponentCommandAction::SetValue, ['value' => '2026-13-01'], ExposedPlatform::Date];
+        yield 'datetime without offset' => [ComponentCommandAction::SetValue, ['value' => '2026-10-09T18:30:00'], ExposedPlatform::DateTime];
     }
 
     /** @param array<string, mixed> $data */

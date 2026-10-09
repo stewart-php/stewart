@@ -42,6 +42,8 @@ use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Exposure\BinarySensorConfig;
 use Stewart\Contracts\Exposure\BinarySensorDeviceClass;
 use Stewart\Contracts\Exposure\ButtonConfig;
+use Stewart\Contracts\Exposure\DateConfig;
+use Stewart\Contracts\Exposure\DateTimeConfig;
 use Stewart\Contracts\Exposure\DeviceInfo;
 use Stewart\Contracts\Exposure\EntityCategory;
 use Stewart\Contracts\Exposure\ExposedEntityConfig;
@@ -57,6 +59,9 @@ use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SensorDeviceClass;
 use Stewart\Contracts\Exposure\SensorStateClass;
 use Stewart\Contracts\Exposure\SwitchConfig;
+use Stewart\Contracts\Exposure\TextConfig;
+use Stewart\Contracts\Exposure\TextMode;
+use Stewart\Contracts\Exposure\TimeConfig;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Support\Time\RevoltTimers;
 use Stewart\Testing\Exception\AssertsReason;
@@ -265,6 +270,36 @@ final class ComponentGoldenTest extends TestCase
 
         self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/upsert'));
         self::assertSame('eco', $snapshot->state->value);
+    }
+
+    #[DataProvider('provideTextAndCalendarUpserts')]
+    public function testTextAndCalendarUpsertsMatchGoldens(string $goldenName, ExposedEntityAddress $address, ExposedEntityConfig $config, ExposedState $state): void
+    {
+        $golden = ComponentGolden::loadGolden($goldenName);
+        $this->server->replayGolden($golden);
+
+        $this->connectClient()->upsertExposedEntity($address, ExposedEntityDefinition::fromConfig($config, null), new ExposedStateChange($state));
+
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/upsert'));
+    }
+
+    /** @return iterable<string, array{string, ExposedEntityAddress, ExposedEntityConfig, ExposedState}> */
+    public static function provideTextAndCalendarUpserts(): iterable
+    {
+        yield 'text' => [
+            'entity-upsert.text',
+            self::createAddress('notify', 'greeting'),
+            new TextConfig(1, 40, '^[A-Za-z ,!]+$', TextMode::Text, name: 'Greeting', icon: 'mdi:message-text'),
+            new ExposedState('Hello'),
+        ];
+        yield 'time' => ['entity-upsert.time', self::createAddress('wakeup', 'alarm'), new TimeConfig('Alarm', 'mdi:alarm'), new ExposedState('06:45:00')];
+        yield 'date' => ['entity-upsert.date', self::createAddress('garden', 'next_mowing'), new DateConfig('Next mowing', 'mdi:mower'), new ExposedState('2026-10-12')];
+        yield 'datetime' => [
+            'entity-upsert.datetime',
+            self::createAddress('garden', 'last_watered'),
+            new DateTimeConfig('Last watered', 'mdi:watering-can'),
+            new ExposedState('2026-10-09T07:15:00+02:00'),
+        ];
     }
 
     public function testBinarySensorUpsertMatchesGolden(): void
