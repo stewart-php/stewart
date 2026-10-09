@@ -17,6 +17,8 @@ minor release may break; its "Upgrading" section says what to change.
   `stewart/entity/upsert`, `state` and `remove`. Each daemon gets a hub device and each app a device under it, or an
   entity names its own device. Entities restore their state and attributes after a Home Assistant restart and become
   unavailable while their daemon has no session
+- `stewart/entity/reconcile` removes every entity of a daemon that it no longer exposes, except those of the apps it
+  names in `keep_apps`
 - `make ha-check` (ruff, mypy, pytest; `HA=min` for Home Assistant 2026.4) as part of `make check`, and
   `make ha-hassfest`
 - The daemon detects the `stewart` integration on every Home Assistant connect and holds its session open;
