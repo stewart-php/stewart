@@ -7,7 +7,8 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.loader import async_get_integration
 
 from .const import DOMAIN, ERR_PROTOCOL_MISMATCH, INSTANCE_PATTERN, MAX_COMMAND_TIMEOUT_SECONDS, PROTOCOL
-from .session import Session, StewartConfigEntry
+from .runtime import StewartConfigEntry
+from .session import Session
 
 
 @callback
@@ -61,8 +62,8 @@ def websocket_session_subscribe(
         stewart_version=msg["stewart_version"],
         command_timeout=msg["command_timeout"],
     )
-    connection.subscriptions[msg["id"]] = partial(entry.runtime_data.close_session, session)
-    entry.runtime_data.open_session(session)
+    connection.subscriptions[msg["id"]] = partial(entry.runtime_data.sessions.close_session, session)
+    entry.runtime_data.sessions.open_session(session)
     connection.send_result(msg["id"])
 
 

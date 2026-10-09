@@ -2,9 +2,11 @@ from typing import Any
 
 import pytest
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.typing import MockHAClientWebSocket, WebSocketGenerator
 
+from custom_components.stewart.const import SIGNAL_SESSION_CHANGED
 from tests.golden import Golden
 
 
@@ -130,3 +132,33 @@ async def test_unload_ends_sessions(
     await hass.config_entries.async_unload(loaded_entry.entry_id)
 
     await assert_subscription_ended(old_client, old_subscription["id"])
+
+
+async def test_session_open_and_close_signal_instance(
+    hass: HomeAssistant, hass_ws_client: WebSocketGenerator, loaded_entry: MockConfigEntry
+) -> None:
+    signals: list[None] = []
+    async_dispatcher_connect(hass, SIGNAL_SESSION_CHANGED.format("default"), lambda: signals.append(None))
+    client = await hass_ws_client(hass)
+
+    subscription = await subscribe(client)
+    await hass.async_block_till_done()
+    assert len(signals) == 1
+
+    await client.send_json_auto_id({"type": "unsubscribe_events", "subscription": subscription["id"]})
+    await client.receive_json()
+    await hass.async_block_till_done()
+    assert len(signals) == 2
+
+
+async def test_takeover_keeps_instance_signal_quiet(
+    hass: HomeAssistant, hass_ws_client: WebSocketGenerator, loaded_entry: MockConfigEntry
+) -> None:
+    signals: list[None] = []
+    await subscribe(await hass_ws_client(hass))
+    async_dispatcher_connect(hass, SIGNAL_SESSION_CHANGED.format("default"), lambda: signals.append(None))
+
+    await subscribe(await hass_ws_client(hass))
+    await hass.async_block_till_done()
+
+    assert signals == []
