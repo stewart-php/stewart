@@ -12,7 +12,11 @@ minor release may break; its "Upgrading" section says what to change.
   JSON goldens for every message in `integrations/home-assistant/tests/protocol/`
 - The `stewart` Home Assistant integration, installed through HACS from `stewart-php/hass-stewart` or by unpacking
   `stewart.zip` from its releases; Home Assistant 2026.4 or newer. It has a config flow, `stewart/version` and
-  `stewart/session/subscribe`; entities follow in later releases
+  `stewart/session/subscribe`
+- The `stewart` integration creates and drives `sensor` and `binary_sensor` entities through
+  `stewart/entity/upsert`, `state` and `remove`. Each daemon gets a hub device and each app a device under it, or an
+  entity names its own device. Entities restore their state and attributes after a Home Assistant restart and become
+  unavailable while their daemon has no session
 - `make ha-check` (ruff, mypy, pytest; `HA=min` for Home Assistant 2026.4) as part of `make check`, and
   `make ha-hassfest`
 - The daemon detects the `stewart` integration on every Home Assistant connect and holds its session open;

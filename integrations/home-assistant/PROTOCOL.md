@@ -51,7 +51,7 @@ An entity belongs to its app's device unless the upsert carries `device`:
 | `model` | string? | |
 | `suggested_area` | string? | Used only when the device is created. |
 
-A device left without entities is removed.
+A device left without entities is removed, and the hub goes with its last device.
 
 ## Session
 
@@ -97,13 +97,14 @@ No fields. Result: `{component_version: string, protocol: int}`. Needs no sessio
 | `attributes` | object? | Extra state attributes, JSON values. Absent: keep; present: replace. |
 | `available` | bool? | Absent: `true` for a new entity, unchanged otherwise. |
 
-Result: `{entity_id, state, attributes, available}`, the entity as it stands after the upsert.
+Result: `{entity_id, state, attributes, available}`, the entity as it stands after the upsert. Home Assistant picks
+`entity_id`, and newer releases put the area in it; Stewart reads it from the result rather than predicting it.
 
 - A new unique_id creates the entity and its registry entry; an existing one updates it in place.
 - An existing entity under another platform is removed with its registry entry first; the new one may get another
   entity id.
 - A restored entity (after a Home Assistant restart) keeps its restored state and attributes unless the upsert
-  sends them.
+  sends them. A restored state that no longer fits the config becomes unknown.
 
 ### `stewart/entity/state`
 
@@ -168,7 +169,11 @@ Every platform takes these config keys:
 | `datetime` | ISO 8601 with offset \| null | — | `set_value {value: string}` |
 
 - `device_class`, `unit_of_measurement` and `state_class` take Home Assistant's values for the platform; the
-  component validates them and fails with `invalid_config`.
+  component validates them, the unit and `state_class` against the `device_class` too, and fails with
+  `invalid_config`. Unknown config keys fail the same way.
+- A `sensor` state is a number when the config has `unit_of_measurement`, `state_class`,
+  `suggested_display_precision` or a numeric `device_class`. With `device_class` `timestamp` it is ISO 8601 with an
+  offset, with `date` it is `YYYY-MM-DD`, and with `enum` one of `options`.
 - A state of the wrong type, or outside `min`/`max`/`options`/`pattern`, fails with `invalid_state`.
 - `switch` `toggle` reaches Stewart as `turn_on` or `turn_off`.
 
