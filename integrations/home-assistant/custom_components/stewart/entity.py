@@ -10,6 +10,7 @@ from .config import EntityConfig
 from .const import SIGNAL_SESSION_CHANGED
 from .errors import InvalidStateError
 from .identity import EntityAddress
+from .restore import StoredExposure
 from .session import SessionRegistry
 from .snapshot import EntitySnapshot
 
@@ -35,6 +36,8 @@ class StewartEntity[ConfigT: PlatformConfig, NativeT](RestoreEntity):
         self._attributes: dict[str, JsonValue] = {}
         self._available_flag = True
         self._live = False
+        self._restores_state = False
+        self._restores_attributes = False
         self._show_config(config)
 
     @property
@@ -61,11 +64,19 @@ class StewartEntity[ConfigT: PlatformConfig, NativeT](RestoreEntity):
         self._show_state(native)
         self._apply_extras(change)
 
+    # Fields the creating upsert left out come from what Home Assistant stored before a restart.
+    @callback
+    def seed_from_upsert(self, change: EntityChange) -> None:
+        self.apply_change(change)
+        self._restores_state = change.state is ABSENT
+        self._restores_attributes = change.attributes is ABSENT
+
     @callback
     def apply_change(self, change: EntityChange) -> None:
         if change.state is not ABSENT:
             self._show_state(self._convert_state(self.config, change.state))
             self._wire_state = change.state
+            self._restores_state = False
         self._apply_extras(change)
 
     @callback
@@ -81,8 +92,13 @@ class StewartEntity[ConfigT: PlatformConfig, NativeT](RestoreEntity):
             available=self.available,
         )
 
+    @property
+    def extra_restore_state_data(self) -> StoredExposure:
+        return StoredExposure(state=self._wire_state, attributes=self._attributes)
+
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
+        await self._restore_stored_exposure()
         self.async_on_remove(
             async_dispatcher_connect(
                 self.hass, SIGNAL_SESSION_CHANGED.format(self.address.instance), self.async_write_ha_state
@@ -93,6 +109,21 @@ class StewartEntity[ConfigT: PlatformConfig, NativeT](RestoreEntity):
     async def async_will_remove_from_hass(self) -> None:
         self._live = False
         await super().async_will_remove_from_hass()
+
+    async def _restore_stored_exposure(self) -> None:
+        if not (self._restores_state or self._restores_attributes):
+            return
+        extra_data = await self.async_get_last_extra_data()
+        if extra_data is None or (stored := StoredExposure.from_dict(extra_data.as_dict())) is None:
+            return
+        if self._restores_attributes:
+            self._attributes = dict(stored.attributes)
+        if self._restores_state:
+            try:
+                self._show_state(self._convert_state(self.config, stored.state))
+            except InvalidStateError:
+                return
+            self._wire_state = stored.state
 
     def _show_config(self, config: ConfigT) -> None:
         self._attr_name = config.entity.name if config.entity.name is not None else self.address.key
@@ -109,5 +140,6 @@ class StewartEntity[ConfigT: PlatformConfig, NativeT](RestoreEntity):
     def _apply_extras(self, change: EntityChange) -> None:
         if change.attributes is not ABSENT:
             self._attributes = dict(change.attributes)
+            self._restores_attributes = False
         if change.available is not ABSENT:
             self._available_flag = change.available

@@ -83,7 +83,7 @@ class ExposedEntities:
         entity = platform.exposure.create_entity(
             address=address, config=config, sessions=self._sessions, device_info=upsert.device.device_info
         )
-        entity.apply_change(upsert.change)
+        entity.seed_from_upsert(upsert.change)
         others = [other for other in self._platforms.values() if other is not platform]
         replaced_entries = self._remove_registry_entries(address, others)
         self._devices.ensure_device(upsert.device)
