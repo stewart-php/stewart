@@ -45,18 +45,31 @@ jobs:
           private-key: ${{ secrets.SPLIT_APP_PRIVATE_KEY }}
           owner: stewart-php
           repositories: ${{ matrix.repository }}
-      - uses: danharrin/monorepo-split-github-action@14e42e2437f674b8987c1f50ca3689116aea1893 # v2.4.5
+      - name: Mirror into stewart-php/${{ matrix.repository }}
+        run: |
+          message=$(git show -s --format=%B "$GITHUB_SHA")
+          git clone --quiet "https://x-access-token:$TOKEN@github.com/stewart-php/$REPOSITORY.git" "$RUNNER_TEMP/split"
+          cd "$RUNNER_TEMP/split"
+          git switch --quiet main 2>/dev/null || git switch --quiet -c main
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a "$GITHUB_WORKSPACE/$DIRECTORY/." .
+          git add --all
+          if ! git diff --cached --quiet; then
+            git commit --quiet --message "$message"
+            git push --quiet origin main
+          fi
+          if [ "$GITHUB_REF_TYPE" = tag ] && ! git ls-remote --exit-code --tags origin "refs/tags/$GITHUB_REF_NAME" > /dev/null; then
+            git tag --annotate "$GITHUB_REF_NAME" --message "$GITHUB_REF_NAME"
+            git push --quiet origin "refs/tags/$GITHUB_REF_NAME"
+          fi
         env:
-          # The action writes this before the @ of the clone URL; an app token only works there as user:password.
-          GITHUB_TOKEN: x-access-token:${{ steps.token.outputs.token }}
-        with:
-          package_directory: ${{ matrix.directory }}
-          repository_organization: stewart-php
-          repository_name: ${{ matrix.repository }}
-          branch: main
-          tag: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
-          user_name: stewart-split[bot]
-          user_email: stewart-split[bot]@users.noreply.github.com
+          TOKEN: ${{ steps.token.outputs.token }}
+          REPOSITORY: ${{ matrix.repository }}
+          DIRECTORY: ${{ matrix.directory }}
+          GIT_AUTHOR_NAME: stewart-split[bot]
+          GIT_AUTHOR_EMAIL: stewart-split[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: stewart-split[bot]
+          GIT_COMMITTER_EMAIL: stewart-split[bot]@users.noreply.github.com
 
   # HACS installs from hass-stewart's releases, so a tag gets a release there with the zip hacs.json names.
   hacs:
