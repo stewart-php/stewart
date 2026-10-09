@@ -25,10 +25,16 @@ minor release may break; its "Upgrading" section says what to change.
 - `expose.instance` setting (`default`), naming this daemon in Home Assistant; daemons sharing one Home Assistant need
   different names
 - Metrics `stewart_component_info{version,protocol}` and `stewart_component_state{state}`
+- Apps expose their own `sensor` and `binary_sensor` entities through an injected `EntityExposure`:
+  `exposeSensor()` and `exposeBinarySensor()` return handles that set the value, attributes and availability and
+  read back the entity ID and the state Home Assistant restored. Exposed entities are sent again after every
+  reconnect; without a compatible integration, `expose*()` throws `ExposureException`
+- `Stewart\Testing\Exposure\RecordingEntityExposure` for unit tests of apps that expose entities
 
 ### Changed
 
 - The control protocol is version 25: snapshots carry `component`
+- IPC protocol 23; broker and workers must run the same version
 
 ## [0.8.0] - 2026-10-08
 

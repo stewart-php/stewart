@@ -1,0 +1,19 @@
+{
+    "protocol": 1,
+    "request": {
+        "type": "stewart/entity/upsert",
+        "instance": "default",
+        "app": "presence",
+        "key": "anyone_home",
+        "platform": "binary_sensor",
+        "config": {
+            "name": "Anyone home",
+            "device_class": "occupancy"
+        },
+        "state": "yes"
+    },
+    "error": {
+        "code": "invalid_state",
+        "message": "A binary_sensor state must be true, false or null."
+    }
+}

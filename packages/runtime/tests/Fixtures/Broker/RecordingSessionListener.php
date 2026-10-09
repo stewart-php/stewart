@@ -11,6 +11,7 @@ use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Contracts\Trigger\TriggerSpec;
+use Stewart\Runtime\Broker\Exposure\ExposedEntitySync;
 use Stewart\Runtime\Broker\HaSessionListener;
 use Throwable;
 
@@ -27,6 +28,9 @@ final class RecordingSessionListener implements HaSessionListener
 
     /** @var list<string> */
     public array $rejectedTriggerReasons = [];
+
+    /** @var list<ExposedEntitySync> */
+    public array $exposureSyncs = [];
 
     /** @var list<string> */
     public array $lost = [];
@@ -57,6 +61,11 @@ final class RecordingSessionListener implements HaSessionListener
     public function triggerRejected(TriggerSpec $spec, string $reason): void
     {
         $this->rejectedTriggerReasons[] = $reason;
+    }
+
+    public function exposedEntitySynced(ExposedEntitySync $sync): void
+    {
+        $this->exposureSyncs[] = $sync;
     }
 
     public function connectionLost(string $reason, Instant $lostAt): void

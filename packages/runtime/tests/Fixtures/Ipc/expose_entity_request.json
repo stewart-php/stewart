@@ -1,0 +1,36 @@
+{
+    "t": "expose_entity_request",
+    "m": {
+        "correlation_id": "w0:7",
+        "scope": "demo",
+        "key": "soil_moisture",
+        "config": {
+            "platform": "sensor",
+            "name": "Soil moisture",
+            "icon": "mdi:sprout",
+            "entity_category": null,
+            "enabled_by_default": true,
+            "device_class": "moisture",
+            "unit": "%",
+            "state_class": "measurement",
+            "display_precision": 1,
+            "options": []
+        },
+        "device": {
+            "identifier": "greenhouse",
+            "name": "Greenhouse",
+            "manufacturer": null,
+            "model": "Probe v2",
+            "suggested_area": null
+        },
+        "change": {
+            "state": {
+                "value": null
+            },
+            "attributes": {
+                "source": "probe"
+            },
+            "available": true
+        }
+    }
+}

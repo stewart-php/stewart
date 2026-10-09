@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Ipc\Wire;
 
 use JsonException;
 use Stewart\Contracts\Exception\StewartException;
+use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\Bootstrap;
 use Stewart\Runtime\Json\ClassShapeReader;
@@ -22,7 +23,7 @@ use Throwable;
 
 final readonly class IpcCodec
 {
-    public const int PROTOCOL_VERSION = 22;
+    public const int PROTOCOL_VERSION = 23;
 
     private const string UNKNOWN_TYPE = '?';
 
@@ -46,6 +47,8 @@ final readonly class IpcCodec
             new MqttMessageConverter(),
             new TriggerSpecConverter(),
             new ExceptionDetailsConverter(),
+            new ExposedStateConverter(),
+            new ExposedEntityConfigConverter(),
             StringIdentifierConverter::createForEntityIds(),
             StringIdentifierConverter::createForAppIds(),
             StringIdentifierConverter::createForAreaIds(),
@@ -54,6 +57,7 @@ final readonly class IpcCodec
             StringIdentifierConverter::createForDeviceIds(),
             new StringIdentifierConverter(SubscriptionId::class, 'a subscription id', SubscriptionId::fromString(...)),
             new StringIdentifierConverter(CorrelationId::class, 'a correlation id', CorrelationId::fromString(...)),
+            new StringIdentifierConverter(ExposedEntityKey::class, 'an exposed entity key', ExposedEntityKey::tryFromString(...)),
             new WorkerIdConverter(),
             new StringIdentifierConverter(ResourceScope::class, 'an app id or "@shared"', ResourceScope::tryFromWireValue(...)),
         ])));

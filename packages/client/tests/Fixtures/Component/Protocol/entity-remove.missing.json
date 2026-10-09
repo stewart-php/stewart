@@ -1,0 +1,12 @@
+{
+    "protocol": 1,
+    "request": {
+        "type": "stewart/entity/remove",
+        "instance": "default",
+        "app": "lights",
+        "key": "night_mode"
+    },
+    "result": {
+        "removed": false
+    }
+}

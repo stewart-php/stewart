@@ -10,9 +10,12 @@ use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Contracts\Trigger\TriggerSpec;
+use Stewart\Runtime\Broker\Exposure\ExposedEntitySync;
 use Stewart\Runtime\Broker\Trigger\TriggerRejections;
+use Stewart\Runtime\Ipc\Message\ExposedEntitySynced;
 use Stewart\Runtime\Ipc\Message\HaConnectionLost;
 use Stewart\Runtime\Ipc\Message\StateResynced;
+use Stewart\Runtime\Model\ResourceScope;
 use Throwable;
 
 final readonly class BrokerHaEvents implements HaSessionListener
@@ -46,6 +49,11 @@ final readonly class BrokerHaEvents implements HaSessionListener
     public function triggerRejected(TriggerSpec $spec, string $reason): void
     {
         $this->triggerRejections->refuseSubscribers($spec, $reason);
+    }
+
+    public function exposedEntitySynced(ExposedEntitySync $sync): void
+    {
+        $this->slots->findHandleForWorker($sync->owner)?->send(new ExposedEntitySynced(ResourceScope::forApp($sync->appId), $sync->key, $sync->snapshot));
     }
 
     public function connectionLost(string $reason, Instant $lostAt): void

@@ -8,8 +8,14 @@ use Amp\DeferredFuture;
 use Amp\Future;
 use Closure;
 use DateTimeZone;
+use Stewart\Client\Component\ExposedEntityDefinition;
+use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventPayload;
+use Stewart\Contracts\Exception\ExposureException;
+use Stewart\Contracts\Exposure\ExposedEntityKey;
+use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
+use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\History\Collection\HistoricalStateCollection;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryDetail;
@@ -29,6 +35,7 @@ use Stewart\Runtime\Broker\RegistryCacheSnapshot;
 use Stewart\Runtime\Broker\StateCacheSnapshot;
 use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
 use Stewart\Runtime\Ipc\Wire\RegistryFragment;
+use Stewart\Runtime\Model\WorkerId;
 use Stewart\Testing\Async\Latch;
 use Throwable;
 
@@ -84,6 +91,16 @@ final class FakeHaSession implements HaSession
 
     /** @var list<TriggerSpec> */
     public array $unsubscribedTriggers = [];
+
+    /** @var array<string, ExposedStateChange> */
+    public array $exposedEntities = [];
+
+    public ?ExposedEntitySnapshot $exposedSnapshot = null;
+
+    public ?ExposureException $exposureFailure = null;
+
+    /** @var DeferredFuture<ExposedStateChange>|null */
+    private ?DeferredFuture $nextExposedUpdate = null;
 
     private bool $open = false;
 
@@ -273,4 +290,52 @@ final class FakeHaSession implements HaSession
     {
         $this->listener?->triggerRejected($spec, $reason);
     }
+
+    public function exposeEntity(
+        WorkerId $owner,
+        AppId $appId,
+        ExposedEntityKey $key,
+        ExposedEntityDefinition $definition,
+        ExposedStateChange $change,
+    ): ?ExposedEntitySnapshot {
+        if ($this->exposureFailure !== null) {
+            throw $this->exposureFailure;
+        }
+
+        $this->exposedEntities[$appId . '/' . $key] = $change;
+
+        return $this->exposedSnapshot;
+    }
+
+    public function updateExposedEntity(AppId $appId, ExposedEntityKey $key, ExposedStateChange $change): void
+    {
+        $address = $appId . '/' . $key;
+        $this->exposedEntities[$address] = ($this->exposedEntities[$address] ?? new ExposedStateChange())->withLaterChange($change);
+
+        $updated = $this->nextExposedUpdate;
+        $this->nextExposedUpdate = null;
+        $updated?->complete($this->exposedEntities[$address]);
+    }
+
+    /** @return Future<ExposedStateChange> */
+    public function waitForNextExposedUpdate(): Future
+    {
+        return ($this->nextExposedUpdate ??= new DeferredFuture())->getFuture();
+    }
+
+    public function removeExposedEntity(AppId $appId, ExposedEntityKey $key): void
+    {
+        unset($this->exposedEntities[$appId . '/' . $key]);
+    }
+
+    public function forgetExposuresOfApp(AppId $appId): void
+    {
+        $this->exposedEntities = array_filter(
+            $this->exposedEntities,
+            static fn(string $address): bool => !str_starts_with($address, $appId . '/'),
+            \ARRAY_FILTER_USE_KEY,
+        );
+    }
+
+    public function forgetExposuresOfWorker(WorkerId $workerId): void {}
 }

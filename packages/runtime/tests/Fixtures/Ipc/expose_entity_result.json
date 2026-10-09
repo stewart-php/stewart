@@ -1,0 +1,16 @@
+{
+    "t": "expose_entity_result",
+    "m": {
+        "correlation_id": "w0:7",
+        "snapshot": {
+            "entity_id": "sensor.greenhouse_soil_moisture",
+            "state": {
+                "value": 38
+            },
+            "attributes": {
+                "source": "probe"
+            },
+            "available": true
+        }
+    }
+}

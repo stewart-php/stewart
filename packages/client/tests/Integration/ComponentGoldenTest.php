@@ -8,20 +8,38 @@ use Amp\DeferredFuture;
 use Amp\TimeoutCancellation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Stewart\Client\Component\ComponentErrorCode;
 use Stewart\Client\Component\ComponentEventDecoder;
 use Stewart\Client\Component\ComponentInstance;
 use Stewart\Client\Component\ComponentSessionEvent;
 use Stewart\Client\Component\ComponentSessionRequest;
 use Stewart\Client\Component\ComponentVersion;
+use Stewart\Client\Component\ExposedEntityAddress;
+use Stewart\Client\Component\ExposedEntityDefinition;
 use Stewart\Client\Component\SessionReplaced;
 use Stewart\Client\Connection\Command\Component\GetComponentVersion;
+use Stewart\Client\Connection\Command\Component\RemoveExposedEntity;
 use Stewart\Client\Connection\Command\Component\SubscribeComponentSession;
+use Stewart\Client\Connection\Command\Component\UpdateExposedEntityState;
+use Stewart\Client\Connection\Command\Component\UpsertExposedEntity;
 use Stewart\Client\Connection\ConnectionConfig;
 use Stewart\Client\Exception\HaClientError;
 use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
 use Stewart\Client\Tests\Fixtures\Component\ComponentGolden;
 use Stewart\Client\Tests\Fixtures\FakeHaServer;
+use Stewart\Contracts\App\AppId;
+use Stewart\Contracts\Exposure\BinarySensorConfig;
+use Stewart\Contracts\Exposure\BinarySensorDeviceClass;
+use Stewart\Contracts\Exposure\DeviceInfo;
+use Stewart\Contracts\Exposure\ExposedEntityConfig;
+use Stewart\Contracts\Exposure\ExposedEntityKey;
+use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
+use Stewart\Contracts\Exposure\ExposedState;
+use Stewart\Contracts\Exposure\ExposedStateChange;
+use Stewart\Contracts\Exposure\SensorConfig;
+use Stewart\Contracts\Exposure\SensorDeviceClass;
+use Stewart\Contracts\Exposure\SensorStateClass;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Support\Time\RevoltTimers;
 use Stewart\Testing\Exception\AssertsReason;
@@ -30,6 +48,13 @@ use Stewart\Testing\Exception\AssertsReason;
 #[CoversClass(SubscribeComponentSession::class)]
 #[CoversClass(ComponentVersion::class)]
 #[CoversClass(ComponentEventDecoder::class)]
+#[CoversClass(UpsertExposedEntity::class)]
+#[CoversClass(UpdateExposedEntityState::class)]
+#[CoversClass(RemoveExposedEntity::class)]
+#[CoversClass(ExposedEntityDefinition::class)]
+#[CoversClass(ExposedStateChange::class)]
+#[CoversClass(ExposedEntitySnapshot::class)]
+#[CoversClass(ComponentErrorCode::class)]
 final class ComponentGoldenTest extends TestCase
 {
     use AssertsReason;
@@ -102,6 +127,155 @@ final class ComponentGoldenTest extends TestCase
         $this->server->pushEvent($subscriptionId, ComponentGolden::loadGolden('event-session-replaced')->requireEvent());
 
         self::assertInstanceOf(SessionReplaced::class, $received->getFuture()->await(new TimeoutCancellation(self::WAIT_SECONDS)));
+    }
+
+    public function testSensorUpsertMatchesGolden(): void
+    {
+        $golden = ComponentGolden::loadGolden('entity-upsert.sensor');
+        $this->server->replayGolden($golden);
+
+        $snapshot = $this->connectClient()->upsertExposedEntity(
+            self::createAddress('climate', 'average_temperature'),
+            ExposedEntityDefinition::fromConfig(self::createTemperatureConfig(), null),
+            new ExposedStateChange(new ExposedState(21.4), ['sources' => ['sensor.kitchen_temperature', 'sensor.hall_temperature']]),
+        );
+
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/upsert'));
+        self::assertSame('sensor.stewart_climate_average_temperature', $snapshot->entityId->value);
+        self::assertSame(21.4, $snapshot->state->value);
+        self::assertTrue($snapshot->available);
+    }
+
+    public function testBinarySensorUpsertMatchesGolden(): void
+    {
+        $golden = ComponentGolden::loadGolden('entity-upsert.binary-sensor');
+        $this->server->replayGolden($golden);
+
+        $snapshot = $this->connectClient()->upsertExposedEntity(
+            self::createAddress('presence', 'anyone_home'),
+            ExposedEntityDefinition::fromConfig(new BinarySensorConfig(BinarySensorDeviceClass::Occupancy, name: 'Anyone home'), null),
+            new ExposedStateChange(new ExposedState(false)),
+        );
+
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/upsert'));
+        self::assertFalse($snapshot->state->value);
+    }
+
+    public function testDeviceOverrideUpsertMatchesGolden(): void
+    {
+        $golden = ComponentGolden::loadGolden('entity-upsert.device-override');
+        $this->server->replayGolden($golden);
+        $config = new SensorConfig(SensorDeviceClass::Moisture, '%', SensorStateClass::Measurement, name: 'Soil moisture');
+
+        $snapshot = $this->connectClient()->upsertExposedEntity(
+            self::createAddress('garden', 'soil_moisture'),
+            ExposedEntityDefinition::fromConfig($config, new DeviceInfo('greenhouse', 'Greenhouse', manufacturer: 'Stewart')),
+            new ExposedStateChange(new ExposedState(38)),
+        );
+
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/upsert'));
+        self::assertSame('sensor.greenhouse_soil_moisture', $snapshot->entityId->value);
+    }
+
+    public function testInvalidStateUpsertMatchesGolden(): void
+    {
+        $golden = ComponentGolden::loadGolden('entity-upsert.invalid-state');
+        $this->server->replayGolden($golden);
+
+        $exception = $this->captureUpsertFailure(
+            self::createAddress('presence', 'anyone_home'),
+            new BinarySensorConfig(BinarySensorDeviceClass::Occupancy, name: 'Anyone home'),
+            new ExposedState('yes'),
+        );
+
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/upsert'));
+        self::assertSame(ComponentErrorCode::InvalidState, ComponentErrorCode::tryFromException($exception));
+    }
+
+    public function testInvalidConfigGoldenIsComponentErrorCode(): void
+    {
+        $this->server->replayGolden(ComponentGolden::loadGolden('entity-upsert.invalid-config'));
+
+        $exception = $this->captureUpsertFailure(self::createAddress('climate', 'average_temperature'), self::createTemperatureConfig(), new ExposedState(21.4));
+
+        self::assertSame(ComponentErrorCode::InvalidConfig, ComponentErrorCode::tryFromException($exception));
+    }
+
+    public function testNoSessionGoldenIsComponentErrorCode(): void
+    {
+        $golden = ComponentGolden::loadGolden('entity-upsert.no-session');
+        $this->server->replayGolden($golden);
+
+        $exception = $this->captureUpsertFailure(self::createAddress('climate', 'average_temperature'), self::createTemperatureConfig(), new ExposedState(21.4));
+
+        self::assertSame(ComponentErrorCode::NoSession, ComponentErrorCode::tryFromException($exception));
+    }
+
+    public function testStateUpdateMatchesGolden(): void
+    {
+        $golden = ComponentGolden::loadGolden('entity-state');
+        $this->server->replayGolden($golden);
+
+        $this->connectClient()->updateExposedEntityState(
+            self::createAddress('climate', 'average_temperature'),
+            new ExposedStateChange(new ExposedState(21.9), ['sources' => ['sensor.kitchen_temperature']]),
+        );
+
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/state'));
+    }
+
+    public function testStateUpdateOfUnknownEntityIsNotFound(): void
+    {
+        $golden = ComponentGolden::loadGolden('entity-state.not-found');
+        $this->server->replayGolden($golden);
+        $client = $this->connectClient();
+
+        $exception = $this->assertThrowsReason(
+            HaClientError::CommandRejected,
+            static fn() => $client->updateExposedEntityState(self::createAddress('lights', 'night_mode'), new ExposedStateChange(available: false)),
+        );
+
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/state'));
+        self::assertInstanceOf(HaClientException::class, $exception);
+        self::assertSame(ComponentErrorCode::NotFound, ComponentErrorCode::tryFromException($exception));
+    }
+
+    public function testRemoveMatchesGolden(): void
+    {
+        $golden = ComponentGolden::loadGolden('entity-remove');
+        $this->server->replayGolden($golden);
+
+        self::assertTrue($this->connectClient()->removeExposedEntity(self::createAddress('lights', 'night_mode')));
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/remove'));
+    }
+
+    public function testRemoveOfMissingEntityIsFalse(): void
+    {
+        $this->server->replayGolden(ComponentGolden::loadGolden('entity-remove.missing'));
+
+        self::assertFalse($this->connectClient()->removeExposedEntity(self::createAddress('lights', 'night_mode')));
+    }
+
+    private function captureUpsertFailure(ExposedEntityAddress $address, ExposedEntityConfig $config, ExposedState $state): HaClientException
+    {
+        $client = $this->connectClient();
+        $exception = $this->assertThrowsReason(
+            HaClientError::CommandRejected,
+            static fn() => $client->upsertExposedEntity($address, ExposedEntityDefinition::fromConfig($config, null), new ExposedStateChange($state)),
+        );
+        self::assertInstanceOf(HaClientException::class, $exception);
+
+        return $exception;
+    }
+
+    private static function createAddress(string $appId, string $key): ExposedEntityAddress
+    {
+        return new ExposedEntityAddress(ComponentInstance::parse('default'), new AppId($appId), new ExposedEntityKey($key));
+    }
+
+    private static function createTemperatureConfig(): SensorConfig
+    {
+        return new SensorConfig(SensorDeviceClass::Temperature, '°C', SensorStateClass::Measurement, 1, name: 'Average temperature');
     }
 
     private static function createSessionRequest(): ComponentSessionRequest

@@ -13,9 +13,15 @@ use Stewart\Client\Component\ComponentEventDecoder;
 use Stewart\Client\Component\ComponentSessionEvent;
 use Stewart\Client\Component\ComponentSessionRequest;
 use Stewart\Client\Component\ComponentVersion;
+use Stewart\Client\Component\ExposedEntityAddress;
+use Stewart\Client\Component\ExposedEntityDefinition;
+use Stewart\Client\Component\ExposedEntitySnapshotReader;
 use Stewart\Client\Connection\Command\CallService;
 use Stewart\Client\Connection\Command\Component\GetComponentVersion;
+use Stewart\Client\Connection\Command\Component\RemoveExposedEntity;
 use Stewart\Client\Connection\Command\Component\SubscribeComponentSession;
+use Stewart\Client\Connection\Command\Component\UpdateExposedEntityState;
+use Stewart\Client\Connection\Command\Component\UpsertExposedEntity;
 use Stewart\Client\Connection\Command\FireEvent;
 use Stewart\Client\Connection\Command\GetAreaRegistry;
 use Stewart\Client\Connection\Command\GetConfig;
@@ -47,6 +53,8 @@ use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Exception\ServiceCallException;
+use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
+use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\History\Collection\HistoricalStateCollection;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryDetail;
@@ -373,6 +381,26 @@ final class HaClient
 
             $onEvent($decoded);
         });
+    }
+
+    /** @throws HaClientException */
+    public function upsertExposedEntity(ExposedEntityAddress $address, ExposedEntityDefinition $definition, ExposedStateChange $change): ExposedEntitySnapshot
+    {
+        return ExposedEntitySnapshotReader::readUpsertResult($this->connection->send(new UpsertExposedEntity($address, $definition, $change)));
+    }
+
+    /** @throws HaClientException */
+    public function updateExposedEntityState(ExposedEntityAddress $address, ExposedStateChange $change): void
+    {
+        $this->connection->sendIgnoringResult(new UpdateExposedEntityState($address, $change));
+    }
+
+    /** @throws HaClientException */
+    public function removeExposedEntity(ExposedEntityAddress $address): bool
+    {
+        $removed = $this->connection->send(new RemoveExposedEntity($address))['removed'] ?? null;
+
+        return \is_bool($removed) ? $removed : throw HaClientException::protocolViolation('a stewart/entity/remove result without removed');
     }
 
     /** @throws HaClientException */

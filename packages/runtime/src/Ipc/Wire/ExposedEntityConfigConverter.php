@@ -1,0 +1,159 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Stewart\Runtime\Ipc\Wire;
+
+use BackedEnum;
+use LogicException;
+use Stewart\Contracts\Exception\ExposureException;
+use Stewart\Contracts\Exception\JsonShapeException;
+use Stewart\Contracts\Exposure\BinarySensorConfig;
+use Stewart\Contracts\Exposure\BinarySensorDeviceClass;
+use Stewart\Contracts\Exposure\EntityCategory;
+use Stewart\Contracts\Exposure\ExposedEntityConfig;
+use Stewart\Contracts\Exposure\ExposedPlatform;
+use Stewart\Contracts\Exposure\SensorConfig;
+use Stewart\Contracts\Exposure\SensorDeviceClass;
+use Stewart\Contracts\Exposure\SensorStateClass;
+use Stewart\Runtime\Json\ValueConverter;
+
+final readonly class ExposedEntityConfigConverter implements ValueConverter
+{
+    public function handledClass(): string
+    {
+        return ExposedEntityConfig::class;
+    }
+
+    public function keySuffix(): string
+    {
+        return '';
+    }
+
+    /** @return array<string, mixed> */
+    public function encodeValue(object $value): array
+    {
+        \assert($value instanceof ExposedEntityConfig);
+
+        $platformFields = match (true) {
+            $value instanceof SensorConfig => [
+                'device_class' => $value->deviceClass?->value,
+                'unit' => $value->unit,
+                'state_class' => $value->stateClass?->value,
+                'display_precision' => $value->displayPrecision,
+                'options' => $value->options,
+            ],
+            $value instanceof BinarySensorConfig => ['device_class' => $value->deviceClass?->value],
+            default => throw new LogicException(\sprintf('%s has no IPC encoding.', $value::class)),
+        };
+
+        return [
+            'platform' => $value->getPlatform()->value,
+            'name' => $value->name,
+            'icon' => $value->icon,
+            'entity_category' => $value->entityCategory?->value,
+            'enabled_by_default' => $value->enabledByDefault,
+            ...$platformFields,
+        ];
+    }
+
+    /** @throws JsonShapeException */
+    public function decodeValue(mixed $value, string $path): ExposedEntityConfig
+    {
+        if (!\is_array($value)) {
+            throw JsonShapeException::wrongType($path, 'an object', get_debug_type($value));
+        }
+
+        $platform = $this->readEnum($value, 'platform', ExposedPlatform::class, $path) ?? throw JsonShapeException::missing($path . '.platform', 'a platform');
+
+        try {
+            return match ($platform) {
+                ExposedPlatform::Sensor => new SensorConfig(
+                    deviceClass: $this->readEnum($value, 'device_class', SensorDeviceClass::class, $path),
+                    unit: $this->readOptionalString($value, 'unit', $path),
+                    stateClass: $this->readEnum($value, 'state_class', SensorStateClass::class, $path),
+                    displayPrecision: $this->readOptionalInt($value, 'display_precision', $path),
+                    options: $this->readStringList($value, 'options', $path),
+                    name: $this->readOptionalString($value, 'name', $path),
+                    icon: $this->readOptionalString($value, 'icon', $path),
+                    entityCategory: $this->readEnum($value, 'entity_category', EntityCategory::class, $path),
+                    enabledByDefault: $this->readBool($value, 'enabled_by_default', $path),
+                ),
+                ExposedPlatform::BinarySensor => new BinarySensorConfig(
+                    deviceClass: $this->readEnum($value, 'device_class', BinarySensorDeviceClass::class, $path),
+                    name: $this->readOptionalString($value, 'name', $path),
+                    icon: $this->readOptionalString($value, 'icon', $path),
+                    entityCategory: $this->readEnum($value, 'entity_category', EntityCategory::class, $path),
+                    enabledByDefault: $this->readBool($value, 'enabled_by_default', $path),
+                ),
+            };
+        } catch (ExposureException $e) {
+            throw JsonShapeException::unexpectedValue($path, 'a valid entity configuration', $e->getMessage());
+        }
+    }
+
+    /**
+     * @template T of BackedEnum
+     *
+     * @param array<array-key, mixed> $fields
+     * @param class-string<T> $enum
+     * @return T|null
+     * @throws JsonShapeException
+     */
+    private function readEnum(array $fields, string $key, string $enum, string $path): ?BackedEnum
+    {
+        $raw = $this->readOptionalString($fields, $key, $path);
+
+        return $raw === null ? null : ($enum::tryFrom($raw) ?? throw JsonShapeException::unexpectedValue($path . '.' . $key, 'a known ' . $key, $raw));
+    }
+
+    /**
+     * @param array<array-key, mixed> $fields
+     * @throws JsonShapeException
+     */
+    private function readOptionalString(array $fields, string $key, string $path): ?string
+    {
+        $raw = $fields[$key] ?? null;
+
+        return $raw === null || \is_string($raw) ? $raw : throw JsonShapeException::wrongType($path . '.' . $key, 'a string', get_debug_type($raw));
+    }
+
+    /**
+     * @param array<array-key, mixed> $fields
+     * @throws JsonShapeException
+     */
+    private function readOptionalInt(array $fields, string $key, string $path): ?int
+    {
+        $raw = $fields[$key] ?? null;
+
+        return $raw === null || \is_int($raw) ? $raw : throw JsonShapeException::wrongType($path . '.' . $key, 'an integer', get_debug_type($raw));
+    }
+
+    /**
+     * @param array<array-key, mixed> $fields
+     * @throws JsonShapeException
+     */
+    private function readBool(array $fields, string $key, string $path): bool
+    {
+        $raw = $fields[$key] ?? null;
+
+        return \is_bool($raw) ? $raw : throw JsonShapeException::wrongType($path . '.' . $key, 'a boolean', get_debug_type($raw));
+    }
+
+    /**
+     * @param array<array-key, mixed> $fields
+     * @return list<string>
+     * @throws JsonShapeException
+     */
+    private function readStringList(array $fields, string $key, string $path): array
+    {
+        $raw = $fields[$key] ?? [];
+
+        if (!\is_array($raw) || !array_is_list($raw) || array_filter($raw, is_string(...)) !== $raw) {
+            throw JsonShapeException::wrongType($path . '.' . $key, 'a list of strings', get_debug_type($raw));
+        }
+
+        /** @var list<string> $raw */
+        return $raw;
+    }
+}

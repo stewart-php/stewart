@@ -42,6 +42,7 @@ final readonly class BrokerWorkerEvents implements WorkerPoolListener
     public function workerGone(WorkerHandle $handle, string $reason): void
     {
         $this->registry->removeWorkerSubscriptions($handle->id);
+        $this->session->forgetExposuresOfWorker($handle->id);
 
         if ($this->run->isRunning()) {
             $this->logger->error('Worker died', [

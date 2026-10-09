@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Stewart\Client\Component\ComponentEventDecoder;
 use Stewart\Client\Component\ComponentInstance;
+use Stewart\Client\Component\ExposedEntityDefinition;
 use Stewart\Client\Connection\ConnectionConfig;
 use Stewart\Client\Connection\HaConnection;
 use Stewart\Client\Connection\HomeAssistantUrl;
@@ -18,18 +19,24 @@ use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
 use Stewart\Client\Registry\RegistryDecoder;
 use Stewart\Client\State\EntityStateDecoder;
+use Stewart\Contracts\App\AppId;
+use Stewart\Contracts\Exposure\ExposedEntityKey;
+use Stewart\Contracts\Exposure\ExposedStateChange;
+use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Broker\Component\ComponentLink;
 use Stewart\Runtime\Broker\Component\ComponentTracker;
+use Stewart\Runtime\Broker\Exposure\ExposureLink;
 use Stewart\Runtime\Broker\Reconnector;
 use Stewart\Runtime\Broker\Trigger\HaTriggerLink;
 use Stewart\Runtime\Broker\WebsocketHaSession;
 use Stewart\Runtime\Config\BackoffPolicy;
 use Stewart\Runtime\Config\ExposeConfig;
 use Stewart\Runtime\Lifecycle\ComponentState;
+use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Tests\Fixtures\Broker\RecordingSessionListener;
@@ -332,6 +339,27 @@ final class WebsocketHaSessionTest extends TestCase
         self::assertSame(ComponentState::Active, $this->componentTracker?->detection->state);
     }
 
+    public function testPendingExposureIsUpsertedOnConnect(): void
+    {
+        $socket = self::createHaSocket(['hall' => 'off'], withComponent: true);
+        $session = $this->createSession($socket);
+        $session->exposeEntity(
+            new WorkerId(0),
+            new AppId('climate'),
+            new ExposedEntityKey('average_temperature'),
+            ExposedEntityDefinition::fromConfig(new SensorConfig(), null),
+            new ExposedStateChange(),
+        );
+        $session->open($this->listener);
+
+        $componentCommands = array_values(array_filter(
+            array_column($socket->sent, 'type'),
+            static fn(mixed $type): bool => \is_string($type) && str_starts_with($type, 'stewart/'),
+        ));
+
+        self::assertSame(['stewart/version', 'stewart/session/subscribe', 'stewart/entity/upsert'], $componentCommands);
+    }
+
     public function testTriggersAreReissuedAfterReconnect(): void
     {
         $first = self::createHaSocket(['hall' => 'off']);
@@ -435,6 +463,7 @@ final class WebsocketHaSessionTest extends TestCase
         );
 
         $client = new HaClient($connection, new EventDecoder(new EntityStateDecoder()), new EntityStateDecoder(), new RegistryDecoder(), new ComponentEventDecoder(), new NullLogger());
+        $expose = new ExposeConfig(ComponentInstance::parse('default'));
 
         return $this->session = new WebsocketHaSession(
             $client,
@@ -448,7 +477,8 @@ final class WebsocketHaSessionTest extends TestCase
             new StateCache(),
             new RegistryCache(),
             new HaTriggerLink($client, new NullLogger()),
-            new ComponentLink($client, new NullLogger(), $this->componentTracker = new ComponentTracker($this->timers->clock), new ExposeConfig(ComponentInstance::parse('default')), '0.9.0'),
+            new ComponentLink($client, new NullLogger(), $this->componentTracker = new ComponentTracker($this->timers->clock), $expose, '0.9.0'),
+            new ExposureLink($client, new NullLogger(), $this->componentTracker, $expose),
         );
     }
 
@@ -477,6 +507,12 @@ final class WebsocketHaSessionTest extends TestCase
             ? ['type' => 'result', 'success' => true, 'result' => ['component_version' => '0.9.0', 'protocol' => 1]]
             : ['type' => 'result', 'success' => false, 'error' => ['code' => 'unknown_command', 'message' => 'Unknown command.']]);
         $socket->replyWhenSent('stewart/session/subscribe', ['type' => 'result', 'success' => true, 'result' => null]);
+        $socket->replyWhenSent('stewart/entity/upsert', ['type' => 'result', 'success' => true, 'result' => [
+            'entity_id' => 'sensor.stewart_climate_average_temperature',
+            'state' => 21.4,
+            'attributes' => [],
+            'available' => true,
+        ]]);
         $socket->replyWhenSent('get_config', ['type' => 'result', 'success' => true, 'result' => [
             'time_zone' => 'Europe/Budapest',
             'latitude' => self::LATITUDE,

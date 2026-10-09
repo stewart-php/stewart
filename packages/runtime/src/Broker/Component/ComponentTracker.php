@@ -27,4 +27,9 @@ final class ComponentTracker
     {
         $this->recordState($state, $this->detection->version);
     }
+
+    public function isActive(): bool
+    {
+        return $this->detection->state === ComponentState::Active;
+    }
 }

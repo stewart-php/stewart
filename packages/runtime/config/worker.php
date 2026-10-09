@@ -20,6 +20,7 @@ use Stewart\Runtime\Worker\DsnStoreBackendOpener;
 use Stewart\Runtime\Worker\Message\BrokerMessageDispatcher;
 use Stewart\Runtime\Worker\Message\BrokerMessageHandler;
 use Stewart\Runtime\Worker\StoreBackendOpener;
+use Stewart\Runtime\Worker\WorkerEntityExposure;
 use Stewart\Runtime\Worker\WorkerHaContext;
 use Stewart\Runtime\Worker\WorkerLogger;
 use Stewart\Runtime\Worker\WorkerMqtt;
@@ -54,6 +55,7 @@ return static function (ContainerConfigurator $container): void {
     $services->set(WorkerHaContext::class)->arg('$resourceScope', inline_service(ResourceScope::class)->factory([ResourceScope::class, 'shared']));
     $services->set(WorkerScheduler::class)->arg('$resourceScope', inline_service(ResourceScope::class)->factory([ResourceScope::class, 'shared']));
     $services->set(WorkerMqtt::class)->arg('$resourceScope', inline_service(ResourceScope::class)->factory([ResourceScope::class, 'shared']));
+    $services->set(WorkerEntityExposure::class)->arg('$resourceScope', inline_service(ResourceScope::class)->factory([ResourceScope::class, 'shared']));
     $services->set(BrokerMessageDispatcher::class)->arg('$handlers', tagged_iterator('stewart.broker_message_handler'));
 
     $services->alias(LoggerInterface::class, WorkerLogger::class);
