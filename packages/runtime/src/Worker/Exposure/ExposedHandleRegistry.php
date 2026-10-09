@@ -37,9 +37,14 @@ final class ExposedHandleRegistry
         unset($this->handlesByScope[$scope->wireValue()][$key->value]);
     }
 
+    public function findHandle(ResourceScope $scope, ExposedEntityKey $key): ?ExposedHandle
+    {
+        return $this->handlesByScope[$scope->wireValue()][$key->value] ?? null;
+    }
+
     public function applySnapshot(ResourceScope $scope, ExposedEntityKey $key, ExposedEntitySnapshot $snapshot): void
     {
-        ($this->handlesByScope[$scope->wireValue()][$key->value] ?? null)?->applySnapshot($snapshot);
+        $this->findHandle($scope, $key)?->applySnapshot($snapshot);
     }
 
     public function releaseHandlesOf(ResourceScope $scope): void

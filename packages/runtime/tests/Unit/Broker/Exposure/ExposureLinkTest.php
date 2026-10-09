@@ -7,6 +7,8 @@ namespace Stewart\Runtime\Tests\Unit\Broker\Exposure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use Stewart\Client\Component\ComponentCommand;
+use Stewart\Client\Component\ComponentCommandAction;
 use Stewart\Client\Component\ComponentEventDecoder;
 use Stewart\Client\Component\ComponentInstance;
 use Stewart\Client\Component\ExposedEntityDefinition;
@@ -19,13 +21,18 @@ use Stewart\Client\Registry\RegistryDecoder;
 use Stewart\Client\State\EntityStateDecoder;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\ExposureError;
+use Stewart\Contracts\Exposure\Command\ButtonPress;
+use Stewart\Contracts\Exposure\Command\SwitchCommand;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\SensorConfig;
+use Stewart\Contracts\Exposure\SwitchConfig;
+use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Broker\Component\ComponentTracker;
+use Stewart\Runtime\Broker\Exposure\ExposedEntityCommand;
 use Stewart\Runtime\Broker\Exposure\ExposedEntitySync;
 use Stewart\Runtime\Broker\Exposure\ExposureLink;
 use Stewart\Runtime\Broker\Exposure\LiveExposure;
@@ -59,15 +66,21 @@ final class ExposureLinkTest extends TestCase
     /** @var list<ExposedEntitySync> */
     private array $synced = [];
 
+    /** @var list<ExposedEntityCommand> */
+    private array $commanded = [];
+
     protected function setUp(): void
     {
         $this->timers = new ManualTimers();
         $this->socket = FakeWebsocketConnector::createAuthenticatedConnection();
         $this->client = $this->createClient();
         $this->tracker = new ComponentTracker($this->timers->clock);
-        $this->link = new ExposureLink($this->client, new NullLogger(), $this->tracker, new ExposeConfig(ComponentInstance::parse('default')));
+        $this->link = new ExposureLink($this->client, new NullLogger(), $this->tracker, new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10)));
         $this->link->onEntitySynced(function (ExposedEntitySync $sync): void {
             $this->synced[] = $sync;
+        });
+        $this->link->onEntityCommanded(function (ExposedEntityCommand $command): void {
+            $this->commanded[] = $command;
         });
         $this->client->connect();
     }
@@ -257,6 +270,100 @@ final class ExposureLinkTest extends TestCase
 
         self::assertCount(1, $this->socket->listSentOfType('stewart/entity/remove'));
         self::assertCount(1, $this->socket->listSentOfType('stewart/entity/upsert'));
+    }
+
+    public function testCommandForUnknownEntityIsRejected(): void
+    {
+        $this->socket->replyWhenSent('stewart/command/result', ['type' => 'result', 'success' => true, 'result' => null]);
+
+        $this->link->receiveCommand(self::createComponentCommand(ComponentCommandAction::TurnOn));
+        EventLoopTicks::settle();
+
+        $answer = $this->socket->listSentOfType('stewart/command/result')[0] ?? [];
+        self::assertFalse($answer['ok'] ?? null);
+        self::assertSame('Entity night_mode of app lights is not exposed by a running app.', $answer['message'] ?? null);
+        self::assertSame([], $this->commanded);
+    }
+
+    public function testCommandForOrphanHasNoOwner(): void
+    {
+        $this->exposeNightMode(false);
+        $this->link->orphanExposuresOfApp(new AppId('lights'));
+
+        $this->link->receiveCommand(self::createComponentCommand(ComponentCommandAction::TurnOn));
+
+        self::assertCount(1, $this->commanded);
+        self::assertNull($this->commanded[0]->owner);
+    }
+
+    public function testCommandReachesOwningWorker(): void
+    {
+        $this->exposeNightMode(false);
+
+        $this->link->receiveCommand(self::createComponentCommand(ComponentCommandAction::TurnOff));
+
+        self::assertCount(1, $this->commanded);
+        self::assertTrue($this->commanded[0]->owner?->equals(new WorkerId(1)));
+        self::assertInstanceOf(SwitchCommand::class, $this->commanded[0]->command);
+        self::assertFalse($this->commanded[0]->command->isTurnOn());
+        self::assertSame('user-1', $this->commanded[0]->command->getContext()->userId);
+    }
+
+    public function testPressBecomesButtonPress(): void
+    {
+        $this->exposeNightMode(null);
+
+        $this->link->receiveCommand(self::createComponentCommand(ComponentCommandAction::Press));
+
+        self::assertInstanceOf(ButtonPress::class, $this->commanded[0]->command ?? null);
+    }
+
+    public function testAcceptedCommandStateIsReplayed(): void
+    {
+        $this->exposeNightMode(false);
+        $this->link->receiveCommand(self::createComponentCommand(ComponentCommandAction::TurnOn));
+        $this->socket->replyWhenSent('stewart/command/result', ['type' => 'result', 'success' => true, 'result' => null]);
+
+        $this->link->acceptCommand($this->commanded[0]);
+        EventLoopTicks::settle();
+        $this->activateComponent();
+        $this->replyToUpsert();
+        $this->link->replayAll();
+
+        self::assertTrue($this->socket->listSentOfType('stewart/command/result')[0]['ok'] ?? null);
+        self::assertTrue($this->socket->listSentOfType('stewart/entity/upsert')[0]['state'] ?? null);
+    }
+
+    public function testRejectedCommandKeepsState(): void
+    {
+        $this->exposeNightMode(false);
+        $this->link->receiveCommand(self::createComponentCommand(ComponentCommandAction::TurnOn));
+        $this->socket->replyWhenSent('stewart/command/result', ['type' => 'result', 'success' => true, 'result' => null]);
+
+        $this->link->rejectCommand($this->commanded[0], 'Alarm is armed.');
+        EventLoopTicks::settle();
+        $this->activateComponent();
+        $this->replyToUpsert();
+        $this->link->replayAll();
+
+        self::assertSame('Alarm is armed.', $this->socket->listSentOfType('stewart/command/result')[0]['message'] ?? null);
+        self::assertFalse($this->socket->listSentOfType('stewart/entity/upsert')[0]['state'] ?? null);
+    }
+
+    private function exposeNightMode(?bool $state): void
+    {
+        $this->link->exposeEntity(
+            new WorkerId(1),
+            new AppId('lights'),
+            new ExposedEntityKey('night_mode'),
+            ExposedEntityDefinition::fromConfig(new SwitchConfig(), null),
+            new ExposedStateChange($state === null ? null : new ExposedState($state)),
+        );
+    }
+
+    private static function createComponentCommand(ComponentCommandAction $action): ComponentCommand
+    {
+        return new ComponentCommand('3f2b9c0e8d7a4f61', new AppId('lights'), new ExposedEntityKey('night_mode'), $action, [], new EventContext('context-1', null, 'user-1'));
     }
 
     private function exposeTemperature(float $state): ?ExposedEntitySnapshot

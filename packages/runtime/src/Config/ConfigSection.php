@@ -138,12 +138,16 @@ final readonly class ConfigSection
     }
 
     /** @throws ConfigurationException */
-    public function readDuration(string $key, ?Duration $atLeast = null): Duration
+    public function readDuration(string $key, ?Duration $atLeast = null, ?Duration $atMost = null): Duration
     {
         $duration = $this->readParsedValue($key, Duration::parse(...));
 
         if ($atLeast?->isLongerThan($duration) === true) {
             throw ConfigurationException::durationTooShort($this->buildKeyPath($key), (string) $duration, (string) $atLeast);
+        }
+
+        if ($atMost !== null && $duration->isLongerThan($atMost)) {
+            throw ConfigurationException::durationTooLong($this->buildKeyPath($key), (string) $duration, (string) $atMost);
         }
 
         return $duration;

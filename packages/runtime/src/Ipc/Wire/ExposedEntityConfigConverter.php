@@ -10,12 +10,16 @@ use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exception\JsonShapeException;
 use Stewart\Contracts\Exposure\BinarySensorConfig;
 use Stewart\Contracts\Exposure\BinarySensorDeviceClass;
+use Stewart\Contracts\Exposure\ButtonConfig;
+use Stewart\Contracts\Exposure\ButtonDeviceClass;
 use Stewart\Contracts\Exposure\EntityCategory;
 use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedPlatform;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SensorDeviceClass;
 use Stewart\Contracts\Exposure\SensorStateClass;
+use Stewart\Contracts\Exposure\SwitchConfig;
+use Stewart\Contracts\Exposure\SwitchDeviceClass;
 use Stewart\Runtime\Json\ValueConverter;
 
 final readonly class ExposedEntityConfigConverter implements ValueConverter
@@ -43,7 +47,7 @@ final readonly class ExposedEntityConfigConverter implements ValueConverter
                 'display_precision' => $value->displayPrecision,
                 'options' => $value->options,
             ],
-            $value instanceof BinarySensorConfig => ['device_class' => $value->deviceClass?->value],
+            $value instanceof BinarySensorConfig, $value instanceof SwitchConfig, $value instanceof ButtonConfig => ['device_class' => $value->deviceClass?->value],
             default => throw new LogicException(\sprintf('%s has no IPC encoding.', $value::class)),
         };
 
@@ -81,6 +85,20 @@ final readonly class ExposedEntityConfigConverter implements ValueConverter
                 ),
                 ExposedPlatform::BinarySensor => new BinarySensorConfig(
                     deviceClass: $this->readEnum($value, 'device_class', BinarySensorDeviceClass::class, $path),
+                    name: $this->readOptionalString($value, 'name', $path),
+                    icon: $this->readOptionalString($value, 'icon', $path),
+                    entityCategory: $this->readEnum($value, 'entity_category', EntityCategory::class, $path),
+                    enabledByDefault: $this->readBool($value, 'enabled_by_default', $path),
+                ),
+                ExposedPlatform::Switch => new SwitchConfig(
+                    deviceClass: $this->readEnum($value, 'device_class', SwitchDeviceClass::class, $path),
+                    name: $this->readOptionalString($value, 'name', $path),
+                    icon: $this->readOptionalString($value, 'icon', $path),
+                    entityCategory: $this->readEnum($value, 'entity_category', EntityCategory::class, $path),
+                    enabledByDefault: $this->readBool($value, 'enabled_by_default', $path),
+                ),
+                ExposedPlatform::Button => new ButtonConfig(
+                    deviceClass: $this->readEnum($value, 'device_class', ButtonDeviceClass::class, $path),
                     name: $this->readOptionalString($value, 'name', $path),
                     icon: $this->readOptionalString($value, 'icon', $path),
                     entityCategory: $this->readEnum($value, 'entity_category', EntityCategory::class, $path),

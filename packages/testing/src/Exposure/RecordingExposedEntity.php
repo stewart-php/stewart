@@ -5,13 +5,19 @@ declare(strict_types=1);
 namespace Stewart\Testing\Exposure;
 
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\EventStream;
+use Stewart\Contracts\Exception\CommandException;
 use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exposure\Collection\ExposedStateChangeCollection;
+use Stewart\Contracts\Exposure\Command\ExposedCommand;
 use Stewart\Contracts\Exposure\ExposedEntity;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
+use Stewart\Contracts\Stream\OperatorStream;
+use Stewart\Testing\Stream\PushSource;
+use Stewart\Testing\Time\ManualTimers;
 
 /** @phpstan-import-type ExposedAttributes from ExposedEntity */
 abstract class RecordingExposedEntity implements ExposedEntity
@@ -29,9 +35,13 @@ abstract class RecordingExposedEntity implements ExposedEntity
 
     private bool $available = true;
 
+    /** @var PushSource<ExposedCommand> */
+    private readonly PushSource $commands;
+
     public function __construct(private readonly ExposedEntityKey $key, ?ExposedEntitySnapshot $seeded)
     {
         $this->changes = ExposedStateChangeCollection::empty();
+        $this->commands = new PushSource();
 
         if ($seeded !== null) {
             $this->entityId = $seeded->entityId;
@@ -90,6 +100,19 @@ abstract class RecordingExposedEntity implements ExposedEntity
         $this->state = $change->state ?? $this->state;
         $this->attributes = $change->attributes ?? $this->attributes;
         $this->available = $change->available ?? $this->available;
+    }
+
+    /** @return EventStream<ExposedCommand> */
+    protected function watchPushedCommands(): EventStream
+    {
+        return new OperatorStream($this->commands, new ManualTimers());
+    }
+
+    /** @throws CommandException */
+    protected function deliverCommand(ExposedCommand $command): void
+    {
+        $this->commands->push($command);
+        $this->state = $command->getRequestedState() ?? $this->state;
     }
 
     protected function findStateValue(): int|float|string|bool|null

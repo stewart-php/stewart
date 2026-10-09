@@ -30,8 +30,8 @@ abstract class WorkerExposedEntity implements ExposedEntity, ExposedHandle
     public function __construct(
         private readonly ExposureRequester $requester,
         private readonly ExposedHandleRegistry $handles,
-        private readonly ResourceScope $scope,
-        private readonly ExposedEntityKey $key,
+        protected readonly ResourceScope $scope,
+        protected readonly ExposedEntityKey $key,
     ) {}
 
     public function getKey(): ExposedEntityKey
@@ -83,6 +83,11 @@ abstract class WorkerExposedEntity implements ExposedEntity, ExposedHandle
         $this->state = $snapshot->state;
         $this->attributes = $snapshot->attributes;
         $this->available = $snapshot->available;
+    }
+
+    public function recordCommandedState(ExposedState $state): void
+    {
+        $this->state = $state;
     }
 
     public function markReleased(): void

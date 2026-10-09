@@ -52,6 +52,11 @@ final class ConfigurationException extends StewartException
         return self::createForReason(ConfigurationError::DurationTooShort, ['path' => $path, 'value' => $value, 'minimum' => $minimum]);
     }
 
+    public static function durationTooLong(string $path, string $value, string $maximum): self
+    {
+        return self::createForReason(ConfigurationError::DurationTooLong, ['path' => $path, 'value' => $value, 'maximum' => $maximum]);
+    }
+
     public static function maxDelayBelowInitialDelay(string $path, string $value, string $initialDelayPath, string $initialDelay): self
     {
         return self::createForReason(

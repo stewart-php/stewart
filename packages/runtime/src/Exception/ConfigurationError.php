@@ -16,6 +16,7 @@ enum ConfigurationError: string implements ExceptionReason
     case KeyInvalid = 'key_invalid';
     case KeyParseFailed = 'key_parse_failed';
     case DurationTooShort = 'duration_too_short';
+    case DurationTooLong = 'duration_too_long';
     case MaxDelayBelowInitialDelay = 'max_delay_below_initial_delay';
     case RestartWindowTooShort = 'restart_window_too_short';
     case HomeAssistantMissing = 'home_assistant_missing';
@@ -46,6 +47,7 @@ enum ConfigurationError: string implements ExceptionReason
             self::KeyInvalid => '{path} must be {expected}.',
             self::KeyParseFailed => '{path} is invalid: {cause}',
             self::DurationTooShort => '{path} is {value}; expected at least {minimum}.',
+            self::DurationTooLong => '{path} is {value}; expected at most {maximum}.',
             self::MaxDelayBelowInitialDelay => '{path} is {value}; expected at least {initialDelayPath} ({initialDelay}).',
             self::RestartWindowTooShort => 'supervision.restart_window is {window}, but the backoff for restart_attempts ({attempts}) adds up to {backoffTotal}, so a crash-looping worker is never quarantined.',
             self::HomeAssistantMissing => 'home_assistant is not configured. Set STEWART_HOME_ASSISTANT__URL and STEWART_HOME_ASSISTANT__TOKEN.',

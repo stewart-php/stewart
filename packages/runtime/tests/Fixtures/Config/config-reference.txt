@@ -235,6 +235,9 @@ expose:
     # Name of this Stewart in Home Assistant, part of every exposed unique_id; daemons sharing one Home Assistant need different names.
     instance:             default
 
+    # How long Home Assistant waits for an app to answer a command on an exposed entity; at most 300s.
+    command_timeout:      10s
+
     # Remove this daemon's entities that no running app exposed shortly after startup; entities of failed apps stay.
     prune:                true
 

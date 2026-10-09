@@ -6,10 +6,12 @@ namespace Stewart\Client\Component;
 
 use LogicException;
 use Stewart\Contracts\Exposure\BinarySensorConfig;
+use Stewart\Contracts\Exposure\ButtonConfig;
 use Stewart\Contracts\Exposure\DeviceInfo;
 use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedPlatform;
 use Stewart\Contracts\Exposure\SensorConfig;
+use Stewart\Contracts\Exposure\SwitchConfig;
 
 final readonly class ExposedEntityDefinition
 {
@@ -33,7 +35,7 @@ final readonly class ExposedEntityDefinition
                 'suggested_display_precision' => $config->displayPrecision,
                 'options' => $config->options === [] ? null : $config->options,
             ],
-            $config instanceof BinarySensorConfig => ['device_class' => $config->deviceClass?->value],
+            $config instanceof BinarySensorConfig, $config instanceof SwitchConfig, $config instanceof ButtonConfig => ['device_class' => $config->deviceClass?->value],
             default => throw new LogicException(\sprintf('%s has no component encoding.', $config::class)),
         };
         $commonFields = [

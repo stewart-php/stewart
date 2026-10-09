@@ -8,6 +8,8 @@ use Closure;
 use LogicException;
 use Stewart\Contracts\Connection\ConnectionEvent;
 use Stewart\Contracts\Event\HaEvent;
+use Stewart\Contracts\Exposure\Command\ExposedCommand;
+use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Mqtt\MqttMessage;
 use Stewart\Contracts\Registry\EntityFilter;
 use Stewart\Contracts\Selector\Selector;
@@ -167,6 +169,20 @@ final class LocalDispatcher
                 $queue->push($event);
             }
         }
+    }
+
+    public function dispatchExposedCommand(ResourceScope $scope, ExposedEntityKey $key, ExposedCommand $command): bool
+    {
+        $delivered = false;
+
+        foreach ($this->listQueuesOf($scope) as $queue) {
+            if ($queue->subscription->kind === SubscriptionKind::ExposedCommand && $queue->subscription->selector->matches($key->value)) {
+                $queue->push($command);
+                $delivered = true;
+            }
+        }
+
+        return $delivered;
     }
 
     public function cancel(SubscriptionId $subscriptionId): void

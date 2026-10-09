@@ -8,14 +8,18 @@ use LogicException;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exposure\BinarySensorConfig;
+use Stewart\Contracts\Exposure\ButtonConfig;
 use Stewart\Contracts\Exposure\DeviceInfo;
 use Stewart\Contracts\Exposure\EntityExposure;
 use Stewart\Contracts\Exposure\ExposedBinarySensor;
+use Stewart\Contracts\Exposure\ExposedButton;
 use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedSensor;
+use Stewart\Contracts\Exposure\ExposedSwitch;
 use Stewart\Contracts\Exposure\SensorConfig;
+use Stewart\Contracts\Exposure\SwitchConfig;
 use Stewart\Testing\Exposure\Collection\RecordedExposureCollection;
 
 final class RecordingEntityExposure implements EntityExposure
@@ -63,6 +67,20 @@ final class RecordingEntityExposure implements EntityExposure
         return $this->handlesByKey[$key->value] = new RecordingExposedBinarySensor($key, $config, $this->seededByKey[$key->value] ?? null);
     }
 
+    public function exposeSwitch(ExposedEntityKey|string $key, SwitchConfig $config = new SwitchConfig(), ?DeviceInfo $device = null): ExposedSwitch
+    {
+        $key = $this->claimKey($key, $config, $device);
+
+        return $this->handlesByKey[$key->value] = new RecordingExposedSwitch($key, $config, $this->seededByKey[$key->value] ?? null);
+    }
+
+    public function exposeButton(ExposedEntityKey|string $key, ButtonConfig $config = new ButtonConfig(), ?DeviceInfo $device = null): ExposedButton
+    {
+        $key = $this->claimKey($key, $config, $device);
+
+        return $this->handlesByKey[$key->value] = new RecordingExposedButton($key, $config, $this->seededByKey[$key->value] ?? null);
+    }
+
     public function requireSensor(ExposedEntityKey|string $key): RecordingExposedSensor
     {
         $handle = $this->findHandle($key);
@@ -75,6 +93,20 @@ final class RecordingEntityExposure implements EntityExposure
         $handle = $this->findHandle($key);
 
         return $handle instanceof RecordingExposedBinarySensor ? $handle : throw new LogicException(\sprintf('No binary sensor was exposed as "%s".', $key));
+    }
+
+    public function requireSwitch(ExposedEntityKey|string $key): RecordingExposedSwitch
+    {
+        $handle = $this->findHandle($key);
+
+        return $handle instanceof RecordingExposedSwitch ? $handle : throw new LogicException(\sprintf('No switch was exposed as "%s".', $key));
+    }
+
+    public function requireButton(ExposedEntityKey|string $key): RecordingExposedButton
+    {
+        $handle = $this->findHandle($key);
+
+        return $handle instanceof RecordingExposedButton ? $handle : throw new LogicException(\sprintf('No button was exposed as "%s".', $key));
     }
 
     /** @throws ExposureException */

@@ -7,32 +7,40 @@ namespace Stewart\Runtime\Worker;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exposure\BinarySensorConfig;
+use Stewart\Contracts\Exposure\ButtonConfig;
 use Stewart\Contracts\Exposure\DeviceInfo;
 use Stewart\Contracts\Exposure\EntityExposure;
 use Stewart\Contracts\Exposure\ExposedBinarySensor;
+use Stewart\Contracts\Exposure\ExposedButton;
 use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedSensor;
 use Stewart\Contracts\Exposure\ExposedStateChange;
+use Stewart\Contracts\Exposure\ExposedSwitch;
 use Stewart\Contracts\Exposure\SensorConfig;
+use Stewart\Contracts\Exposure\SwitchConfig;
 use Stewart\Runtime\Model\ResourceScope;
+use Stewart\Runtime\Worker\Exposure\ExposedCommandStreams;
 use Stewart\Runtime\Worker\Exposure\ExposedHandleRegistry;
 use Stewart\Runtime\Worker\Exposure\ExposureRequester;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedBinarySensor;
+use Stewart\Runtime\Worker\Exposure\WorkerExposedButton;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedEntity;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedSensor;
+use Stewart\Runtime\Worker\Exposure\WorkerExposedSwitch;
 
 final readonly class WorkerEntityExposure implements EntityExposure
 {
     public function __construct(
         private ExposureRequester $requester,
         private ExposedHandleRegistry $handles,
+        private ExposedCommandStreams $commandStreams,
         private ResourceScope $resourceScope,
     ) {}
 
     public function forApp(AppId $appId): self
     {
-        return new self($this->requester, $this->handles, ResourceScope::forApp($appId));
+        return new self($this->requester, $this->handles, $this->commandStreams, ResourceScope::forApp($appId));
     }
 
     public function exposeSensor(ExposedEntityKey|string $key, SensorConfig $config = new SensorConfig(), ?DeviceInfo $device = null): ExposedSensor
@@ -50,6 +58,20 @@ final readonly class WorkerEntityExposure implements EntityExposure
         $key = $this->claimKey($key);
 
         return $this->exposeHandle(new WorkerExposedBinarySensor($this->requester, $this->handles, $this->resourceScope, $key), $config, $device);
+    }
+
+    public function exposeSwitch(ExposedEntityKey|string $key, SwitchConfig $config = new SwitchConfig(), ?DeviceInfo $device = null): ExposedSwitch
+    {
+        $key = $this->claimKey($key);
+
+        return $this->exposeHandle(new WorkerExposedSwitch($this->requester, $this->handles, $this->resourceScope, $key, $this->commandStreams), $config, $device);
+    }
+
+    public function exposeButton(ExposedEntityKey|string $key, ButtonConfig $config = new ButtonConfig(), ?DeviceInfo $device = null): ExposedButton
+    {
+        $key = $this->claimKey($key);
+
+        return $this->exposeHandle(new WorkerExposedButton($this->requester, $this->handles, $this->resourceScope, $key, $this->commandStreams), $config, $device);
     }
 
     /** @throws ExposureException */

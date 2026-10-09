@@ -40,6 +40,6 @@ final class ExposureLinkFixture
         );
         $client = new HaClient($connection, new EventDecoder(new EntityStateDecoder()), new EntityStateDecoder(), new RegistryDecoder(), new ComponentEventDecoder(), new NullLogger());
 
-        return new ExposureLink($client, new NullLogger(), new ComponentTracker($timers->clock), new ExposeConfig(ComponentInstance::parse('default')));
+        return new ExposureLink($client, new NullLogger(), new ComponentTracker($timers->clock), new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10)));
     }
 }

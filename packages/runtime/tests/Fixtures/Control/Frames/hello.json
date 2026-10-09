@@ -2,5 +2,5 @@
     "type": "hello",
     "token": "golden-token",
     "client": "stewart status",
-    "protocol": 26
+    "protocol": 28
 }

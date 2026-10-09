@@ -9,6 +9,9 @@ use Amp\TimeoutCancellation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Client\Component\Collection\ExposedEntityAddressCollection;
+use Stewart\Client\Component\ComponentCommand;
+use Stewart\Client\Component\ComponentCommandAction;
+use Stewart\Client\Component\ComponentCommandAnswer;
 use Stewart\Client\Component\ComponentErrorCode;
 use Stewart\Client\Component\ComponentEventDecoder;
 use Stewart\Client\Component\ComponentInstance;
@@ -20,6 +23,7 @@ use Stewart\Client\Component\ExposedEntityDefinition;
 use Stewart\Client\Component\ExposedEntityReconcile;
 use Stewart\Client\Component\ReconcileResultReader;
 use Stewart\Client\Component\SessionReplaced;
+use Stewart\Client\Connection\Command\Component\AnswerComponentCommand;
 use Stewart\Client\Connection\Command\Component\GetComponentVersion;
 use Stewart\Client\Connection\Command\Component\ReconcileExposedEntities;
 use Stewart\Client\Connection\Command\Component\RemoveExposedEntity;
@@ -36,7 +40,9 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Exposure\BinarySensorConfig;
 use Stewart\Contracts\Exposure\BinarySensorDeviceClass;
+use Stewart\Contracts\Exposure\ButtonConfig;
 use Stewart\Contracts\Exposure\DeviceInfo;
+use Stewart\Contracts\Exposure\EntityCategory;
 use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
@@ -45,6 +51,7 @@ use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SensorDeviceClass;
 use Stewart\Contracts\Exposure\SensorStateClass;
+use Stewart\Contracts\Exposure\SwitchConfig;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Support\Time\RevoltTimers;
 use Stewart\Testing\Exception\AssertsReason;
@@ -62,6 +69,8 @@ use Stewart\Testing\Exception\AssertsReason;
 #[CoversClass(ExposedStateChange::class)]
 #[CoversClass(ExposedEntitySnapshot::class)]
 #[CoversClass(ComponentErrorCode::class)]
+#[CoversClass(AnswerComponentCommand::class)]
+#[CoversClass(ComponentCommandAnswer::class)]
 final class ComponentGoldenTest extends TestCase
 {
     use AssertsReason;
@@ -136,6 +145,54 @@ final class ComponentGoldenTest extends TestCase
         self::assertInstanceOf(SessionReplaced::class, $received->getFuture()->await(new TimeoutCancellation(self::WAIT_SECONDS)));
     }
 
+    public function testSwitchCommandGoldenIsDecoded(): void
+    {
+        $command = $this->receiveCommandGolden('event-command.switch');
+
+        self::assertSame('lights', $command->appId->value);
+        self::assertSame('night_mode', $command->key->value);
+        self::assertSame(ComponentCommandAction::TurnOn, $command->action);
+        self::assertSame('9e2d6b4f1c8a4e7d8b3f5a0c6d1e2f3a', $command->context->userId);
+    }
+
+    public function testButtonCommandGoldenIsDecoded(): void
+    {
+        $command = $this->receiveCommandGolden('event-command.button');
+
+        self::assertSame('all_off', $command->key->value);
+        self::assertSame(ComponentCommandAction::Press, $command->action);
+    }
+
+    public function testAcceptedAnswerMatchesGolden(): void
+    {
+        $golden = ComponentGolden::loadGolden('command-result.ok');
+        $this->server->replayGolden($golden);
+
+        $answered = $this->connectClient()->answerComponentCommand(ComponentCommandAnswer::accept('3f2b9c0e8d7a4f61'));
+
+        self::assertTrue($answered);
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/command/result'));
+    }
+
+    public function testRejectedAnswerMatchesGolden(): void
+    {
+        $golden = ComponentGolden::loadGolden('command-result.rejected');
+        $this->server->replayGolden($golden);
+
+        $this->connectClient()->answerComponentCommand(
+            ComponentCommandAnswer::reject('3f2b9c0e8d7a4f61', 'Night mode cannot start while the alarm is armed.'),
+        );
+
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/command/result'));
+    }
+
+    public function testAnswerToUnknownCommandIsFalse(): void
+    {
+        $this->server->replayGolden(ComponentGolden::loadGolden('command-result.not-found'));
+
+        self::assertFalse($this->connectClient()->answerComponentCommand(ComponentCommandAnswer::accept('3f2b9c0e8d7a4f61')));
+    }
+
     public function testSensorUpsertMatchesGolden(): void
     {
         $golden = ComponentGolden::loadGolden('entity-upsert.sensor');
@@ -166,6 +223,36 @@ final class ComponentGoldenTest extends TestCase
 
         self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/upsert'));
         self::assertFalse($snapshot->state->value);
+    }
+
+    public function testSwitchUpsertMatchesGolden(): void
+    {
+        $golden = ComponentGolden::loadGolden('entity-upsert.switch');
+        $this->server->replayGolden($golden);
+
+        $snapshot = $this->connectClient()->upsertExposedEntity(
+            self::createAddress('lights', 'night_mode'),
+            ExposedEntityDefinition::fromConfig(new SwitchConfig(name: 'Night mode', icon: 'mdi:weather-night', entityCategory: EntityCategory::Config), null),
+            new ExposedStateChange(new ExposedState(true)),
+        );
+
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/upsert'));
+        self::assertTrue($snapshot->state->value);
+    }
+
+    public function testButtonUpsertMatchesGolden(): void
+    {
+        $golden = ComponentGolden::loadGolden('entity-upsert.button');
+        $this->server->replayGolden($golden);
+
+        $snapshot = $this->connectClient()->upsertExposedEntity(
+            self::createAddress('lights', 'all_off'),
+            ExposedEntityDefinition::fromConfig(new ButtonConfig(name: 'All off', icon: 'mdi:lightbulb-group-off'), null),
+            new ExposedStateChange(),
+        );
+
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/upsert'));
+        self::assertNull($snapshot->state->value);
     }
 
     public function testDeviceOverrideUpsertMatchesGolden(): void
@@ -279,6 +366,25 @@ final class ComponentGoldenTest extends TestCase
 
         self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/reconcile'));
         self::assertSame(['binary_sensor.stewart_presence_anyone_home'], $removed->toStrings());
+    }
+
+    private function receiveCommandGolden(string $name): ComponentCommand
+    {
+        $this->server->replayGolden(ComponentGolden::loadGolden('session-subscribe'));
+        /** @var DeferredFuture<ComponentSessionEvent> $received */
+        $received = new DeferredFuture();
+
+        $subscriptionId = $this->connectClient()->subscribeComponentSession(
+            self::createSessionRequest(),
+            static function (ComponentSessionEvent $event) use ($received): void {
+                $received->complete($event);
+            },
+        );
+        $this->server->pushEvent($subscriptionId, ComponentGolden::loadGolden($name)->requireEvent());
+        $command = $received->getFuture()->await(new TimeoutCancellation(self::WAIT_SECONDS));
+        self::assertInstanceOf(ComponentCommand::class, $command);
+
+        return $command;
     }
 
     private function captureUpsertFailure(ExposedEntityAddress $address, ExposedEntityConfig $config, ExposedState $state): HaClientException

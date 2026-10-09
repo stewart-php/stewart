@@ -11,10 +11,12 @@ use Stewart\Runtime\Broker\Exposure\ExposureLink;
 use Stewart\Runtime\Control\Protocol\Status\AppCounters;
 use Stewart\Runtime\Control\Protocol\Status\AppPauseStatus;
 use Stewart\Runtime\Control\Protocol\Status\AppStatus;
+use Stewart\Runtime\Control\Protocol\Status\ExposedCommandStats;
 use Stewart\Runtime\Control\Protocol\Status\FailureReport;
 use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
 use Stewart\Runtime\Ipc\Message\AppActivityReport;
 use Stewart\Runtime\Lifecycle\AppState;
+use Stewart\Runtime\Model\ExposedCommandOutcome;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\WorkerId;
@@ -45,6 +47,9 @@ final class AppRunningTotals
 
     /** @var array<string, ServiceCallStatsRecorder> */
     private array $calls = [];
+
+    /** @var array<string, int> */
+    private array $exposedCommandCounts = [];
 
     private function __construct(
         private readonly string $id,
@@ -93,6 +98,11 @@ final class AppRunningTotals
         ($this->calls[$outcome->value] ??= new ServiceCallStatsRecorder($outcome))->recordCall($latency);
     }
 
+    public function recordExposedCommand(ExposedCommandOutcome $outcome): void
+    {
+        $this->exposedCommandCounts[$outcome->value] = ($this->exposedCommandCounts[$outcome->value] ?? 0) + 1;
+    }
+
     public function recordLastFailure(FailureReport $failure): void
     {
         $this->lastFailure = $failure;
@@ -126,6 +136,21 @@ final class AppRunningTotals
             ),
             serviceCalls: array_values(array_map(static fn(ServiceCallStatsRecorder $recorder): ServiceCallStats => $recorder->buildServiceCallStats(), $calls)),
             lastFailure: $this->lastFailure,
+            exposedCommands: $this->buildExposedCommandStats(),
         );
+    }
+
+    /** @return list<ExposedCommandStats> */
+    private function buildExposedCommandStats(): array
+    {
+        $stats = [];
+
+        foreach (ExposedCommandOutcome::cases() as $outcome) {
+            if (isset($this->exposedCommandCounts[$outcome->value])) {
+                $stats[] = new ExposedCommandStats($outcome, $this->exposedCommandCounts[$outcome->value]);
+            }
+        }
+
+        return $stats;
     }
 }

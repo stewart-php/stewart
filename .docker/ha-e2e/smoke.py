@@ -15,6 +15,7 @@ HA_PORT = 8123
 CLIENT_ID = "http://stewart-e2e.local/"
 EXPOSED_SENSOR = "sensor.stewart_hello_changes_seen"
 EXPOSED_SENSOR_DEVICE = "Stewart · hello"
+EXPOSED_SWITCH = "switch.stewart_hello_counting"
 WATCHED_ENTITY = "input_boolean.stewart_e2e"
 WAIT_SECONDS = 60.0
 POLL_SECONDS = 0.5
@@ -134,6 +135,15 @@ def toggle_watched_entity(ha: HomeAssistant) -> None:
     ha.post_json("/api/services/input_boolean/toggle", {"entity_id": WATCHED_ENTITY})
 
 
+def switch_exposed_entity(ha: HomeAssistant, state: str) -> None:
+    ha.post_json(f"/api/services/switch/turn_{state}", {"entity_id": EXPOSED_SWITCH})
+    switched = read_text(
+        HomeAssistant.expect_success(ha.get(f"/api/states/{EXPOSED_SWITCH}"), EXPOSED_SWITCH).read_object(), "state"
+    )
+    if switched != state:
+        raise SmokeError(f"{EXPOSED_SWITCH} is {switched!r} after turn_{state}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Drives the real Home Assistant of the e2e smoke test.")
     parser.add_argument("--token-file", type=Path, required=True)
@@ -141,6 +151,7 @@ def main() -> int:
     steps.add_parser("provision")
     steps.add_parser("await-sensor").add_argument("state")
     steps.add_parser("toggle")
+    steps.add_parser("switch").add_argument("state", choices=("on", "off"))
     arguments = parser.parse_args()
     token_file: Path = arguments.token_file
 
@@ -151,6 +162,8 @@ def main() -> int:
             ha = HomeAssistant(token=token_file.read_text())
             if arguments.step == "await-sensor":
                 await_sensor(ha, arguments.state)
+            elif arguments.step == "switch":
+                switch_exposed_entity(ha, arguments.state)
             else:
                 toggle_watched_entity(ha)
     except SmokeError as failure:

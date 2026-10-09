@@ -75,7 +75,7 @@ Result: `null`, then events.
 
 | `event.type` | Fields | Notes |
 |---|---|---|
-| `command` | `command_id`, `app`, `key`, `action`, `data` | See [Commands](#commands). `command_id` is an opaque string. |
+| `command` | `command_id`, `app`, `key`, `action`, `data`, `context` | See [Commands](#commands). `command_id` is an opaque string; `context` is the service call's `{id, parent_id, user_id}`. |
 | `session_replaced` | — | The last event of a session that another subscribe took over. |
 | `sentence` | — | Reserved. |
 
@@ -161,7 +161,7 @@ Every platform takes these config keys:
 | `sensor` | number \| string \| null | `device_class`, `unit_of_measurement`, `state_class` (`measurement`, `total`, `total_increasing`), `suggested_display_precision`, `options` (with `device_class: enum`) | — |
 | `binary_sensor` | bool \| null | `device_class` | — |
 | `switch` | bool \| null | `device_class` (`outlet`, `switch`) | `turn_on`, `turn_off` |
-| `button` | none; `state` must be absent | `device_class` (`identify`, `restart`, `update`) | `press` |
+| `button` | none; `state` must be absent and reads back as `null` | `device_class` (`identify`, `restart`, `update`) | `press` |
 | `number` | number \| null | `min`, `max`, `step` (required), `mode` (`auto`, `box`, `slider`), `device_class`, `unit_of_measurement` | `set_value {value: number}` |
 | `select` | string \| null | `options` (required, non-empty list of strings) | `select_option {option: string}` |
 | `text` | string \| null | `min` (default 0), `max` (default 255), `pattern`, `mode` (`text`, `password`) | `set_value {value: string}` |
@@ -189,7 +189,8 @@ Every platform takes these config keys:
 5. No answer in time, or the session ends first: the service call fails with `HomeAssistantError`; the state is
    unchanged.
 
-Without a session, a service call fails at once.
+Without a session, a service call fails at once. A `button` records its press time before the command is sent, so a
+refused press still shows as pressed.
 
 ## Errors
 

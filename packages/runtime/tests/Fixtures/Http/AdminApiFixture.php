@@ -8,6 +8,7 @@ use Psr\Log\NullLogger;
 use Stewart\Client\Component\ComponentInstance;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
+use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
@@ -106,7 +107,7 @@ final readonly class AdminApiFixture
             storeHealth: new StoreHealthBuilder($broker->pools->slots, storeConfigured: false),
             appStatuses: new AppStatusBuilder($metrics, $this->registry, ExposureLinkFixture::createWithoutExposures()),
             deployStatus: new DeployStatusBuilder(new DeployState()),
-            componentStatus: new ComponentStatusBuilder(new ComponentTracker($this->clock), new ExposeConfig(ComponentInstance::parse('default'))),
+            componentStatus: new ComponentStatusBuilder(new ComponentTracker($this->clock), new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10))),
             connection: new ConnectionTracker($this->clock),
             clock: $this->clock,
         );

@@ -9,6 +9,8 @@ use Closure;
 use DateTimeZone;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Stewart\Client\Component\ComponentCommandAnswer;
+use Stewart\Client\Component\ComponentErrorCode;
 use Stewart\Client\Component\ComponentEventDecoder;
 use Stewart\Client\Component\ComponentSessionEvent;
 use Stewart\Client\Component\ComponentSessionRequest;
@@ -19,6 +21,7 @@ use Stewart\Client\Component\ExposedEntityReconcile;
 use Stewart\Client\Component\ExposedEntitySnapshotReader;
 use Stewart\Client\Component\ReconcileResultReader;
 use Stewart\Client\Connection\Command\CallService;
+use Stewart\Client\Connection\Command\Component\AnswerComponentCommand;
 use Stewart\Client\Connection\Command\Component\GetComponentVersion;
 use Stewart\Client\Connection\Command\Component\ReconcileExposedEntities;
 use Stewart\Client\Connection\Command\Component\RemoveExposedEntity;
@@ -385,6 +388,22 @@ final class HaClient
 
             $onEvent($decoded);
         });
+    }
+
+    /** @throws HaClientException */
+    public function answerComponentCommand(ComponentCommandAnswer $answer): bool
+    {
+        try {
+            $this->connection->sendIgnoringResult(new AnswerComponentCommand($answer));
+        } catch (HaClientException $e) {
+            if (ComponentErrorCode::tryFromException($e) === ComponentErrorCode::NotFound) {
+                return false;
+            }
+
+            throw $e;
+        }
+
+        return true;
     }
 
     /** @throws HaClientException */

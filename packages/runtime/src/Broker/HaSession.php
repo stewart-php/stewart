@@ -24,6 +24,7 @@ use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\Sun\GeoLocation;
 use Stewart\Contracts\Trigger\TriggerSpec;
+use Stewart\Runtime\Broker\Exposure\ExposedEntityCommand;
 use Stewart\Runtime\Model\WorkerId;
 use Throwable;
 
@@ -94,4 +95,8 @@ interface HaSession
     public function orphanExposuresOfApp(AppId $appId): void;
 
     public function orphanExposuresOfWorker(WorkerId $workerId): void;
+
+    public function acceptExposedEntityCommand(ExposedEntityCommand $command): void;
+
+    public function rejectExposedEntityCommand(ExposedEntityCommand $command, string $reason): void;
 }

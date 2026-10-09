@@ -9,9 +9,13 @@ use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Exception\JsonShapeError;
 use Stewart\Contracts\Exposure\BinarySensorConfig;
 use Stewart\Contracts\Exposure\BinarySensorDeviceClass;
+use Stewart\Contracts\Exposure\ButtonConfig;
+use Stewart\Contracts\Exposure\ButtonDeviceClass;
 use Stewart\Contracts\Exposure\EntityCategory;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SensorDeviceClass;
+use Stewart\Contracts\Exposure\SwitchConfig;
+use Stewart\Contracts\Exposure\SwitchDeviceClass;
 use Stewart\Runtime\Ipc\Wire\ExposedEntityConfigConverter;
 use Stewart\Testing\Exception\AssertsReason;
 
@@ -24,6 +28,22 @@ final class ExposedEntityConfigConverterTest extends TestCase
     {
         $converter = new ExposedEntityConfigConverter();
         $config = new BinarySensorConfig(BinarySensorDeviceClass::Window, name: 'Window', entityCategory: EntityCategory::Diagnostic, enabledByDefault: false);
+
+        self::assertEquals($config, $converter->decodeValue($converter->encodeValue($config), 'config'));
+    }
+
+    public function testSwitchConfigRoundTrips(): void
+    {
+        $converter = new ExposedEntityConfigConverter();
+        $config = new SwitchConfig(SwitchDeviceClass::Outlet, name: 'Heater', icon: 'mdi:radiator');
+
+        self::assertEquals($config, $converter->decodeValue($converter->encodeValue($config), 'config'));
+    }
+
+    public function testButtonConfigRoundTrips(): void
+    {
+        $converter = new ExposedEntityConfigConverter();
+        $config = new ButtonConfig(ButtonDeviceClass::Restart, entityCategory: EntityCategory::Config);
 
         self::assertEquals($config, $converter->decodeValue($converter->encodeValue($config), 'config'));
     }

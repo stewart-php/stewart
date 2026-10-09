@@ -17,4 +17,10 @@ interface EntityExposure
         BinarySensorConfig $config = new BinarySensorConfig(),
         ?DeviceInfo $device = null,
     ): ExposedBinarySensor;
+
+    /** @throws ExposureException */
+    public function exposeSwitch(ExposedEntityKey|string $key, SwitchConfig $config = new SwitchConfig(), ?DeviceInfo $device = null): ExposedSwitch;
+
+    /** @throws ExposureException */
+    public function exposeButton(ExposedEntityKey|string $key, ButtonConfig $config = new ButtonConfig(), ?DeviceInfo $device = null): ExposedButton;
 }
