@@ -46,6 +46,7 @@ final class StewartConfigSchema implements ConfigurationInterface
         $this->addHttpSection($root);
         $this->addCodegenSection($root);
         $this->addDeploySection($root);
+        $this->addExposeSection($root);
         $this->addAppsSection($root);
 
         return $treeBuilder;
@@ -335,6 +336,20 @@ final class StewartConfigSchema implements ConfigurationInterface
                                 ->append($this->createDurationNode('prepare_timeout', 'Longest a fetch, dependency install and check of one commit may take.', '10m'))
                             ->end()
                         ->end()
+                    ->end()
+                ->end()
+            ->end();
+    }
+
+    private function addExposeSection(ArrayNodeDefinition $root): void
+    {
+        $root
+            ->children()
+                ->arrayNode('expose')
+                    ->info('Entities apps create in Home Assistant through the stewart integration.')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->append($this->createScalarNode('instance', 'Name of this Stewart in Home Assistant, part of every exposed unique_id; daemons sharing one Home Assistant need different names.', 'default'))
                     ->end()
                 ->end()
             ->end();
