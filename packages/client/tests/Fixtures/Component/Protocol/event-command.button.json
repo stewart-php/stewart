@@ -1,0 +1,16 @@
+{
+    "protocol": 1,
+    "event": {
+        "type": "command",
+        "command_id": "7c1d5e9a3b0f4a26",
+        "app": "lights",
+        "key": "all_off",
+        "action": "press",
+        "data": {},
+        "context": {
+            "id": "01J9ZK3YQ8T7C4M2N6P5R0VWXA",
+            "parent_id": null,
+            "user_id": "9e2d6b4f1c8a4e7d8b3f5a0c6d1e2f3a"
+        }
+    }
+}
