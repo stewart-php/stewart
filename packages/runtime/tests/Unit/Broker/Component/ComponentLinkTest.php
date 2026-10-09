@@ -19,8 +19,9 @@ use Stewart\Client\Registry\RegistryDecoder;
 use Stewart\Client\State\EntityStateDecoder;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Broker\Component\ComponentLink;
-use Stewart\Runtime\Broker\Component\ComponentState;
+use Stewart\Runtime\Broker\Component\ComponentTracker;
 use Stewart\Runtime\Config\ExposeConfig;
+use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
@@ -28,6 +29,7 @@ use Stewart\Testing\Websocket\FakeWebsocketConnection;
 use Stewart\Testing\Websocket\FakeWebsocketConnector;
 
 #[CoversClass(ComponentLink::class)]
+#[CoversClass(ComponentTracker::class)]
 final class ComponentLinkTest extends TestCase
 {
     use AssertsReason;
@@ -42,17 +44,20 @@ final class ComponentLinkTest extends TestCase
 
     private ComponentLink $link;
 
+    private ComponentTracker $tracker;
+
     protected function setUp(): void
     {
         $this->timers = new ManualTimers();
         $this->socket = FakeWebsocketConnector::createAuthenticatedConnection();
         $this->client = $this->createClient();
-        $this->link = new ComponentLink($this->client, new NullLogger(), $this->timers->clock, new ExposeConfig(ComponentInstance::parse('upstairs')), self::STEWART_VERSION);
+        $this->tracker = new ComponentTracker($this->timers->clock);
+        $this->link = new ComponentLink($this->client, new NullLogger(), $this->tracker, new ExposeConfig(ComponentInstance::parse('upstairs')), self::STEWART_VERSION);
     }
 
     public function testLinkIsUncheckedBeforeFirstConnect(): void
     {
-        self::assertSame(ComponentState::Unchecked, $this->link->describeDetection()->state);
+        self::assertSame(ComponentState::Unchecked, $this->tracker->detection->state);
     }
 
     public function testMissingComponentOpensNoSession(): void
@@ -60,7 +65,7 @@ final class ComponentLinkTest extends TestCase
         $this->socket->replyWhenSent('stewart/version', self::createRejection('unknown_command'));
         $this->connectAndEstablish();
 
-        self::assertSame(ComponentState::Missing, $this->link->describeDetection()->state);
+        self::assertSame(ComponentState::Missing, $this->tracker->detection->state);
         self::assertSame([], $this->socket->listSentOfType('stewart/session/subscribe'));
     }
 
@@ -70,7 +75,7 @@ final class ComponentLinkTest extends TestCase
         $this->replyToSessionSubscribe();
         $this->connectAndEstablish();
 
-        $detection = $this->link->describeDetection();
+        $detection = $this->tracker->detection;
         $subscribe = $this->socket->listSentOfType('stewart/session/subscribe')[0] ?? [];
 
         self::assertSame(ComponentState::Active, $detection->state);
@@ -84,7 +89,7 @@ final class ComponentLinkTest extends TestCase
         $this->replyWithVersion(2);
         $this->connectAndEstablish();
 
-        self::assertSame(ComponentState::ProtocolMismatch, $this->link->describeDetection()->state);
+        self::assertSame(ComponentState::ProtocolMismatch, $this->tracker->detection->state);
         self::assertSame([], $this->socket->listSentOfType('stewart/session/subscribe'));
     }
 
@@ -94,7 +99,7 @@ final class ComponentLinkTest extends TestCase
         $this->socket->replyWhenSent('stewart/session/subscribe', self::createRejection('protocol_mismatch'));
         $this->connectAndEstablish();
 
-        $detection = $this->link->describeDetection();
+        $detection = $this->tracker->detection;
 
         self::assertSame(ComponentState::Refused, $detection->state);
         self::assertSame('0.9.1', $detection->version?->componentVersion);
@@ -113,7 +118,7 @@ final class ComponentLinkTest extends TestCase
 
         $this->pushSessionReplaced();
 
-        self::assertSame(ComponentState::Replaced, $this->link->describeDetection()->state);
+        self::assertSame(ComponentState::Replaced, $this->tracker->detection->state);
     }
 
     public function testEventAfterLostLinkIsIgnored(): void
@@ -125,7 +130,7 @@ final class ComponentLinkTest extends TestCase
         $this->link->markLinkLost();
         $this->pushSessionReplaced();
 
-        $detection = $this->link->describeDetection();
+        $detection = $this->tracker->detection;
 
         self::assertSame(ComponentState::Unchecked, $detection->state);
         self::assertSame('0.9.1', $detection->version?->componentVersion);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Tests\Unit\Console;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
@@ -14,6 +15,7 @@ use Stewart\Runtime\Control\Protocol\Status\AppCounters;
 use Stewart\Runtime\Control\Protocol\Status\AppPauseStatus;
 use Stewart\Runtime\Control\Protocol\Status\AppStatus;
 use Stewart\Runtime\Control\Protocol\Status\BrokerStats;
+use Stewart\Runtime\Control\Protocol\Status\ComponentStatus;
 use Stewart\Runtime\Control\Protocol\Status\ConnectionState;
 use Stewart\Runtime\Control\Protocol\Status\DaemonInfo;
 use Stewart\Runtime\Control\Protocol\Status\DeployFailure;
@@ -27,6 +29,7 @@ use Stewart\Runtime\Control\Protocol\Status\WorkerStatus;
 use Stewart\Runtime\Lifecycle\AppFailurePhase;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
 use Stewart\Runtime\Lifecycle\AppState;
+use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
 use Stewart\Runtime\Model\RoutingStats;
@@ -41,10 +44,59 @@ final class StatusRendererTest extends TestCase
 {
     private const string GOLDEN = __DIR__ . '/../../Fixtures/Control/status.txt';
 
+    private const float NOW = 1700003600.0;
+
     public function testEverySectionIsRenderedFromTheSnapshot(): void
     {
-        $now = 1700003600.0;
-        $snapshot = new RuntimeSnapshot(
+        $snapshot = self::createSnapshot(new ComponentStatus(ComponentState::Active, self::createInstantAt(self::NOW - 30.0), 'default', '0.9.0', 1));
+
+        $output = new BufferedOutput();
+        new StatusRenderer(new StatusFormatter())->render($output, $snapshot);
+        $text = $output->fetch();
+
+        if (getenv('UPDATE_GOLDEN') === '1') {
+            file_put_contents(self::GOLDEN, $text);
+        }
+
+        self::assertStringEqualsFile(self::GOLDEN, $text);
+    }
+
+    public function testFormatHelpersRead(): void
+    {
+        self::assertSame('1.5 GiB', new StatusFormatter()->formatBytes(1_610_612_736));
+        self::assertSame('512 KiB', new StatusFormatter()->formatBytes(524_288));
+        self::assertSame('12 B', new StatusFormatter()->formatBytes(12));
+        self::assertSame('-', new StatusFormatter()->formatBytes(null));
+        self::assertSame('1.2 s', new StatusFormatter()->formatElapsed(Duration::microseconds(1_234_000)));
+        self::assertSame('0.3 ms', new StatusFormatter()->formatElapsed(Duration::microseconds(300)));
+        self::assertSame('never', new StatusFormatter()->formatTimeAgo(null, self::createInstantAt(10.0)));
+        self::assertSame('2d 03h', new StatusFormatter()->formatDuration(Duration::seconds(2 * 86400 + 3 * 3600 + 5)));
+    }
+
+    #[DataProvider('provideComponentRows')]
+    public function testComponentRowExplainsState(ComponentStatus $component, string $expected): void
+    {
+        $output = new BufferedOutput();
+        new StatusRenderer(new StatusFormatter())->render($output, self::createSnapshot($component));
+
+        self::assertStringContainsString('component      ' . $expected, $output->fetch());
+    }
+
+    /** @return iterable<string, array{ComponentStatus, string}> */
+    public static function provideComponentRows(): iterable
+    {
+        $since = self::createInstantAt(self::NOW - 120.0);
+
+        yield 'missing' => [new ComponentStatus(ComponentState::Missing, $since, 'default'), 'missing since 2m 00s ago, install the stewart integration in Home Assistant'];
+        yield 'protocol mismatch' => [new ComponentStatus(ComponentState::ProtocolMismatch, $since, 'default', '0.10.0', 2), 'protocol mismatch since 2m 00s ago, version 0.10.0, protocol 2 where Stewart speaks 1'];
+        yield 'replaced' => [new ComponentStatus(ComponentState::Replaced, $since, 'upstairs', '0.9.0', 1), 'replaced since 2m 00s ago, version 0.9.0, another Stewart uses expose.instance "upstairs"'];
+    }
+
+    private static function createSnapshot(?ComponentStatus $component): RuntimeSnapshot
+    {
+        $now = self::NOW;
+
+        return new RuntimeSnapshot(
             takenAt: self::createInstantAt($now),
             daemon: new DaemonInfo(42, self::createInstantAt($now - 3725.0), 12_582_912, '0.1.0-test', 'Europe/Budapest', 2000, '2026.8.1'),
             connection: new ConnectionState(ConnectionPhase::Connected, self::createInstantAt($now - 30.0), 1, Duration::milliseconds(4_500)),
@@ -81,29 +133,9 @@ final class StatusRendererTest extends TestCase
                 2,
                 new DeployFailure(str_repeat('b', 40), 'apps/Porch.php failed to load: syntax error', self::createInstantAt($now - 120.0)),
             ),
+            component: $component,
         );
 
-        $output = new BufferedOutput();
-        new StatusRenderer(new StatusFormatter())->render($output, $snapshot);
-        $text = $output->fetch();
-
-        if (getenv('UPDATE_GOLDEN') === '1') {
-            file_put_contents(self::GOLDEN, $text);
-        }
-
-        self::assertStringEqualsFile(self::GOLDEN, $text);
-    }
-
-    public function testFormatHelpersRead(): void
-    {
-        self::assertSame('1.5 GiB', new StatusFormatter()->formatBytes(1_610_612_736));
-        self::assertSame('512 KiB', new StatusFormatter()->formatBytes(524_288));
-        self::assertSame('12 B', new StatusFormatter()->formatBytes(12));
-        self::assertSame('-', new StatusFormatter()->formatBytes(null));
-        self::assertSame('1.2 s', new StatusFormatter()->formatElapsed(Duration::microseconds(1_234_000)));
-        self::assertSame('0.3 ms', new StatusFormatter()->formatElapsed(Duration::microseconds(300)));
-        self::assertSame('never', new StatusFormatter()->formatTimeAgo(null, self::createInstantAt(10.0)));
-        self::assertSame('2d 03h', new StatusFormatter()->formatDuration(Duration::seconds(2 * 86400 + 3 * 3600 + 5)));
     }
 
     private static function createInstantAt(float $epochSeconds): Instant

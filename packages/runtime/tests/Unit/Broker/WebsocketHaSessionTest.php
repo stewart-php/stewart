@@ -23,12 +23,13 @@ use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Broker\Component\ComponentLink;
-use Stewart\Runtime\Broker\Component\ComponentState;
+use Stewart\Runtime\Broker\Component\ComponentTracker;
 use Stewart\Runtime\Broker\Reconnector;
 use Stewart\Runtime\Broker\Trigger\HaTriggerLink;
 use Stewart\Runtime\Broker\WebsocketHaSession;
 use Stewart\Runtime\Config\BackoffPolicy;
 use Stewart\Runtime\Config\ExposeConfig;
+use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Tests\Fixtures\Broker\RecordingSessionListener;
@@ -72,7 +73,7 @@ final class WebsocketHaSessionTest extends TestCase
 
     private ?WebsocketHaSession $session = null;
 
-    private ?ComponentLink $component = null;
+    private ?ComponentTracker $componentTracker = null;
 
     protected function setUp(): void
     {
@@ -328,7 +329,7 @@ final class WebsocketHaSessionTest extends TestCase
         EventLoopTicks::settleUntil(static fn(): bool => $session->isConnected() && $second->listSentOfType('config/entity_registry/list') !== []);
 
         self::assertCount(1, $second->listSentOfType('stewart/session/subscribe'));
-        self::assertSame(ComponentState::Active, $this->component?->describeDetection()->state);
+        self::assertSame(ComponentState::Active, $this->componentTracker?->detection->state);
     }
 
     public function testTriggersAreReissuedAfterReconnect(): void
@@ -447,7 +448,7 @@ final class WebsocketHaSessionTest extends TestCase
             new StateCache(),
             new RegistryCache(),
             new HaTriggerLink($client, new NullLogger()),
-            $this->component = new ComponentLink($client, new NullLogger(), $this->timers->clock, new ExposeConfig(ComponentInstance::parse('default')), '0.9.0'),
+            new ComponentLink($client, new NullLogger(), $this->componentTracker = new ComponentTracker($this->timers->clock), new ExposeConfig(ComponentInstance::parse('default')), '0.9.0'),
         );
     }
 

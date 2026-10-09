@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Runtime\Broker\Component;
+namespace Stewart\Runtime\Lifecycle;
 
 enum ComponentState: string
 {

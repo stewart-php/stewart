@@ -28,5 +28,6 @@ final readonly class RuntimeSnapshot
         public array $subscriptions,
         public ?StoreHealth $store = null,
         public ?DeployStatus $deploy = null,
+        public ?ComponentStatus $component = null,
     ) {}
 }
