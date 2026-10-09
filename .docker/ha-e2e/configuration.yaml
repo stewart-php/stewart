@@ -1,0 +1,14 @@
+# Only what the smoke test needs; default_config would pull in integrations that reach the network.
+api:
+config:
+http:
+onboarding:
+
+input_boolean:
+  stewart_e2e:
+    name: Stewart e2e
+
+logger:
+  default: warning
+  logs:
+    custom_components.stewart: debug

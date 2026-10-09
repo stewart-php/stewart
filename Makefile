@@ -157,6 +157,10 @@ test-skeleton: ## Install skeleton/ against this checkout and run a new project'
 export HA ?= latest
 HA_RUN := $(DC) run --rm ha
 HASSFEST_IMAGE := ghcr.io/home-assistant/hassfest@sha256:c79061c27ff0b4c43534d9a0ae67b19fe320261be8c0aded32b117e0272237e3
+# The Home Assistant core that requirements/ha-<HA>.txt resolves to.
+HA_E2E_IMAGE_min := ghcr.io/home-assistant/home-assistant:2026.4.4@sha256:c1e5f0147f4cb51ccb05bb30b62a1269cc1bd48a6274792d3b38a77ab274dfd2
+HA_E2E_IMAGE_latest := ghcr.io/home-assistant/home-assistant:2026.10.0@sha256:1b64d38f38d922bf9d59336451fd6453e1d614f934456af4ee3d2a51061be3a4
+HA_E2E_DRIVER := /app/.docker/ha-e2e
 
 .PHONY: ha-build
 ha-build: ## Build the integration's Python toolchain image [HA=min|latest]
@@ -169,10 +173,15 @@ ha-sh: ## Shell in the integration's toolchain [HA=min|latest]
 .PHONY: ha-check
 ha-check: ## Lint, type-check and test the Home Assistant integration [HA=min|latest]
 	$(HA_RUN) sh -c 'ruff check && ruff format --check && mypy && pytest'
+	$(HA_RUN) sh -c 'ruff check --config pyproject.toml $(HA_E2E_DRIVER) && ruff format --config pyproject.toml --check $(HA_E2E_DRIVER) && mypy $(HA_E2E_DRIVER)'
 
 .PHONY: ha-hassfest
 ha-hassfest: ## Validate the integration with Home Assistant's hassfest
 	$(DOCKER) run --rm -v "$(CURDIR)/integrations/home-assistant:/github/workspace:ro" $(HASSFEST_IMAGE)
+
+.PHONY: test-ha-e2e
+test-ha-e2e: ## Boot a real Home Assistant with the integration and smoke-test exposure [HA=min|latest]
+	HA_E2E_IMAGE=$(HA_E2E_IMAGE_$(HA)) sh bin/test-ha-e2e.sh
 
 # --- demo -----------------------------------------------------------------
 

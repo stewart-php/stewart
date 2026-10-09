@@ -1,0 +1,45 @@
+# A real Home Assistant with the stewart integration, and the Stewart project in var/ha-e2e; bin/test-ha-e2e.sh drives it.
+name: stewart-ha-e2e
+
+services:
+  homeassistant:
+    image: "${HA_E2E_IMAGE:?set HA_E2E_IMAGE to the Home Assistant image under test}"
+    tmpfs:
+      - /config
+    volumes:
+      - ./configuration.yaml:/config/configuration.yaml:ro
+      - ../../integrations/home-assistant/custom_components/stewart:/config/custom_components/stewart:ro
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8123/api/onboarding')"]
+      interval: 2s
+      timeout: 2s
+      retries: 60
+
+  stewart:
+    image: stewart-php:dev
+    user: "${UID:-1000}:${GID:-1000}"
+    working_dir: /app/var/ha-e2e
+    volumes:
+      - ../..:/app
+    environment:
+      STEWART_HOME_ASSISTANT__URL: ws://homeassistant:8123/api/websocket
+      STEWART_HOME_ASSISTANT__TOKEN_FILE: /app/var/ha-e2e/ha-token
+      STEWART_APPS__HELLO__OPTIONS__WATCH: input_boolean.stewart_e2e
+      STEWART_CONTROL__LISTEN: "off"
+      STEWART_LOG_LEVEL: debug
+    command: ["php", "vendor/bin/stewart", "run"]
+    depends_on:
+      homeassistant:
+        condition: service_healthy
+    init: true
+
+  driver:
+    image: "stewart-ha:${HA:-latest}"
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - ../..:/app
+    entrypoint: ["python", "/app/.docker/ha-e2e/smoke.py", "--token-file", "/app/var/ha-e2e/ha-token"]
+    depends_on:
+      homeassistant:
+        condition: service_healthy
+    init: true
