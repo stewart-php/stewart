@@ -1,0 +1,21 @@
+{
+    "protocol": 1,
+    "request": {
+        "type": "stewart/entity/upsert",
+        "instance": "default",
+        "app": "wakeup",
+        "key": "alarm",
+        "platform": "time",
+        "config": {
+            "name": "Alarm",
+            "icon": "mdi:alarm"
+        },
+        "state": "06:45:00"
+    },
+    "result": {
+        "entity_id": "time.stewart_wakeup_alarm",
+        "state": "06:45:00",
+        "attributes": {},
+        "available": true
+    }
+}

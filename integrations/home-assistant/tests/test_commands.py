@@ -1,46 +1,19 @@
-import asyncio
-from typing import Any
-
 import pytest
 from homeassistant.components.button import DOMAIN as BUTTON_DOMAIN
 from homeassistant.components.button import SERVICE_PRESS
 from homeassistant.components.switch import DOMAIN as SWITCH_DOMAIN
-from homeassistant.const import ATTR_ENTITY_ID, SERVICE_TURN_OFF, SERVICE_TURN_ON
+from homeassistant.const import SERVICE_TURN_OFF, SERVICE_TURN_ON
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from pytest_homeassistant_custom_component.common import MockConfigEntry, MockUser
 from pytest_homeassistant_custom_component.typing import MockHAClientWebSocket, WebSocketGenerator
 
+from tests.commands import call_service, command_result, receive_command, without_ids
 from tests.exchange import send_request, subscribe
 from tests.golden import Golden
 
 SWITCH_ENTITY_ID = "switch.stewart_lights_night_mode"
 BUTTON_ENTITY_ID = "button.stewart_lights_all_off"
-ANSWER_WAIT_SECONDS = 5
-
-
-def call_service(
-    hass: HomeAssistant, domain: str, service: str, entity_id: str, context: Context | None = None
-) -> asyncio.Task[Any]:
-    return hass.async_create_task(
-        hass.services.async_call(domain, service, {ATTR_ENTITY_ID: entity_id}, blocking=True, context=context)
-    )
-
-
-def command_result(command_id: str, golden: str = "command-result.ok") -> dict[str, Any]:
-    return {**Golden.load(golden).request, "command_id": command_id}
-
-
-async def receive_command(client: MockHAClientWebSocket) -> dict[str, Any]:
-    async with asyncio.timeout(ANSWER_WAIT_SECONDS):
-        frame = await client.receive_json()
-    assert frame["type"] == "event"
-    event: dict[str, Any] = frame["event"]
-    return event
-
-
-def without_ids(event: dict[str, Any]) -> dict[str, Any]:
-    return {**event, "command_id": None, "context": None}
 
 
 @pytest.fixture
@@ -54,7 +27,7 @@ async def test_turn_on_sends_golden_command(
     hass: HomeAssistant, hass_admin_user: MockUser, switch_client: MockHAClientWebSocket
 ) -> None:
     context = Context(user_id=hass_admin_user.id)
-    call = call_service(hass, SWITCH_DOMAIN, SERVICE_TURN_ON, SWITCH_ENTITY_ID, context)
+    call = call_service(hass, SWITCH_DOMAIN, SERVICE_TURN_ON, SWITCH_ENTITY_ID, context=context)
 
     event = await receive_command(switch_client)
     await send_request(switch_client, command_result(event["command_id"]))

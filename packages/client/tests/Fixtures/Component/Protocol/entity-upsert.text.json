@@ -1,0 +1,25 @@
+{
+    "protocol": 1,
+    "request": {
+        "type": "stewart/entity/upsert",
+        "instance": "default",
+        "app": "notify",
+        "key": "greeting",
+        "platform": "text",
+        "config": {
+            "name": "Greeting",
+            "icon": "mdi:message-text",
+            "min": 1,
+            "max": 40,
+            "pattern": "^[A-Za-z ,!]+$",
+            "mode": "text"
+        },
+        "state": "Hello"
+    },
+    "result": {
+        "entity_id": "text.stewart_notify_greeting",
+        "state": "Hello",
+        "attributes": {},
+        "available": true
+    }
+}

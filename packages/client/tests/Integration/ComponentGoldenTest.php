@@ -7,6 +7,7 @@ namespace Stewart\Client\Tests\Integration;
 use Amp\DeferredFuture;
 use Amp\TimeoutCancellation;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Stewart\Client\Component\Collection\ExposedEntityAddressCollection;
 use Stewart\Client\Component\ComponentCommand;
@@ -41,6 +42,8 @@ use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Exposure\BinarySensorConfig;
 use Stewart\Contracts\Exposure\BinarySensorDeviceClass;
 use Stewart\Contracts\Exposure\ButtonConfig;
+use Stewart\Contracts\Exposure\DateConfig;
+use Stewart\Contracts\Exposure\DateTimeConfig;
 use Stewart\Contracts\Exposure\DeviceInfo;
 use Stewart\Contracts\Exposure\EntityCategory;
 use Stewart\Contracts\Exposure\ExposedEntityConfig;
@@ -48,10 +51,17 @@ use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
+use Stewart\Contracts\Exposure\NumberConfig;
+use Stewart\Contracts\Exposure\NumberDeviceClass;
+use Stewart\Contracts\Exposure\NumberMode;
+use Stewart\Contracts\Exposure\SelectConfig;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SensorDeviceClass;
 use Stewart\Contracts\Exposure\SensorStateClass;
 use Stewart\Contracts\Exposure\SwitchConfig;
+use Stewart\Contracts\Exposure\TextConfig;
+use Stewart\Contracts\Exposure\TextMode;
+use Stewart\Contracts\Exposure\TimeConfig;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Support\Time\RevoltTimers;
 use Stewart\Testing\Exception\AssertsReason;
@@ -163,6 +173,27 @@ final class ComponentGoldenTest extends TestCase
         self::assertSame(ComponentCommandAction::Press, $command->action);
     }
 
+    /** @param array<string, mixed> $data */
+    #[DataProvider('provideValueCommandGoldens')]
+    public function testValueCommandGoldenIsDecoded(string $golden, ComponentCommandAction $action, array $data): void
+    {
+        $command = $this->receiveCommandGolden($golden);
+
+        self::assertSame($action, $command->action);
+        self::assertSame($data, $command->data);
+    }
+
+    /** @return iterable<string, array{string, ComponentCommandAction, array<string, mixed>}> */
+    public static function provideValueCommandGoldens(): iterable
+    {
+        yield 'number' => ['event-command.number', ComponentCommandAction::SetValue, ['value' => 1.5]];
+        yield 'select' => ['event-command.select', ComponentCommandAction::SelectOption, ['option' => 'comfort']];
+        yield 'text' => ['event-command.text', ComponentCommandAction::SetValue, ['value' => 'Good morning']];
+        yield 'time' => ['event-command.time', ComponentCommandAction::SetValue, ['value' => '07:00:00']];
+        yield 'date' => ['event-command.date', ComponentCommandAction::SetValue, ['value' => '2026-10-15']];
+        yield 'datetime' => ['event-command.datetime', ComponentCommandAction::SetValue, ['value' => '2026-10-09T18:30:00+00:00']];
+    }
+
     public function testAcceptedAnswerMatchesGolden(): void
     {
         $golden = ComponentGolden::loadGolden('command-result.ok');
@@ -208,6 +239,67 @@ final class ComponentGoldenTest extends TestCase
         self::assertSame('sensor.stewart_climate_average_temperature', $snapshot->entityId->value);
         self::assertSame(21.4, $snapshot->state->value);
         self::assertTrue($snapshot->available);
+    }
+
+    public function testNumberUpsertMatchesGolden(): void
+    {
+        $golden = ComponentGolden::loadGolden('entity-upsert.number');
+        $this->server->replayGolden($golden);
+        $config = new NumberConfig(-3, 3, 0.5, NumberMode::Slider, NumberDeviceClass::Temperature, '°C', name: 'Target offset', icon: 'mdi:thermometer-plus');
+
+        $snapshot = $this->connectClient()->upsertExposedEntity(
+            self::createAddress('climate', 'target_offset'),
+            ExposedEntityDefinition::fromConfig($config, null),
+            new ExposedStateChange(new ExposedState(0.5)),
+        );
+
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/upsert'));
+        self::assertSame('number.stewart_climate_target_offset', $snapshot->entityId->value);
+    }
+
+    public function testSelectUpsertMatchesGolden(): void
+    {
+        $golden = ComponentGolden::loadGolden('entity-upsert.select');
+        $this->server->replayGolden($golden);
+
+        $snapshot = $this->connectClient()->upsertExposedEntity(
+            self::createAddress('heating', 'mode'),
+            ExposedEntityDefinition::fromConfig(new SelectConfig(['eco', 'comfort', 'away'], name: 'Mode', icon: 'mdi:radiator'), null),
+            new ExposedStateChange(new ExposedState('eco')),
+        );
+
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/upsert'));
+        self::assertSame('eco', $snapshot->state->value);
+    }
+
+    #[DataProvider('provideTextAndCalendarUpserts')]
+    public function testTextAndCalendarUpsertsMatchGoldens(string $goldenName, ExposedEntityAddress $address, ExposedEntityConfig $config, ExposedState $state): void
+    {
+        $golden = ComponentGolden::loadGolden($goldenName);
+        $this->server->replayGolden($golden);
+
+        $this->connectClient()->upsertExposedEntity($address, ExposedEntityDefinition::fromConfig($config, null), new ExposedStateChange($state));
+
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/upsert'));
+    }
+
+    /** @return iterable<string, array{string, ExposedEntityAddress, ExposedEntityConfig, ExposedState}> */
+    public static function provideTextAndCalendarUpserts(): iterable
+    {
+        yield 'text' => [
+            'entity-upsert.text',
+            self::createAddress('notify', 'greeting'),
+            new TextConfig(1, 40, '^[A-Za-z ,!]+$', TextMode::Text, name: 'Greeting', icon: 'mdi:message-text'),
+            new ExposedState('Hello'),
+        ];
+        yield 'time' => ['entity-upsert.time', self::createAddress('wakeup', 'alarm'), new TimeConfig('Alarm', 'mdi:alarm'), new ExposedState('06:45:00')];
+        yield 'date' => ['entity-upsert.date', self::createAddress('garden', 'next_mowing'), new DateConfig('Next mowing', 'mdi:mower'), new ExposedState('2026-10-12')];
+        yield 'datetime' => [
+            'entity-upsert.datetime',
+            self::createAddress('garden', 'last_watered'),
+            new DateTimeConfig('Last watered', 'mdi:watering-can'),
+            new ExposedState('2026-10-09T07:15:00+02:00'),
+        ];
     }
 
     public function testBinarySensorUpsertMatchesGolden(): void
@@ -316,6 +408,22 @@ final class ComponentGoldenTest extends TestCase
         );
 
         self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/state'));
+    }
+
+    public function testButtonStateIsInvalid(): void
+    {
+        $golden = ComponentGolden::loadGolden('entity-state.button');
+        $this->server->replayGolden($golden);
+        $client = $this->connectClient();
+
+        $exception = $this->assertThrowsReason(
+            HaClientError::CommandRejected,
+            static fn() => $client->updateExposedEntityState(self::createAddress('lights', 'all_off'), new ExposedStateChange(new ExposedState(null))),
+        );
+
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/state'));
+        self::assertInstanceOf(HaClientException::class, $exception);
+        self::assertSame(ComponentErrorCode::InvalidState, ComponentErrorCode::tryFromException($exception));
     }
 
     public function testStateUpdateOfUnknownEntityIsNotFound(): void

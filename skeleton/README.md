@@ -31,7 +31,8 @@ An app is a class in `apps/` that implements `Stewart\Contracts\App` and carries
 `Store`, `Clock`, your own services from `services.php`) or filled from the app's `options` in `stewart.yaml`.
 
 `HelloApp` also counts the changes it sees in `sensor.stewart_hello_changes_seen`, while
-`switch.stewart_hello_counting` is on. Entities an app exposes need the `stewart` Home Assistant integration; without
+`switch.stewart_hello_counting` is on; each change adds `number.stewart_hello_step`, whose icon shows when counting
+is paused. Entities an app exposes need the `stewart` Home Assistant integration; without
 it, the app logs why and keeps running.
 
 Import generated classes with `use App\Generated\…;`. Inside `namespace App`, a qualified `App\Generated\X` would

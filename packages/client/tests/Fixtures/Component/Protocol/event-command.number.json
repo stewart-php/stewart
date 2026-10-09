@@ -1,0 +1,18 @@
+{
+    "protocol": 1,
+    "event": {
+        "type": "command",
+        "command_id": "a91e44d0c2b35e78",
+        "app": "climate",
+        "key": "target_offset",
+        "action": "set_value",
+        "data": {
+            "value": 1.5
+        },
+        "context": {
+            "id": "01J9ZK3YQ8T7C4M2N6P5R0VWXA",
+            "parent_id": null,
+            "user_id": "9e2d6b4f1c8a4e7d8b3f5a0c6d1e2f3a"
+        }
+    }
+}

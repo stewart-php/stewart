@@ -8,7 +8,6 @@ use Closure;
 use Psr\Log\LoggerInterface;
 use Stewart\Client\Component\Collection\ExposedEntityAddressCollection;
 use Stewart\Client\Component\ComponentCommand;
-use Stewart\Client\Component\ComponentCommandAction;
 use Stewart\Client\Component\ComponentCommandAnswer;
 use Stewart\Client\Component\ComponentErrorCode;
 use Stewart\Client\Component\ExposedEntityAddress;
@@ -17,10 +16,6 @@ use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\ExposureException;
-use Stewart\Contracts\Exposure\Command\ButtonPress;
-use Stewart\Contracts\Exposure\Command\ExposedCommand;
-use Stewart\Contracts\Exposure\Command\SwitchAction;
-use Stewart\Contracts\Exposure\Command\SwitchCommand;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedStateChange;
@@ -76,7 +71,16 @@ final class ExposureLink
             return;
         }
 
-        ($this->onCommanded)(new ExposedEntityCommand($command->commandId, $live->owner, $command->appId, $command->key, $this->createExposedCommand($command)));
+        $exposedCommand = $command->readExposedCommand($live->definition->platform);
+
+        if ($exposedCommand === null) {
+            $reason = \sprintf('Entity %s of app %s does not take %s commands.', $command->key, $command->appId, $command->action->value);
+            $this->sendCommandAnswer(ComponentCommandAnswer::reject($command->commandId, $reason));
+
+            return;
+        }
+
+        ($this->onCommanded)(new ExposedEntityCommand($command->commandId, $live->owner, $command->appId, $command->key, $exposedCommand));
     }
 
     public function acceptCommand(ExposedEntityCommand $command): void
@@ -113,12 +117,34 @@ final class ExposureLink
         }
 
         try {
-            return $this->sendUpsert($live);
+            return $this->sendUpsert($live->address, $live->definition, $live->buildUpsertChange());
         } catch (ExposureException $e) {
             unset($this->exposuresByAddress[$live->address->describe()]);
 
             throw $e;
         }
+    }
+
+    /** @throws ExposureException */
+    public function reconfigureEntity(AppId $appId, ExposedEntityKey $key, ExposedEntityDefinition $definition): ?ExposedEntitySnapshot
+    {
+        $live = $this->findLive($appId, $key) ?? throw ExposureException::removed($key);
+        $definition = $live->definition->withConfigOf($definition);
+
+        if (!$this->tracker->isActive()) {
+            $live->recordDefinition($definition);
+
+            return null;
+        }
+
+        $snapshot = $this->sendUpsert($live->address, $definition, new ExposedStateChange());
+        $live->recordDefinition($definition);
+
+        if ($snapshot !== null) {
+            $live->recordChange(new ExposedStateChange($snapshot->state));
+        }
+
+        return $snapshot;
     }
 
     /** @throws ExposureException */
@@ -192,7 +218,7 @@ final class ExposureLink
 
         foreach ($this->exposuresByAddress as $live) {
             try {
-                $snapshot = $this->sendUpsert($live);
+                $snapshot = $this->sendUpsert($live->address, $live->definition, $live->buildUpsertChange());
             } catch (ExposureException $e) {
                 $this->logger->error('Home Assistant refused an exposed entity again', ['entity' => $live->address->describe(), 'exception' => $e]);
 
@@ -217,13 +243,13 @@ final class ExposureLink
     }
 
     /** @throws ExposureException */
-    private function sendUpsert(LiveExposure $live): ?ExposedEntitySnapshot
+    private function sendUpsert(ExposedEntityAddress $address, ExposedEntityDefinition $definition, ExposedStateChange $change): ?ExposedEntitySnapshot
     {
         try {
-            return $this->client->upsertExposedEntity($live->address, $live->definition, $live->buildUpsertChange());
+            return $this->client->upsertExposedEntity($address, $definition, $change);
         } catch (HaClientException $e) {
             $this->throwIfAppCaused($e);
-            $this->logger->debug('Exposed entity waits for the next stewart integration session', ['entity' => $live->address->describe(), 'exception' => $e]);
+            $this->logger->debug('Exposed entity waits for the next stewart integration session', ['entity' => $address->describe(), 'exception' => $e]);
 
             return null;
         }
@@ -251,7 +277,7 @@ final class ExposureLink
             return;
         }
 
-        $snapshot = $this->sendUpsert($live);
+        $snapshot = $this->sendUpsert($live->address, $live->definition, $live->buildUpsertChange());
 
         if ($snapshot !== null) {
             $this->syncOwner($live, $snapshot);
@@ -288,15 +314,6 @@ final class ExposureLink
                 ]);
             }
         }
-    }
-
-    private function createExposedCommand(ComponentCommand $command): ExposedCommand
-    {
-        return match ($command->action) {
-            ComponentCommandAction::TurnOn => new SwitchCommand(SwitchAction::TurnOn, $command->context),
-            ComponentCommandAction::TurnOff => new SwitchCommand(SwitchAction::TurnOff, $command->context),
-            ComponentCommandAction::Press => new ButtonPress($command->context),
-        };
     }
 
     private function sendCommandAnswer(ComponentCommandAnswer $answer): void

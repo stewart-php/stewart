@@ -11,6 +11,11 @@ use Stewart\Contracts\Exposure\Command\SwitchCommand;
 /** @phpstan-import-type ExposedAttributes from ExposedEntity */
 interface ExposedSwitch extends ExposedEntity
 {
+    public function getConfig(): SwitchConfig;
+
+    /** @throws ExposureException */
+    public function updateConfig(SwitchConfig $config): void;
+
     public function getValue(): ?bool;
 
     /**

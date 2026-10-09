@@ -11,11 +11,20 @@ use Stewart\Contracts\Exposure\BinarySensorConfig;
 use Stewart\Contracts\Exposure\BinarySensorDeviceClass;
 use Stewart\Contracts\Exposure\ButtonConfig;
 use Stewart\Contracts\Exposure\ButtonDeviceClass;
+use Stewart\Contracts\Exposure\DateConfig;
+use Stewart\Contracts\Exposure\DateTimeConfig;
 use Stewart\Contracts\Exposure\EntityCategory;
+use Stewart\Contracts\Exposure\NumberConfig;
+use Stewart\Contracts\Exposure\NumberDeviceClass;
+use Stewart\Contracts\Exposure\NumberMode;
+use Stewart\Contracts\Exposure\SelectConfig;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SensorDeviceClass;
 use Stewart\Contracts\Exposure\SwitchConfig;
 use Stewart\Contracts\Exposure\SwitchDeviceClass;
+use Stewart\Contracts\Exposure\TextConfig;
+use Stewart\Contracts\Exposure\TextMode;
+use Stewart\Contracts\Exposure\TimeConfig;
 use Stewart\Runtime\Ipc\Wire\ExposedEntityConfigConverter;
 use Stewart\Testing\Exception\AssertsReason;
 
@@ -54,6 +63,39 @@ final class ExposedEntityConfigConverterTest extends TestCase
         $config = new SensorConfig(SensorDeviceClass::Enum, options: ['low', 'high']);
 
         self::assertEquals($config, $converter->decodeValue($converter->encodeValue($config), 'config'));
+    }
+
+    public function testNumberConfigRoundTrips(): void
+    {
+        $converter = new ExposedEntityConfigConverter();
+        $config = new NumberConfig(-3, 3, 0.5, NumberMode::Slider, NumberDeviceClass::Temperature, '°C', name: 'Target offset');
+
+        self::assertEquals($config, $converter->decodeValue($converter->encodeValue($config), 'config'));
+    }
+
+    public function testSelectConfigRoundTrips(): void
+    {
+        $converter = new ExposedEntityConfigConverter();
+        $config = new SelectConfig(['eco', 'comfort'], icon: 'mdi:radiator');
+
+        self::assertEquals($config, $converter->decodeValue($converter->encodeValue($config), 'config'));
+    }
+
+    public function testTextConfigRoundTrips(): void
+    {
+        $converter = new ExposedEntityConfigConverter();
+        $config = new TextConfig(1, 40, '^[a-z]+$', TextMode::Password, name: 'Code');
+
+        self::assertEquals($config, $converter->decodeValue($converter->encodeValue($config), 'config'));
+    }
+
+    public function testCalendarConfigsRoundTrip(): void
+    {
+        $converter = new ExposedEntityConfigConverter();
+
+        foreach ([new TimeConfig('Alarm'), new DateConfig(icon: 'mdi:mower'), new DateTimeConfig(enabledByDefault: false)] as $config) {
+            self::assertEquals($config, $converter->decodeValue($converter->encodeValue($config), 'config'));
+        }
     }
 
     public function testUnknownPlatformIsRejected(): void

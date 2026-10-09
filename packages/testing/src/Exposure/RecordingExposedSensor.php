@@ -16,10 +16,21 @@ final class RecordingExposedSensor extends RecordingExposedEntity implements Exp
 {
     public function __construct(
         ExposedEntityKey $key,
-        public readonly SensorConfig $config,
+        public private(set) SensorConfig $config,
         ?ExposedEntitySnapshot $seeded,
     ) {
         parent::__construct($key, $seeded);
+    }
+
+    public function getConfig(): SensorConfig
+    {
+        return $this->config;
+    }
+
+    public function updateConfig(SensorConfig $config): void
+    {
+        $this->assertNotRemoved();
+        $this->config = $config;
     }
 
     public function getValue(): int|float|string|null

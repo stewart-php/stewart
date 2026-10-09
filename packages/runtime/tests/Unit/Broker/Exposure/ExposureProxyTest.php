@@ -26,6 +26,7 @@ use Stewart\Runtime\Ipc\Message\ExposeEntityRequest;
 use Stewart\Runtime\Ipc\Message\ExposeEntityResult;
 use Stewart\Runtime\Ipc\Message\ExposureAcknowledged;
 use Stewart\Runtime\Ipc\Message\ExposureFailed;
+use Stewart\Runtime\Ipc\Message\ReconfigureExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\UpdateExposedEntityRequest;
 use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
@@ -93,6 +94,20 @@ final class ExposureProxyTest extends TestCase
 
         self::assertSame('w0:2', $this->listSentOfType(ExposureAcknowledged::class)[0]->correlationId->value);
         self::assertSame(4, $this->session->exposedEntities['demo/level']->state?->value);
+    }
+
+    public function testReconfigureAnswersWithSnapshot(): void
+    {
+        $this->session->exposedSnapshot = new ExposedEntitySnapshot(new EntityId('sensor.demo_level'), new ExposedState(3), [], true);
+
+        new ExposureProxy($this->session, new NullLogger())->forwardReconfigure(
+            $this->worker,
+            new ReconfigureExposedEntityRequest(new CorrelationId('w0:3'), ResourceScope::forApp(new AppId('demo')), new ExposedEntityKey('level'), new SensorConfig(unit: '%')),
+        );
+        EventLoopTicks::settle();
+
+        self::assertSame('w0:3', $this->listSentOfType(ExposeEntityResult::class)[0]->correlationId->value);
+        self::assertSame(['unit_of_measurement' => '%'], $this->session->reconfiguredDefinitions['demo/level']->config);
     }
 
     private function forwardExpose(ResourceScope $scope): void

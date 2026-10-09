@@ -15,10 +15,21 @@ final class RecordingExposedBinarySensor extends RecordingExposedEntity implemen
 {
     public function __construct(
         ExposedEntityKey $key,
-        public readonly BinarySensorConfig $config,
+        public private(set) BinarySensorConfig $config,
         ?ExposedEntitySnapshot $seeded,
     ) {
         parent::__construct($key, $seeded);
+    }
+
+    public function getConfig(): BinarySensorConfig
+    {
+        return $this->config;
+    }
+
+    public function updateConfig(BinarySensorConfig $config): void
+    {
+        $this->assertNotRemoved();
+        $this->config = $config;
     }
 
     public function getValue(): ?bool

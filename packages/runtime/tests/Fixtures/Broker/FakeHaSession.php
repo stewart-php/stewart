@@ -98,6 +98,9 @@ final class FakeHaSession implements HaSession
 
     public ?ExposedEntitySnapshot $exposedSnapshot = null;
 
+    /** @var array<string, ExposedEntityDefinition> */
+    public array $reconfiguredDefinitions = [];
+
     public ?ExposureException $exposureFailure = null;
 
     /** @var list<AnsweredExposedCommand> */
@@ -310,6 +313,17 @@ final class FakeHaSession implements HaSession
         }
 
         $this->exposedEntities[$appId . '/' . $key] = $change;
+
+        return $this->exposedSnapshot;
+    }
+
+    public function reconfigureExposedEntity(AppId $appId, ExposedEntityKey $key, ExposedEntityDefinition $definition): ?ExposedEntitySnapshot
+    {
+        if ($this->exposureFailure !== null) {
+            throw $this->exposureFailure;
+        }
+
+        $this->reconfiguredDefinitions[$appId . '/' . $key] = $definition;
 
         return $this->exposedSnapshot;
     }

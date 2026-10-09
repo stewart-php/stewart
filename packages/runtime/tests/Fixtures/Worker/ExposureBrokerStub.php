@@ -9,6 +9,7 @@ use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Runtime\Ipc\Message\ExposeEntityRequest;
 use Stewart\Runtime\Ipc\Message\ExposeEntityResult;
 use Stewart\Runtime\Ipc\Message\ExposureAcknowledged;
+use Stewart\Runtime\Ipc\Message\ReconfigureExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\RemoveExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\UpdateExposedEntityRequest;
 use Stewart\Runtime\Ipc\Transport;
@@ -29,7 +30,9 @@ final class ExposureBrokerStub implements Transport
     {
         $this->sent[] = $message;
 
-        if (!$message instanceof ExposeEntityRequest && !$message instanceof UpdateExposedEntityRequest && !$message instanceof RemoveExposedEntityRequest) {
+        $answersWithSnapshot = $message instanceof ExposeEntityRequest || $message instanceof ReconfigureExposedEntityRequest;
+
+        if (!$answersWithSnapshot && !$message instanceof UpdateExposedEntityRequest && !$message instanceof RemoveExposedEntityRequest) {
             return;
         }
 
@@ -41,7 +44,7 @@ final class ExposureBrokerStub implements Transport
 
         $this->pending->resolve(
             $message->correlationId,
-            $message instanceof ExposeEntityRequest ? new ExposeEntityResult($message->correlationId, $this->snapshot) : new ExposureAcknowledged($message->correlationId),
+            $answersWithSnapshot ? new ExposeEntityResult($message->correlationId, $this->snapshot) : new ExposureAcknowledged($message->correlationId),
         );
     }
 

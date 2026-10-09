@@ -7,11 +7,17 @@ namespace Stewart\Client\Component;
 use LogicException;
 use Stewart\Contracts\Exposure\BinarySensorConfig;
 use Stewart\Contracts\Exposure\ButtonConfig;
+use Stewart\Contracts\Exposure\DateConfig;
+use Stewart\Contracts\Exposure\DateTimeConfig;
 use Stewart\Contracts\Exposure\DeviceInfo;
 use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedPlatform;
+use Stewart\Contracts\Exposure\NumberConfig;
+use Stewart\Contracts\Exposure\SelectConfig;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SwitchConfig;
+use Stewart\Contracts\Exposure\TextConfig;
+use Stewart\Contracts\Exposure\TimeConfig;
 
 final readonly class ExposedEntityDefinition
 {
@@ -36,6 +42,17 @@ final readonly class ExposedEntityDefinition
                 'options' => $config->options === [] ? null : $config->options,
             ],
             $config instanceof BinarySensorConfig, $config instanceof SwitchConfig, $config instanceof ButtonConfig => ['device_class' => $config->deviceClass?->value],
+            $config instanceof NumberConfig => [
+                'min' => $config->min,
+                'max' => $config->max,
+                'step' => $config->step,
+                'mode' => $config->mode->value,
+                'device_class' => $config->deviceClass?->value,
+                'unit_of_measurement' => $config->unit,
+            ],
+            $config instanceof SelectConfig => ['options' => $config->options],
+            $config instanceof TextConfig => ['min' => $config->min, 'max' => $config->max, 'pattern' => $config->pattern, 'mode' => $config->mode->value],
+            $config instanceof TimeConfig, $config instanceof DateConfig, $config instanceof DateTimeConfig => [],
             default => throw new LogicException(\sprintf('%s has no component encoding.', $config::class)),
         };
         $commonFields = [
@@ -56,6 +73,11 @@ final readonly class ExposedEntityDefinition
                 'suggested_area' => $device->suggestedArea,
             ]),
         );
+    }
+
+    public function withConfigOf(self $other): self
+    {
+        return new self($other->platform, $other->config, $this->device);
     }
 
     /** @return array<string, mixed> */

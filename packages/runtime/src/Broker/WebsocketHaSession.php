@@ -235,6 +235,11 @@ final class WebsocketHaSession implements HaSession
         return $this->exposures->exposeEntity($owner, $appId, $key, $definition, $change);
     }
 
+    public function reconfigureExposedEntity(AppId $appId, ExposedEntityKey $key, ExposedEntityDefinition $definition): ?ExposedEntitySnapshot
+    {
+        return $this->exposures->reconfigureEntity($appId, $key, $definition);
+    }
+
     public function updateExposedEntity(AppId $appId, ExposedEntityKey $key, ExposedStateChange $change): void
     {
         $this->exposures->updateEntity($appId, $key, $change);

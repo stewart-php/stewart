@@ -6,7 +6,18 @@ DOMAIN: Final = "stewart"
 PROTOCOL: Final = 1
 MANUFACTURER: Final = "Stewart"
 DEFAULT_INSTANCE: Final = "default"
-PLATFORMS: Final = (Platform.BINARY_SENSOR, Platform.BUTTON, Platform.SENSOR, Platform.SWITCH)
+PLATFORMS: Final = (
+    Platform.BINARY_SENSOR,
+    Platform.BUTTON,
+    Platform.DATE,
+    Platform.DATETIME,
+    Platform.NUMBER,
+    Platform.SELECT,
+    Platform.SENSOR,
+    Platform.SWITCH,
+    Platform.TEXT,
+    Platform.TIME,
+)
 
 INSTANCE_PATTERN: Final = r"\A[a-z][a-z0-9_]{0,63}\Z"
 APP_PATTERN: Final = r"\A[a-z][a-z0-9_-]*\Z"

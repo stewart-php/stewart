@@ -16,10 +16,21 @@ final class RecordingExposedButton extends RecordingExposedEntity implements Exp
 {
     public function __construct(
         ExposedEntityKey $key,
-        public readonly ButtonConfig $config,
+        public private(set) ButtonConfig $config,
         ?ExposedEntitySnapshot $seeded,
     ) {
         parent::__construct($key, $seeded);
+    }
+
+    public function getConfig(): ButtonConfig
+    {
+        return $this->config;
+    }
+
+    public function updateConfig(ButtonConfig $config): void
+    {
+        $this->assertNotRemoved();
+        $this->config = $config;
     }
 
     public function watchCommands(): EventStream

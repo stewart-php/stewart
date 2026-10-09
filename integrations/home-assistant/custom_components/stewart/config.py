@@ -1,3 +1,4 @@
+import math
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -37,6 +38,14 @@ class ConfigReader:
         if value is None or (isinstance(value, int) and not isinstance(value, bool) and value >= 0):
             return value
         raise self.fail(f"{key} must be a non-negative integer")
+
+    def read_required_number(self, key: str) -> float:
+        value = self._take(key)
+        if value is None:
+            raise self.fail(f"needs {key}")
+        if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value):
+            return float(value)
+        raise self.fail(f"{key} must be a finite number")
 
     def read_choice[E: StrEnum](self, key: str, choices: type[E]) -> E | None:
         value = self._take(key)

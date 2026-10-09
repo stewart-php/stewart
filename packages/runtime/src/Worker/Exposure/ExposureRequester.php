@@ -15,6 +15,7 @@ use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\ExposeEntityRequest;
+use Stewart\Runtime\Ipc\Message\ReconfigureExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\RemoveExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\UpdateExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\WorkerMessage;
@@ -46,6 +47,14 @@ final readonly class ExposureRequester
         $pending = $this->pending->open(new ExposeEntitySubject($key));
 
         return $this->awaitAnswer($pending, $key, new ExposeEntityRequest($pending->correlationId, $scope, $key, $config, $device, $change))->snapshot;
+    }
+
+    /** @throws ExposureException */
+    public function requestReconfiguration(ResourceScope $scope, ExposedEntityKey $key, ExposedEntityConfig $config): ?ExposedEntitySnapshot
+    {
+        $pending = $this->pending->open(new ExposeEntitySubject($key));
+
+        return $this->awaitAnswer($pending, $key, new ReconfigureExposedEntityRequest($pending->correlationId, $scope, $key, $config))->snapshot;
     }
 
     /** @throws ExposureException */

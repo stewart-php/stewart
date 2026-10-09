@@ -20,6 +20,9 @@ use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
+use Stewart\Contracts\Exposure\NumberConfig;
+use Stewart\Contracts\Exposure\NumberDeviceClass;
+use Stewart\Contracts\Exposure\NumberMode;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SensorDeviceClass;
 use Stewart\Contracts\Exposure\SensorStateClass;
@@ -87,6 +90,7 @@ use Stewart\Runtime\Ipc\Message\PausedAppsChanged;
 use Stewart\Runtime\Ipc\Message\Ping;
 use Stewart\Runtime\Ipc\Message\Pong;
 use Stewart\Runtime\Ipc\Message\Publish;
+use Stewart\Runtime\Ipc\Message\ReconfigureExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\RegistrySnapshot;
 use Stewart\Runtime\Ipc\Message\RemoveExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallFailed;
@@ -185,6 +189,12 @@ final class IpcMessageSamples
                 new ExposedStateChange(new ExposedState(null), ['source' => 'probe'], true),
             )),
             'expose_entity_result' => IpcMessageSample::createRoundTrip(new ExposeEntityResult(new CorrelationId('w0:7'), self::createExposedSnapshot())),
+            'reconfigure_exposed_entity_request' => IpcMessageSample::createRoundTrip(new ReconfigureExposedEntityRequest(
+                new CorrelationId('w0:10'),
+                $demo,
+                new ExposedEntityKey('target_offset'),
+                new NumberConfig(-3, 3, 0.5, NumberMode::Slider, NumberDeviceClass::Temperature, '°C', name: 'Target offset'),
+            )),
             'update_exposed_entity_request' => IpcMessageSample::createRoundTrip(new UpdateExposedEntityRequest(new CorrelationId('w0:8'), $demo, new ExposedEntityKey('soil_moisture'), new ExposedStateChange(new ExposedState(38)))),
             'remove_exposed_entity_request' => IpcMessageSample::createRoundTrip(new RemoveExposedEntityRequest(new CorrelationId('w0:9'), $demo, new ExposedEntityKey('soil_moisture'))),
             'exposure_acknowledged' => IpcMessageSample::createRoundTrip(new ExposureAcknowledged(new CorrelationId('w0:8'))),

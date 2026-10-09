@@ -27,4 +27,11 @@ final class ComponentGoldenCopyTest extends TestCase
             self::assertFileEquals($original, $copy, basename($copy) . ' drifted; copy it again from integrations/home-assistant/tests/protocol.');
         }
     }
+
+    public function testEveryIntegrationGoldenIsCopied(): void
+    {
+        foreach (glob(self::ORIGINAL_DIRECTORY . '/*.json') ?: [] as $original) {
+            self::assertFileExists(self::COPY_DIRECTORY . '/' . basename($original), basename($original) . ' is missing; copy it from integrations/home-assistant/tests/protocol.');
+        }
+    }
 }

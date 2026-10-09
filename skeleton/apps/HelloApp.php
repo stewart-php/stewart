@@ -8,10 +8,14 @@ use Psr\Log\LoggerInterface;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
 use Stewart\Contracts\Exception\ExposureException;
+use Stewart\Contracts\Exposure\Command\NumberCommand;
 use Stewart\Contracts\Exposure\Command\SwitchCommand;
 use Stewart\Contracts\Exposure\EntityExposure;
+use Stewart\Contracts\Exposure\ExposedNumber;
 use Stewart\Contracts\Exposure\ExposedSensor;
 use Stewart\Contracts\Exposure\ExposedSwitch;
+use Stewart\Contracts\Exposure\NumberConfig;
+use Stewart\Contracts\Exposure\NumberMode;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SensorStateClass;
 use Stewart\Contracts\Exposure\SwitchConfig;
@@ -24,6 +28,8 @@ final class HelloApp implements App
     private ?ExposedSensor $changesSeen = null;
 
     private ?ExposedSwitch $counting = null;
+
+    private ?ExposedNumber $step = null;
 
     private int $changeCount = 0;
 
@@ -42,6 +48,7 @@ final class HelloApp implements App
             $this->changesSeen = $this->entities->exposeSensor('changes_seen', new SensorConfig(stateClass: SensorStateClass::TotalIncreasing, name: 'Changes seen', icon: 'mdi:counter'));
             $this->changesSeen->setValue($this->changeCount);
             $this->counting = $this->exposeCountingSwitch();
+            $this->step = $this->exposeCountStep(paused: $this->counting->getValue() === false);
         } catch (ExposureException $e) {
             $this->stopExposing($e);
         }
@@ -64,9 +71,35 @@ final class HelloApp implements App
 
         $counting->watchCommands()->subscribe(function (SwitchCommand $command): void {
             $this->logger->info('Counting changes turned ' . ($command->isTurnOn() ? 'on' : 'off'));
+
+            try {
+                $this->step?->updateConfig(self::createStepConfig(paused: !$command->isTurnOn()));
+            } catch (ExposureException $e) {
+                $this->stopExposing($e);
+            }
         });
 
         return $counting;
+    }
+
+    private function exposeCountStep(bool $paused): ExposedNumber
+    {
+        $step = $this->entities->exposeNumber('step', self::createStepConfig($paused));
+
+        if ($step->getValue() === null) {
+            $step->setValue(1);
+        }
+
+        $step->watchCommands()->subscribe(function (NumberCommand $command): void {
+            $this->logger->info('Each change now counts ' . $command->value);
+        });
+
+        return $step;
+    }
+
+    private static function createStepConfig(bool $paused): NumberConfig
+    {
+        return new NumberConfig(min: 1, max: 5, mode: NumberMode::Box, name: 'Step', icon: $paused ? 'mdi:pause-circle' : 'mdi:numeric');
     }
 
     private function countChange(): void
@@ -75,7 +108,7 @@ final class HelloApp implements App
             return;
         }
 
-        ++$this->changeCount;
+        $this->changeCount += (int) ($this->step?->getValue() ?? 1);
 
         try {
             $this->changesSeen?->setValue($this->changeCount);
@@ -88,6 +121,7 @@ final class HelloApp implements App
     {
         $this->changesSeen = null;
         $this->counting = null;
-        $this->logger->info('The changes seen sensor is not exposed', ['reason' => $e->getMessage()]);
+        $this->step = null;
+        $this->logger->info('The hello entities are not exposed', ['reason' => $e->getMessage()]);
     }
 }

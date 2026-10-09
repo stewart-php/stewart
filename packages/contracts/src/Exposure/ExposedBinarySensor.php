@@ -9,6 +9,11 @@ use Stewart\Contracts\Exception\ExposureException;
 /** @phpstan-import-type ExposedAttributes from ExposedEntity */
 interface ExposedBinarySensor extends ExposedEntity
 {
+    public function getConfig(): BinarySensorConfig;
+
+    /** @throws ExposureException */
+    public function updateConfig(BinarySensorConfig $config): void;
+
     public function getValue(): ?bool;
 
     /**

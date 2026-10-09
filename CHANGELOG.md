@@ -51,8 +51,17 @@ minor release may break; its "Upgrading" section says what to change.
 - Metric `stewart_app_exposed_commands_total{outcome}` (`accepted`, `rejected`, `refused`, `lost`)
 - `RecordingExposedSwitch::pushCommand()` and `RecordingExposedButton::pushCommand()` run an app's command handlers in
   unit tests
-- The skeleton's `HelloApp` exposes `switch.stewart_hello_counting`, which pauses its change counter; the e2e smoke
-  test turns it off and on
+- The skeleton's `HelloApp` exposes `switch.stewart_hello_counting`, which pauses its change counter, and
+  `number.stewart_hello_step`, how much each change adds, whose icon shows the pause through `updateConfig()`; the
+  e2e smoke test sets the step and turns counting off and on
+- The `stewart` integration creates `number`, `select`, `text`, `time`, `date` and `datetime` entities; their
+  `set_value` and `select_option` service calls send `set_value` and `select_option` commands
+- Apps expose numbers, selects, texts, times, dates and datetimes with `exposeNumber()`, `exposeSelect()`,
+  `exposeText()`, `exposeTime()`, `exposeDate()` and `exposeDateTime()`. Times are `TimeOfDay`, dates and datetimes
+  `DateTimeImmutable`. `watchCommands()` streams a typed command per platform; an accepted command sets the handle's
+  value. The `RecordingExposed*` handles push them in unit tests
+- Every exposed handle has `getConfig()` and `updateConfig()`, which changes the entity's name, icon, options or
+  limits in place and keeps its device; Home Assistant drops a value that no longer fits to unknown
 
 ### Changed
 
@@ -60,7 +69,7 @@ minor release may break; its "Upgrading" section says what to change.
   of keeping their last state as if live
 - The control protocol is version 28: snapshots carry `component` and each app's `exposed_entities` and
   `exposed_commands`
-- IPC protocol 24; broker and workers must run the same version
+- IPC protocol 25; broker and workers must run the same version
 
 ## [0.8.0] - 2026-10-08
 
