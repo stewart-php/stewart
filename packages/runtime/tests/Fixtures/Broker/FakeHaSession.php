@@ -8,8 +8,13 @@ use Amp\DeferredFuture;
 use Amp\Future;
 use Closure;
 use DateTimeZone;
+use Stewart\Client\Component\ExposedEntityDefinition;
+use Stewart\Client\Component\ExposedEntitySnapshot;
+use Stewart\Client\Component\ExposedStateChange;
+use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventPayload;
+use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\History\Collection\HistoricalStateCollection;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryDetail;
@@ -29,6 +34,7 @@ use Stewart\Runtime\Broker\RegistryCacheSnapshot;
 use Stewart\Runtime\Broker\StateCacheSnapshot;
 use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
 use Stewart\Runtime\Ipc\Wire\RegistryFragment;
+use Stewart\Runtime\Model\WorkerId;
 use Stewart\Testing\Async\Latch;
 use Throwable;
 
@@ -84,6 +90,9 @@ final class FakeHaSession implements HaSession
 
     /** @var list<TriggerSpec> */
     public array $unsubscribedTriggers = [];
+
+    /** @var array<string, ExposedStateChange> */
+    public array $exposedEntities = [];
 
     private bool $open = false;
 
@@ -273,4 +282,38 @@ final class FakeHaSession implements HaSession
     {
         $this->listener?->triggerRejected($spec, $reason);
     }
+
+    public function exposeEntity(
+        WorkerId $owner,
+        AppId $appId,
+        ExposedEntityKey $key,
+        ExposedEntityDefinition $definition,
+        ExposedStateChange $change,
+    ): ?ExposedEntitySnapshot {
+        $this->exposedEntities[$appId . '/' . $key] = $change;
+
+        return null;
+    }
+
+    public function updateExposedEntity(AppId $appId, ExposedEntityKey $key, ExposedStateChange $change): void
+    {
+        $address = $appId . '/' . $key;
+        $this->exposedEntities[$address] = ($this->exposedEntities[$address] ?? new ExposedStateChange())->withLaterChange($change);
+    }
+
+    public function removeExposedEntity(AppId $appId, ExposedEntityKey $key): void
+    {
+        unset($this->exposedEntities[$appId . '/' . $key]);
+    }
+
+    public function forgetExposuresOfApp(AppId $appId): void
+    {
+        $this->exposedEntities = array_filter(
+            $this->exposedEntities,
+            static fn(string $address): bool => !str_starts_with($address, $appId . '/'),
+            \ARRAY_FILTER_USE_KEY,
+        );
+    }
+
+    public function forgetExposuresOfWorker(WorkerId $workerId): void {}
 }

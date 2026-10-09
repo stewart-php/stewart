@@ -14,6 +14,11 @@ final readonly class ExposedStateChange
         public ?bool $available = null,
     ) {}
 
+    public function withLaterChange(self $later): self
+    {
+        return new self($later->state ?? $this->state, $later->attributes ?? $this->attributes, $later->available ?? $this->available);
+    }
+
     /** @return array<string, mixed> */
     public function toMessageFields(): array
     {

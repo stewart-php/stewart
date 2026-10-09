@@ -7,12 +7,17 @@ namespace Stewart\Runtime\Broker;
 use Amp\DeferredCancellation;
 use DateTimeZone;
 use Psr\Log\LoggerInterface;
+use Stewart\Client\Component\ExposedEntityDefinition;
+use Stewart\Client\Component\ExposedEntitySnapshot;
+use Stewart\Client\Component\ExposedStateChange;
 use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
 use Stewart\Client\HaSiteSettings;
+use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\Event\HaEvent;
+use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
@@ -26,9 +31,11 @@ use Stewart\Contracts\Time\MonotonicTime;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Broker\Component\ComponentLink;
+use Stewart\Runtime\Broker\Exposure\ExposureLink;
 use Stewart\Runtime\Broker\Trigger\HaTriggerLink;
 use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
 use Stewart\Runtime\Ipc\Wire\RegistryFragment;
+use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\StateCache;
 use Throwable;
@@ -69,6 +76,7 @@ final class WebsocketHaSession implements HaSession
         private readonly RegistryCache $registry,
         private readonly HaTriggerLink $triggers,
         private readonly ComponentLink $component,
+        private readonly ExposureLink $exposures,
     ) {
         $this->stop = new DeferredCancellation();
     }
@@ -211,6 +219,36 @@ final class WebsocketHaSession implements HaSession
         $this->triggers->unsubscribeTrigger($spec);
     }
 
+    public function exposeEntity(
+        WorkerId $owner,
+        AppId $appId,
+        ExposedEntityKey $key,
+        ExposedEntityDefinition $definition,
+        ExposedStateChange $change,
+    ): ?ExposedEntitySnapshot {
+        return $this->exposures->exposeEntity($owner, $appId, $key, $definition, $change);
+    }
+
+    public function updateExposedEntity(AppId $appId, ExposedEntityKey $key, ExposedStateChange $change): void
+    {
+        $this->exposures->updateEntity($appId, $key, $change);
+    }
+
+    public function removeExposedEntity(AppId $appId, ExposedEntityKey $key): void
+    {
+        $this->exposures->removeEntity($appId, $key);
+    }
+
+    public function forgetExposuresOfApp(AppId $appId): void
+    {
+        $this->exposures->forgetExposuresOfApp($appId);
+    }
+
+    public function forgetExposuresOfWorker(WorkerId $workerId): void
+    {
+        $this->exposures->forgetExposuresOfWorker($workerId);
+    }
+
     private function connectSubscribeAndSeed(): void
     {
         // Subscribe before seeding and buffer changes in between, so no change is lost.
@@ -224,6 +262,7 @@ final class WebsocketHaSession implements HaSession
             $this->client->subscribeAllEvents($this->onStateChanged(...), $this->onEventFired(...));
             $this->triggers->resubscribeAll();
             $this->component->establishLink();
+            $this->exposures->replayAll();
             $this->siteSettings ??= $this->client->getSiteSettings();
             $this->haUserId ??= $this->client->getCurrentUserId();
             $states = $this->client->getStates();
