@@ -10,6 +10,7 @@ from homeassistant.loader import async_get_integration
 from .change import EntityChange, EntityUpsert
 from .const import (
     APP_PATTERN,
+    DEVICE_IDENTIFIER_PATTERN,
     DOMAIN,
     ERR_PROTOCOL_MISMATCH,
     INSTANCE_PATTERN,
@@ -27,6 +28,16 @@ ENTITY_ADDRESS_SCHEMA = {
     vol.Required("app"): vol.Match(APP_PATTERN),
     vol.Required("key"): vol.Match(KEY_PATTERN),
 }
+
+DEVICE_SCHEMA = vol.Schema(
+    {
+        vol.Required("identifier"): vol.Match(DEVICE_IDENTIFIER_PATTERN),
+        vol.Required("name"): str,
+        vol.Optional("manufacturer"): str,
+        vol.Optional("model"): str,
+        vol.Optional("suggested_area"): str,
+    }
+)
 
 type ExposureHandler = Callable[[StewartRuntime, dict[str, Any]], Awaitable[dict[str, Any] | None]]
 
@@ -112,6 +123,7 @@ def websocket_session_subscribe(
         **ENTITY_ADDRESS_SCHEMA,
         vol.Required("platform"): str,
         vol.Required("config"): dict,
+        vol.Optional("device"): DEVICE_SCHEMA,
         vol.Optional("state"): object,
         vol.Optional("attributes"): dict,
         vol.Optional("available"): bool,

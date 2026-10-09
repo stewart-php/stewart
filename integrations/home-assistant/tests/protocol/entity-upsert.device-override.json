@@ -15,8 +15,7 @@
         "device": {
             "identifier": "greenhouse",
             "name": "Greenhouse",
-            "manufacturer": "Stewart",
-            "suggested_area": "garden"
+            "manufacturer": "Stewart"
         },
         "state": 38
     },

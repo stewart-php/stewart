@@ -11,6 +11,7 @@ PLATFORMS: Final = (Platform.BINARY_SENSOR, Platform.SENSOR)
 INSTANCE_PATTERN: Final = r"\A[a-z][a-z0-9_]{0,63}\Z"
 APP_PATTERN: Final = r"\A[a-z][a-z0-9_-]*\Z"
 KEY_PATTERN: Final = r"\A[a-z][a-z0-9_]{0,63}\Z"
+DEVICE_IDENTIFIER_PATTERN: Final = r"\A[a-z][a-z0-9_]*\Z"
 MAX_COMMAND_TIMEOUT_SECONDS: Final = 300
 
 SIGNAL_SESSION_CHANGED: Final = "stewart_session_changed_{}"

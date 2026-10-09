@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Final, Self
 
+from .devices import DeviceTarget
 from .identity import EntityAddress
 
 
@@ -38,13 +39,20 @@ class EntityUpsert:
     address: EntityAddress
     platform: str
     config: Mapping[str, JsonValue]
+    device: DeviceTarget
     change: EntityChange
 
     @classmethod
     def from_message(cls, msg: Mapping[str, Any]) -> Self:
+        address = EntityAddress.from_message(msg)
         return cls(
-            address=EntityAddress.from_message(msg),
+            address=address,
             platform=msg["platform"],
             config=msg["config"],
+            device=(
+                DeviceTarget.for_named(address.instance, msg["device"])
+                if "device" in msg
+                else DeviceTarget.for_app(address)
+            ),
             change=EntityChange.from_message(msg),
         )
