@@ -15,6 +15,16 @@ minor release may break; its "Upgrading" section says what to change.
   `stewart/session/subscribe`; entities follow in later releases
 - `make ha-check` (ruff, mypy, pytest; `HA=min` for Home Assistant 2026.4) as part of `make check`, and
   `make ha-hassfest`
+- The daemon detects the `stewart` integration on every Home Assistant connect and holds its session open;
+  `stewart status` shows it on a `component` row, with the reason when it is missing, speaks another protocol or was
+  taken over by another daemon
+- `expose.instance` setting (`default`), naming this daemon in Home Assistant; daemons sharing one Home Assistant need
+  different names
+- Metrics `stewart_component_info{version,protocol}` and `stewart_component_state{state}`
+
+### Changed
+
+- The control protocol is version 25: snapshots carry `component`
 
 ## [0.8.0] - 2026-10-08
 
