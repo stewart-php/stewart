@@ -70,11 +70,14 @@ Done once, by an owner of the `stewart-php` organization, before `v0.1.0`.
    `PACKAGIST_USERNAME` (variable) and `PACKAGIST_TOKEN` (secret) so `split.yml` also triggers an update itself.
 4. **GHCR.** After the first release, open the `runtime` and `charts/stewart` packages in the organization's
    packages, make them public, and link them to this repository.
-5. **Runners.** `ubuntu-24.04-arm` runners must be available to the organization; they are free for public
+5. **Docker Hub.** Create a read-only Docker Hub access token, then add the username as the variable
+   `DOCKERHUB_USERNAME` and the token as the secret `DOCKERHUB_TOKEN`; image builds log in with them so Docker Hub's
+   anonymous rate limit does not fail them. Split's action image is built before any step and stays anonymous.
+6. **Runners.** `ubuntu-24.04-arm` runners must be available to the organization; they are free for public
    repositories.
-6. **HACS.** Until `hass-stewart` is in the HACS default store, users add it as a custom repository (category
+7. **HACS.** Until `hass-stewart` is in the HACS default store, users add it as a custom repository (category
    *Integration*); its README says how.
-7. **Optional.** List the chart on Artifact Hub (`oci://ghcr.io/stewart-php/charts/stewart`).
+8. **Optional.** List the chart on Artifact Hub (`oci://ghcr.io/stewart-php/charts/stewart`).
 
 ## Verifying a published release
 
