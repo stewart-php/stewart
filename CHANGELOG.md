@@ -6,6 +6,24 @@ minor release may break; its "Upgrading" section says what to change.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-09
+
+Apps now show up in Home Assistant as entities of their own. The new `stewart` integration, installed through HACS,
+lets an app expose sensors, switches, buttons, numbers, selects and other controls, receive their commands, and edit
+entity registry entries.
+
+### Highlights
+
+- **The `stewart` Home Assistant integration.** Installed from `stewart-php/hass-stewart` through HACS; the daemon
+  detects it on every connect and `stewart status` shows it on a `component` row.
+- **Exposed entities.** An injected `EntityExposure` gives apps `sensor`, `binary_sensor`, `switch`, `button`,
+  `number`, `select`, `text`, `time`, `date` and `datetime` entities. `watchCommands()` streams typed commands, and
+  entities turn unavailable while their app or daemon is down.
+- **Registry edits.** An injected `RegistryEditor` renames, labels, hides or moves entities in Home Assistant's entity
+  registry.
+- **Testing.** `RecordingEntityExposure` and `RecordingRegistryEditor` in `stewart-php/testing` cover both in unit
+  tests.
+
 ### Added
 
 - The protocol between Stewart and its Home Assistant integration, `integrations/home-assistant/PROTOCOL.md`, with
@@ -78,6 +96,14 @@ minor release may break; its "Upgrading" section says what to change.
 - The control protocol is version 28: snapshots carry `component` and each app's `exposed_entities` and
   `exposed_commands`
 - IPC protocol 26; broker and workers must run the same version
+
+### Upgrading
+
+1. Run `make upgrade VERSION=0.9`. Broker, workers and `stewart` commands must all run 0.9; `stewart status` against
+   a 0.8 daemon is refused (control protocol 28).
+2. Install the `stewart` integration 0.9.0 in Home Assistant 2026.4 or newer before an app calls `expose*()`; without
+   it, `expose*()` throws `ExposureException`. Apps that expose nothing need no integration.
+3. Daemons sharing one Home Assistant set a different `expose.instance` each.
 
 ## [0.8.0] - 2026-10-08
 

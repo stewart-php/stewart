@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM ghcr.io/stewart-php/runtime:0.8 AS build
+FROM ghcr.io/stewart-php/runtime:0.9 AS build
 
 COPY --chown=10001:10001 composer.json composer.lock ./
 RUN composer install --no-dev --no-interaction --no-progress --no-scripts --no-autoloader
@@ -7,7 +7,7 @@ RUN composer install --no-dev --no-interaction --no-progress --no-scripts --no-a
 COPY --chown=10001:10001 . .
 RUN composer dump-autoload --no-dev --optimize
 
-FROM ghcr.io/stewart-php/runtime:0.8
+FROM ghcr.io/stewart-php/runtime:0.9
 
 COPY --from=build /app /app
 
