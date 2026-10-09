@@ -17,6 +17,8 @@ minor release may break; its "Upgrading" section says what to change.
   `stewart/entity/upsert`, `state` and `remove`. Each daemon gets a hub device and each app a device under it, or an
   entity names its own device. Entities restore their state and attributes after a Home Assistant restart and become
   unavailable while their daemon has no session
+- `stewart/entity/reconcile` removes every entity of a daemon that it no longer exposes, except those of the apps it
+  names in `keep_apps`
 - `make ha-check` (ruff, mypy, pytest; `HA=min` for Home Assistant 2026.4) as part of `make check`, and
   `make ha-hassfest`
 - The daemon detects the `stewart` integration on every Home Assistant connect and holds its session open;
@@ -24,7 +26,11 @@ minor release may break; its "Upgrading" section says what to change.
   taken over by another daemon
 - `expose.instance` setting (`default`), naming this daemon in Home Assistant; daemons sharing one Home Assistant need
   different names
+- Shortly after startup, once every worker is ready or quarantined, the daemon removes its entities that no running
+  app exposed; entities of apps that failed or did not start stay. `expose.prune: false` turns it off
 - Metrics `stewart_component_info{version,protocol}` and `stewart_component_state{state}`
+- `stewart status` shows how many entities each app exposes in an `exposed` column, also exported as
+  `stewart_app_exposed_entities`
 - Apps expose their own `sensor` and `binary_sensor` entities through an injected `EntityExposure`:
   `exposeSensor()` and `exposeBinarySensor()` return handles that set the value, attributes and availability and
   read back the entity ID and the state Home Assistant restored. Exposed entities are sent again after every
@@ -37,7 +43,9 @@ minor release may break; its "Upgrading" section says what to change.
 
 ### Changed
 
-- The control protocol is version 25: snapshots carry `component`
+- Entities of an app that fails, stops or loses its worker turn unavailable until the app exposes them again, instead
+  of keeping their last state as if live
+- The control protocol is version 26: snapshots carry `component` and each app's `exposed_entities`
 - IPC protocol 23; broker and workers must run the same version
 
 ## [0.8.0] - 2026-10-08

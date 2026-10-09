@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Broker;
 
 use Psr\Log\LoggerInterface;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
+use Stewart\Runtime\Broker\Exposure\ExposureReconciler;
 use Stewart\Runtime\Exception\BrokerException;
 use Throwable;
 
@@ -20,6 +21,7 @@ final readonly class WorkerStartup
         private WorkerSlotRegistry $slots,
         private WorkerWatchdog $watchdog,
         private BrokerWorkerEvents $workerEvents,
+        private ExposureReconciler $reconciler,
         private HaSession $session,
         private BrokerRun $run,
         private LoggerInterface $logger,
@@ -40,6 +42,7 @@ final readonly class WorkerStartup
         }
 
         $this->watchdog->startProbing();
+        $this->reconciler->scheduleOnceWorkersSettle();
 
         $this->logger->info('Stewart is running', [
             'workers' => $this->slots->countLiveWorkers(),

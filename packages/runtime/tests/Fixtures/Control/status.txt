@@ -21,9 +21,9 @@ worker phase                   pid  ready apps lag    memory  pong   missed rest
 1      restart_scheduled in 4s -    no    echo -      -       never  0      2 (5 since start) -      -       -                0     
 
 Apps
-app  worker state                                               reported subs schedules delivered dropped suppressed runs publishes calls ok/failed p95     failures 
-demo 0      running (paused by control 2m 05s ago)              7s ago   1    1         12        1       4          3    2         4/1             > 10 ms 1        
-echo 1      running (resumed by control 5m 00s ago over config) never    0    0         0         0       0          0    0         0/0             -       0        
+app  worker state                                               reported subs schedules exposed delivered dropped suppressed runs publishes calls ok/failed p95     failures 
+demo 0      running (paused by control 2m 05s ago)              7s ago   1    1         2       12        1       4          3    2         4/1             > 10 ms 1        
+echo 1      running (resumed by control 5m 00s ago over config) never    0    0         0       0         0       0          0    0         0/0             -       0        
 
 Failures
 app  when       phase   reason      message      

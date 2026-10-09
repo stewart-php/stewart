@@ -116,6 +116,7 @@ final class StatusRendererTest extends TestCase
                     reportedAt: self::createInstantAt($now - 7.0),
                     subscriptions: 1,
                     schedules: 1,
+                    exposedEntities: 2,
                     counters: new AppCounters(delivered: 12, subscriptionDropped: 1, scheduleRuns: 3, publishes: 2, failures: 1, suppressed: 4),
                     serviceCalls: [
                         new ServiceCallStats(ServiceCallOutcome::Succeeded, 4, new LatencyHistogram([5, 10], [1, 3], 4, Duration::milliseconds(40))),
@@ -123,7 +124,7 @@ final class StatusRendererTest extends TestCase
                     ],
                     lastFailure: new FailureReport(AppFailurePhase::Handler, 'RuntimeException', 'lamp offline', null, 'unreachable', self::createInstantAt($now - 60.0)),
                 ),
-                new AppStatus('echo', 'Echo', 1, AppState::Running, null, new AppPauseStatus(self::createInstantAt($now - 300.0), AppPauseSource::Control), null, 0, 0, new AppCounters(), [], null),
+                new AppStatus('echo', 'Echo', 1, AppState::Running, null, new AppPauseStatus(self::createInstantAt($now - 300.0), AppPauseSource::Control), null, 0, 0, 0, new AppCounters(), [], null),
             ],
             subscriptions: [],
             store: new StoreHealth(false, 'connection refused', self::createInstantAt($now - 20.0)),

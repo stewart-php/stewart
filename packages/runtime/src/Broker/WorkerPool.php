@@ -260,6 +260,7 @@ final class WorkerPool
             ]);
 
             $state->markQuarantined();
+            $state->listener->workerQuarantined($slot);
 
             return;
         }

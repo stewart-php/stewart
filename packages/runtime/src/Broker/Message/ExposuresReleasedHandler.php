@@ -23,7 +23,7 @@ final readonly class ExposuresReleasedHandler implements WorkerMessageHandler
     public function handle(WorkerHandle $handle, WorkerMessage $message): void
     {
         if ($message->scope->appId !== null) {
-            $this->session->forgetExposuresOfApp($message->scope->appId);
+            $this->session->orphanExposuresOfApp($message->scope->appId);
         }
     }
 }

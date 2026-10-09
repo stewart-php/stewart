@@ -11,7 +11,7 @@ from .const import DOMAIN
 from .devices import DeviceDirectory, DeviceTarget
 from .entity import PlatformConfig, StewartEntity
 from .errors import EntityNotFoundError, InvalidConfigError
-from .identity import EntityAddress
+from .identity import EntityAddress, KeptEntities
 from .platforms import ExposurePlatform
 from .session import SessionRegistry
 from .snapshot import EntitySnapshot
@@ -66,6 +66,21 @@ class ExposedEntities:
         removed_entries = self._remove_registry_entries(address, self._platforms.values())
         self._devices.remove_if_empty(entry.device_id for entry in removed_entries)
         return tracked is not None or bool(removed_entries)
+
+    @callback
+    def reconcile(self, instance: str, kept: KeptEntities) -> list[str]:
+        stale = [
+            (address, entry)
+            for entry in list(self._entity_registry.entities.values())
+            if entry.platform == DOMAIN
+            and (address := EntityAddress.from_unique_id(instance, entry.unique_id)) is not None
+            and not kept.keeps(address)
+        ]
+        for address, entry in stale:
+            self._entities.pop(address.unique_id, None)
+            self._entity_registry.async_remove(entry.entity_id)
+        self._devices.remove_if_empty(entry.device_id for _, entry in stale)
+        return [entry.entity_id for _, entry in stale]
 
     # A user may delete an entity in Home Assistant; it stays deleted until Stewart upserts it again.
     @callback

@@ -33,6 +33,7 @@ use Stewart\Runtime\Config\ExposeConfig;
 use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Testing\Exception\AssertsReason;
+use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
 use Stewart\Testing\Websocket\FakeWebsocketConnection;
 use Stewart\Testing\Websocket\FakeWebsocketConnector;
@@ -126,15 +127,87 @@ final class ExposureLinkTest extends TestCase
         self::assertSame(self::ENTITY_ID, $this->synced[0]->snapshot->entityId->value);
     }
 
-    public function testForgottenAppIsNotReplayed(): void
+    public function testExposureIsSentAvailable(): void
+    {
+        $this->activateComponent();
+        $this->replyToUpsert();
+
+        $this->exposeTemperature(21.4);
+
+        self::assertTrue($this->socket->listSentOfType('stewart/entity/upsert')[0]['available'] ?? null);
+    }
+
+    public function testOrphanedAppTurnsUnavailable(): void
+    {
+        $this->activateComponent();
+        $this->replyToUpsert();
+        $this->exposeTemperature(21.4);
+        $this->socket->replyWhenSent('stewart/entity/state', ['type' => 'result', 'success' => true, 'result' => null]);
+
+        $this->link->orphanExposuresOfApp(new AppId('climate'));
+        EventLoopTicks::settle();
+
+        self::assertFalse($this->socket->listSentOfType('stewart/entity/state')[0]['available'] ?? null);
+    }
+
+    public function testOrphanIsReplayedUnavailableWithoutSync(): void
     {
         $this->exposeTemperature(21.4);
-        $this->link->forgetExposuresOfApp(new AppId('climate'));
+        $this->link->orphanExposuresOfApp(new AppId('climate'));
         $this->activateComponent();
+        $this->replyToUpsert();
 
         $this->link->replayAll();
 
-        self::assertSame([], $this->socket->listSentOfType('stewart/entity/upsert'));
+        self::assertFalse($this->socket->listSentOfType('stewart/entity/upsert')[0]['available'] ?? null);
+        self::assertSame([], $this->socket->listSentOfType('stewart/entity/state'));
+        self::assertSame([], $this->synced);
+    }
+
+    public function testExposingOrphanAgainMakesItAvailable(): void
+    {
+        $this->exposeTemperature(21.4);
+        $this->link->orphanExposuresOfApp(new AppId('climate'));
+        $this->exposeTemperature(22.0);
+        $this->activateComponent();
+        $this->replyToUpsert();
+
+        $this->link->replayAll();
+
+        self::assertTrue($this->socket->listSentOfType('stewart/entity/upsert')[0]['available'] ?? null);
+        self::assertCount(1, $this->synced);
+    }
+
+    public function testLostWorkerOrphansOnlyItsEntities(): void
+    {
+        $this->activateComponent();
+        $this->replyToUpsert();
+        $this->exposeTemperature(21.4);
+        $this->replyToUpsert();
+        $this->link->exposeEntity(
+            new WorkerId(1),
+            new AppId('lights'),
+            new ExposedEntityKey('night_mode'),
+            ExposedEntityDefinition::fromConfig(new SensorConfig(), null),
+            new ExposedStateChange(new ExposedState('on')),
+        );
+        $this->socket->replyWhenSent('stewart/entity/state', ['type' => 'result', 'success' => true, 'result' => null]);
+
+        $this->link->orphanExposuresOfWorker(new WorkerId(0));
+        EventLoopTicks::settle();
+
+        $states = $this->socket->listSentOfType('stewart/entity/state');
+        self::assertCount(1, $states);
+        self::assertSame('climate', $states[0]['app'] ?? null);
+    }
+
+    public function testCountIncludesOrphans(): void
+    {
+        $this->exposeTemperature(21.4);
+        $this->link->orphanExposuresOfApp(new AppId('climate'));
+
+        self::assertSame(1, $this->link->countExposuresOfApp(new AppId('climate')));
+        self::assertSame(0, $this->link->countExposuresOfApp(new AppId('lights')));
     }
 
     public function testDeletedEntityIsUpsertedAgain(): void

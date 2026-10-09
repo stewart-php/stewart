@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Broker;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
+use Stewart\Runtime\Broker\Exposure\ExposureLink;
 use Stewart\Runtime\Control\Protocol\Status\AppCounters;
 use Stewart\Runtime\Control\Protocol\Status\AppPauseStatus;
 use Stewart\Runtime\Control\Protocol\Status\AppStatus;
@@ -97,7 +98,7 @@ final class AppRunningTotals
         $this->lastFailure = $failure;
     }
 
-    public function buildAppStatus(AppPauseRegistry $pausedApps): AppStatus
+    public function buildAppStatus(AppPauseRegistry $pausedApps, ExposureLink $exposures): AppStatus
     {
         $calls = $this->calls;
         ksort($calls);
@@ -114,6 +115,7 @@ final class AppRunningTotals
             reportedAt: $this->reportedAt,
             subscriptions: $this->subscriptions,
             schedules: $this->schedules,
+            exposedEntities: $this->appId === null ? 0 : $exposures->countExposuresOfApp($this->appId),
             counters: new AppCounters(
                 delivered: $this->delivered,
                 subscriptionDropped: $this->subscriptionDropped,

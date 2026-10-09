@@ -127,9 +127,10 @@ Fields: `instance`, `app`, `key`. Result: `{removed: bool}`; `false` when there 
 |---|---|---|
 | `instance` | string | |
 | `keep` | list of `{app, key}` | Entities to leave alone. |
+| `keep_apps` | list of string | Apps whose entities are all left alone, such as apps that failed before exposing. |
 
-Removes every entity of the instance that is not in `keep`, with its registry entry. Result:
-`{removed: [entity_id, …]}`.
+Removes every entity of the instance that neither `keep` nor `keep_apps` names, with its registry entry and any device
+left empty. Result: `{removed: [entity_id, …]}`.
 
 ### `stewart/command/result`
 

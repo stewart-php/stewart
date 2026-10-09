@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Tests\Fixtures\Broker;
 use RuntimeException;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerPoolListener;
+use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Ipc\Message\BrokerMessage;
 use Stewart\Runtime\Ipc\Message\WorkerMessage;
 
@@ -20,6 +21,9 @@ final class RecordingPoolListener implements WorkerPoolListener
 
     /** @var list<int> */
     public array $spawned = [];
+
+    /** @var list<int> */
+    public array $quarantined = [];
 
     public bool $failOnMessage = false;
 
@@ -47,5 +51,10 @@ final class RecordingPoolListener implements WorkerPoolListener
     public function workerGone(WorkerHandle $handle, string $reason): void
     {
         $this->gone[] = $handle->id . ': ' . $reason;
+    }
+
+    public function workerQuarantined(WorkerSlot $slot): void
+    {
+        $this->quarantined[] = $slot->workerId->value;
     }
 }

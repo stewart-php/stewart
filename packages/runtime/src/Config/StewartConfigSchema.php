@@ -350,6 +350,10 @@ final class StewartConfigSchema implements ConfigurationInterface
                     ->addDefaultsIfNotSet()
                     ->children()
                         ->append($this->createScalarNode('instance', 'Name of this Stewart in Home Assistant, part of every exposed unique_id; daemons sharing one Home Assistant need different names.', 'default'))
+                        ->booleanNode('prune')
+                            ->info('Remove this daemon\'s entities that no running app exposed shortly after startup; entities of failed apps stay.')
+                            ->defaultTrue()
+                        ->end()
                     ->end()
                 ->end()
             ->end();

@@ -27,9 +27,11 @@ use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Contracts\Trigger\TriggerSpec;
+use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\Component\ComponentLink;
 use Stewart\Runtime\Broker\Component\ComponentTracker;
 use Stewart\Runtime\Broker\Exposure\ExposureLink;
+use Stewart\Runtime\Broker\Exposure\ExposureReconciler;
 use Stewart\Runtime\Broker\Reconnector;
 use Stewart\Runtime\Broker\Trigger\HaTriggerLink;
 use Stewart\Runtime\Broker\WebsocketHaSession;
@@ -478,7 +480,8 @@ final class WebsocketHaSessionTest extends TestCase
             new RegistryCache(),
             new HaTriggerLink($client, new NullLogger()),
             new ComponentLink($client, new NullLogger(), $this->componentTracker = new ComponentTracker($this->timers->clock), $expose, '0.9.0'),
-            new ExposureLink($client, new NullLogger(), $this->componentTracker, $expose),
+            $exposures = new ExposureLink($client, new NullLogger(), $this->componentTracker, $expose),
+            new ExposureReconciler(WorkerSlotCollection::fromWorkerSlots([]), $exposures, $client, $this->componentTracker, $expose, $this->timers, new NullLogger()),
         );
     }
 

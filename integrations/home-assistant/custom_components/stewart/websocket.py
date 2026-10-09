@@ -19,7 +19,7 @@ from .const import (
     PROTOCOL,
 )
 from .errors import ExposureError
-from .identity import EntityAddress
+from .identity import EntityAddress, KeptEntities
 from .runtime import StewartConfigEntry, StewartRuntime
 from .session import Session
 
@@ -28,6 +28,13 @@ ENTITY_ADDRESS_SCHEMA = {
     vol.Required("app"): vol.Match(APP_PATTERN),
     vol.Required("key"): vol.Match(KEY_PATTERN),
 }
+
+KEPT_ENTITY_SCHEMA = vol.Schema(
+    {
+        vol.Required("app"): vol.Match(APP_PATTERN),
+        vol.Required("key"): vol.Match(KEY_PATTERN),
+    }
+)
 
 DEVICE_SCHEMA = vol.Schema(
     {
@@ -65,6 +72,7 @@ def async_register_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_entity_upsert)
     websocket_api.async_register_command(hass, websocket_entity_state)
     websocket_api.async_register_command(hass, websocket_entity_remove)
+    websocket_api.async_register_command(hass, websocket_entity_reconcile)
 
 
 @websocket_api.websocket_command({vol.Required("type"): "stewart/version"})
@@ -158,6 +166,21 @@ async def websocket_entity_state(runtime: StewartRuntime, msg: dict[str, Any]) -
 @_exposure_command
 async def websocket_entity_remove(runtime: StewartRuntime, msg: dict[str, Any]) -> dict[str, Any]:
     return {"removed": runtime.entities.remove(EntityAddress.from_message(msg))}
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "stewart/entity/reconcile",
+        vol.Required("instance"): vol.Match(INSTANCE_PATTERN),
+        vol.Required("keep"): [KEPT_ENTITY_SCHEMA],
+        vol.Required("keep_apps"): [vol.Match(APP_PATTERN)],
+    }
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+@_exposure_command
+async def websocket_entity_reconcile(runtime: StewartRuntime, msg: dict[str, Any]) -> dict[str, Any]:
+    return {"removed": runtime.entities.reconcile(msg["instance"], KeptEntities.from_message(msg))}
 
 
 # Commands outlive an unload; answering like a missing integration lets Stewart detect both the same way.
