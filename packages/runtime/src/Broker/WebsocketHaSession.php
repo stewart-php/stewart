@@ -32,6 +32,7 @@ use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Broker\Component\ComponentLink;
 use Stewart\Runtime\Broker\Exposure\ExposureLink;
+use Stewart\Runtime\Broker\Exposure\ExposureReconciler;
 use Stewart\Runtime\Broker\Trigger\HaTriggerLink;
 use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
 use Stewart\Runtime\Ipc\Wire\RegistryFragment;
@@ -77,6 +78,7 @@ final class WebsocketHaSession implements HaSession
         private readonly HaTriggerLink $triggers,
         private readonly ComponentLink $component,
         private readonly ExposureLink $exposures,
+        private readonly ExposureReconciler $reconciler,
     ) {
         $this->stop = new DeferredCancellation();
     }
@@ -264,6 +266,7 @@ final class WebsocketHaSession implements HaSession
             $this->triggers->resubscribeAll();
             $this->component->establishLink();
             $this->exposures->replayAll();
+            $this->reconciler->reconcileIfDue();
             $this->siteSettings ??= $this->client->getSiteSettings();
             $this->haUserId ??= $this->client->getCurrentUserId();
             $states = $this->client->getStates();

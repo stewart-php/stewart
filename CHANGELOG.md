@@ -26,6 +26,8 @@ minor release may break; its "Upgrading" section says what to change.
   taken over by another daemon
 - `expose.instance` setting (`default`), naming this daemon in Home Assistant; daemons sharing one Home Assistant need
   different names
+- Shortly after startup, once every worker is ready or quarantined, the daemon removes its entities that no running
+  app exposed; entities of apps that failed or did not start stay. `expose.prune: false` turns it off
 - Metrics `stewart_component_info{version,protocol}` and `stewart_component_state{state}`
 - Apps expose their own `sensor` and `binary_sensor` entities through an injected `EntityExposure`:
   `exposeSensor()` and `exposeBinarySensor()` return handles that set the value, attributes and availability and

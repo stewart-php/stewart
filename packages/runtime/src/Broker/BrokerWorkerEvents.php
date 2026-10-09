@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker;
 
 use Psr\Log\LoggerInterface;
+use Stewart\Runtime\Broker\Exposure\ExposureReconciler;
 use Stewart\Runtime\Broker\Message\WorkerMessageDispatcher;
 use Stewart\Runtime\Ipc\Message\StateSnapshot;
 use Stewart\Runtime\Ipc\Message\WorkerMessage;
@@ -17,6 +18,7 @@ final readonly class BrokerWorkerEvents implements WorkerPoolListener
         private ConnectionTracker $connection,
         private WorkerMessageDispatcher $messages,
         private SubscriptionRegistry $registry,
+        private ExposureReconciler $reconciler,
         private BrokerRun $run,
         private LoggerInterface $logger,
     ) {}
@@ -52,5 +54,10 @@ final readonly class BrokerWorkerEvents implements WorkerPoolListener
                 'reason' => $reason,
             ]);
         }
+    }
+
+    public function workerQuarantined(WorkerSlot $slot): void
+    {
+        $this->reconciler->recordWorkerQuarantined($slot->workerId);
     }
 }

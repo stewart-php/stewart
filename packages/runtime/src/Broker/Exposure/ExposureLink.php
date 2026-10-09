@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Broker\Exposure;
 
 use Closure;
 use Psr\Log\LoggerInterface;
+use Stewart\Client\Component\Collection\ExposedEntityAddressCollection;
 use Stewart\Client\Component\ComponentErrorCode;
 use Stewart\Client\Component\ExposedEntityAddress;
 use Stewart\Client\Component\ExposedEntityDefinition;
@@ -123,6 +124,11 @@ final class ExposureLink
     public function orphanExposuresOfWorker(WorkerId $workerId): void
     {
         $this->orphanExposures(static fn(LiveExposure $live): bool => $live->isOwnedBy($workerId));
+    }
+
+    public function listKeptAddresses(): ExposedEntityAddressCollection
+    {
+        return ExposedEntityAddressCollection::fromAddresses(array_map(static fn(LiveExposure $live) => $live->address, array_values($this->exposuresByAddress)));
     }
 
     /** @throws HaClientException */

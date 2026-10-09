@@ -13,4 +13,6 @@ interface WorkerPoolListener
     public function workerMessage(WorkerHandle $handle, WorkerMessage $message): void;
 
     public function workerGone(WorkerHandle $handle, string $reason): void;
+
+    public function workerQuarantined(WorkerSlot $slot): void;
 }

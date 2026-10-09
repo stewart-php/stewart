@@ -145,6 +145,7 @@ final class WorkerPoolTest extends TestCase
         self::assertSame(WorkerPhase::Quarantined, $this->getPhaseOf(0));
         self::assertSame(0, $this->slots->countLiveWorkers());
         self::assertSame(0, $this->slots->countPendingRestarts());
+        self::assertSame([0], $this->listener->quarantined);
     }
 
     public function testSpawnThatFailsAfterACrashIsRetried(): void
