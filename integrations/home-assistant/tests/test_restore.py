@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Any
 
 import pytest
@@ -17,6 +18,8 @@ SENSOR_ENTITY_ID = "sensor.stewart_climate_average_temperature"
 BINARY_SENSOR_ENTITY_ID = "binary_sensor.stewart_presence_anyone_home"
 SWITCH_ENTITY_ID = "switch.stewart_lights_night_mode"
 BUTTON_ENTITY_ID = "button.stewart_lights_all_off"
+NUMBER_ENTITY_ID = "number.stewart_climate_target_offset"
+SELECT_ENTITY_ID = "select.stewart_heating_mode"
 LAST_PRESS = "2026-10-09T12:00:00+00:00"
 STORED_ATTRIBUTES = {"sources": ["sensor.attic_temperature"]}
 
@@ -128,6 +131,43 @@ async def test_switch_restores_stored_state(
     response = await send_request(client, request)
 
     assert response["result"]["state"] is False
+
+
+@dataclass(frozen=True, kw_only=True)
+class StoredStateCase:
+    golden: str
+    entity_id: str
+    stored_state: JsonValue
+    restored_state: JsonValue
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        StoredStateCase(
+            golden="entity-upsert.number", entity_id=NUMBER_ENTITY_ID, stored_state=-1.5, restored_state=-1.5
+        ),
+        StoredStateCase(golden="entity-upsert.number", entity_id=NUMBER_ENTITY_ID, stored_state=7, restored_state=None),
+        StoredStateCase(
+            golden="entity-upsert.select", entity_id=SELECT_ENTITY_ID, stored_state="away", restored_state="away"
+        ),
+        StoredStateCase(
+            golden="entity-upsert.select", entity_id=SELECT_ENTITY_ID, stored_state="boost", restored_state=None
+        ),
+    ],
+)
+async def test_restores_stored_state_that_fits_config(
+    hass: HomeAssistant, hass_ws_client: WebSocketGenerator, loaded_entry: MockConfigEntry, case: StoredStateCase
+) -> None:
+    store_extra_data(hass, case.entity_id, {"state": case.stored_state, "attributes": {}})
+    client = await hass_ws_client(hass)
+    await subscribe(client)
+    request = dict(Golden.load(case.golden).request)
+    del request["state"]
+
+    response = await send_request(client, request)
+
+    assert response["result"]["state"] == case.restored_state
 
 
 async def test_button_restores_last_press(

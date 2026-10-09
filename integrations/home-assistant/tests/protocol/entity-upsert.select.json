@@ -1,0 +1,22 @@
+{
+    "protocol": 1,
+    "request": {
+        "type": "stewart/entity/upsert",
+        "instance": "default",
+        "app": "heating",
+        "key": "mode",
+        "platform": "select",
+        "config": {
+            "name": "Mode",
+            "icon": "mdi:radiator",
+            "options": ["eco", "comfort", "away"]
+        },
+        "state": "eco"
+    },
+    "result": {
+        "entity_id": "select.stewart_heating_mode",
+        "state": "eco",
+        "attributes": {},
+        "available": true
+    }
+}

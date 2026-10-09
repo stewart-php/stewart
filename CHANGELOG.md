@@ -53,6 +53,8 @@ minor release may break; its "Upgrading" section says what to change.
   unit tests
 - The skeleton's `HelloApp` exposes `switch.stewart_hello_counting`, which pauses its change counter; the e2e smoke
   test turns it off and on
+- The `stewart` integration creates `number` and `select` entities; `number/set_value` and `select/select_option`
+  send `set_value` and `select_option` commands
 
 ### Changed
 
