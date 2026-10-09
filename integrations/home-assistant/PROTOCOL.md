@@ -75,7 +75,7 @@ Result: `null`, then events.
 
 | `event.type` | Fields | Notes |
 |---|---|---|
-| `command` | `command_id`, `app`, `key`, `action`, `data` | See [Commands](#commands). `command_id` is an opaque string. |
+| `command` | `command_id`, `app`, `key`, `action`, `data`, `context` | See [Commands](#commands). `command_id` is an opaque string; `context` is the service call's `{id, parent_id, user_id}`. |
 | `session_replaced` | — | The last event of a session that another subscribe took over. |
 | `sentence` | — | Reserved. |
 
@@ -189,7 +189,8 @@ Every platform takes these config keys:
 5. No answer in time, or the session ends first: the service call fails with `HomeAssistantError`; the state is
    unchanged.
 
-Without a session, a service call fails at once.
+Without a session, a service call fails at once. A `button` records its press time before the command is sent, so a
+refused press still shows as pressed.
 
 ## Errors
 

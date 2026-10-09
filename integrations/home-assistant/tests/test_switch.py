@@ -1,10 +1,7 @@
 from typing import Any
 
 import pytest
-from homeassistant.components.switch import DOMAIN as SWITCH_DOMAIN
-from homeassistant.const import ATTR_ENTITY_ID, SERVICE_TURN_ON
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
 from pytest_homeassistant_custom_component.typing import MockHAClientWebSocket
 
 from custom_components.stewart.change import JsonValue
@@ -61,12 +58,3 @@ async def test_switch_refuses_config(
     response = await send_request(session_client, switch_upsert(config=config))
 
     assert response["error"]["code"] == "invalid_config"
-
-
-async def test_switch_refuses_service_calls(hass: HomeAssistant, session_client: MockHAClientWebSocket) -> None:
-    await send_request(session_client, switch_upsert())
-
-    with pytest.raises(HomeAssistantError):
-        await hass.services.async_call(
-            SWITCH_DOMAIN, SERVICE_TURN_ON, {ATTR_ENTITY_ID: SWITCH_ENTITY_ID}, blocking=True
-        )

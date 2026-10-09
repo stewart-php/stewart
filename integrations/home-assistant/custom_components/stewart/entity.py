@@ -1,11 +1,12 @@
 from typing import Protocol
 
-from homeassistant.core import callback
+from homeassistant.core import Context, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.restore_state import RestoreEntity
 
 from .change import ABSENT, EntityChange, JsonValue
+from .command import CommandAction, EntityCommand
 from .config import EntityConfig
 from .const import SIGNAL_SESSION_CHANGED
 from .errors import InvalidStateError
@@ -85,6 +86,11 @@ class StewartEntity[ConfigT: PlatformConfig, NativeT](RestoreEntity):
     def publish(self) -> None:
         if self._live:
             self.async_write_ha_state()
+
+    async def run_command(self, action: CommandAction, data: dict[str, JsonValue] | None = None) -> None:
+        await self._sessions.run_command(
+            EntityCommand(address=self.address, action=action, data=data or {}, context=self._context or Context())
+        )
 
     def take_snapshot(self) -> EntitySnapshot:
         return EntitySnapshot(

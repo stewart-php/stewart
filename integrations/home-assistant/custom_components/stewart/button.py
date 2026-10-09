@@ -5,11 +5,11 @@ from typing import Final, Self
 from homeassistant.components.button import ButtonDeviceClass, ButtonEntity
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback, async_get_current_platform
 
 from .change import ABSENT, EntityChange, JsonValue
+from .command import CommandAction
 from .config import ConfigReader, EntityConfig
 from .entity import StewartEntity
 from .errors import InvalidStateError
@@ -37,7 +37,7 @@ class ButtonConfig:
 # Home Assistant owns a button's state, the time of its last press.
 class StewartButton(StewartEntity[ButtonConfig, None], ButtonEntity):
     async def async_press(self) -> None:
-        raise HomeAssistantError("Stewart buttons do not take commands yet.")
+        await self.run_command(CommandAction.PRESS)
 
     def _show_config(self, config: ButtonConfig) -> None:
         super()._show_config(config)

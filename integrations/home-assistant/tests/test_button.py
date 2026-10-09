@@ -1,11 +1,8 @@
 from typing import Any
 
 import pytest
-from homeassistant.components.button import DOMAIN as BUTTON_DOMAIN
-from homeassistant.components.button import SERVICE_PRESS
-from homeassistant.const import ATTR_ENTITY_ID, STATE_UNKNOWN
+from homeassistant.const import STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
 from pytest_homeassistant_custom_component.typing import MockHAClientWebSocket
 
 from tests.exchange import send_request
@@ -74,10 +71,3 @@ async def test_button_takes_attributes(hass: HomeAssistant, session_client: Mock
     state = hass.states.get(BUTTON_ENTITY_ID)
     assert state is not None
     assert state.attributes["zone"] == "upstairs"
-
-
-async def test_button_refuses_presses(hass: HomeAssistant, session_client: MockHAClientWebSocket) -> None:
-    await send_request(session_client, button_upsert())
-
-    with pytest.raises(HomeAssistantError):
-        await hass.services.async_call(BUTTON_DOMAIN, SERVICE_PRESS, {ATTR_ENTITY_ID: BUTTON_ENTITY_ID}, blocking=True)

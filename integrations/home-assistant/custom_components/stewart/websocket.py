@@ -8,6 +8,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.loader import async_get_integration
 
 from .change import EntityChange, EntityUpsert
+from .command import CommandAnswer
 from .const import (
     APP_PATTERN,
     DEVICE_IDENTIFIER_PATTERN,
@@ -73,6 +74,7 @@ def async_register_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_entity_state)
     websocket_api.async_register_command(hass, websocket_entity_remove)
     websocket_api.async_register_command(hass, websocket_entity_reconcile)
+    websocket_api.async_register_command(hass, websocket_command_result)
 
 
 @websocket_api.websocket_command({vol.Required("type"): "stewart/version"})
@@ -181,6 +183,29 @@ async def websocket_entity_remove(runtime: StewartRuntime, msg: dict[str, Any]) 
 @_exposure_command
 async def websocket_entity_reconcile(runtime: StewartRuntime, msg: dict[str, Any]) -> dict[str, Any]:
     return {"removed": runtime.entities.reconcile(msg["instance"], KeptEntities.from_message(msg))}
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "stewart/command/result",
+        vol.Required("command_id"): str,
+        vol.Required("ok"): bool,
+        vol.Optional("message"): str,
+    }
+)
+@websocket_api.require_admin
+@callback
+def websocket_command_result(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    if (entry := _find_loaded_entry(hass, connection, msg)) is None:
+        return
+    try:
+        entry.runtime_data.sessions.answer_command(connection, CommandAnswer.from_message(msg))
+    except ExposureError as error:
+        connection.send_error(msg["id"], error.code, error.message)
+        return
+    connection.send_result(msg["id"])
 
 
 # Commands outlive an unload; answering like a missing integration lets Stewart detect both the same way.

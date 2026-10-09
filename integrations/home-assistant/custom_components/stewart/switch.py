@@ -5,11 +5,11 @@ from typing import Any, Final, Self
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback, async_get_current_platform
 
-from .change import JsonValue
+from .change import EntityChange, JsonValue
+from .command import CommandAction
 from .config import ConfigReader, EntityConfig
 from .entity import StewartEntity
 from .errors import InvalidStateError
@@ -36,10 +36,14 @@ class SwitchConfig:
 
 class StewartSwitch(StewartEntity[SwitchConfig, bool | None], SwitchEntity):
     async def async_turn_on(self, **kwargs: Any) -> None:  # noqa: ANN401, ARG002
-        raise HomeAssistantError("Stewart switches do not take commands yet.")
+        await self.run_command(CommandAction.TURN_ON)
+        self.apply_change(EntityChange(state=True))
+        self.publish()
 
     async def async_turn_off(self, **kwargs: Any) -> None:  # noqa: ANN401, ARG002
-        raise HomeAssistantError("Stewart switches do not take commands yet.")
+        await self.run_command(CommandAction.TURN_OFF)
+        self.apply_change(EntityChange(state=False))
+        self.publish()
 
     def _show_config(self, config: SwitchConfig) -> None:
         super()._show_config(config)

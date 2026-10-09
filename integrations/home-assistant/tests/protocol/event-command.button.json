@@ -2,13 +2,11 @@
     "protocol": 1,
     "event": {
         "type": "command",
-        "command_id": "a91e44d0c2b35e78",
-        "app": "climate",
-        "key": "target_offset",
-        "action": "set_value",
-        "data": {
-            "value": 1.5
-        },
+        "command_id": "7c1d5e9a3b0f4a26",
+        "app": "lights",
+        "key": "all_off",
+        "action": "press",
+        "data": {},
         "context": {
             "id": "01J9ZK3YQ8T7C4M2N6P5R0VWXA",
             "parent_id": null,
