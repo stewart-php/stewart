@@ -17,6 +17,7 @@ use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\ExceptionReason;
 use Stewart\Contracts\Exception\StewartException;
+use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\Model\WorkerId;
@@ -135,6 +136,7 @@ final class ExceptionReasonsTest extends TestCase
             $type === AppIdCollection::class => AppIdCollection::fromIds([new AppId('demo')]),
             $type === EntityId::class => new EntityId('light.hall'),
             $type === WorkerId::class => new WorkerId(1),
+            $type === ExposedEntityKey::class => new ExposedEntityKey('demo'),
             $type === Duration::class => Duration::seconds(1),
             $type === Instant::class => Instant::fromEpochMicroseconds(0),
             default => throw new LogicException(\sprintf('No sample value for %s; add one here.', $type)),
