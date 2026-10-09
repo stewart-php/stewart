@@ -2,10 +2,12 @@ from typing import Protocol
 
 from homeassistant.core import callback
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.restore_state import RestoreEntity
 
 from .change import ABSENT, EntityChange, JsonValue
 from .config import EntityConfig
+from .const import SIGNAL_SESSION_CHANGED
 from .errors import InvalidStateError
 from .identity import EntityAddress
 from .session import SessionRegistry
@@ -81,6 +83,11 @@ class StewartEntity[ConfigT: PlatformConfig, NativeT](RestoreEntity):
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
+        self.async_on_remove(
+            async_dispatcher_connect(
+                self.hass, SIGNAL_SESSION_CHANGED.format(self.address.instance), self.async_write_ha_state
+            )
+        )
         self._live = True
 
     async def async_will_remove_from_hass(self) -> None:
