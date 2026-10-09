@@ -8,6 +8,7 @@ use Amp\DeferredFuture;
 use Amp\TimeoutCancellation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Stewart\Client\Component\Collection\ExposedEntityAddressCollection;
 use Stewart\Client\Component\ComponentErrorCode;
 use Stewart\Client\Component\ComponentEventDecoder;
 use Stewart\Client\Component\ComponentInstance;
@@ -16,8 +17,11 @@ use Stewart\Client\Component\ComponentSessionRequest;
 use Stewart\Client\Component\ComponentVersion;
 use Stewart\Client\Component\ExposedEntityAddress;
 use Stewart\Client\Component\ExposedEntityDefinition;
+use Stewart\Client\Component\ExposedEntityReconcile;
+use Stewart\Client\Component\ReconcileResultReader;
 use Stewart\Client\Component\SessionReplaced;
 use Stewart\Client\Connection\Command\Component\GetComponentVersion;
+use Stewart\Client\Connection\Command\Component\ReconcileExposedEntities;
 use Stewart\Client\Connection\Command\Component\RemoveExposedEntity;
 use Stewart\Client\Connection\Command\Component\SubscribeComponentSession;
 use Stewart\Client\Connection\Command\Component\UpdateExposedEntityState;
@@ -29,6 +33,7 @@ use Stewart\Client\HaClient;
 use Stewart\Client\Tests\Fixtures\Component\ComponentGolden;
 use Stewart\Client\Tests\Fixtures\FakeHaServer;
 use Stewart\Contracts\App\AppId;
+use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Exposure\BinarySensorConfig;
 use Stewart\Contracts\Exposure\BinarySensorDeviceClass;
 use Stewart\Contracts\Exposure\DeviceInfo;
@@ -51,6 +56,8 @@ use Stewart\Testing\Exception\AssertsReason;
 #[CoversClass(UpsertExposedEntity::class)]
 #[CoversClass(UpdateExposedEntityState::class)]
 #[CoversClass(RemoveExposedEntity::class)]
+#[CoversClass(ReconcileExposedEntities::class)]
+#[CoversClass(ReconcileResultReader::class)]
 #[CoversClass(ExposedEntityDefinition::class)]
 #[CoversClass(ExposedStateChange::class)]
 #[CoversClass(ExposedEntitySnapshot::class)]
@@ -254,6 +261,24 @@ final class ComponentGoldenTest extends TestCase
         $this->server->replayGolden(ComponentGolden::loadGolden('entity-remove.missing'));
 
         self::assertFalse($this->connectClient()->removeExposedEntity(self::createAddress('lights', 'night_mode')));
+    }
+
+    public function testReconcileMatchesGolden(): void
+    {
+        $golden = ComponentGolden::loadGolden('entity-reconcile');
+        $this->server->replayGolden($golden);
+
+        $removed = $this->connectClient()->reconcileExposedEntities(new ExposedEntityReconcile(
+            ComponentInstance::parse('default'),
+            ExposedEntityAddressCollection::fromAddresses([
+                self::createAddress('climate', 'average_temperature'),
+                self::createAddress('lights', 'night_mode'),
+            ]),
+            AppIdCollection::fromIds([new AppId('heating')]),
+        ));
+
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/reconcile'));
+        self::assertSame(['binary_sensor.stewart_presence_anyone_home'], $removed->toStrings());
     }
 
     private function captureUpsertFailure(ExposedEntityAddress $address, ExposedEntityConfig $config, ExposedState $state): HaClientException

@@ -1,0 +1,25 @@
+{
+    "protocol": 1,
+    "request": {
+        "type": "stewart/entity/reconcile",
+        "instance": "default",
+        "keep": [
+            {
+                "app": "climate",
+                "key": "average_temperature"
+            },
+            {
+                "app": "lights",
+                "key": "night_mode"
+            }
+        ],
+        "keep_apps": [
+            "heating"
+        ]
+    },
+    "result": {
+        "removed": [
+            "binary_sensor.stewart_presence_anyone_home"
+        ]
+    }
+}

@@ -15,9 +15,12 @@ use Stewart\Client\Component\ComponentSessionRequest;
 use Stewart\Client\Component\ComponentVersion;
 use Stewart\Client\Component\ExposedEntityAddress;
 use Stewart\Client\Component\ExposedEntityDefinition;
+use Stewart\Client\Component\ExposedEntityReconcile;
 use Stewart\Client\Component\ExposedEntitySnapshotReader;
+use Stewart\Client\Component\ReconcileResultReader;
 use Stewart\Client\Connection\Command\CallService;
 use Stewart\Client\Connection\Command\Component\GetComponentVersion;
+use Stewart\Client\Connection\Command\Component\ReconcileExposedEntities;
 use Stewart\Client\Connection\Command\Component\RemoveExposedEntity;
 use Stewart\Client\Connection\Command\Component\SubscribeComponentSession;
 use Stewart\Client\Connection\Command\Component\UpdateExposedEntityState;
@@ -46,6 +49,7 @@ use Stewart\Client\Registry\Collection\EntityRegistryCollection;
 use Stewart\Client\Registry\EntityRegistryEntry;
 use Stewart\Client\Registry\RegistryDecoder;
 use Stewart\Client\State\EntityStateDecoder;
+use Stewart\Contracts\Entity\Collection\EntityIdCollection;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\Event\HaEvent;
@@ -401,6 +405,12 @@ final class HaClient
         $removed = $this->connection->send(new RemoveExposedEntity($address))['removed'] ?? null;
 
         return \is_bool($removed) ? $removed : throw HaClientException::protocolViolation('a stewart/entity/remove result without removed');
+    }
+
+    /** @throws HaClientException */
+    public function reconcileExposedEntities(ExposedEntityReconcile $reconcile): EntityIdCollection
+    {
+        return ReconcileResultReader::readRemovedEntityIds($this->connection->send(new ReconcileExposedEntities($reconcile)));
     }
 
     /** @throws HaClientException */
