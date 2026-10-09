@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Client\Component;
+namespace Stewart\Contracts\Exposure;
 
 // A null field leaves that part of the entity as it is; an ExposedState holding null makes the state unknown.
 final readonly class ExposedStateChange
@@ -17,25 +17,5 @@ final readonly class ExposedStateChange
     public function withLaterChange(self $later): self
     {
         return new self($later->state ?? $this->state, $later->attributes ?? $this->attributes, $later->available ?? $this->available);
-    }
-
-    /** @return array<string, mixed> */
-    public function toMessageFields(): array
-    {
-        $fields = [];
-
-        if ($this->state !== null) {
-            $fields['state'] = $this->state->value;
-        }
-
-        if ($this->attributes !== null) {
-            $fields['attributes'] = $this->attributes;
-        }
-
-        if ($this->available !== null) {
-            $fields['available'] = $this->available;
-        }
-
-        return $fields;
     }
 }

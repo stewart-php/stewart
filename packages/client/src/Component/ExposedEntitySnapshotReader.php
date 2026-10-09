@@ -7,23 +7,17 @@ namespace Stewart\Client\Component;
 use Stewart\Client\Exception\HaClientException;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\IdentifierException;
+use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
+use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Support\Json\JsonShape;
 
-final readonly class ExposedEntitySnapshot
+final class ExposedEntitySnapshotReader
 {
-    /** @param array<string, mixed> $attributes */
-    public function __construct(
-        public EntityId $entityId,
-        public int|float|string|bool|null $state,
-        public array $attributes,
-        public bool $available,
-    ) {}
-
     /**
      * @param array<array-key, mixed> $result
      * @throws HaClientException
      */
-    public static function fromUpsertResult(array $result): self
+    public static function readUpsertResult(array $result): ExposedEntitySnapshot
     {
         $entityId = $result['entity_id'] ?? null;
         $state = $result['state'] ?? null;
@@ -35,7 +29,7 @@ final readonly class ExposedEntitySnapshot
         }
 
         try {
-            return new self(new EntityId($entityId), $state, JsonShape::treatKeysAsStrings($attributes), $available);
+            return new ExposedEntitySnapshot(new EntityId($entityId), new ExposedState($state), JsonShape::treatKeysAsStrings($attributes), $available);
         } catch (IdentifierException $e) {
             throw HaClientException::protocolViolation('a stewart/entity/upsert result with an invalid entity_id', $e);
         }

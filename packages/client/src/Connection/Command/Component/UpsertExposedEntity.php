@@ -6,8 +6,9 @@ namespace Stewart\Client\Connection\Command\Component;
 
 use Stewart\Client\Component\ExposedEntityAddress;
 use Stewart\Client\Component\ExposedEntityDefinition;
-use Stewart\Client\Component\ExposedStateChange;
+use Stewart\Client\Component\ExposedStateFields;
 use Stewart\Client\Connection\Command\HaCommand;
+use Stewart\Contracts\Exposure\ExposedStateChange;
 
 final readonly class UpsertExposedEntity implements HaCommand
 {
@@ -33,7 +34,7 @@ final readonly class UpsertExposedEntity implements HaCommand
             'type' => $this->type(),
             ...$this->address->toMessageFields(),
             ...$this->definition->toMessageFields(),
-            ...$this->change->toMessageFields(),
+            ...ExposedStateFields::formatStateChange($this->change),
         ];
     }
 }

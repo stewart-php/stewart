@@ -16,9 +16,6 @@ use Stewart\Client\Component\ComponentSessionRequest;
 use Stewart\Client\Component\ComponentVersion;
 use Stewart\Client\Component\ExposedEntityAddress;
 use Stewart\Client\Component\ExposedEntityDefinition;
-use Stewart\Client\Component\ExposedEntitySnapshot;
-use Stewart\Client\Component\ExposedState;
-use Stewart\Client\Component\ExposedStateChange;
 use Stewart\Client\Component\SessionReplaced;
 use Stewart\Client\Connection\Command\Component\GetComponentVersion;
 use Stewart\Client\Connection\Command\Component\RemoveExposedEntity;
@@ -37,6 +34,9 @@ use Stewart\Contracts\Exposure\BinarySensorDeviceClass;
 use Stewart\Contracts\Exposure\DeviceInfo;
 use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
+use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
+use Stewart\Contracts\Exposure\ExposedState;
+use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Exposure\SensorDeviceClass;
 use Stewart\Contracts\Exposure\SensorStateClass;
@@ -142,7 +142,7 @@ final class ComponentGoldenTest extends TestCase
 
         self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/upsert'));
         self::assertSame('sensor.stewart_climate_average_temperature', $snapshot->entityId->value);
-        self::assertSame(21.4, $snapshot->state);
+        self::assertSame(21.4, $snapshot->state->value);
         self::assertTrue($snapshot->available);
     }
 
@@ -158,7 +158,7 @@ final class ComponentGoldenTest extends TestCase
         );
 
         self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/upsert'));
-        self::assertFalse($snapshot->state);
+        self::assertFalse($snapshot->state->value);
     }
 
     public function testDeviceOverrideUpsertMatchesGolden(): void

@@ -1,0 +1,8 @@
+{
+    "t": "remove_exposed_entity_request",
+    "m": {
+        "correlation_id": "w0:9",
+        "scope": "demo",
+        "key": "soil_moisture"
+    }
+}

@@ -15,8 +15,7 @@ use Stewart\Client\Component\ComponentSessionRequest;
 use Stewart\Client\Component\ComponentVersion;
 use Stewart\Client\Component\ExposedEntityAddress;
 use Stewart\Client\Component\ExposedEntityDefinition;
-use Stewart\Client\Component\ExposedEntitySnapshot;
-use Stewart\Client\Component\ExposedStateChange;
+use Stewart\Client\Component\ExposedEntitySnapshotReader;
 use Stewart\Client\Connection\Command\CallService;
 use Stewart\Client\Connection\Command\Component\GetComponentVersion;
 use Stewart\Client\Connection\Command\Component\RemoveExposedEntity;
@@ -54,6 +53,8 @@ use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Exception\ServiceCallException;
+use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
+use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\History\Collection\HistoricalStateCollection;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryDetail;
@@ -385,7 +386,7 @@ final class HaClient
     /** @throws HaClientException */
     public function upsertExposedEntity(ExposedEntityAddress $address, ExposedEntityDefinition $definition, ExposedStateChange $change): ExposedEntitySnapshot
     {
-        return ExposedEntitySnapshot::fromUpsertResult($this->connection->send(new UpsertExposedEntity($address, $definition, $change)));
+        return ExposedEntitySnapshotReader::readUpsertResult($this->connection->send(new UpsertExposedEntity($address, $definition, $change)));
     }
 
     /** @throws HaClientException */

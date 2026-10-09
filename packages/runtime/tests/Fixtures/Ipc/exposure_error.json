@@ -1,0 +1,14 @@
+{
+    "t": "exposure_error",
+    "m": {
+        "correlation_id": "w0:7",
+        "message": "Home Assistant cannot use this entity configuration: The sensor unit does not fit.",
+        "details": {
+            "class": "Stewart\\Contracts\\Exception\\ExposureException",
+            "reason": "exposure_config_invalid",
+            "context": {
+                "detail": "The sensor unit does not fit."
+            }
+        }
+    }
+}

@@ -1,0 +1,54 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Stewart\Runtime\Tests\Unit\Ipc;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Stewart\Contracts\Exception\JsonShapeError;
+use Stewart\Contracts\Exposure\BinarySensorConfig;
+use Stewart\Contracts\Exposure\BinarySensorDeviceClass;
+use Stewart\Contracts\Exposure\EntityCategory;
+use Stewart\Contracts\Exposure\SensorConfig;
+use Stewart\Contracts\Exposure\SensorDeviceClass;
+use Stewart\Runtime\Ipc\Wire\ExposedEntityConfigConverter;
+use Stewart\Testing\Exception\AssertsReason;
+
+#[CoversClass(ExposedEntityConfigConverter::class)]
+final class ExposedEntityConfigConverterTest extends TestCase
+{
+    use AssertsReason;
+
+    public function testBinarySensorConfigRoundTrips(): void
+    {
+        $converter = new ExposedEntityConfigConverter();
+        $config = new BinarySensorConfig(BinarySensorDeviceClass::Window, name: 'Window', entityCategory: EntityCategory::Diagnostic, enabledByDefault: false);
+
+        self::assertEquals($config, $converter->decodeValue($converter->encodeValue($config), 'config'));
+    }
+
+    public function testEnumSensorConfigRoundTrips(): void
+    {
+        $converter = new ExposedEntityConfigConverter();
+        $config = new SensorConfig(SensorDeviceClass::Enum, options: ['low', 'high']);
+
+        self::assertEquals($config, $converter->decodeValue($converter->encodeValue($config), 'config'));
+    }
+
+    public function testUnknownPlatformIsRejected(): void
+    {
+        $this->assertThrowsReason(
+            JsonShapeError::UnexpectedValue,
+            static fn() => new ExposedEntityConfigConverter()->decodeValue(['platform' => 'light', 'enabled_by_default' => true], 'config'),
+        );
+    }
+
+    public function testInvalidConfigIsRejected(): void
+    {
+        $this->assertThrowsReason(
+            JsonShapeError::UnexpectedValue,
+            static fn() => new ExposedEntityConfigConverter()->decodeValue(['platform' => 'sensor', 'icon' => 'thermometer', 'enabled_by_default' => true], 'config'),
+        );
+    }
+}

@@ -6,7 +6,7 @@ namespace Stewart\Runtime\Broker\Exposure;
 
 use Stewart\Client\Component\ExposedEntityAddress;
 use Stewart\Client\Component\ExposedEntityDefinition;
-use Stewart\Client\Component\ExposedStateChange;
+use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Runtime\Model\WorkerId;
 
 final class LiveExposure

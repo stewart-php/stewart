@@ -10,8 +10,17 @@ use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventOrigin;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\Exception\EventFireException;
+use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\ServiceCallException;
+use Stewart\Contracts\Exposure\DeviceInfo;
+use Stewart\Contracts\Exposure\ExposedEntityKey;
+use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
+use Stewart\Contracts\Exposure\ExposedState;
+use Stewart\Contracts\Exposure\ExposedStateChange;
+use Stewart\Contracts\Exposure\SensorConfig;
+use Stewart\Contracts\Exposure\SensorDeviceClass;
+use Stewart\Contracts\Exposure\SensorStateClass;
 use Stewart\Contracts\History\Collection\HistoricalStateCollection;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
@@ -57,6 +66,12 @@ use Stewart\Runtime\Ipc\Message\EventFired;
 use Stewart\Runtime\Ipc\Message\EventFireFailed;
 use Stewart\Runtime\Ipc\Message\EventFireRequest;
 use Stewart\Runtime\Ipc\Message\EventFireResult;
+use Stewart\Runtime\Ipc\Message\ExposedEntitySynced;
+use Stewart\Runtime\Ipc\Message\ExposeEntityRequest;
+use Stewart\Runtime\Ipc\Message\ExposeEntityResult;
+use Stewart\Runtime\Ipc\Message\ExposureAcknowledged;
+use Stewart\Runtime\Ipc\Message\ExposureFailed;
+use Stewart\Runtime\Ipc\Message\ExposuresReleased;
 use Stewart\Runtime\Ipc\Message\HaConnectionLost;
 use Stewart\Runtime\Ipc\Message\HistoryFailed;
 use Stewart\Runtime\Ipc\Message\HistoryRequest;
@@ -69,6 +84,7 @@ use Stewart\Runtime\Ipc\Message\Ping;
 use Stewart\Runtime\Ipc\Message\Pong;
 use Stewart\Runtime\Ipc\Message\Publish;
 use Stewart\Runtime\Ipc\Message\RegistrySnapshot;
+use Stewart\Runtime\Ipc\Message\RemoveExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallFailed;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
@@ -82,6 +98,7 @@ use Stewart\Runtime\Ipc\Message\SubscriptionAck;
 use Stewart\Runtime\Ipc\Message\TopicMessage;
 use Stewart\Runtime\Ipc\Message\TriggerFired;
 use Stewart\Runtime\Ipc\Message\Unsubscribe;
+use Stewart\Runtime\Ipc\Message\UpdateExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\WorkerReady;
 use Stewart\Runtime\Ipc\StoreSettings;
 use Stewart\Runtime\Ipc\Wire\AppIdsFragment;
@@ -155,8 +172,28 @@ final class IpcMessageSamples
             'app_failed' => IpcMessageSample::createRoundTrip(new AppFailed($demo, AppFailurePhase::Handler, 'RuntimeException', 'boom', '#0 {main}', 'subscription w0:1', 100, new ExceptionDetails('Stewart\Contracts\Exception\StateException', 'entity_not_found', ['entityId' => 'light.hall', 'known' => ['a', null]]))),
             'mqtt_publish' => IpcMessageSample::createRoundTrip(new MqttPublish(new MqttMessage('home/hall/light', "on\xff", MqttQos::AtLeastOnce, true), $demo)),
             'mqtt_message' => IpcMessageSample::createRoundTrip(new MqttMessageDelivery(new MqttMessage('home/hall/temp', '{"t":21.5}'), [new SubscriptionId('w0:3')])),
+            'expose_entity_request' => IpcMessageSample::createRoundTrip(new ExposeEntityRequest(
+                new CorrelationId('w0:7'),
+                $demo,
+                new ExposedEntityKey('soil_moisture'),
+                new SensorConfig(SensorDeviceClass::Moisture, '%', SensorStateClass::Measurement, 1, name: 'Soil moisture', icon: 'mdi:sprout'),
+                new DeviceInfo('greenhouse', 'Greenhouse', model: 'Probe v2'),
+                new ExposedStateChange(new ExposedState(null), ['source' => 'probe'], true),
+            )),
+            'expose_entity_result' => IpcMessageSample::createRoundTrip(new ExposeEntityResult(new CorrelationId('w0:7'), self::createExposedSnapshot())),
+            'update_exposed_entity_request' => IpcMessageSample::createRoundTrip(new UpdateExposedEntityRequest(new CorrelationId('w0:8'), $demo, new ExposedEntityKey('soil_moisture'), new ExposedStateChange(new ExposedState(38)))),
+            'remove_exposed_entity_request' => IpcMessageSample::createRoundTrip(new RemoveExposedEntityRequest(new CorrelationId('w0:9'), $demo, new ExposedEntityKey('soil_moisture'))),
+            'exposure_acknowledged' => IpcMessageSample::createRoundTrip(new ExposureAcknowledged(new CorrelationId('w0:8'))),
+            'exposure_error' => IpcMessageSample::createRoundTrip(ExposureFailed::fromException(new CorrelationId('w0:7'), ExposureException::configInvalid('The sensor unit does not fit.'))),
+            'exposures_released' => IpcMessageSample::createRoundTrip(new ExposuresReleased($demo)),
+            'exposed_entity_synced' => IpcMessageSample::createRoundTrip(new ExposedEntitySynced($demo, new ExposedEntityKey('soil_moisture'), self::createExposedSnapshot())),
             'pong' => IpcMessageSample::createRoundTrip(new Pong(42, Duration::microseconds(1_250), 12_345_678, [new AppActivityReport($demo, AppState::Running, 2, 1, 30, 1, 4, 2, 3, 5)], new StoreHealth(false, 'timed out', Instant::fromEpochMicroseconds(1_700_000_000_000_000)))),
         ];
+    }
+
+    private static function createExposedSnapshot(): ExposedEntitySnapshot
+    {
+        return new ExposedEntitySnapshot(new EntityId('sensor.greenhouse_soil_moisture'), new ExposedState(38), ['source' => 'probe'], true);
     }
 
     private static function createHistoryResult(Instant $at): HistoryResult

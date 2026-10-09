@@ -6,8 +6,6 @@ namespace Stewart\Runtime\Broker;
 
 use DateTimeZone;
 use Stewart\Client\Component\ExposedEntityDefinition;
-use Stewart\Client\Component\ExposedEntitySnapshot;
-use Stewart\Client\Component\ExposedStateChange;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventPayload;
@@ -16,6 +14,8 @@ use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
+use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
+use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;

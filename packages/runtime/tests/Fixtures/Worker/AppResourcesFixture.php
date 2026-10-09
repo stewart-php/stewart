@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Tests\Fixtures\Worker;
 
+use Psr\Log\NullLogger;
 use Stewart\Runtime\Dispatch\LocalDispatcher;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\Schedule\EntityTimeScheduler;
@@ -13,8 +14,10 @@ use Stewart\Runtime\Schedule\ScheduleRegistry;
 use Stewart\Runtime\Schedule\TriggerFactory;
 use Stewart\Runtime\Scope\ScopeLifecycle;
 use Stewart\Runtime\State\StateCache;
+use Stewart\Runtime\Tests\Fixtures\Ipc\NullTransport;
 use Stewart\Runtime\Worker\AppResources;
 use Stewart\Runtime\Worker\Context\DispatchStreams;
+use Stewart\Runtime\Worker\Exposure\ExposedHandleRegistry;
 use Stewart\Testing\Time\ManualTimers;
 
 final readonly class AppResourcesFixture
@@ -28,6 +31,10 @@ final readonly class AppResourcesFixture
     public StateCache $states;
 
     public EntityTimeScheduler $entityTimes;
+
+    public ExposedHandleRegistry $exposedHandles;
+
+    public NullTransport $transport;
 
     public AppResources $resources;
 
@@ -47,6 +54,8 @@ final readonly class AppResourcesFixture
             $this->scopes,
         );
         $this->entityTimes = new EntityTimeScheduler($this->schedules, $this->states, new DispatchStreams($this->dispatcher, $timers, $this->states, $registry), $timers->clock);
-        $this->resources = new AppResources($this->scopes, $this->dispatcher, $this->schedules, $this->entityTimes);
+        $this->transport = new NullTransport();
+        $this->exposedHandles = new ExposedHandleRegistry($this->transport, new NullLogger());
+        $this->resources = new AppResources($this->scopes, $this->dispatcher, $this->schedules, $this->entityTimes, $this->exposedHandles);
     }
 }

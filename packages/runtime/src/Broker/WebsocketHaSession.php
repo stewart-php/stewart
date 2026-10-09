@@ -8,8 +8,6 @@ use Amp\DeferredCancellation;
 use DateTimeZone;
 use Psr\Log\LoggerInterface;
 use Stewart\Client\Component\ExposedEntityDefinition;
-use Stewart\Client\Component\ExposedEntitySnapshot;
-use Stewart\Client\Component\ExposedStateChange;
 use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
 use Stewart\Client\HaSiteSettings;
@@ -18,6 +16,8 @@ use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
+use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
+use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
@@ -87,6 +87,7 @@ final class WebsocketHaSession implements HaSession
         $this->open = true;
         $this->triggers->onTriggerFired($this->onTriggerFired(...));
         $this->triggers->onTriggerRejected($this->onTriggerRejected(...));
+        $this->exposures->onEntitySynced($listener->exposedEntitySynced(...));
 
         $this->reconnector->retryUntilConnected($this->connectSubscribeAndSeed(...), $this->stop->getCancellation());
 

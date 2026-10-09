@@ -9,6 +9,7 @@ use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Schedule\EntityTimeScheduler;
 use Stewart\Runtime\Schedule\ScheduleRegistry;
 use Stewart\Runtime\Scope\ScopeLifecycle;
+use Stewart\Runtime\Worker\Exposure\ExposedHandleRegistry;
 
 final readonly class AppResources
 {
@@ -17,6 +18,7 @@ final readonly class AppResources
         private LocalDispatcher $dispatcher,
         private ScheduleRegistry $schedules,
         private EntityTimeScheduler $entityTimes,
+        private ExposedHandleRegistry $exposedHandles,
     ) {}
 
     public function activateScope(ResourceScope $scope): void
@@ -60,6 +62,7 @@ final readonly class AppResources
         $this->entityTimes->cancelTasksOf($scope);
         $this->dispatcher->cancelSubscriptionsOf($scope);
         $this->schedules->cancelEntriesOf($scope);
+        $this->exposedHandles->releaseHandlesOf($scope);
     }
 
     public function releaseAll(): void
@@ -68,5 +71,6 @@ final readonly class AppResources
         $this->entityTimes->cancelAll();
         $this->dispatcher->cancelAll();
         $this->schedules->cancelAll();
+        $this->exposedHandles->releaseAll();
     }
 }

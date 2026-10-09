@@ -10,9 +10,6 @@ use Psr\Log\NullLogger;
 use Stewart\Client\Component\ComponentEventDecoder;
 use Stewart\Client\Component\ComponentInstance;
 use Stewart\Client\Component\ExposedEntityDefinition;
-use Stewart\Client\Component\ExposedEntitySnapshot;
-use Stewart\Client\Component\ExposedState;
-use Stewart\Client\Component\ExposedStateChange;
 use Stewart\Client\Connection\ConnectionConfig;
 use Stewart\Client\Connection\HaConnection;
 use Stewart\Client\Connection\HomeAssistantUrl;
@@ -23,6 +20,9 @@ use Stewart\Client\State\EntityStateDecoder;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\ExposureError;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
+use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
+use Stewart\Contracts\Exposure\ExposedState;
+use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Broker\Component\ComponentTracker;
@@ -39,7 +39,6 @@ use Stewart\Testing\Websocket\FakeWebsocketConnector;
 
 #[CoversClass(ExposureLink::class)]
 #[CoversClass(LiveExposure::class)]
-#[CoversClass(ExposedStateChange::class)]
 final class ExposureLinkTest extends TestCase
 {
     use AssertsReason;

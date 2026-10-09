@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Stewart\Client\Connection\Command\Component;
 
 use Stewart\Client\Component\ExposedEntityAddress;
-use Stewart\Client\Component\ExposedStateChange;
+use Stewart\Client\Component\ExposedStateFields;
 use Stewart\Client\Connection\Command\HaCommand;
+use Stewart\Contracts\Exposure\ExposedStateChange;
 
 final readonly class UpdateExposedEntityState implements HaCommand
 {
@@ -27,6 +28,6 @@ final readonly class UpdateExposedEntityState implements HaCommand
 
     public function toMessage(): array
     {
-        return ['type' => $this->type(), ...$this->address->toMessageFields(), ...$this->change->toMessageFields()];
+        return ['type' => $this->type(), ...$this->address->toMessageFields(), ...ExposedStateFields::formatStateChange($this->change)];
     }
 }

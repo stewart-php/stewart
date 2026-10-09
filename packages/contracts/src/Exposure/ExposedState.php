@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Client\Component;
+namespace Stewart\Contracts\Exposure;
 
 final readonly class ExposedState
 {

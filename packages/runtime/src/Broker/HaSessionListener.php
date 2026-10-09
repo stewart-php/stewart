@@ -10,6 +10,7 @@ use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Contracts\Trigger\TriggerSpec;
+use Stewart\Runtime\Broker\Exposure\ExposedEntitySync;
 use Throwable;
 
 interface HaSessionListener
@@ -21,6 +22,8 @@ interface HaSessionListener
     public function triggerFired(TriggerSpec $spec, TriggerEvent $event): void;
 
     public function triggerRejected(TriggerSpec $spec, string $reason): void;
+
+    public function exposedEntitySynced(ExposedEntitySync $sync): void;
 
     public function connectionLost(string $reason, Instant $lostAt): void;
 

@@ -9,12 +9,13 @@ use Amp\Future;
 use Closure;
 use DateTimeZone;
 use Stewart\Client\Component\ExposedEntityDefinition;
-use Stewart\Client\Component\ExposedEntitySnapshot;
-use Stewart\Client\Component\ExposedStateChange;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventPayload;
+use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
+use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
+use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\History\Collection\HistoricalStateCollection;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryDetail;
@@ -93,6 +94,10 @@ final class FakeHaSession implements HaSession
 
     /** @var array<string, ExposedStateChange> */
     public array $exposedEntities = [];
+
+    public ?ExposedEntitySnapshot $exposedSnapshot = null;
+
+    public ?ExposureException $exposureFailure = null;
 
     private bool $open = false;
 
@@ -290,9 +295,13 @@ final class FakeHaSession implements HaSession
         ExposedEntityDefinition $definition,
         ExposedStateChange $change,
     ): ?ExposedEntitySnapshot {
+        if ($this->exposureFailure !== null) {
+            throw $this->exposureFailure;
+        }
+
         $this->exposedEntities[$appId . '/' . $key] = $change;
 
-        return null;
+        return $this->exposedSnapshot;
     }
 
     public function updateExposedEntity(AppId $appId, ExposedEntityKey $key, ExposedStateChange $change): void

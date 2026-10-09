@@ -1,0 +1,17 @@
+{
+    "t": "exposed_entity_synced",
+    "m": {
+        "scope": "demo",
+        "key": "soil_moisture",
+        "snapshot": {
+            "entity_id": "sensor.greenhouse_soil_moisture",
+            "state": {
+                "value": 38
+            },
+            "attributes": {
+                "source": "probe"
+            },
+            "available": true
+        }
+    }
+}

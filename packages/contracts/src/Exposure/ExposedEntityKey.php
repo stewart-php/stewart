@@ -31,6 +31,15 @@ final readonly class ExposedEntityKey implements Stringable
         return $key instanceof self ? $key : new self($key);
     }
 
+    public static function tryFromString(string $value): ?self
+    {
+        try {
+            return new self($value);
+        } catch (ExposureException) {
+            return null;
+        }
+    }
+
     public function equals(self $other): bool
     {
         return $this->value === $other->value;
