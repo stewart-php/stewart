@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         if: vars.DOCKERHUB_USERNAME != ''
@@ -55,12 +57,28 @@ jobs:
           annotate_only: true
           transformers: '[{"searchValue":"^/app/","replaceValue":""}]'
 
+  lint-ci:
+    name: Workflows and Dockerfiles
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: |
+          echo "::add-matcher::.github/matchers/actionlint.json"
+          echo "::add-matcher::.github/matchers/hadolint.json"
+      - run: make lint-ci
+        env:
+          GH_TOKEN: ${{ github.token }}
+
   # make check covers the latest Home Assistant; this job adds the oldest supported one.
   home-assistant:
     name: Home Assistant integration, minimum version
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         if: vars.DOCKERHUB_USERNAME != ''
@@ -89,6 +107,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         if: vars.DOCKERHUB_USERNAME != ''

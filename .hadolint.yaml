@@ -1,0 +1,5 @@
+# Alpine and Debian drop old package versions, so pinned versions break rebuilds.
+ignored:
+  - DL3008
+  - DL3018
+  - DL3066

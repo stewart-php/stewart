@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 FROM ghcr.io/stewart-php/runtime:0.9 AS build
 
+WORKDIR /app
 COPY --chown=10001:10001 composer.json composer.lock ./
 RUN composer install --no-dev --no-interaction --no-progress --no-scripts --no-autoloader
 
