@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\RestartDecision;
@@ -21,6 +22,8 @@ use Stewart\Runtime\Broker\WorkerSlotState;
 use Stewart\Runtime\Config\SupervisionConfig;
 use Stewart\Runtime\Exception\BrokerError;
 use Stewart\Runtime\Exception\BrokerException;
+use Stewart\Runtime\Exception\TransportException;
+use Stewart\Runtime\Ipc\Message\Ping;
 use Stewart\Runtime\Ipc\Message\Shutdown;
 use Stewart\Runtime\Ipc\Message\Unsubscribe;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
@@ -339,6 +342,27 @@ final class WorkerPoolTest extends TestCase
             self::assertInstanceOf(Shutdown::class, $process->channel->sent[\count($process->channel->sent) - 1]);
             self::assertTrue($process->closed);
         }
+    }
+
+    public function testMessagesAfterShutdownDoNotKillExitingWorker(): void
+    {
+        $exiting = new Latch();
+        $this->spawner = new FakeWorkerSpawner(joinLatch: $exiting);
+        $pool = $this->createPool();
+        $pool->startWorker(self::createSlot(0), $this->listener);
+        $process = $this->spawner->getLatestProcess(0);
+        $process->channel->refuseSendsOf(Ping::class, TransportException::sendFailed(new RuntimeException('broken pipe')));
+
+        $stopping = async(static fn() => $pool->shutdown('test', Duration::seconds(2.0)));
+        EventLoopTicks::settleUntil(static fn(): bool => $exiting->countWaiters() === 1);
+        $process->crash();
+        $this->getHandle(0)->send(new Ping(1, Instant::fromEpochMicroseconds(0)));
+        EventLoopTicks::settle();
+        $exiting->open();
+        $stopping->await();
+
+        self::assertNotNull($this->findLogged('Worker stopped cleanly'));
+        self::assertSame([], $this->logger->listMessagesAt('warning'));
     }
 
     public function testWorkerOverrunningTheGraceIsKilled(): void

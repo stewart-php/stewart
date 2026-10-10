@@ -72,7 +72,7 @@ final class WorkerPool
 
     public function markReady(WorkerHandle $handle): void
     {
-        if ($handle->isReady() || $handle->isTerminated()) {
+        if (!$handle->isStarting()) {
             return;
         }
 
@@ -104,7 +104,7 @@ final class WorkerPool
                 continue;
             }
 
-            $handle->send(new Shutdown($reason, $grace));
+            $handle->sendShutdown(new Shutdown($reason, $grace));
             $joins[] = async(fn() => $this->awaitWorkerExit($handle, $deadline));
         }
 
@@ -194,7 +194,7 @@ final class WorkerPool
 
         // A worker that answers pings but never reports ready is treated as dead.
         return $this->timers->startTimer($readyTimeout, function () use ($handle, $readyTimeout): void {
-            if ($handle->isReady() || $handle->isTerminated()) {
+            if (!$handle->isStarting()) {
                 return;
             }
 

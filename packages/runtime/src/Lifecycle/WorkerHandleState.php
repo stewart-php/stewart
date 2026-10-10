@@ -8,13 +8,15 @@ enum WorkerHandleState
 {
     case Starting;
     case Ready;
+    case Stopping;
     case Terminated;
 
     public function canEnter(self $next): bool
     {
         return match ($this) {
-            self::Starting => $next === self::Ready || $next === self::Terminated,
-            self::Ready => $next === self::Terminated,
+            self::Starting => $next === self::Ready || $next === self::Stopping || $next === self::Terminated,
+            self::Ready => $next === self::Stopping || $next === self::Terminated,
+            self::Stopping => $next === self::Terminated,
             self::Terminated => false,
         };
     }
