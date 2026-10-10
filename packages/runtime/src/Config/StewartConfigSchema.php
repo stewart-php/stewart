@@ -32,7 +32,6 @@ final class StewartConfigSchema implements ConfigurationInterface
     public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder(self::ROOT);
-        /** @var ArrayNodeDefinition $root */
         $root = $treeBuilder->getRootNode();
 
         $this->addTopLevelSettings($root);

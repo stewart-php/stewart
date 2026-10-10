@@ -15,6 +15,9 @@ use Stewart\Runtime\Ipc\MessageHandler;
  */
 interface ControlRequestHandler extends MessageHandler
 {
-    /** @throws StewartException */
+    /**
+     * @param T $request
+     * @throws StewartException
+     */
     public function answerRequest(ClientFrame $request): ServerFrame;
 }

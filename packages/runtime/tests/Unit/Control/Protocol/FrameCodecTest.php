@@ -80,7 +80,7 @@ final class FrameCodecTest extends TestCase
     public function testHelloWithoutAProtocolIsRefused(): void
     {
         $this->expectException(JsonShapeException::class);
-        $this->expectExceptionMessage('"protocol" is missing; expected a whole number.');
+        $this->expectExceptionMessageIsOrContains('"protocol" is missing; expected a whole number.');
 
         $this->codec->decodeClientFrame("{\"type\":\"hello\",\"token\":\"t\",\"client\":\"c\"}\n");
     }
@@ -166,7 +166,7 @@ final class FrameCodecTest extends TestCase
     public function testNegativeDurationIsRefused(): void
     {
         $this->expectException(JsonShapeException::class);
-        $this->expectExceptionMessage('"snapshot.connection.last_outage_us" is -1; expected a non-negative whole number of microseconds');
+        $this->expectExceptionMessageIsOrContains('"snapshot.connection.last_outage_us" is -1; expected a non-negative whole number of microseconds');
 
         $data = $this->getSnapshotData();
         $data['connection'] = ['phase' => 'connected', 'since' => null, 'reconnects' => 0, 'last_outage_us' => -1];

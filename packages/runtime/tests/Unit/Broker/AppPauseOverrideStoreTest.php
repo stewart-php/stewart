@@ -70,7 +70,7 @@ final class AppPauseOverrideStoreTest extends TestCase
         $store->saveOverride(self::createOverride('heating', true));
 
         self::assertSame(AppPauseOverridePersistence::Stored, $store->removeOverride(new AppId('heating')));
-        self::assertSame(0, $store->loadOverrides()->count());
+        self::assertCount(0, $store->loadOverrides());
     }
 
     public function testHasOverrideSeesStoredKey(): void
@@ -89,7 +89,7 @@ final class AppPauseOverrideStoreTest extends TestCase
         self::assertSame(AppPauseOverridePersistence::NotConfigured, $store->saveOverride(self::createOverride('heating', true)));
         self::assertSame(AppPauseOverridePersistence::NotConfigured, $store->removeOverride(new AppId('heating')));
         self::assertFalse($store->hasOverride(new AppId('heating')));
-        self::assertSame(0, $store->loadOverrides()->count());
+        self::assertCount(0, $store->loadOverrides());
     }
 
     public function testFailedWriteIsReportedAndLogged(): void
@@ -123,7 +123,7 @@ final class AppPauseOverrideStoreTest extends TestCase
         $this->backend->write('stewart:app:heating:app-pause:lights', '{}', null);
         $this->backend->write('upstairs:runtime:app-pause:lights', '{}', null);
 
-        self::assertSame(0, $this->createStore()->loadOverrides()->count());
+        self::assertCount(0, $this->createStore()->loadOverrides());
     }
 
     private function createStore(): AppPauseOverrideStore

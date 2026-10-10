@@ -51,7 +51,7 @@ final class AppPauseOverrideStoreTest extends TestCase
         self::assertSame(AppPauseOverridePersistence::Stored, $store->removeOverride(new AppId('lights')));
 
         $loaded = $this->createStore()->loadOverrides();
-        self::assertSame(1, $loaded->count());
+        self::assertCount(1, $loaded);
         self::assertEquals($paused, $loaded->find(new AppId('heating')));
         self::assertNotNull($this->backend->read($this->prefix->value . ':runtime:app-pause:heating'));
     }

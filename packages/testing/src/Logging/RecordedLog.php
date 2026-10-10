@@ -6,7 +6,7 @@ namespace Stewart\Testing\Logging;
 
 final readonly class RecordedLog
 {
-    /** @param array<string, mixed> $context */
+    /** @param array<mixed> $context */
     public function __construct(
         public string $level,
         public string $message,

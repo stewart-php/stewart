@@ -28,6 +28,7 @@ final readonly class ControlRequestDispatcher
     /** @throws StewartException */
     public function answerRequest(ClientFrame $request): ServerFrame
     {
+        /** @var ControlRequestHandler<ClientFrame> $handler */
         $handler = $this->handlers->findHandlerFor($request) ?? throw ControlException::requestUnexpected($request::class);
 
         return $handler->answerRequest($request);

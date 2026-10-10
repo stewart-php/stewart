@@ -36,7 +36,7 @@ final class WorkerLogger extends AbstractLogger
 
     /**
      * @param mixed $level
-     * @param array<string, mixed> $context
+     * @param array<mixed> $context
      * @throws InvalidArgumentException
      */
     public function log($level, string|Stringable $message, array $context = []): void

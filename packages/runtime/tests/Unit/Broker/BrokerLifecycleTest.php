@@ -268,7 +268,7 @@ final class BrokerLifecycleTest extends TestCase
             $batches = $this->listSentToWorker($workerId, StateChangeBatch::class);
 
             self::assertCount(1, $batches);
-            self::assertSame(1, $batches[0]->changes->collection->count());
+            self::assertCount(1, $batches[0]->changes->collection);
             $codec = IpcCodec::createForWorkerBootstrap();
             $decoded = $codec->decodeMessage($codec->encodeMessage($batches[0]));
             self::assertInstanceOf(StateChangeBatch::class, $decoded);

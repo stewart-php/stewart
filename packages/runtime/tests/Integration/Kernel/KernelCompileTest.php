@@ -48,12 +48,16 @@ final class KernelCompileTest extends TestCase
 
     public function testBrokerWiresWithTheControlSocketOff(): void
     {
-        self::assertInstanceOf(BrokerLifecycle::class, self::bootBroker(['control' => ['listen' => 'off']]));
+        $this->expectNotToPerformAssertions();
+
+        self::bootBroker(['control' => ['listen' => 'off']]);
     }
 
     public function testBrokerWiresWithTheControlSocketOn(): void
     {
-        self::assertInstanceOf(BrokerLifecycle::class, self::bootBroker(['control' => ['listen' => 'unix://var/run/kernel-test.sock', 'token' => 'secret']]));
+        $this->expectNotToPerformAssertions();
+
+        self::bootBroker(['control' => ['listen' => 'unix://var/run/kernel-test.sock', 'token' => 'secret']]);
     }
 
     public function testDefaultTimeoutsLogNoWarning(): void

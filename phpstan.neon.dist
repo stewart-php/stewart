@@ -1,5 +1,9 @@
 includes:
     - vendor/phpat/phpat/extension.neon
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-phpunit/rules.neon
+    - vendor/phpstan/phpstan-deprecation-rules/rules.neon
 
 parameters:
     level: max
@@ -34,6 +38,8 @@ parameters:
     tmpDir: var/phpstan
     treatPhpDocTypesAsCertain: false
     checkExplicitMixed: true
+    strictRules:
+        disallowedShortTernary: false
     phpat:
         ignore_built_in_classes: true
     ignoreErrors:
@@ -41,6 +47,34 @@ parameters:
         -
             identifier: class.notFound
             path: packages/runtime/tests/Fixtures/Container/NeedsMissingClass.php
+        # PHP 8 no longer deprecates casting a ReflectionType to string.
+        -
+            identifier: class.toStringDeprecated
+            path: packages/runtime/src/Json/ClassShapeReader.php
+        # The mapper reads DTO properties by their wire field names.
+        -
+            identifier: property.dynamicName
+            path: packages/runtime/src/Json/WireMapper.php
+        # amphp's WebsocketClient narrows the onClose closure it inherits from Closable.
+        -
+            identifier: method.childParameterType
+            path: packages/testing/src/Websocket/FakeWebsocketConnection.php
+        # Assertions narrow values that captured closures or event-loop callbacks change afterwards.
+        -
+            identifier: staticMethod.impossibleType
+            paths:
+                - packages/runtime/tests/Unit/Broker/BrokerLifecycleTest.php
+                - packages/runtime/tests/Unit/Dispatch/LocalDispatcherTest.php
+                - packages/support/tests/Unit/Time/RevoltTimersTest.php
+        -
+            identifiers:
+                - offsetAccess.notFound
+                - method.nonObject
+            path: packages/runtime/tests/Unit/Schedule/ScheduleRegistryTest.php
+        # Fails when the committed fixture's format falls behind the generator.
+        -
+            identifier: staticMethod.alreadyNarrowedType
+            path: packages/codegen/tests/Unit/GeneratedCodeBehaviorTest.php
 
 services:
     -

@@ -20,7 +20,7 @@ final readonly class FieldModel
 
     public function summary(): string
     {
-        $parts = array_filter([$this->field->label, $this->field->description, $this->boundsNote()]);
+        $parts = array_filter([$this->field->label, $this->field->description, $this->boundsNote()], static fn(?string $part): bool => $part !== null && $part !== '');
 
         return implode('. ', array_map(static fn(string $part): string => rtrim($part, '.'), $parts));
     }

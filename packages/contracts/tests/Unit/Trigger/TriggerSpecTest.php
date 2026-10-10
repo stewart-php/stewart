@@ -34,7 +34,7 @@ final class TriggerSpecTest extends TestCase
         $single = TriggerSpec::fromSpec(['trigger' => 'sun', 'event' => 'sunset']);
         $many = TriggerSpec::fromSpec([['trigger' => 'sun', 'event' => 'sunset'], ['platform' => 'time', 'at' => '07:00']]);
 
-        self::assertSame(1, $single->triggers->count());
+        self::assertCount(1, $single->triggers);
         self::assertSame(['sun', 'time'], $many->listPlatforms());
     }
 

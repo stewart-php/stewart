@@ -131,7 +131,7 @@ final class WireMapperTest extends TestCase
         }
 
         $this->expectException(JsonShapeException::class);
-        $this->expectExceptionMessage($message);
+        $this->expectExceptionMessageIsOrContains($message);
 
         $this->mapper->decodeObject(Everything::class, $data);
     }
@@ -166,7 +166,7 @@ final class WireMapperTest extends TestCase
     public function testClassTheWireCannotCarryFailsWhenDescribed(string $class, string $message): void
     {
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessage($message);
+        $this->expectExceptionMessageIsOrContains($message);
 
         $this->mapper->shapes->resolveClassShape($class);
     }

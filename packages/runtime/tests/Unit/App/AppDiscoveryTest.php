@@ -88,7 +88,7 @@ final class AppDiscoveryTest extends TestCase
         $found = $this->temporary->createDiscovery()->discover();
 
         self::assertSame(['survivor'], $found->apps->listAppIds()->toStrings());
-        self::assertSame(1, $found->unloadable->count());
+        self::assertCount(1, $found->unloadable);
     }
 
     public function testItFindsMarkedClassesIncludingNestedOnes(): void

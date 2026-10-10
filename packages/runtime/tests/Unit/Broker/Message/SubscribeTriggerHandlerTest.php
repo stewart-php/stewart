@@ -53,7 +53,7 @@ final class SubscribeTriggerHandlerTest extends TestCase
         EventLoopTicks::settleUntil(static fn(): bool => $process->channel->listSentOfType(SubscriptionAck::class) !== []);
 
         self::assertTrue($process->channel->listSentOfType(SubscriptionAck::class)[0]->accepted);
-        self::assertSame(1, $registry->findRoutes(SubscriptionKind::Trigger, $spec->getSharingKey())->listSubscriptionIdsForWorker(new WorkerId(0))->count());
+        self::assertCount(1, $registry->findRoutes(SubscriptionKind::Trigger, $spec->getSharingKey())->listSubscriptionIdsForWorker(new WorkerId(0)));
         self::assertCount(1, $session->subscribedTriggers);
     }
 }
