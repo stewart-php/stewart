@@ -127,8 +127,12 @@ test-architecture: ## Repository-wide guards over every package (monorepo only)
 PACKAGES := $(notdir $(wildcard packages/*))
 
 .PHONY: test-package
-test-package: ## Install one package on its own and run its tests (PKG=name [SUITE=unit] [LOWEST=1])
+test-package: ## Install one package on its own, run its tests and check its declared dependencies (PKG=name [SUITE=unit] [LOWEST=1])
 	$(RUN_APP) env SUITE=$(SUITE) LOWEST=$(LOWEST) sh bin/test-package.sh $(PKG)
+
+.PHONY: audit
+audit: ## Report known vulnerabilities and abandoned packages in the locked dependencies
+	$(RUN) composer audit --locked --abandoned=report
 
 .PHONY: test-packages
 test-packages: ## Run test-package for every package

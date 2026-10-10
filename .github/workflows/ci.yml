@@ -45,6 +45,7 @@ jobs:
           cache-from: type=gha,scope=ha-latest
           cache-to: type=gha,mode=max,scope=ha-latest
       - run: make install
+      - run: make audit
       - run: make check
       - name: Annotate test failures
         if: ${{ !cancelled() }}

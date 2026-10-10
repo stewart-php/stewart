@@ -11,7 +11,6 @@
         "amphp/websocket-client": "^2.0.2",
         "ext-json": "*",
         "psr/log": "^3.0",
-        "revolt/event-loop": "^1.0.9",
         "stewart-php/contracts": "self.version",
         "stewart-php/support": "self.version"
     },
@@ -20,6 +19,7 @@
         "amphp/socket": "^2.4",
         "amphp/websocket-server": "^4.0",
         "phpunit/phpunit": "^13.3",
+        "revolt/event-loop": "^1.0.9",
         "stewart-php/testing": "self.version"
     },
     "conflict": {

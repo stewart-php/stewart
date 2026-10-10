@@ -26,6 +26,7 @@
         "phpstan/phpstan-phpunit": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^13.3",
+        "shipmonk/composer-dependency-analyser": "^1.8",
         "staabm/annotate-pull-request-from-checkstyle": "^1.8",
         "stewart-php/codegen": "0.x-dev",
         "stewart-php/testing": "0.x-dev"
