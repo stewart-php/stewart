@@ -22,6 +22,11 @@ final class WorkerHandleStateTest extends TestCase
         yield 'terminated again' => [WorkerHandleState::Terminated, WorkerHandleState::Terminated, false];
         yield 'terminated to ready' => [WorkerHandleState::Terminated, WorkerHandleState::Ready, false];
         yield 'ready to starting' => [WorkerHandleState::Ready, WorkerHandleState::Starting, false];
+        yield 'starting to stopping' => [WorkerHandleState::Starting, WorkerHandleState::Stopping, true];
+        yield 'ready to stopping' => [WorkerHandleState::Ready, WorkerHandleState::Stopping, true];
+        yield 'stopping to terminated' => [WorkerHandleState::Stopping, WorkerHandleState::Terminated, true];
+        yield 'stopping to ready' => [WorkerHandleState::Stopping, WorkerHandleState::Ready, false];
+        yield 'terminated to stopping' => [WorkerHandleState::Terminated, WorkerHandleState::Stopping, false];
     }
 
     #[DataProvider('provideTransitions')]

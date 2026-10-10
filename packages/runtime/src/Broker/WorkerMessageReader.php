@@ -39,8 +39,10 @@ final readonly class WorkerMessageReader
                 }
 
                 $reason = 'closed the channel';
+                $this->logger->debug('Stopped reading from worker', ['worker' => $handle->id->value, 'reason' => $reason]);
             } catch (Throwable $e) {
                 $reason = $e->getMessage();
+                $this->logger->debug('Stopped reading from worker', ['worker' => $handle->id->value, 'exception' => $e]);
             }
 
             $this->reportGone($handle, $reason, $onGone);
@@ -82,6 +84,11 @@ final readonly class WorkerMessageReader
             try {
                 return $handle->getTransport()->receive();
             } catch (TransportException $e) {
+                // amphp closes the message channel on every worker exit; the exit result arrives through join().
+                if ($e->reason === TransportError::PeerDisconnected) {
+                    return null;
+                }
+
                 if ($e->reason !== TransportError::UndecodableFrame) {
                     throw $e;
                 }

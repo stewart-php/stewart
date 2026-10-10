@@ -15,6 +15,7 @@ use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\Control\Protocol\Status\OutboxStatus;
 use Stewart\Runtime\Ipc\Message\BrokerMessage;
 use Stewart\Runtime\Ipc\Message\Pong;
+use Stewart\Runtime\Ipc\Message\Shutdown;
 use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Ipc\Wire\EncodedStateChange;
 use Stewart\Runtime\Lifecycle\WorkerHandleState;
@@ -82,6 +83,16 @@ final class WorkerHandle
         return $this->state === WorkerHandleState::Ready;
     }
 
+    public function isStarting(): bool
+    {
+        return $this->state === WorkerHandleState::Starting;
+    }
+
+    public function isStopping(): bool
+    {
+        return $this->state === WorkerHandleState::Stopping;
+    }
+
     public function isTerminated(): bool
     {
         return $this->state === WorkerHandleState::Terminated;
@@ -89,7 +100,7 @@ final class WorkerHandle
 
     public function send(BrokerMessage $message): void
     {
-        if ($this->isTerminated()) {
+        if (!$this->acceptsMessages()) {
             return;
         }
 
@@ -100,11 +111,22 @@ final class WorkerHandle
 
     public function sendStateChange(EncodedStateChange $change): void
     {
-        if ($this->isTerminated()) {
+        if (!$this->acceptsMessages()) {
             return;
         }
 
         $this->outbox->pushStateChange($change);
+        $this->flush();
+    }
+
+    public function sendShutdown(Shutdown $shutdown): void
+    {
+        if (!$this->acceptsMessages()) {
+            return;
+        }
+
+        $this->outbox->enqueue($shutdown);
+        $this->moveTo(WorkerHandleState::Stopping);
         $this->flush();
     }
 
@@ -151,6 +173,11 @@ final class WorkerHandle
         $this->process->close();
     }
 
+    private function acceptsMessages(): bool
+    {
+        return $this->state === WorkerHandleState::Starting || $this->state === WorkerHandleState::Ready;
+    }
+
     private function moveTo(WorkerHandleState $state): void
     {
         if (!$this->state->canEnter($state)) {
@@ -173,6 +200,23 @@ final class WorkerHandle
                 $this->logger->warning('Lost a worker output stream', ['worker' => $this->id->value, 'stream' => $name, 'exception' => $e]);
             }
         })->ignore();
+    }
+
+    private function handleFailedSend(Throwable $failure): void
+    {
+        if ($this->isTerminated()) {
+            return;
+        }
+
+        // A stopping worker closes its channel before exiting; the shutdown deadline still bounds the wait.
+        if ($this->isStopping()) {
+            $this->logger->debug('Stopped sending to a stopping worker', ['worker' => $this->id->value, 'reason' => $failure->getMessage()]);
+
+            return;
+        }
+
+        $this->logger->warning('Failed sending to worker; terminating it', ['worker' => $this->id->value, 'exception' => $failure]);
+        $this->terminate();
     }
 
     private function reportDrops(): void
@@ -208,10 +252,7 @@ final class WorkerHandle
                     $this->getTransport()->send($message);
                 }
             } catch (Throwable $e) {
-                if (!$this->isTerminated()) {
-                    $this->logger->warning('Failed sending to worker; terminating it', ['worker' => $this->id->value, 'exception' => $e]);
-                    $this->terminate();
-                }
+                $this->handleFailedSend($e);
             } finally {
                 $this->flushing = false;
             }

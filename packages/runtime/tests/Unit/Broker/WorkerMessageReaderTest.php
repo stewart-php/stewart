@@ -24,6 +24,7 @@ use Stewart\Runtime\Model\SubscriptionId;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerProcess;
+use Stewart\Testing\Logging\RecordedLog;
 use Stewart\Testing\Logging\RecordingLogger;
 use Stewart\Testing\Time\EventLoopTicks;
 
@@ -123,6 +124,37 @@ final class WorkerMessageReaderTest extends TestCase
         EventLoopTicks::settleUntil(fn(): bool => $this->gone !== []);
 
         self::assertSame(['Failed handling a worker exit'], $this->logger->listMessagesAt('error'));
+        self::assertSame('closed the channel', $this->logger->records->findFirstWhere(static fn(RecordedLog $log): bool => $log->level === 'error')?->context['reason']);
+    }
+
+    public function testClosedChannelIsLoggedAtDebug(): void
+    {
+        $this->process->crash();
+        EventLoopTicks::settleUntil(fn(): bool => $this->gone !== []);
+
+        self::assertSame(['Stopped reading from worker'], $this->logger->listMessagesAt('debug'));
+        self::assertSame('closed the channel', $this->logger->records->getFirst()?->context['reason']);
+    }
+
+    public function testFailingChannelIsLoggedWithItsException(): void
+    {
+        $failure = TransportException::closed();
+
+        EventLoopTicks::settle();
+        $this->process->channel->fail($failure);
+        EventLoopTicks::settleUntil(fn(): bool => $this->gone !== []);
+
+        self::assertSame(['Stopped reading from worker'], $this->logger->listMessagesAt('debug'));
+        self::assertSame($failure, $this->logger->records->getFirst()?->context['exception']);
+    }
+
+    public function testPeerDisconnectCountsAsClosedChannel(): void
+    {
+        EventLoopTicks::settle();
+        $this->process->channel->fail(TransportException::peerDisconnected(new RuntimeException('channel closed')));
+        EventLoopTicks::settleUntil(fn(): bool => $this->gone !== []);
+
+        self::assertSame(['closed the channel'], $this->gone);
         self::assertSame('closed the channel', $this->logger->records->getFirst()?->context['reason']);
     }
 
