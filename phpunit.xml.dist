@@ -41,6 +41,7 @@
             <directory>packages/mqtt/src</directory>
             <directory>packages/sun/src</directory>
             <directory>packages/runtime/src</directory>
+            <directory>packages/testing/src</directory>
         </include>
     </source>
     <php>

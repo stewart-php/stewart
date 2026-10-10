@@ -139,6 +139,16 @@ PACKAGES := $(notdir $(wildcard packages/*))
 test-package: ## Install one package on its own, run its tests and check its declared dependencies (PKG=name [SUITE=unit] [LOWEST=1])
 	$(RUN_APP) env SUITE=$(SUITE) LOWEST=$(LOWEST) sh bin/test-package.sh $(PKG)
 
+.PHONY: coverage
+coverage: ## Coverage of every suite but architecture: clover, HTML and the XML and JUnit logs Infection reads
+	$(RUN_APP) php -d pcov.enabled=1 -d pcov.directory=/app/packages -d 'pcov.exclude=~/(tests|vendor)/~' vendor/bin/phpunit \
+		--testsuite=unit,integration,process,persistence \
+		--coverage-clover var/reports/coverage/clover.xml \
+		--coverage-html var/reports/coverage/html \
+		--coverage-xml var/reports/coverage/xml \
+		--log-junit var/reports/coverage/junit.xml \
+		--coverage-text=var/reports/coverage/summary.txt --only-summary-for-coverage-text
+
 .PHONY: audit
 audit: ## Report known vulnerabilities and abandoned packages in the locked dependencies
 	$(RUN) composer audit --locked --abandoned=report
