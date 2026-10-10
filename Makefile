@@ -31,8 +31,9 @@ build: ## Build the dev image
 	$(DC) build php
 
 .PHONY: install
-install: ## composer install
+install: ## composer install, including the isolated tools under tools/
 	$(RUN) composer install --no-interaction
+	@for tool in tools/*/; do $(RUN) composer install --no-interaction --working-dir=$$tool || exit 1; done
 
 .PHONY: update
 update: ## composer update
@@ -145,9 +146,14 @@ coverage: ## Coverage of every suite but architecture: clover, HTML and the XML 
 		--testsuite=unit,integration,process,persistence \
 		--coverage-clover var/reports/coverage/clover.xml \
 		--coverage-html var/reports/coverage/html \
-		--coverage-xml var/reports/coverage/xml \
+		--coverage-xml var/reports/coverage/coverage-xml \
 		--log-junit var/reports/coverage/junit.xml \
 		--coverage-text=var/reports/coverage/summary.txt --only-summary-for-coverage-text
+
+.PHONY: infection
+infection: ## Mutation testing over the coverage run; INFECTION_BASE=origin/main limits it to lines changed since that ref
+	$(RUN_APP) tools/infection/vendor/bin/infection --coverage=var/reports/coverage --skip-initial-tests --threads=max --no-progress \
+		$(if $(INFECTION_BASE),--git-diff-lines --git-diff-base=$(INFECTION_BASE)) $(if $(GITHUB_ACTIONS),--logger-github)
 
 .PHONY: audit
 audit: ## Report known vulnerabilities and abandoned packages in the locked dependencies

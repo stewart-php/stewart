@@ -17,13 +17,14 @@ concurrency:
 
 jobs:
   coverage:
-    name: Coverage
+    name: Coverage and mutation testing
     if: github.event_name != 'schedule'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         if: vars.DOCKERHUB_USERNAME != ''
@@ -49,10 +50,66 @@ jobs:
             sed 's/\x1b\[[0-9;]*m//g' var/reports/coverage/summary.txt | sed '/^\s*$/d'
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+      - name: Mutation testing of the changed lines
+        if: github.event_name == 'pull_request'
+        run: make infection
+        env:
+          INFECTION_BASE: origin/${{ github.base_ref }}
+      - name: Summarize mutation testing
+        if: ${{ !cancelled() && hashFiles('var/reports/infection/summary.txt') != '' }}
+        run: |
+          {
+            echo '### Mutation testing'
+            echo '```'
+            cat var/reports/infection/summary.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ !cancelled() }}
+        with:
+          name: reports
+          path: |
+            var/reports/coverage
+            var/reports/infection
+          retention-days: 14
+
+  # A full run takes about 40 minutes on a hosted runner, so it runs weekly.
+  mutation:
+    name: Full mutation testing
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build the toolchain image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: .docker/php/Dockerfile
+          target: dev
+          tags: stewart-php:dev
+          load: true
+          cache-from: type=gha,scope=dev-8.5
+      - run: make install
+      - run: make coverage
+      - run: make infection
+        env:
+          GITHUB_ACTIONS: ''
+      - name: Summarize mutation testing
+        run: |
+          {
+            echo '### Mutation testing'
+            echo '```'
+            cat var/reports/infection/summary.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: coverage
-          path: var/reports/coverage
+          name: mutation
+          path: var/reports/infection
           retention-days: 14
 
   # Pull requests audit the lock in CI; this catches advisories published since the last change.

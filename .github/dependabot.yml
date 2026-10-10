@@ -17,3 +17,11 @@ updates:
     directory: /
     schedule:
       interval: weekly
+
+  - package-ecosystem: composer
+    directories: ['/tools/*']
+    schedule:
+      interval: weekly
+    groups:
+      tools:
+        patterns: ['*']
