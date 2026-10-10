@@ -11,6 +11,7 @@ services:
       - .:/app
     environment:
       XDEBUG_MODE: "${XDEBUG_MODE:-off}"
+      GITHUB_ACTIONS:
       # Inside the bind mount, so the non-root container user can write the cache.
       COMPOSER_HOME: /app/var/composer
     depends_on:

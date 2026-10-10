@@ -94,7 +94,11 @@ stan: ## PHPStan at max level and dependency check (phpat)
 
 .PHONY: cs
 cs: ## Check code style
+ifdef GITHUB_ACTIONS
+	$(RUN) sh -c 'set -o pipefail; vendor/bin/php-cs-fixer check --format=checkstyle | vendor/bin/cs2pr'
+else
 	$(RUN) vendor/bin/php-cs-fixer check --diff
+endif
 
 .PHONY: cs-fix
 cs-fix: ## Fix code style
@@ -102,23 +106,23 @@ cs-fix: ## Fix code style
 
 .PHONY: test
 test: ## Unit tests (no Home Assistant needed)
-	$(RUN) vendor/bin/phpunit --testsuite=unit
+	$(RUN) vendor/bin/phpunit --testsuite=unit --log-junit var/reports/junit/unit.xml
 
 .PHONY: test-process
 test-process: ## Worker process smoke tests against Valkey (no Home Assistant needed)
-	$(RUN_APP) vendor/bin/phpunit --testsuite=process
+	$(RUN_APP) vendor/bin/phpunit --testsuite=process --log-junit var/reports/junit/process.xml
 
 .PHONY: test-persistence
 test-persistence: ## Tests against the Valkey and Mosquitto services (no Home Assistant needed)
-	$(RUN_APP) vendor/bin/phpunit --testsuite=persistence
+	$(RUN_APP) vendor/bin/phpunit --testsuite=persistence --log-junit var/reports/junit/persistence.xml
 
 .PHONY: test-integration
 test-integration: ## Cross-package tests over real sockets (no Home Assistant needed)
-	$(RUN) vendor/bin/phpunit --testsuite=integration
+	$(RUN) vendor/bin/phpunit --testsuite=integration --log-junit var/reports/junit/integration.xml
 
 .PHONY: test-architecture
 test-architecture: ## Repository-wide guards over every package (monorepo only)
-	$(RUN) vendor/bin/phpunit --testsuite=architecture
+	$(RUN) vendor/bin/phpunit --testsuite=architecture --log-junit var/reports/junit/architecture.xml
 
 PACKAGES := $(notdir $(wildcard packages/*))
 

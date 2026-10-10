@@ -46,6 +46,13 @@ jobs:
           cache-to: type=gha,mode=max,scope=ha-latest
       - run: make install
       - run: make check
+      - name: Annotate test failures
+        if: ${{ !cancelled() }}
+        uses: mikepenz/action-junit-report@6ef3fdcfcd5f0b5d14df3e659ef19b8c6820f93d # v6.6.1
+        with:
+          report_paths: var/reports/junit/*.xml
+          annotate_only: true
+          transformers: '[{"searchValue":"^/app/","replaceValue":""}]'
 
   # make check covers the latest Home Assistant; this job adds the oldest supported one.
   home-assistant:

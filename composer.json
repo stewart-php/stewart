@@ -23,6 +23,7 @@
         "phpat/phpat": "^0.12.5",
         "phpstan/phpstan": "^2.2",
         "phpunit/phpunit": "^13.3",
+        "staabm/annotate-pull-request-from-checkstyle": "^1.8",
         "stewart-php/codegen": "0.x-dev",
         "stewart-php/testing": "0.x-dev"
     },
