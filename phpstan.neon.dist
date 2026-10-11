@@ -35,6 +35,7 @@ parameters:
         - packages/mqtt/config
         - packages/runtime/bin/stewart
         - bin/annotate-metric-violations.php
+        - bin/quality-summary.php
         - tests
     tmpDir: var/phpstan
     treatPhpDocTypesAsCertain: false

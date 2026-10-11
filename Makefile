@@ -169,6 +169,10 @@ ifdef METRICS_BASE
 endif
 endif
 
+.PHONY: quality-summary
+quality-summary: ## Headline numbers from var/reports into summary.json and summary.md; QUALITY_BASELINE=<summary.json> adds changes
+	$(RUN) php bin/quality-summary.php var/reports $(QUALITY_BASELINE)
+
 .PHONY: audit
 audit: ## Report known vulnerabilities and abandoned packages in the locked dependencies
 	$(RUN) composer audit --locked --abandoned=report

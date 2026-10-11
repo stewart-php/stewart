@@ -1,5 +1,10 @@
 # Stewart
 
+[![CI](https://github.com/stewart-php/stewart/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/stewart-php/stewart/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fstewart-php.github.io%2Fstewart%2Freports%2Fbadge-coverage.json)](https://stewart-php.github.io/stewart/reports/coverage/)
+[![Mutation MSI](https://img.shields.io/endpoint?url=https%3A%2F%2Fstewart-php.github.io%2Fstewart%2Freports%2Fbadge-msi.json)](https://stewart-php.github.io/stewart/reports/mutation/)
+[![Metrics](https://img.shields.io/badge/metrics-phpmetrics-informational)](https://stewart-php.github.io/stewart/reports/metrics/)
+
 Write Home Assistant automations in PHP.
 
 An automation is an ordinary PHP class. Stewart holds one WebSocket connection to Home Assistant in a broker
