@@ -34,6 +34,7 @@ parameters:
         - packages/store-redis/config
         - packages/mqtt/config
         - packages/runtime/bin/stewart
+        - bin/annotate-metric-violations.php
         - tests
     tmpDir: var/phpstan
     treatPhpDocTypesAsCertain: false

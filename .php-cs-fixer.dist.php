@@ -8,7 +8,7 @@ $finder = Finder::create()
     ->in([__DIR__ . '/packages', __DIR__ . '/tests', __DIR__ . '/skeleton'])
     // Generated code follows the generator's formatting, not this one's.
     ->notPath(['codegen/tests/Fixtures/Expected', 'runtime/tests/Fixtures/Generated/Code'])
-    ->append([__DIR__ . '/packages/runtime/bin/stewart', __FILE__]);
+    ->append([__DIR__ . '/packages/runtime/bin/stewart', __DIR__ . '/bin/annotate-metric-violations.php', __DIR__ . '/composer-dependency-analyser.php', __FILE__]);
 
 return new Config()
     ->setRiskyAllowed(true)

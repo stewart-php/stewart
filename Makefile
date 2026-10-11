@@ -155,6 +155,20 @@ infection: ## Mutation testing over the coverage run; INFECTION_BASE=origin/main
 	$(RUN_APP) tools/infection/vendor/bin/infection --coverage=var/reports/coverage --skip-initial-tests --threads=max --no-progress \
 		$(if $(INFECTION_BASE),--git-diff-lines --git-diff-base=$(INFECTION_BASE)) $(if $(GITHUB_ACTIONS),--logger-github)
 
+.PHONY: metrics
+metrics: ## phpmetrics HTML, JSON and violation reports; on CI, METRICS_BASE=<ref> annotates the violations in files changed since that ref
+	@mkdir -p var/reports/metrics
+	$(RUN) php -d 'error_reporting=E_ALL & ~E_DEPRECATED' tools/phpmetrics/vendor/bin/phpmetrics packages \
+		--report-html=var/reports/metrics/html \
+		--report-json=var/reports/metrics/metrics.json \
+		--report-summary-json=var/reports/metrics/summary.json \
+		--report-violations=var/reports/metrics/violations.xml
+ifdef GITHUB_ACTIONS
+ifdef METRICS_BASE
+	$(RUN) php bin/annotate-metric-violations.php var/reports/metrics/violations.xml $(METRICS_BASE)
+endif
+endif
+
 .PHONY: audit
 audit: ## Report known vulnerabilities and abandoned packages in the locked dependencies
 	$(RUN) composer audit --locked --abandoned=report
