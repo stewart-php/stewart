@@ -173,6 +173,10 @@ endif
 quality-summary: ## Headline numbers from var/reports into summary.json and summary.md; QUALITY_BASELINE=<summary.json> adds changes
 	$(RUN) php bin/quality-summary.php var/reports $(QUALITY_BASELINE)
 
+.PHONY: bc-check
+bc-check: ## Public API backwards-compatibility breaks per package since BC_BASE (default: the latest tag)
+	$(RUN) env BC_FORMAT=$(if $(GITHUB_ACTIONS),github-actions,console) sh bin/bc-check.sh $(or $(BC_BASE),$(shell git describe --tags --abbrev=0))
+
 .PHONY: audit
 audit: ## Report known vulnerabilities and abandoned packages in the locked dependencies
 	$(RUN) composer audit --locked --abandoned=report
