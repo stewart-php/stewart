@@ -102,7 +102,6 @@ jobs:
   bc-check:
     name: Backwards compatibility
     if: github.event_name == 'pull_request'
-    continue-on-error: true
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -121,6 +120,7 @@ jobs:
           cache-from: type=gha,scope=dev-8.5
       - run: make install
       - run: make bc-check
+        continue-on-error: true
 
   # A full run takes about 40 minutes on a hosted runner, so it runs weekly.
   mutation:
