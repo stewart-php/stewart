@@ -6,6 +6,31 @@ minor release may break; its "Upgrading" section says what to change.
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-12
+
+A maintenance release: quieter worker shutdown, tighter package manifests and a hardened skeleton CI.
+
+### Fixed
+
+- Workers stopping during daemon shutdown no longer log errors: a worker in the new `Stopping` state drops sends after
+  its shutdown request, and a disconnecting worker counts as closed
+- Generated field summaries keep a label or description of `"0"`
+
+### Changed
+
+- `stewart-php/contracts` and `stewart-php/runtime` require `ext-filter`; `stewart-php/client` and
+  `stewart-php/store-redis` no longer require `revolt/event-loop` directly
+- `RecordingLogger` and `RecordedLog` in `stewart-php/testing` accept any log context array, as PSR-3 does
+- The skeleton's workflows check out without persisted credentials and grant `packages: write` only to the image jobs;
+  its `Dockerfile` sets `WORKDIR /app` in the build stage
+
+### Upgrading
+
+1. Run `make upgrade VERSION=0.10`. Control and IPC protocols are unchanged, but broker, workers and `stewart`
+   commands should all run 0.10.
+2. Update the `stewart` integration to 0.10.0 in Home Assistant.
+3. Optionally take over the skeleton's `.github/workflows/*.yml` and `Dockerfile` changes.
+
 ## [0.9.0] - 2026-10-09
 
 Apps now show up in Home Assistant as entities of their own. The new `stewart` integration, installed through HACS,
