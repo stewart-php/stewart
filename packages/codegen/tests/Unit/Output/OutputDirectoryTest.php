@@ -9,7 +9,6 @@ use PHPUnit\Framework\TestCase;
 use Stewart\Codegen\Emitter\GeneratedCodePrinter;
 use Stewart\Codegen\Exception\CodegenError;
 use Stewart\Codegen\Output\Collection\FileChangeCollection;
-use Stewart\Codegen\Output\Collection\GeneratedFileCollection;
 use Stewart\Codegen\Output\FileChange;
 use Stewart\Codegen\Output\FileOutcome;
 use Stewart\Codegen\Output\GeneratedFile;
@@ -23,7 +22,6 @@ use Stewart\Testing\Filesystem\TempDirectory;
 #[CoversClass(FileChangeCollection::class)]
 #[CoversClass(FileOutcome::class)]
 #[CoversClass(GeneratedFile::class)]
-#[CoversClass(GeneratedFileCollection::class)]
 final class OutputDirectoryTest extends TestCase
 {
     use AssertsReason;
@@ -103,7 +101,7 @@ final class OutputDirectoryTest extends TestCase
         $output = new OutputDirectory($this->path);
         self::writeFiles($output, self::createGeneratedFile('Entities.php', 'one'), self::createGeneratedFile('Gone.php', 'gone'));
 
-        $plan = $output->planChanges(GeneratedFileCollection::fromFilesSortedByPath([self::createGeneratedFile('Entities.php', 'two'), self::createGeneratedFile('New.php', 'new')]));
+        $plan = $output->planChanges([self::createGeneratedFile('Entities.php', 'two'), self::createGeneratedFile('New.php', 'new')]);
 
         self::assertEquals([
             new FileChange('Entities.php', FileOutcome::Updated),
@@ -119,7 +117,7 @@ final class OutputDirectoryTest extends TestCase
         $output = new OutputDirectory($this->path);
         self::writeFiles($output, self::createGeneratedFile('Entities.php', 'one'));
         file_put_contents($this->path . '/LightEntity.php', "<?php\n// mine\n");
-        $files = GeneratedFileCollection::fromFilesSortedByPath([self::createGeneratedFile('Entities.php', 'two'), self::createGeneratedFile('LightEntity.php', 'light')]);
+        $files = [self::createGeneratedFile('Entities.php', 'two'), self::createGeneratedFile('LightEntity.php', 'light')];
 
         $this->assertThrowsReason(CodegenError::UnmarkedFileInTheWay, static fn() => $output->planChanges($files));
         $this->assertThrowsReason(CodegenError::UnmarkedFileInTheWay, static fn() => $output->writeChanges($files, ShrinkPolicy::Allow));
@@ -145,7 +143,7 @@ final class OutputDirectoryTest extends TestCase
         $output = new OutputDirectory($this->path);
         self::writeFiles($output, self::createGeneratedFile('A.php', 'a'), self::createGeneratedFile('B.php', 'b'), self::createGeneratedFile('C.php', 'c'));
 
-        $changes = $output->writeChanges(GeneratedFileCollection::fromFilesSortedByPath([self::createGeneratedFile('A.php', 'a')]), ShrinkPolicy::Allow);
+        $changes = $output->writeChanges([self::createGeneratedFile('A.php', 'a')], ShrinkPolicy::Allow);
 
         self::assertSame(2, $changes->countWithOutcome(FileOutcome::Deleted));
         self::assertSame([$this->path . '/A.php'], glob($this->path . '/*'));
@@ -163,7 +161,7 @@ final class OutputDirectoryTest extends TestCase
 
     private static function writeFiles(OutputDirectory $output, GeneratedFile ...$files): FileChangeCollection
     {
-        return $output->writeChanges(GeneratedFileCollection::fromFilesSortedByPath($files), ShrinkPolicy::Refuse);
+        return $output->writeChanges(array_values($files), ShrinkPolicy::Refuse);
     }
 
     private static function createGeneratedFile(string $name, string $body): GeneratedFile

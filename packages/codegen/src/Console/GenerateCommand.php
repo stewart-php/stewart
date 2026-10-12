@@ -6,7 +6,7 @@ namespace Stewart\Codegen\Console;
 
 use Stewart\Codegen\GenerationTarget;
 use Stewart\Codegen\Generator;
-use Stewart\Codegen\Model\Collection\GenerationWarningCollection;
+use Stewart\Codegen\Model\GenerationWarning;
 use Stewart\Codegen\Output\CheckResult;
 use Stewart\Codegen\Output\FileChange;
 use Stewart\Codegen\Output\GenerationReport;
@@ -171,7 +171,8 @@ final class GenerateCommand extends StewartCommand
         return Command::FAILURE;
     }
 
-    private function printWarnings(OutputInterface $output, GenerationWarningCollection $warnings): void
+    /** @param list<GenerationWarning> $warnings */
+    private function printWarnings(OutputInterface $output, array $warnings): void
     {
         foreach ($warnings as $warning) {
             $output->writeln('<comment>' . OutputFormatter::escape($warning->describeWarning()) . '</comment>');

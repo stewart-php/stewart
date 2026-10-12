@@ -8,7 +8,6 @@ use Stewart\Codegen\Emitter\GeneratedCodePrinter;
 use Stewart\Codegen\Exception\CodegenError;
 use Stewart\Codegen\Exception\CodegenException;
 use Stewart\Codegen\Output\Collection\FileChangeCollection;
-use Stewart\Codegen\Output\Collection\GeneratedFileCollection;
 
 final readonly class OutputDirectory
 {
@@ -16,8 +15,11 @@ final readonly class OutputDirectory
 
     public function __construct(private string $path) {}
 
-    /** @throws CodegenException */
-    public function planChanges(GeneratedFileCollection $files): FileChangeCollection
+    /**
+     * @throws CodegenException
+     * @param list<GeneratedFile> $files
+     */
+    public function planChanges(array $files): FileChangeCollection
     {
         $changes = [];
         $rendered = [];
@@ -34,8 +36,11 @@ final readonly class OutputDirectory
         return FileChangeCollection::fromChangesSortedByPath($changes);
     }
 
-    /** @throws CodegenException */
-    public function writeChanges(GeneratedFileCollection $files, ShrinkPolicy $shrinkPolicy): FileChangeCollection
+    /**
+     * @throws CodegenException
+     * @param list<GeneratedFile> $files
+     */
+    public function writeChanges(array $files, ShrinkPolicy $shrinkPolicy): FileChangeCollection
     {
         $changes = $this->planChanges($files);
 

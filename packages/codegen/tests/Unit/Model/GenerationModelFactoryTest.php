@@ -103,6 +103,6 @@ final class GenerationModelFactoryTest extends TestCase
     /** @return list<string> */
     private static function describeWarnings(GenerationReport $report): array
     {
-        return $report->warnings->mapToList(static fn(GenerationWarning $warning): string => $warning->describeWarning());
+        return array_map(static fn(GenerationWarning $warning): string => $warning->describeWarning(), $report->warnings);
     }
 }

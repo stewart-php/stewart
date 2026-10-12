@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Stewart\Codegen\Snapshot;
 
-use Stewart\Codegen\Snapshot\Collection\RawMapCollection;
-
 /** @internal */
 final readonly class RawMap
 {
@@ -59,19 +57,20 @@ final readonly class RawMap
         return self::fromValue($this->values[$key] ?? null);
     }
 
-    public function listMaps(string $key): RawMapCollection
+    /** @return list<RawMap> */
+    public function listMaps(string $key): array
     {
         $value = $this->values[$key] ?? null;
 
         if (!\is_array($value)) {
-            return RawMapCollection::empty();
+            return [];
         }
 
         if (!array_is_list($value)) {
-            return RawMapCollection::fromList([self::fromValue($value)]);
+            return [self::fromValue($value)];
         }
 
-        return RawMapCollection::fromList(array_map(self::fromValue(...), array_filter($value, \is_array(...))));
+        return array_values(array_map(self::fromValue(...), array_filter($value, \is_array(...))));
     }
 
     /** @return list<string> */

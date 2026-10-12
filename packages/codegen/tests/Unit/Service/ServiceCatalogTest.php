@@ -35,10 +35,10 @@ final class ServiceCatalogTest extends TestCase
 
         self::assertSame(
             ['brightness_pct', 'color_temp_kelvin', 'effect', 'flash', 'profile', 'rgb_color', 'transition', 'white'],
-            $turnOn->fields->mapToList(static fn(ServiceField $field): string => $field->name),
+            array_map(static fn(ServiceField $field): string => $field->name, $turnOn->fields),
         );
 
-        $message = self::createServiceDefinition('notify', 'mobile_app_phone')->fields->getFirst();
+        $message = self::createServiceDefinition('notify', 'mobile_app_phone')->fields[0] ?? null;
 
         self::assertNotNull($message);
         self::assertSame('message', $message->name);
@@ -55,7 +55,7 @@ final class ServiceCatalogTest extends TestCase
 
         self::assertSame(
             ['alpha', 'zeta', 'beta'],
-            $catalog->forDomain('demo')->getFirst()?->fields->mapToList(static fn(ServiceField $field): string => $field->name),
+            array_map(static fn(ServiceField $field): string => $field->name, $catalog->forDomain('demo')->getFirst()->fields ?? []),
         );
     }
 

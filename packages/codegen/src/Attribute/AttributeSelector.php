@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Stewart\Codegen\Attribute;
 
-use Stewart\Codegen\Attribute\Collection\UnseenAttributeCollection;
 use Stewart\Codegen\Php\Identifier;
 
 final readonly class AttributeSelector
@@ -39,7 +38,7 @@ final readonly class AttributeSelector
         $typed = array_filter($typed, fn(string|int $key): bool => $this->isTypeable((string) $key, $filter), \ARRAY_FILTER_USE_KEY);
         ksort($typed, \SORT_STRING);
 
-        return new AttributeSelection($typed, UnseenAttributeCollection::fromList($unseen));
+        return new AttributeSelection($typed, $unseen);
     }
 
     // friendly_name has its own accessor; an include glob can match keys that are not identifiers.

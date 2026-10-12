@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Codegen\Service;
 
 use Stewart\Codegen\Service\Collection\ServiceDefinitionCollection;
-use Stewart\Codegen\Service\Collection\ServiceFieldCollection;
 use Stewart\Codegen\Snapshot\RawMap;
 
 final readonly class ServiceCatalogParser
@@ -47,7 +46,8 @@ final readonly class ServiceCatalogParser
         );
     }
 
-    private function flattenFields(RawMap $fields): ServiceFieldCollection
+    /** @return list<ServiceField> */
+    private function flattenFields(RawMap $fields): array
     {
         $flat = [];
 
@@ -63,7 +63,7 @@ final readonly class ServiceCatalogParser
             $flat[] = $this->parseField($name, $field);
         }
 
-        return ServiceFieldCollection::fromList($flat);
+        return $flat;
     }
 
     private function parseField(string $name, RawMap $field): ServiceField
@@ -83,12 +83,14 @@ final readonly class ServiceCatalogParser
         );
     }
 
-    private function sortRequiredFirstThenByName(ServiceFieldCollection $fields): ServiceFieldCollection
+    /**
+     * @param list<ServiceField> $fields
+     * @return list<ServiceField>
+     */
+    private function sortRequiredFirstThenByName(array $fields): array
     {
-        $byName = static fn(ServiceField $a, ServiceField $b): int => strcmp($a->name, $b->name);
-        $required = $fields->filter(static fn(ServiceField $field): bool => $field->required)->sortedBy($byName);
-        $optional = $fields->filter(static fn(ServiceField $field): bool => !$field->required)->sortedBy($byName);
+        usort($fields, static fn(ServiceField $a, ServiceField $b): int => [!$a->required, $a->name] <=> [!$b->required, $b->name]);
 
-        return ServiceFieldCollection::fromList([...$required, ...$optional]);
+        return $fields;
     }
 }

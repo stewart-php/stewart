@@ -51,11 +51,11 @@ final readonly class EntityHandleEmitter implements DomainFileEmitter, ReservesM
             $context->importClass($namespace, $import, $declared);
         }
 
-        if ($domain->handleServices->containsWhere(static fn(ServiceModel $service): bool => $service->definition->returnsResponse)) {
+        if (array_any($domain->handleServices, static fn(ServiceModel $service): bool => $service->definition->returnsResponse)) {
             $context->importClass($namespace, ServiceResponse::class, $declared);
         }
 
-        if ($domain->handleServices->containsWhere(static fn(ServiceModel $service): bool => !$service->definition->returnsResponse)) {
+        if (array_any($domain->handleServices, static fn(ServiceModel $service): bool => !$service->definition->returnsResponse)) {
             $context->importClass($namespace, EventContext::class, $declared);
         }
 

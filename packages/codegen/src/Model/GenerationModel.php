@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Codegen\Model;
 
 use Stewart\Codegen\Model\Collection\DomainModelCollection;
-use Stewart\Codegen\Model\Collection\GenerationWarningCollection;
 use Stewart\Contracts\Entity\Collection\EntityIdCollection;
 use Stewart\Contracts\Registry\Collection\AreaIdCollection;
 use Stewart\Contracts\Registry\Collection\FloorIdCollection;
@@ -13,11 +12,12 @@ use Stewart\Contracts\Registry\Collection\LabelIdCollection;
 
 final readonly class GenerationModel
 {
+    /** @param list<GenerationWarning> $warnings */
     public function __construct(
         public DomainModelCollection $domains,
         public EntityIdCollection $entityIds,
         public EntityIdCollection $ignoredEntityIds,
-        public GenerationWarningCollection $warnings,
+        public array $warnings,
         public AreaIdCollection $areaIds,
         public FloorIdCollection $floorIds,
         public LabelIdCollection $labelIds,

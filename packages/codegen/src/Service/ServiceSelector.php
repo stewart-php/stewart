@@ -128,7 +128,7 @@ final readonly class ServiceSelector
         }
 
         return array_values(array_filter(
-            $this->configuration->listMaps('options')->mapToList(static fn(RawMap $option): ?string => $option->readString('value')),
+            array_map(static fn(RawMap $option): ?string => $option->readString('value'), $this->configuration->listMaps('options')),
             static fn(?string $value): bool => $value !== null,
         ));
     }
