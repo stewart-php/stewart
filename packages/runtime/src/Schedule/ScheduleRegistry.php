@@ -83,6 +83,13 @@ final class ScheduleRegistry
         }
     }
 
+    public function runHeldOccurrencesOf(ResourceScope $scope): void
+    {
+        foreach ($this->listEntriesOf($scope) as $entry) {
+            $entry->runHeldOccurrence();
+        }
+    }
+
     public function cancelEntriesOf(ResourceScope $scope): void
     {
         foreach ($this->listEntriesOf($scope) as $entry) {

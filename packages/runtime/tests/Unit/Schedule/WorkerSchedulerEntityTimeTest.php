@@ -164,6 +164,35 @@ final class WorkerSchedulerEntityTimeTest extends TestCase
         self::assertCount(1, $this->runs);
     }
 
+    public function testMomentDueWhilePausedRunsOnResume(): void
+    {
+        $this->changeWakeUp('2026-06-01 07:30:00', self::DATE_AND_TIME);
+        $this->scheduleWakeUp();
+        $this->fixture->resources->pauseScope($this->scope);
+
+        $this->timers->delay(Duration::hours(2));
+        self::assertCount(0, $this->runs);
+
+        $this->fixture->resources->resumeScope($this->scope);
+
+        self::assertSame(['07:30'], $this->listScheduledTimes());
+    }
+
+    public function testMomentChangedWhileHeldByPauseIsNotRunEarly(): void
+    {
+        $this->changeWakeUp('2026-06-01 07:30:00', self::DATE_AND_TIME);
+        $this->scheduleWakeUp();
+        $this->fixture->resources->pauseScope($this->scope);
+        $this->timers->delay(Duration::hours(2));
+
+        $this->changeWakeUp('2026-06-01 09:00:00', self::DATE_AND_TIME);
+        $this->fixture->resources->resumeScope($this->scope);
+        self::assertCount(0, $this->runs);
+
+        $this->timers->delay(Duration::hours(1));
+        self::assertCount(1, $this->runs);
+    }
+
     public function testRunsReportEntityTaskId(): void
     {
         $this->changeWakeUp('2026-06-01 07:30:00', self::DATE_AND_TIME);
@@ -233,6 +262,12 @@ final class WorkerSchedulerEntityTimeTest extends TestCase
 
         self::assertFalse($task->isActive());
         self::assertCount(0, $this->runs);
+    }
+
+    /** @return list<string> */
+    private function listScheduledTimes(): array
+    {
+        return array_map(static fn(ScheduledRun $run): string => $run->scheduledFor->toDateTime(new DateTimeZone('Europe/Budapest'))->format('H:i'), $this->runs);
     }
 
     private function scheduleWakeUp(): ScheduledTask

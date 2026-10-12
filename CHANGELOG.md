@@ -57,6 +57,9 @@ minor release may break; its "Upgrading" section says what to change.
   instead of being sent again on every reconnect
 - An MQTT connection that the server drops within one `mqtt.keepalive` keeps the reconnect delay growing, so a
   duplicate `client_id` or a rejected message no longer reconnects at the shortest delay forever
+- A one-shot timer (`runAfter()`, `runAt()`, `Timers::startTimer()`, a moment from `runAtEntityTime()`) that comes
+  due while its app is paused runs once when the app resumes, with its original `scheduledFor`, instead of being
+  lost; recurring schedules still skip the runs a pause covers
 
 ### Changed
 

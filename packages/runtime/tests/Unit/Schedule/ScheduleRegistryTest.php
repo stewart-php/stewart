@@ -528,19 +528,53 @@ final class ScheduleRegistryTest extends TestCase
         self::assertSame(['00:00:30'], $this->listScheduledTimes());
     }
 
-    public function testOneShotDueWhilePausedIsDropped(): void
+    public function testOneShotDueWhilePausedRunsOnResume(): void
     {
         $this->goLive('demo');
         $task = $this->scheduler->runAfter(Duration::seconds(30), $this->record(...));
         $this->pause('demo');
 
         $this->timers->delay(Duration::minutes(1));
+
+        self::assertSame([], $this->runs);
+        self::assertTrue($task->isActive());
+        self::assertSame('00:00:30', $task->getNextRunAt()?->toDateTime(self::getUtcZone())->format('H:i:s'));
+
+        $this->resume('demo');
+
+        self::assertSame(['00:00:30'], $this->listScheduledTimes());
+        self::assertSame(30.0, $this->runs[0]->getLateness()->toSeconds());
+        self::assertFalse($task->isActive());
+        self::assertSame(0, $this->registry->count());
+    }
+
+    public function testOneShotHeldByPauseRunsOnlyOnce(): void
+    {
+        $this->goLive('demo');
+        $this->scheduler->runAfter(Duration::seconds(30), $this->record(...));
+        $this->pause('demo');
+        $this->timers->delay(Duration::minutes(1));
+
+        $this->resume('demo');
+        $this->pause('demo');
         $this->resume('demo');
         $this->timers->delay(Duration::minutes(1));
 
+        self::assertCount(1, $this->runs);
+    }
+
+    public function testOneShotHeldByPauseIsDroppedWhenTheAppStops(): void
+    {
+        $this->goLive('demo');
+        $task = $this->scheduler->runAfter(Duration::seconds(30), $this->record(...));
+        $this->pause('demo');
+        $this->timers->delay(Duration::minutes(1));
+
+        $this->release('demo');
+        $this->registry->runHeldOccurrencesOf(self::createScope('demo'));
+
         self::assertSame([], $this->runs);
         self::assertFalse($task->isActive());
-        self::assertSame(0, $this->registry->count());
     }
 
     public function testScheduleArmedWhilePausedStartsPaused(): void
@@ -569,6 +603,7 @@ final class ScheduleRegistryTest extends TestCase
     private function resume(string $appId): void
     {
         $this->scopes->resumeScope(self::createScope($appId));
+        $this->registry->runHeldOccurrencesOf(self::createScope($appId));
     }
 
     private function release(string $appId): void

@@ -29,6 +29,8 @@ final class ScheduleEntry
 
     private ?TimerHandle $timer = null;
 
+    private ?Instant $heldOccurrence = null;
+
     private int $overlapSkips = 0;
 
     /**
@@ -74,7 +76,7 @@ final class ScheduleEntry
 
     public function getNextRunAt(): ?Instant
     {
-        return $this->active ? $this->trigger->dueAt() : null;
+        return $this->active ? $this->trigger->dueAt() ?? $this->heldOccurrence : null;
     }
 
     public function cancel(): void
@@ -123,6 +125,24 @@ final class ScheduleEntry
         $this->armTimerForNextOccurrence();
     }
 
+    public function runHeldOccurrence(): void
+    {
+        $handler = $this->handler;
+        $scheduledFor = $this->heldOccurrence;
+
+        if ($handler === null || $scheduledFor === null) {
+            return;
+        }
+
+        $this->heldOccurrence = null;
+        $this->logger->info('A one-shot schedule held by a pause ran late', [
+            'schedule' => $this->origin->description,
+            'due' => $scheduledFor->toIso8601(),
+        ]);
+        $this->startHandlerRun($handler, $scheduledFor, 0);
+        $this->cancel();
+    }
+
     // An advance() failure propagates to onTimerFired(), which reports it and cancels before any handler runs.
     private function runDueOccurrence(): void
     {
@@ -130,12 +150,19 @@ final class ScheduleEntry
         $handler = $this->handler;
         $scheduledFor = $this->trigger->dueAt();
         $missed = $this->trigger->advance();
+        $occursAgain = $this->trigger->dueAt() !== null;
+
+        if (!$occursAgain && !$this->trigger->isRecurring() && $this->scopeState->isPaused() && $scheduledFor !== null) {
+            $this->holdUntilResumed($scheduledFor);
+
+            return;
+        }
 
         if ($handler !== null && $scheduledFor !== null) {
             $this->startHandlerRun($handler, $scheduledFor, $missed);
         }
 
-        if ($this->trigger->dueAt() !== null) {
+        if ($occursAgain) {
             return;
         }
 
@@ -146,6 +173,16 @@ final class ScheduleEntry
         }
 
         $this->cancel();
+    }
+
+    // A recurring schedule simply runs again later; a one-shot would be lost.
+    private function holdUntilResumed(Instant $scheduledFor): void
+    {
+        $this->heldOccurrence = $scheduledFor;
+        $this->logger->debug('A one-shot schedule came due while its app is paused; it runs on resume', [
+            'schedule' => $this->origin->description,
+            'due' => $scheduledFor->toIso8601(),
+        ]);
     }
 
     /** @param Closure(ScheduledRun): void $handler */

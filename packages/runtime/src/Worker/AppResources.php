@@ -51,6 +51,7 @@ final readonly class AppResources
 
         $this->scopes->resumeScope($scope);
         $this->entityTimes->refreshTasksOf($scope);
+        $this->schedules->runHeldOccurrencesOf($scope);
     }
 
     public function releaseScope(ResourceScope $scope): void
