@@ -18,7 +18,6 @@ use Stewart\Contracts\Exception\IdentifierError;
 use Stewart\Contracts\Exception\TopicError;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryQuery;
-use Stewart\Contracts\Identity\StewartIdentity;
 use Stewart\Contracts\Registry\Area;
 use Stewart\Contracts\Registry\AreaId;
 use Stewart\Contracts\Registry\EntityFilter;
@@ -119,7 +118,6 @@ final class RecordingHaContextTest extends TestCase
     public function testPushedStateCarriesCausingContext(): void
     {
         $ha = new RecordingHaContext();
-        $identity = new StewartIdentity(RecordingHaContext::STEWART_USER_ID);
         $changes = [];
         $ha->watchStateChanges('light.hall')->subscribe(static function (StateChange $change) use (&$changes): void {
             $changes[] = $change;
@@ -130,9 +128,9 @@ final class RecordingHaContextTest extends TestCase
         $ha->pushState('light.hall', 'off', context: new EventContext('manual', userId: 'resident'));
 
         self::assertTrue($changes[0]->wasCausedBy($call));
-        self::assertTrue($identity->wasCausedByStewart($changes[0]));
+        self::assertTrue($ha->wasCausedByStewart($changes[0]));
         self::assertFalse($changes[1]->wasCausedBy($call));
-        self::assertFalse($identity->wasCausedByStewart($changes[1]));
+        self::assertFalse($ha->wasCausedByStewart($changes[1]));
         self::assertTrue($ha->requireState('light.hall')->wasLastChangedBy(new EventContext('manual')));
     }
 
@@ -248,7 +246,7 @@ final class RecordingHaContextTest extends TestCase
         self::assertCount(1, $echoes);
         self::assertSame(EventOrigin::Remote, $echoes[0]->origin);
         self::assertTrue($context->isSameOrParentOf($echoes[0]->context ?? EventContext::unknown()));
-        self::assertTrue(new StewartIdentity(RecordingHaContext::STEWART_USER_ID)->wasCausedByStewart($echoes[0]));
+        self::assertTrue($ha->wasCausedByStewart($echoes[0]));
     }
 
     public function testCallsAndFiresGetDistinctContexts(): void

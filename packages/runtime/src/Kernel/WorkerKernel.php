@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Kernel;
 
 use DateTimeZone;
-use Stewart\Contracts\Identity\StewartIdentity;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\Bootstrap;
@@ -14,6 +13,7 @@ use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Time\ProcessTimeZone;
 use Stewart\Runtime\Time\SystemClock;
 use Stewart\Runtime\Worker\WorkerSession;
+use Stewart\Support\State\StewartIdentity;
 
 final readonly class WorkerKernel
 {

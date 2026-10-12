@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Identity;
+namespace Stewart\Support\State;
 
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
 
 // Every call and fired event carries the token's user id, so it is known before callService() or fireEvent() returns.
+/** @internal */
 final readonly class StewartIdentity
 {
     public function __construct(public ?string $haUserId) {}

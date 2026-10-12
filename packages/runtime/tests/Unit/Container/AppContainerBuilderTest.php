@@ -49,7 +49,6 @@ use Stewart\Runtime\Tests\Fixtures\Container\NeedsGenerated;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsMissingClass;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsNullableScalar;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsScalar;
-use Stewart\Runtime\Tests\Fixtures\Container\NeedsStewartIdentity;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsStores;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsSunCalendar;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsUnknownPeer;
@@ -400,13 +399,6 @@ final class AppContainerBuilderTest extends TestCase
 
         self::assertInstanceOf(VirtualClock::class, $demo->clock);
         self::assertInstanceOf(WorkerTimers::class, $demo->timers);
-    }
-
-    public function testAppCanAutowireStewartIdentity(): void
-    {
-        $services = $this->buildContainer([new WorkerApp(id: new AppId('demo'), class: NeedsStewartIdentity::class, options: [])]);
-
-        self::assertSame(AppRuntimeServicesFixture::STEWART_USER_ID, $this->getApp($services, 'demo', NeedsStewartIdentity::class)->identity->haUserId);
     }
 
     public function testAppCanAutowireSunCalendar(): void

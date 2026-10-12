@@ -46,6 +46,7 @@ use Stewart\Contracts\Trigger\Collection\TriggerSpecCollection;
 use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Contracts\Trigger\TriggerSpec;
+use Stewart\Support\State\StewartIdentity;
 use Stewart\Testing\HaContext\Collection\RecordedEventFireCollection;
 use Stewart\Testing\HaContext\Collection\RecordedHistoryQueryCollection;
 use Stewart\Testing\HaContext\Collection\RecordedServiceCallCollection;
@@ -100,6 +101,8 @@ final class RecordingHaContext implements HaContext
 
     private TriggerSpecCollection $watchedTriggers;
 
+    private readonly StewartIdentity $identity;
+
     public private(set) bool $connected = true;
 
     public readonly VirtualClock $clock;
@@ -122,6 +125,7 @@ final class RecordingHaContext implements HaContext
         $this->connectionEvents = new PushSource($timers->handlerFibers);
         $this->triggers = new PushSource($timers->handlerFibers);
         $this->watchedTriggers = TriggerSpecCollection::empty();
+        $this->identity = new StewartIdentity(self::STEWART_USER_ID);
     }
 
     /** @param array<string, mixed> $attributes */
@@ -347,6 +351,11 @@ final class RecordingHaContext implements HaContext
         $this->events->push(new HaEvent($fire->eventType, $fire->data, EventOrigin::Remote, $this->clock->getNow(), $fire->context));
 
         return $fire->context;
+    }
+
+    public function wasCausedByStewart(StateChange|EntityState|HaEvent $subject): bool
+    {
+        return $this->identity->wasCausedByStewart($subject);
     }
 
     public function publish(string $topic, bool|int|float|string|array|null $payload = null): void

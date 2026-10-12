@@ -9,6 +9,7 @@ use Stewart\Contracts\Entity\Entity;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\Event\EventTypeSelector;
+use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\EventStream;
 use Stewart\Contracts\Exception\StateException;
 use Stewart\Contracts\Exception\TopicError;
@@ -26,6 +27,7 @@ use Stewart\Contracts\Service\ServiceTargetSource;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
+use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Topic\TopicPayload;
@@ -41,6 +43,7 @@ use Stewart\Runtime\Worker\Context\EventFirer;
 use Stewart\Runtime\Worker\Context\HistoryReader;
 use Stewart\Runtime\Worker\Context\ServiceCaller;
 use Stewart\Runtime\Worker\Context\TopicPublisher;
+use Stewart\Support\State\StewartIdentity;
 
 final readonly class WorkerHaContext implements HaContext
 {
@@ -53,12 +56,13 @@ final readonly class WorkerHaContext implements HaContext
         private EventFirer $eventFires,
         private DispatchStreams $streams,
         private TopicPublisher $topics,
+        private StewartIdentity $identity,
         private ResourceScope $resourceScope,
     ) {}
 
     public function forApp(AppId $appId): self
     {
-        return new self($this->states, $this->registry, $this->connection, $this->serviceCalls, $this->history, $this->eventFires, $this->streams, $this->topics, ResourceScope::forApp($appId));
+        return new self($this->states, $this->registry, $this->connection, $this->serviceCalls, $this->history, $this->eventFires, $this->streams, $this->topics, $this->identity, ResourceScope::forApp($appId));
     }
 
     public function getState(EntityId|string $entityId): ?EntityState
@@ -130,6 +134,11 @@ final readonly class WorkerHaContext implements HaContext
     public function fireEvent(string $eventType, array $data = []): EventContext
     {
         return $this->eventFires->fireEvent($this->resourceScope, new EventPayload($eventType, $data));
+    }
+
+    public function wasCausedByStewart(StateChange|EntityState|HaEvent $subject): bool
+    {
+        return $this->identity->wasCausedByStewart($subject);
     }
 
     public function publish(string $topic, bool|int|float|string|array|null $payload = null): void
