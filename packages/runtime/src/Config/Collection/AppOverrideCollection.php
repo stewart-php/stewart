@@ -21,4 +21,10 @@ final readonly class AppOverrideCollection extends KeyedCollection
     {
         return $this->elementAt($id->value);
     }
+
+    // Environment variable names spell "my-app" as MY_APP, so an override may name its app either way.
+    public function findMatchingApp(AppId $id): ?AppOverride
+    {
+        return $this->find($id) ?? $this->findFirstWhere(static fn(AppOverride $override): bool => $override->id->collidesWith($id));
+    }
 }

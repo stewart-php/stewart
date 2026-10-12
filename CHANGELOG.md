@@ -12,6 +12,15 @@ minor release may break; its "Upgrading" section says what to change.
   unavailable until Home Assistant reconnects: the daemon opens a new session and sends its entities again
 - A command to an exposed entity that its app had queued is refused at once with the reason, instead of timing out
   in Home Assistant, when the app pauses, falls behind or stops watching commands before handling it
+- Environment overrides reach apps whose ID has a hyphen (`STEWART_APPS__HALL_LIGHT__…` for `hall-light`) and
+  camelCase options (`…__OPTIONS__MOTION_SENSOR` or `…__MOTIONSENSOR` for `$motionSensor`), also when `stewart.yaml`
+  does not name them; an option name that matches two constructor parameters loosely, or one parameter set under two
+  spellings, fails the app
+
+### Changed
+
+- `stewart.yaml` may name an app with `_` in place of `-` (`hall_light:` for `hall-light`); this no longer fails with
+  "the automation ID is …"
 
 ## [0.10.0] - 2026-10-12
 

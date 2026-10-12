@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Config;
 
+use Closure;
 use Stewart\Runtime\Config\Environment\LeafParserChain;
 use Stewart\Runtime\Exception\ConfigurationException;
 use Stewart\Support\Text\ClosestNameFinder;
@@ -176,18 +177,31 @@ final readonly class EnvironmentOverlay
     /** @param array<array-key, mixed> $file */
     private function findMatchingFileKey(string $segment, array $file): string
     {
-        foreach (array_keys($file) as $existing) {
-            if ($this->normalizeForKeyComparison((string) $existing) === $this->normalizeForKeyComparison($segment)) {
-                return (string) $existing;
-            }
-        }
+        $fileKeys = array_map(strval(...), array_keys($file));
 
-        return strtolower($segment);
+        return $this->findFileKeyBy($fileKeys, $segment, $this->normalizeForKeyComparison(...))
+            ?? $this->findFileKeyBy($fileKeys, $segment, $this->foldForKeyComparison(...))
+            ?? strtolower($segment);
+    }
+
+    /**
+     * @param list<string> $fileKeys
+     * @param Closure(string): string $normalize
+     */
+    private function findFileKeyBy(array $fileKeys, string $segment, Closure $normalize): ?string
+    {
+        return array_find($fileKeys, static fn(string $existing): bool => $normalize($existing) === $normalize($segment));
     }
 
     private function normalizeForKeyComparison(string $key): string
     {
         // Env segments are upper case and cannot express "-", so both sides map it to "_".
         return strtolower(strtr($key, '-', '_'));
+    }
+
+    // MOTION_SENSOR and MOTIONSENSOR both stand for a camelCase key such as motionSensor.
+    private function foldForKeyComparison(string $key): string
+    {
+        return strtolower(str_replace(['_', '-'], '', $key));
     }
 }
