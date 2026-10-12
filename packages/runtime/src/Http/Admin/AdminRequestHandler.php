@@ -16,6 +16,7 @@ use Stewart\Contracts\Exception\ExceptionReason;
 use Stewart\Contracts\Exception\IdentifierError;
 use Stewart\Contracts\Exception\StewartException;
 use Stewart\Runtime\Exception\AppError;
+use Stewart\Runtime\Exception\WorkerError;
 use Stewart\Runtime\Http\Admin\Response\AdminAppList;
 use Stewart\Runtime\Http\Admin\Response\AdminAppView;
 use Stewart\Runtime\Http\Admin\Response\AdminCommandResult;
@@ -34,6 +35,7 @@ final readonly class AdminRequestHandler implements RequestHandler
 
     public function __construct(
         private AppsAdminApi $apps,
+        private WorkersAdminApi $workers,
         private AdminApiCodec $codec,
         private RuntimeMetricsExporter $metrics,
         private LoggerInterface $logger,
@@ -80,10 +82,11 @@ final readonly class AdminRequestHandler implements RequestHandler
     {
         return match ($route->action) {
             AdminAction::ListApps => $this->apps->listApps(),
-            AdminAction::ShowApp => $this->apps->showApp(new AppId((string) $route->appId)),
-            AdminAction::PauseApp => $this->apps->pauseApp(new AppId((string) $route->appId)),
-            AdminAction::ResumeApp => $this->apps->resumeApp(new AppId((string) $route->appId)),
-            AdminAction::ResetApp => $this->apps->resetApp(new AppId((string) $route->appId)),
+            AdminAction::ShowApp => $this->apps->showApp(new AppId((string) $route->resourceId)),
+            AdminAction::PauseApp => $this->apps->pauseApp(new AppId((string) $route->resourceId)),
+            AdminAction::ResumeApp => $this->apps->resumeApp(new AppId((string) $route->resourceId)),
+            AdminAction::ResetApp => $this->apps->resetApp(new AppId((string) $route->resourceId)),
+            AdminAction::RestartWorker => $this->workers->restartWorker((string) $route->resourceId),
             AdminAction::ShowMetrics => throw new LogicException('Metrics are answered before the JSON routes.'),
         };
     }
@@ -100,8 +103,8 @@ final readonly class AdminRequestHandler implements RequestHandler
     private function selectFailureStatus(ExceptionReason $reason): int
     {
         return match ($reason) {
-            AppError::Unknown, IdentifierError::AppIdInvalid, IdentifierError::AppIdTooLong => HttpStatus::NOT_FOUND,
-            AppError::Disabled => HttpStatus::CONFLICT,
+            AppError::Unknown, IdentifierError::AppIdInvalid, IdentifierError::AppIdTooLong, WorkerError::Unknown => HttpStatus::NOT_FOUND,
+            AppError::Disabled, WorkerError::ShuttingDown => HttpStatus::CONFLICT,
             default => HttpStatus::INTERNAL_SERVER_ERROR,
         };
     }

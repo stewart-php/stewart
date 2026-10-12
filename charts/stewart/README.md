@@ -56,7 +56,7 @@ classes are rewritten inside the image.
 | `persistence.url` | `""` | An external `redis://` URL; empty with `valkey.enabled` uses the chart's Valkey |
 | `persistence.existingSecret`, `.existingSecretKey` | `""`, `url` | Secret holding the URL, when it carries a password |
 | `control.existingSecret`, `.existingSecretKey` | `""`, `token` | Secret with the control token; name one when rendering with `helm template`, or the generated token changes on every render |
-| `adminApi.enabled` | `false` | Start the HTTP admin API (`http.admin`) that lists, pauses and resumes apps |
+| `adminApi.enabled` | `false` | Start the HTTP admin API (`http.admin`) that lists, pauses and resumes apps and restarts workers |
 | `adminApi.host`, `.port` | `127.0.0.1`, `8081` | Where it binds; loopback is reachable through `kubectl port-forward`, `0.0.0.0` from other pods |
 | `adminApi.existingSecret`, `.existingSecretKey` | `""`, `token` | Secret with the admin bearer token; name one when rendering with `helm template`, or the generated token changes on every render |
 | `adminApi.podMonitor.enabled` | `false` | Create a Prometheus Operator `PodMonitor` that scrapes `/metrics` with the admin token; needs `adminApi.host: 0.0.0.0` |
@@ -90,13 +90,14 @@ one and must pass `stewart check`; only then does the daemon stop gracefully and
 A commit that fails the check is logged, shown by `stewart status` and counted in `stewart_deploy_failures_total`, and
 never tried again; the running commit stays. To go back, set `code.git.ref` to a commit.
 
-With `adminApi.enabled`, the same pause commands work over HTTP:
+With `adminApi.enabled`, the same pause and restart commands work over HTTP:
 
 ```bash
 kubectl port-forward deployment/home-stewart 8081:8081 &
 TOKEN=$(kubectl get secret home-stewart -o jsonpath='{.data.admin-token}' | base64 -d)
 curl -H "Authorization: Bearer $TOKEN" localhost:8081/api/apps
 curl -X POST -H "Authorization: Bearer $TOKEN" localhost:8081/api/apps/porch/pause   # resume, reset
+curl -X POST -H "Authorization: Bearer $TOKEN" localhost:8081/api/workers/0/restart
 curl -H "Authorization: Bearer $TOKEN" localhost:8081/metrics                        # Prometheus text format
 ```
 

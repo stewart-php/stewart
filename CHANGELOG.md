@@ -11,6 +11,7 @@ minor release may break; its "Upgrading" section says what to change.
 - `stewart worker:restart <worker>` restarts one worker with a fresh crash budget: a running worker stops gracefully
   within `shutdown_grace` first, a quarantined or backing-off one starts at once. While it stops, `stewart status`
   and `stewart_worker_phase` show the new `stopping` phase
+- `POST /api/workers/{id}/restart` on the HTTP admin API does the same as `worker:restart`; an unknown worker is 404
 
 ### Fixed
 
