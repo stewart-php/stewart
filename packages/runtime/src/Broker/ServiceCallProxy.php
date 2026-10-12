@@ -10,7 +10,7 @@ use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\MonotonicTime;
 use Stewart\Runtime\Config\ServiceCallPolicy;
-use Stewart\Runtime\Ipc\Message\ServiceCallFailed;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Model\ServiceCallOutcome;
@@ -50,7 +50,7 @@ final readonly class ServiceCallProxy
                     $this->slots->release($handle);
                 }
 
-                $handle->send($outcome);
+                $handle->send($outcome instanceof ServiceCallException ? RequestFailed::fromException($request->correlationId, $outcome) : $outcome);
                 $this->recordFinishedCall($handle, $request, $outcome, $startedAt);
             } catch (Throwable $e) {
                 $this->logger->error('Service call reply failed', [
@@ -62,7 +62,7 @@ final readonly class ServiceCallProxy
         })->ignore();
     }
 
-    private function callHomeAssistant(ServiceCallRequest $request): ServiceCallResult|ServiceCallFailed
+    private function callHomeAssistant(ServiceCallRequest $request): ServiceCallResult|ServiceCallException
     {
         if ($this->policy->dryRun) {
             $this->logger->info('Service call not sent: service_calls.dry_run is on', [
@@ -91,25 +91,22 @@ final readonly class ServiceCallProxy
                 $request->returnResponse,
             ));
         } catch (ServiceCallException $e) {
-            return ServiceCallFailed::fromException($request->correlationId, $e);
+            return $e;
         } catch (Throwable $e) {
-            return ServiceCallFailed::fromException(
-                $request->correlationId,
-                ServiceCallException::unreachable($request->domain, $request->service, $e->getMessage(), $e),
-            );
+            return ServiceCallException::unreachable($request->domain, $request->service, $e->getMessage(), $e);
         }
     }
 
     private function recordFinishedCall(
         WorkerHandle $handle,
         ServiceCallRequest $request,
-        ServiceCallResult|ServiceCallFailed $outcome,
+        ServiceCallResult|ServiceCallException $outcome,
         MonotonicTime $startedAt,
     ): void {
         $this->metrics->recordFinishedCall(
             $handle->id,
             $request->scope,
-            $outcome instanceof ServiceCallFailed ? ServiceCallOutcome::failedWith($outcome->getReason()) : ServiceCallOutcome::Succeeded,
+            $outcome instanceof ServiceCallException ? ServiceCallOutcome::failedWith($outcome->reason) : ServiceCallOutcome::Succeeded,
             $this->clock->getMonotonicTime()->elapsedSince($startedAt),
         );
     }
@@ -118,7 +115,7 @@ final readonly class ServiceCallProxy
     {
         $this->slots->recordRefusal($handle, $request->scope);
         $this->metrics->recordRefusedCall($handle->id, $request->scope);
-        $handle->send(ServiceCallFailed::fromException(
+        $handle->send(RequestFailed::fromException(
             $request->correlationId,
             ServiceCallException::overloaded($request->domain, $request->service, $reason),
         ));

@@ -11,9 +11,9 @@ use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\MonotonicTime;
 use Stewart\Runtime\Config\ServiceCallPolicy;
-use Stewart\Runtime\Ipc\Message\EventFireFailed;
 use Stewart\Runtime\Ipc\Message\EventFireRequest;
 use Stewart\Runtime\Ipc\Message\EventFireResult;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Model\ServiceCallOutcome;
 use Throwable;
 
@@ -51,7 +51,7 @@ final readonly class EventFireProxy
                     $this->slots->release($handle);
                 }
 
-                $handle->send($outcome);
+                $handle->send($outcome instanceof EventFireException ? RequestFailed::fromException($request->correlationId, $outcome) : $outcome);
                 $this->recordFinishedFire($handle, $request, $outcome, $startedAt);
             } catch (Throwable $e) {
                 $this->logger->error('Event fire reply failed', [
@@ -63,7 +63,7 @@ final readonly class EventFireProxy
         })->ignore();
     }
 
-    private function fireOnHomeAssistant(EventFireRequest $request): EventFireResult|EventFireFailed
+    private function fireOnHomeAssistant(EventFireRequest $request): EventFireResult|EventFireException
     {
         if ($this->policy->dryRun) {
             $this->logger->info('Event not fired: service_calls.dry_run is on', [
@@ -81,25 +81,22 @@ final readonly class EventFireProxy
 
             return new EventFireResult($request->correlationId, $this->session->fireEvent(new EventPayload($request->eventType, $request->data)));
         } catch (EventFireException $e) {
-            return EventFireFailed::fromException($request->correlationId, $e);
+            return $e;
         } catch (Throwable $e) {
-            return EventFireFailed::fromException(
-                $request->correlationId,
-                EventFireException::unreachable($request->eventType, $e->getMessage(), $e),
-            );
+            return EventFireException::unreachable($request->eventType, $e->getMessage(), $e);
         }
     }
 
     private function recordFinishedFire(
         WorkerHandle $handle,
         EventFireRequest $request,
-        EventFireResult|EventFireFailed $outcome,
+        EventFireResult|EventFireException $outcome,
         MonotonicTime $startedAt,
     ): void {
         $this->metrics->recordFinishedCall(
             $handle->id,
             $request->scope,
-            $outcome instanceof EventFireFailed ? ServiceCallOutcome::failedWith($outcome->getReason()) : ServiceCallOutcome::Succeeded,
+            $outcome instanceof EventFireException ? ServiceCallOutcome::failedWith($outcome->reason) : ServiceCallOutcome::Succeeded,
             $this->clock->getMonotonicTime()->elapsedSince($startedAt),
         );
     }
@@ -108,7 +105,7 @@ final readonly class EventFireProxy
     {
         $this->slots->recordRefusal($handle, $request->scope);
         $this->metrics->recordRefusedCall($handle->id, $request->scope);
-        $handle->send(EventFireFailed::fromException(
+        $handle->send(RequestFailed::fromException(
             $request->correlationId,
             EventFireException::createForReason(EventFireError::Overloaded, eventType: $request->eventType, detail: $reason),
         ));

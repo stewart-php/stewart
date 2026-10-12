@@ -33,7 +33,7 @@ final class RegistryEditExceptionTest extends TestCase
     {
         $original = RegistryEditException::notFound(new EntityId('light.hall'));
 
-        $rebuilt = RegistryEditException::fromWire($original->reason, $original->getMessage(), $original->context);
+        $rebuilt = RegistryEditException::restoreFromWire($original->reason, $original->getMessage(), $original->context);
 
         self::assertSame(RegistryEditError::NotFound, $rebuilt->reason);
         self::assertSame($original->getMessage(), $rebuilt->getMessage());

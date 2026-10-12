@@ -29,6 +29,8 @@ minor release may break; its "Upgrading" section says what to change.
   one-line factories in `stewart-php/contracts` are gone
 - List collections are built with `XCollection::fromList(...)`; the named factories that only forwarded to it, such
   as `EntityIdCollection::fromIds()` and `HaTriggerCollection::fromTriggers()`, are gone
+- IPC protocol 27: one `request_failed` message replaces the five per-request error messages; the broker and its
+  workers must run the same version
 
 ### Upgrading
 
@@ -38,6 +40,9 @@ minor release may break; its "Upgrading" section says what to change.
 2. Replace calls to removed collection factories such as `AppIdCollection::fromIds($ids)` with `fromList($ids)`.
    Factories that do more, such as `SelectorCollection::fromSpecs()` and `DayOfWeekCollection::fromDistinctDays()`,
    stay.
+3. `ServiceCallException::fromWire()`, `EventFireException::fromWire()`, `HistoryException::fromWire()`,
+   `RegistryEditException::fromWire()` and `ExposureException::fromWire()` are gone; call
+   `XException::restoreFromWire($reason, $message, $context)` instead.
 
 ## [0.10.0] - 2026-10-12
 

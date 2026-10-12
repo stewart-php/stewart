@@ -32,7 +32,7 @@ final class ServiceCallExceptionTest extends TestCase
     {
         $original = ServiceCallException::overloaded('light', 'turn_on', 'busy');
 
-        $rebuilt = ServiceCallException::fromWire($original->reason, $original->getMessage(), $original->context);
+        $rebuilt = ServiceCallException::restoreFromWire($original->reason, $original->getMessage(), $original->context);
 
         self::assertSame(ServiceCallError::Overloaded, $rebuilt->reason);
         self::assertSame($original->getMessage(), $rebuilt->getMessage());

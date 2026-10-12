@@ -63,7 +63,7 @@ use Stewart\Runtime\Ipc\Message\EventFireResult;
 use Stewart\Runtime\Ipc\Message\HaConnectionLost;
 use Stewart\Runtime\Ipc\Message\Pong;
 use Stewart\Runtime\Ipc\Message\RegistrySnapshot;
-use Stewart\Runtime\Ipc\Message\ServiceCallFailed;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Ipc\Message\StateChangeBatch;
@@ -436,12 +436,12 @@ final class BrokerLifecycleTest extends TestCase
         $this->session->connected = false;
 
         $this->spawner->getLatestProcess(1)->channel->deliver(new ServiceCallRequest(new CorrelationId('1:0'), self::createScope('echo'), 'light', 'turn_on', [], null, false));
-        EventLoopTicks::settleUntil(fn(): bool => \count($this->listSentToWorker(1, ServiceCallFailed::class)) === 1);
+        EventLoopTicks::settleUntil(fn(): bool => \count($this->listSentToWorker(1, RequestFailed::class)) === 1);
 
-        $errors = $this->listSentToWorker(1, ServiceCallFailed::class);
+        $errors = $this->listSentToWorker(1, RequestFailed::class);
 
         self::assertCount(1, $errors);
-        self::assertSame(ServiceCallError::Unreachable, $errors[0]->getReason());
+        self::assertSame(ServiceCallError::Unreachable->value, $errors[0]->details->reason);
         self::assertSame(0, $this->session->calls);
     }
 

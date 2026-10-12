@@ -6,11 +6,7 @@ namespace Stewart\Contracts\Exception;
 
 use Throwable;
 
-/**
- * @phpstan-import-type ExceptionContext from StewartException
- *
- * @extends StewartException<ServiceCallError>
- */
+/** @extends StewartException<ServiceCallError> */
 final class ServiceCallException extends StewartException
 {
     public static function rejected(
@@ -36,12 +32,6 @@ final class ServiceCallException extends StewartException
     public static function overloaded(string $domain, string $service, string $detail): self
     {
         return self::createForServiceCall(ServiceCallError::Overloaded, $domain, $service, $detail, null, null);
-    }
-
-    /** @param ExceptionContext|null $context */
-    public static function fromWire(ServiceCallError $reason, string $message, ?array $context): self
-    {
-        return new self($message, $reason, $context);
     }
 
     private static function createForServiceCall(

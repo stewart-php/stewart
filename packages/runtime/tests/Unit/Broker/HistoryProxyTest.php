@@ -22,9 +22,9 @@ use Stewart\Runtime\Broker\HistoryProxy;
 use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
-use Stewart\Runtime\Ipc\Message\HistoryFailed;
 use Stewart\Runtime\Ipc\Message\HistoryRequest;
 use Stewart\Runtime\Ipc\Message\HistoryResult;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
@@ -71,7 +71,7 @@ final class HistoryProxyTest extends TestCase
 
         $this->forwardRequest();
 
-        self::assertSame(HistoryError::RecorderUnavailable, $this->listSentOfType(HistoryFailed::class)[0]->getReason());
+        self::assertSame(HistoryError::RecorderUnavailable->value, $this->listSentOfType(RequestFailed::class)[0]->details->reason);
     }
 
     public function testDisconnectedSessionIsUnreachable(): void
@@ -80,7 +80,7 @@ final class HistoryProxyTest extends TestCase
 
         $this->forwardRequest();
 
-        self::assertSame(HistoryError::Unreachable, $this->listSentOfType(HistoryFailed::class)[0]->getReason());
+        self::assertSame(HistoryError::Unreachable->value, $this->listSentOfType(RequestFailed::class)[0]->details->reason);
         self::assertSame([], $this->listSentOfType(HistoryResult::class));
     }
 
@@ -90,7 +90,7 @@ final class HistoryProxyTest extends TestCase
 
         $this->forwardRequest();
 
-        self::assertSame(HistoryError::Unreachable, $this->listSentOfType(HistoryFailed::class)[0]->getReason());
+        self::assertSame(HistoryError::Unreachable->value, $this->listSentOfType(RequestFailed::class)[0]->details->reason);
     }
 
     private function forwardRequest(): void

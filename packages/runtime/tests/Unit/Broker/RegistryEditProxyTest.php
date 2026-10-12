@@ -27,9 +27,9 @@ use Stewart\Runtime\Broker\RegistryEditProxy;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Config\ServiceCallPolicy;
-use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateFailed;
 use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateRequest;
 use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateResult;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\ServiceCallOutcome;
@@ -127,7 +127,7 @@ final class RegistryEditProxyTest extends TestCase
 
         $this->createProxy(new ServiceCallPolicy(perWorker: 0, total: 0))->forward($worker, self::createRequest(new EntityRegistryUpdate()->withHidden(true), 'light.gone'));
 
-        self::assertSame(RegistryEditError::NotFound, $this->awaitFailure($worker)->getReason());
+        self::assertSame(RegistryEditError::NotFound->value, $this->awaitFailure($worker)->details->reason);
     }
 
     public function testDisconnectedUpdateFailsAsUnreachable(): void
@@ -137,7 +137,7 @@ final class RegistryEditProxyTest extends TestCase
 
         $this->createProxy(new ServiceCallPolicy(perWorker: 0, total: 0))->forward($worker, self::createRequest(new EntityRegistryUpdate()->withName('Hallway')));
 
-        self::assertSame(RegistryEditError::Unreachable, $this->awaitFailure($worker)->getReason());
+        self::assertSame(RegistryEditError::Unreachable->value, $this->awaitFailure($worker)->details->reason);
     }
 
     public function testFullCallBudgetRefusesUpdate(): void
@@ -148,7 +148,7 @@ final class RegistryEditProxyTest extends TestCase
 
         $proxy->forward($worker, self::createRequest(new EntityRegistryUpdate()->withName('Hallway')));
 
-        self::assertSame(RegistryEditError::Overloaded, $this->awaitFailure($worker)->getReason());
+        self::assertSame(RegistryEditError::Overloaded->value, $this->awaitFailure($worker)->details->reason);
         self::assertSame([], $this->session->sentRegistryUpdates);
     }
 
@@ -178,11 +178,11 @@ final class RegistryEditProxyTest extends TestCase
         return self::listSentOfType($worker, RegistryEntityUpdateResult::class)[0];
     }
 
-    private function awaitFailure(WorkerHandle $worker): RegistryEntityUpdateFailed
+    private function awaitFailure(WorkerHandle $worker): RequestFailed
     {
-        EventLoopTicks::settleUntil(static fn(): bool => self::listSentOfType($worker, RegistryEntityUpdateFailed::class) !== []);
+        EventLoopTicks::settleUntil(static fn(): bool => self::listSentOfType($worker, RequestFailed::class) !== []);
 
-        return self::listSentOfType($worker, RegistryEntityUpdateFailed::class)[0];
+        return self::listSentOfType($worker, RequestFailed::class)[0];
     }
 
     private function createHandle(): WorkerHandle

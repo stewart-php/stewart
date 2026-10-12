@@ -6,9 +6,9 @@ namespace Stewart\Runtime\Broker;
 
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\Exception\HistoryException;
-use Stewart\Runtime\Ipc\Message\HistoryFailed;
 use Stewart\Runtime\Ipc\Message\HistoryRequest;
 use Stewart\Runtime\Ipc\Message\HistoryResult;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Wire\HistoricalStatesFragment;
 use Throwable;
 
@@ -36,7 +36,7 @@ final readonly class HistoryProxy
         })->ignore();
     }
 
-    private function fetchFromHomeAssistant(HistoryRequest $request): HistoryResult|HistoryFailed
+    private function fetchFromHomeAssistant(HistoryRequest $request): HistoryResult|RequestFailed
     {
         try {
             if (!$this->session->isConnected()) {
@@ -47,9 +47,9 @@ final readonly class HistoryProxy
 
             return new HistoryResult($request->correlationId, HistoricalStatesFragment::fromCollection($history->states));
         } catch (HistoryException $e) {
-            return HistoryFailed::fromException($request->correlationId, $e);
+            return RequestFailed::fromException($request->correlationId, $e);
         } catch (Throwable $e) {
-            return HistoryFailed::fromException($request->correlationId, HistoryException::unreachable($request->entityId, $e->getMessage(), $e));
+            return RequestFailed::fromException($request->correlationId, HistoryException::unreachable($request->entityId, $e->getMessage(), $e));
         }
     }
 }

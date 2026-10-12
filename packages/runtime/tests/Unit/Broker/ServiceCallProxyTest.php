@@ -26,7 +26,7 @@ use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Config\ServiceCallPolicy;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
 use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
-use Stewart\Runtime\Ipc\Message\ServiceCallFailed;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Model\CorrelationId;
@@ -90,7 +90,7 @@ final class ServiceCallProxyTest extends TestCase
         EventLoopTicks::settleUntil(static fn(): bool => \count(self::listSentErrors($worker)) === 3);
         $refusals = self::listSentErrors($worker);
         self::assertCount(3, $refusals);
-        self::assertSame(ServiceCallError::Overloaded, $refusals[0]->getReason());
+        self::assertSame(ServiceCallError::Overloaded->value, $refusals[0]->details->reason);
 
         $this->finishCalls();
 
@@ -217,10 +217,10 @@ final class ServiceCallProxyTest extends TestCase
         );
     }
 
-    /** @return list<ServiceCallFailed> */
+    /** @return list<RequestFailed> */
     private static function listSentErrors(WorkerHandle $handle): array
     {
-        return self::listSentOfType($handle, ServiceCallFailed::class);
+        return self::listSentOfType($handle, RequestFailed::class);
     }
 
     /** @return list<ServiceCallResult> */

@@ -9,11 +9,6 @@ use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventOrigin;
 use Stewart\Contracts\Event\HaEvent;
-use Stewart\Contracts\Exception\EventFireException;
-use Stewart\Contracts\Exception\ExposureException;
-use Stewart\Contracts\Exception\HistoryError;
-use Stewart\Contracts\Exception\HistoryException;
-use Stewart\Contracts\Exception\RegistryEditException;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exposure\Command\SwitchAction;
 use Stewart\Contracts\Exposure\Command\SwitchCommand;
@@ -72,7 +67,6 @@ use Stewart\Runtime\Ipc\Message\AppActivityReport;
 use Stewart\Runtime\Ipc\Message\AppFailed;
 use Stewart\Runtime\Ipc\Message\Bootstrap;
 use Stewart\Runtime\Ipc\Message\EventFired;
-use Stewart\Runtime\Ipc\Message\EventFireFailed;
 use Stewart\Runtime\Ipc\Message\EventFireRequest;
 use Stewart\Runtime\Ipc\Message\EventFireResult;
 use Stewart\Runtime\Ipc\Message\ExposedCommandAnswered;
@@ -81,10 +75,8 @@ use Stewart\Runtime\Ipc\Message\ExposedEntitySynced;
 use Stewart\Runtime\Ipc\Message\ExposeEntityRequest;
 use Stewart\Runtime\Ipc\Message\ExposeEntityResult;
 use Stewart\Runtime\Ipc\Message\ExposureAcknowledged;
-use Stewart\Runtime\Ipc\Message\ExposureFailed;
 use Stewart\Runtime\Ipc\Message\ExposuresReleased;
 use Stewart\Runtime\Ipc\Message\HaConnectionLost;
-use Stewart\Runtime\Ipc\Message\HistoryFailed;
 use Stewart\Runtime\Ipc\Message\HistoryRequest;
 use Stewart\Runtime\Ipc\Message\HistoryResult;
 use Stewart\Runtime\Ipc\Message\LogRecord;
@@ -95,12 +87,11 @@ use Stewart\Runtime\Ipc\Message\Ping;
 use Stewart\Runtime\Ipc\Message\Pong;
 use Stewart\Runtime\Ipc\Message\Publish;
 use Stewart\Runtime\Ipc\Message\ReconfigureExposedEntityRequest;
-use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateFailed;
 use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateRequest;
 use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateResult;
 use Stewart\Runtime\Ipc\Message\RegistrySnapshot;
 use Stewart\Runtime\Ipc\Message\RemoveExposedEntityRequest;
-use Stewart\Runtime\Ipc\Message\ServiceCallFailed;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Ipc\Message\Shutdown;
@@ -161,14 +152,12 @@ final class IpcMessageSamples
             'trigger_fired' => IpcMessageSample::createRoundTrip(new TriggerFired(new TriggerEvent(['platform' => 'sun', 'event' => 'sunset', 'offset' => -1800.0, 'id' => 'dusk', 'idx' => '0'], new EventContext('c'), $at), [new SubscriptionId('w0:4')])),
             'topic_message' => IpcMessageSample::createRoundTrip(new TopicMessage(new TopicEvent('presence.home', ['who' => 'resident', 'confidence' => 0.92], new AppId('presence'), $at), [new SubscriptionId('w1:2')])),
             'service_call_result' => IpcMessageSample::createRoundTrip(new ServiceCallResult(new CorrelationId('w0:2'), new ServiceResponse('weather', 'get_forecasts', ['weather.home' => ['forecast' => []]], new EventContext('call-1', null, 'stewart-user')))),
-            'service_call_error' => IpcMessageSample::createRoundTrip(ServiceCallFailed::fromException(new CorrelationId('w0:2'), ServiceCallException::rejected('light', 'turn_on', 'Service not found', 'not_found'))),
+            'request_failed' => IpcMessageSample::createRoundTrip(RequestFailed::fromException(new CorrelationId('w0:2'), ServiceCallException::rejected('light', 'turn_on', 'Service not found', 'not_found'))),
             'event_fire_result' => IpcMessageSample::createRoundTrip(new EventFireResult(new CorrelationId('w0:6'), new EventContext('fire-1', null, 'stewart-user'))),
-            'event_fire_error' => IpcMessageSample::createRoundTrip(EventFireFailed::fromException(new CorrelationId('w0:6'), EventFireException::rejected('doorbell_pressed', 'Unauthorized', 'unauthorized'))),
             'registry_entity_update_result' => IpcMessageSample::createRoundTrip(new RegistryEntityUpdateResult(
                 new CorrelationId('w0:7'),
                 new RegisteredEntity(new EntityId('light.hall'), areaId: new AreaId('hall'), name: 'Hall', hiddenBy: 'user', aliases: [EntityAlias::entityName()]),
             )),
-            'registry_entity_update_error' => IpcMessageSample::createRoundTrip(RegistryEntityUpdateFailed::fromException(new CorrelationId('w0:7'), RegistryEditException::notFound(new EntityId('light.gone')))),
             'subscription_ack' => IpcMessageSample::createRoundTrip(new SubscriptionAck(new SubscriptionId('w0:1'), false, 'refused')),
             'ping' => IpcMessageSample::createRoundTrip(new Ping(42, $at)),
             'shutdown' => IpcMessageSample::createRoundTrip(new Shutdown('stopping', Duration::seconds(5))),
@@ -184,7 +173,6 @@ final class IpcMessageSamples
             'unsubscribe' => IpcMessageSample::createRoundTrip(new Unsubscribe(new SubscriptionId('w0:1'))),
             'history_request' => IpcMessageSample::createRoundTrip(new HistoryRequest(new CorrelationId('w0:3'), $demo, new EntityId('light.hall'), new HistoryWindow($at, $at->plus(Duration::minutes(30))), HistoryDetail::AllChanges)),
             'history_result' => new IpcMessageSample(self::createHistoryResult($at), self::createHistoryResult($at)),
-            'history_error' => IpcMessageSample::createRoundTrip(HistoryFailed::fromException(new CorrelationId('w0:3'), HistoryException::createForReason(HistoryError::RecorderUnavailable, entityId: 'light.hall'))),
             'service_call_request' => IpcMessageSample::createRoundTrip(new ServiceCallRequest(new CorrelationId('w0:2'), $demo, 'light', 'turn_on', ['transition' => 1.5], new ServiceTarget(entityIds: [new EntityId('light.hall')], areaIds: ['hall']), false)),
             'registry_entity_update_request' => IpcMessageSample::createRoundTrip(new RegistryEntityUpdateRequest(
                 new CorrelationId('w0:7'),
@@ -224,7 +212,6 @@ final class IpcMessageSamples
             'update_exposed_entity_request' => IpcMessageSample::createRoundTrip(new UpdateExposedEntityRequest(new CorrelationId('w0:8'), $demo, new ExposedEntityKey('soil_moisture'), new ExposedStateChange(new ExposedState(38)))),
             'remove_exposed_entity_request' => IpcMessageSample::createRoundTrip(new RemoveExposedEntityRequest(new CorrelationId('w0:9'), $demo, new ExposedEntityKey('soil_moisture'))),
             'exposure_acknowledged' => IpcMessageSample::createRoundTrip(new ExposureAcknowledged(new CorrelationId('w0:8'))),
-            'exposure_error' => IpcMessageSample::createRoundTrip(ExposureFailed::fromException(new CorrelationId('w0:7'), ExposureException::configInvalid('The sensor unit does not fit.'))),
             'exposures_released' => IpcMessageSample::createRoundTrip(new ExposuresReleased($demo)),
             'exposed_entity_commanded' => IpcMessageSample::createRoundTrip(new ExposedEntityCommanded(
                 '3f2b9c0e8d7a4f61',

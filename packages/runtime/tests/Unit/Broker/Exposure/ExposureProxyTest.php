@@ -25,8 +25,8 @@ use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Ipc\Message\ExposeEntityRequest;
 use Stewart\Runtime\Ipc\Message\ExposeEntityResult;
 use Stewart\Runtime\Ipc\Message\ExposureAcknowledged;
-use Stewart\Runtime\Ipc\Message\ExposureFailed;
 use Stewart\Runtime\Ipc\Message\ReconfigureExposedEntityRequest;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\UpdateExposedEntityRequest;
 use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
@@ -71,14 +71,14 @@ final class ExposureProxyTest extends TestCase
 
         $this->forwardExpose(ResourceScope::forApp(new AppId('demo')));
 
-        self::assertSame(ExposureError::ComponentMissing, $this->listSentOfType(ExposureFailed::class)[0]->getReason());
+        self::assertSame(ExposureError::ComponentMissing->value, $this->listSentOfType(RequestFailed::class)[0]->details->reason);
     }
 
     public function testSharedScopeIsOutsideApp(): void
     {
         $this->forwardExpose(ResourceScope::shared());
 
-        self::assertSame(ExposureError::OutsideApp, $this->listSentOfType(ExposureFailed::class)[0]->getReason());
+        self::assertSame(ExposureError::OutsideApp->value, $this->listSentOfType(RequestFailed::class)[0]->details->reason);
         self::assertSame([], $this->session->exposedEntities);
     }
 

@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Worker;
 
 use Amp\DeferredFuture;
 use Amp\Future;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Model\CorrelationId;
 use Throwable;
 
@@ -42,6 +43,14 @@ final readonly class PendingRequest
         }
 
         $this->deferred->complete($result);
+    }
+
+    public function failFromWire(RequestFailed $failure): void
+    {
+        $fallback = $this->subject->createUnreachableFailure($failure->message);
+        $reason = $fallback->reason::tryFrom($failure->details->reason) ?? $fallback->reason;
+
+        $this->fail($fallback::restoreFromWire($reason, $failure->message, $failure->details->context));
     }
 
     public function fail(Throwable $error): void

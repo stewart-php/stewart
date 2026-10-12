@@ -16,9 +16,9 @@ use Stewart\Runtime\Ipc\Message\BrokerMessage;
 use Stewart\Runtime\Ipc\Message\ExposeEntityRequest;
 use Stewart\Runtime\Ipc\Message\ExposeEntityResult;
 use Stewart\Runtime\Ipc\Message\ExposureAcknowledged;
-use Stewart\Runtime\Ipc\Message\ExposureFailed;
 use Stewart\Runtime\Ipc\Message\ReconfigureExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\RemoveExposedEntityRequest;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\UpdateExposedEntityRequest;
 use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
@@ -90,7 +90,7 @@ final readonly class ExposureProxy
         try {
             return $answer();
         } catch (ExposureException $e) {
-            return ExposureFailed::fromException($correlationId, $e);
+            return RequestFailed::fromException($correlationId, $e);
         }
     }
 

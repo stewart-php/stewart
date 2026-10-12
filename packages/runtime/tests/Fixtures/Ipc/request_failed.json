@@ -1,5 +1,5 @@
 {
-    "t": "service_call_error",
+    "t": "request_failed",
     "m": {
         "correlation_id": "w0:2",
         "message": "light.turn_on was rejected by Home Assistant: Service not found (not_found)",

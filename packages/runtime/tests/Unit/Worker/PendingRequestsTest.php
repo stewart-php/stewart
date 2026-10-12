@@ -10,8 +10,11 @@ use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\HistoryError;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\ServiceCallError;
+use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\History\Collection\HistoricalStateCollection;
 use Stewart\Contracts\Service\ServiceResponse;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
+use Stewart\Runtime\Model\ExceptionDetails;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\PendingRequest;
@@ -20,6 +23,7 @@ use Stewart\Runtime\Worker\Subject\HistoryQuerySubject;
 use Stewart\Runtime\Worker\Subject\ServiceCallSubject;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Time\EventLoopTicks;
+use Throwable;
 
 use function Amp\async;
 
@@ -52,9 +56,27 @@ final class PendingRequestsTest extends TestCase
     {
         $query = $this->pending->open(new HistoryQuerySubject(new EntityId('light.hall')));
 
-        $this->pending->reject($query->correlationId, HistoryException::createForReason(HistoryError::RecorderUnavailable, entityId: 'light.hall'));
+        $failure = HistoryException::createForReason(HistoryError::RecorderUnavailable, entityId: 'light.hall');
 
-        $this->assertThrowsReason(HistoryError::RecorderUnavailable, static fn() => $query->getFuture()->await());
+        $this->pending->rejectFromWire(RequestFailed::fromException($query->correlationId, $failure));
+
+        $restored = $this->catchFailureOf($query);
+        self::assertInstanceOf(HistoryException::class, $restored);
+        self::assertSame(HistoryError::RecorderUnavailable, $restored->reason);
+        self::assertSame($failure->getMessage(), $restored->getMessage());
+        self::assertSame($failure->context, $restored->context);
+    }
+
+    public function testUnknownFailureReasonDegradesToUnreachable(): void
+    {
+        $call = $this->pending->open(new ServiceCallSubject('light', 'turn_on'));
+
+        $this->pending->rejectFromWire(new RequestFailed($call->correlationId, 'something odd', new ExceptionDetails(ServiceCallException::class, 'melted', null)));
+
+        $restored = $this->catchFailureOf($call);
+        self::assertInstanceOf(ServiceCallException::class, $restored);
+        self::assertSame(ServiceCallError::Unreachable, $restored->reason);
+        self::assertSame('something odd', $restored->getMessage());
     }
 
     public function testAnswerOfWrongTypeFailsAsUnreachable(): void
@@ -89,5 +111,21 @@ final class PendingRequestsTest extends TestCase
 
         self::assertSame(0, $this->pending->failAll('again'));
         $this->assertThrowsReason(ServiceCallError::Unreachable, static fn() => $call->getFuture()->await());
+    }
+
+    /**
+     * @template TResult of object
+     *
+     * @param PendingRequest<TResult> $request
+     */
+    private function catchFailureOf(PendingRequest $request): Throwable
+    {
+        try {
+            $request->getFuture()->await();
+        } catch (Throwable $e) {
+            return $e;
+        }
+
+        self::fail('The request did not fail.');
     }
 }

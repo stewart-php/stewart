@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Worker;
 
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Model\CorrelationId;
-use Throwable;
 
 final class PendingRequests
 {
@@ -32,9 +32,9 @@ final class PendingRequests
         $this->take($correlationId)?->complete($result);
     }
 
-    public function reject(CorrelationId $correlationId, Throwable $failure): void
+    public function rejectFromWire(RequestFailed $failure): void
     {
-        $this->take($correlationId)?->fail($failure);
+        $this->take($failure->correlationId)?->failFromWire($failure);
     }
 
     public function forget(CorrelationId $correlationId): void

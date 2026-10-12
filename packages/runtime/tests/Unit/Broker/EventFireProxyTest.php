@@ -25,9 +25,9 @@ use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Config\ServiceCallPolicy;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
 use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
-use Stewart\Runtime\Ipc\Message\EventFireFailed;
 use Stewart\Runtime\Ipc\Message\EventFireRequest;
 use Stewart\Runtime\Ipc\Message\EventFireResult;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
@@ -100,11 +100,11 @@ final class EventFireProxyTest extends TestCase
 
         $serviceCalls->forward($worker, new ServiceCallRequest(new CorrelationId('call'), ResourceScope::forApp(new AppId('demo')), 'light', 'turn_on', [], null, false));
         $proxy->forward($worker, self::createRequest('fire'));
-        EventLoopTicks::settleUntil(static fn(): bool => self::listSentOfType($worker, EventFireFailed::class) !== []);
+        EventLoopTicks::settleUntil(static fn(): bool => self::listSentOfType($worker, RequestFailed::class) !== []);
 
-        $refusals = self::listSentOfType($worker, EventFireFailed::class);
+        $refusals = self::listSentOfType($worker, RequestFailed::class);
         self::assertCount(1, $refusals);
-        self::assertSame(EventFireError::Overloaded, $refusals[0]->getReason());
+        self::assertSame(EventFireError::Overloaded->value, $refusals[0]->details->reason);
         self::assertSame(1, $this->slots->refusedCalls);
         self::assertSame([], $this->session->receivedEventFires);
     }
@@ -116,9 +116,9 @@ final class EventFireProxyTest extends TestCase
         $this->session->connected = false;
 
         $proxy->forward($worker, self::createRequest('a'));
-        EventLoopTicks::settleUntil(static fn(): bool => self::listSentOfType($worker, EventFireFailed::class) !== []);
+        EventLoopTicks::settleUntil(static fn(): bool => self::listSentOfType($worker, RequestFailed::class) !== []);
 
-        self::assertSame(EventFireError::Unreachable, self::listSentOfType($worker, EventFireFailed::class)[0]->getReason());
+        self::assertSame(EventFireError::Unreachable->value, self::listSentOfType($worker, RequestFailed::class)[0]->details->reason);
     }
 
     public function testFiresAreCountedAsCallsPerApp(): void

@@ -12,9 +12,9 @@ use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\MonotonicTime;
 use Stewart\Runtime\Broker\Exposure\ExposureLink;
 use Stewart\Runtime\Config\ServiceCallPolicy;
-use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateFailed;
 use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateRequest;
 use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateResult;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Model\ServiceCallOutcome;
 use Throwable;
 
@@ -53,7 +53,7 @@ final readonly class RegistryEditProxy
                     $this->slots->release($handle);
                 }
 
-                $handle->send($outcome);
+                $handle->send($outcome instanceof RegistryEditException ? RequestFailed::fromException($request->correlationId, $outcome) : $outcome);
                 $this->recordFinishedUpdate($handle, $request, $outcome, $startedAt);
             } catch (Throwable $e) {
                 $this->logger->error('Registry update reply failed', [
@@ -65,7 +65,7 @@ final readonly class RegistryEditProxy
         })->ignore();
     }
 
-    private function updateOnHomeAssistant(RegistryEntityUpdateRequest $request): RegistryEntityUpdateResult|RegistryEntityUpdateFailed
+    private function updateOnHomeAssistant(RegistryEntityUpdateRequest $request): RegistryEntityUpdateResult|RegistryEditException
     {
         try {
             if (!$this->session->isConnected()) {
@@ -76,12 +76,9 @@ final readonly class RegistryEditProxy
 
             return new RegistryEntityUpdateResult($request->correlationId, $this->policy->dryRun ? $this->previewUpdate($request) : $this->sendUpdate($request));
         } catch (RegistryEditException $e) {
-            return RegistryEntityUpdateFailed::fromException($request->correlationId, $e);
+            return $e;
         } catch (Throwable $e) {
-            return RegistryEntityUpdateFailed::fromException(
-                $request->correlationId,
-                RegistryEditException::unreachable($request->entityId, $e->getMessage(), $e),
-            );
+            return RegistryEditException::unreachable($request->entityId, $e->getMessage(), $e);
         }
     }
 
@@ -121,13 +118,13 @@ final readonly class RegistryEditProxy
     private function recordFinishedUpdate(
         WorkerHandle $handle,
         RegistryEntityUpdateRequest $request,
-        RegistryEntityUpdateResult|RegistryEntityUpdateFailed $outcome,
+        RegistryEntityUpdateResult|RegistryEditException $outcome,
         MonotonicTime $startedAt,
     ): void {
         $this->metrics->recordFinishedCall(
             $handle->id,
             $request->scope,
-            $outcome instanceof RegistryEntityUpdateFailed ? ServiceCallOutcome::failedWith($outcome->getReason()) : ServiceCallOutcome::Succeeded,
+            $outcome instanceof RegistryEditException ? ServiceCallOutcome::failedWith($outcome->reason) : ServiceCallOutcome::Succeeded,
             $this->clock->getMonotonicTime()->elapsedSince($startedAt),
         );
     }
@@ -136,7 +133,7 @@ final readonly class RegistryEditProxy
     {
         $this->slots->recordRefusal($handle, $request->scope);
         $this->metrics->recordRefusedCall($handle->id, $request->scope);
-        $handle->send(RegistryEntityUpdateFailed::fromException(
+        $handle->send(RequestFailed::fromException(
             $request->correlationId,
             RegistryEditException::createForReason(RegistryEditError::Overloaded, entityId: $request->entityId->value, detail: $reason),
         ));
