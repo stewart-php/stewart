@@ -14,13 +14,13 @@ final class StoreSetupException extends StewartException
     // The DSN may hold a password, so only its length reaches the message.
     public static function dsnInvalid(#[SensitiveParameter] string $dsn): self
     {
-        return self::createForReason(StoreSetupError::DsnInvalid, ['length' => \strlen($dsn)]);
+        return self::createForReason(StoreSetupError::DsnInvalid, length: \strlen($dsn));
     }
 
     /** @param list<string> $supported */
     public static function schemeUnsupported(string $scheme, array $supported): self
     {
-        return self::createForReason(StoreSetupError::SchemeUnsupported, ['scheme' => $scheme, 'supported' => $supported]);
+        return self::createForReason(StoreSetupError::SchemeUnsupported, scheme: $scheme, supported: $supported);
     }
 
     public static function unknownPeerApp(AppId $appId, ?string $suggestion): self
@@ -34,6 +34,6 @@ final class StoreSetupException extends StewartException
 
     public static function prefixInvalid(string $prefix): self
     {
-        return self::createForReason(StoreSetupError::PrefixInvalid, ['prefix' => $prefix]);
+        return self::createForReason(StoreSetupError::PrefixInvalid, prefix: $prefix);
     }
 }

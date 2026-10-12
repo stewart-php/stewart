@@ -13,52 +13,52 @@ final class ControlException extends StewartException
 {
     public static function socketInUse(string $address): self
     {
-        return self::createForReason(ControlError::SocketInUse, ['address' => $address]);
+        return self::createForReason(ControlError::SocketInUse, address: $address);
     }
 
     public static function socketUnremovable(string $path, Throwable $previous): self
     {
-        return self::createForReason(ControlError::SocketUnremovable, ['path' => $path], $previous);
+        return self::createForReason(ControlError::SocketUnremovable, $previous, path: $path);
     }
 
     public static function socketDirectoryNotCreatable(string $directory, Throwable $previous): self
     {
-        return self::createForReason(ControlError::SocketDirectoryNotCreatable, ['directory' => $directory], $previous);
+        return self::createForReason(ControlError::SocketDirectoryNotCreatable, $previous, directory: $directory);
     }
 
     public static function socketPathNotASocket(string $path): self
     {
-        return self::createForReason(ControlError::SocketPathNotASocket, ['path' => $path]);
+        return self::createForReason(ControlError::SocketPathNotASocket, path: $path);
     }
 
     public static function frameNotJson(Throwable $previous): self
     {
-        return self::createForReason(ControlError::FrameNotJson, [], $previous);
+        return self::createForReason(ControlError::FrameNotJson, $previous);
     }
 
     public static function frameNotAnObject(string $actualType): self
     {
-        return self::createForReason(ControlError::FrameNotAnObject, ['actualType' => $actualType]);
+        return self::createForReason(ControlError::FrameNotAnObject, actualType: $actualType);
     }
 
     public static function frameUnencodable(string $frameClass, Throwable $previous): self
     {
-        return self::createForReason(ControlError::FrameUnencodable, ['frameClass' => $frameClass], $previous);
+        return self::createForReason(ControlError::FrameUnencodable, $previous, frameClass: $frameClass);
     }
 
     public static function frameClassUnknown(string $frameClass): self
     {
-        return self::createForReason(ControlError::FrameClassUnknown, ['frameClass' => $frameClass]);
+        return self::createForReason(ControlError::FrameClassUnknown, frameClass: $frameClass);
     }
 
     public static function frameUndecodable(string $frameType, Throwable $previous): self
     {
-        return self::createForReason(ControlError::FrameUndecodable, ['frameType' => $frameType], $previous);
+        return self::createForReason(ControlError::FrameUndecodable, $previous, frameType: $frameType);
     }
 
     public static function configUnavailable(Throwable $previous): self
     {
-        return self::createForReason(ControlError::ConfigUnavailable, [], $previous);
+        return self::createForReason(ControlError::ConfigUnavailable, $previous);
     }
 
     public static function controlDisabled(): self
@@ -73,17 +73,17 @@ final class ControlException extends StewartException
 
     public static function connectionRejected(string $reason): self
     {
-        return self::createForReason(ControlError::ConnectionRejected, ['reason' => $reason]);
+        return self::createForReason(ControlError::ConnectionRejected, reason: $reason);
     }
 
     public static function unexpectedGreeting(string $frameClass): self
     {
-        return self::createForReason(ControlError::UnexpectedGreeting, ['frameClass' => $frameClass]);
+        return self::createForReason(ControlError::UnexpectedGreeting, frameClass: $frameClass);
     }
 
     public static function protocolMismatch(int $brokerProtocol, int $clientProtocol): self
     {
-        return self::createForReason(ControlError::ProtocolMismatch, ['brokerProtocol' => $brokerProtocol, 'clientProtocol' => $clientProtocol]);
+        return self::createForReason(ControlError::ProtocolMismatch, brokerProtocol: $brokerProtocol, clientProtocol: $clientProtocol);
     }
 
     public static function brokerHungUp(): self
@@ -93,27 +93,27 @@ final class ControlException extends StewartException
 
     public static function unexpectedFrame(string $frameClass, string $expectedFrameClass): self
     {
-        return self::createForReason(ControlError::UnexpectedFrame, ['frameClass' => $frameClass, 'expectedFrameClass' => $expectedFrameClass]);
+        return self::createForReason(ControlError::UnexpectedFrame, frameClass: $frameClass, expectedFrameClass: $expectedFrameClass);
     }
 
     public static function requestTimedOut(Duration $timeout, Throwable $previous): self
     {
-        return self::createForReason(ControlError::RequestTimedOut, ['timeout' => (string) $timeout], $previous);
+        return self::createForReason(ControlError::RequestTimedOut, $previous, timeout: (string) $timeout);
     }
 
     public static function requestUnexpected(string $frameClass): self
     {
-        return self::createForReason(ControlError::RequestUnexpected, ['frameClass' => $frameClass]);
+        return self::createForReason(ControlError::RequestUnexpected, frameClass: $frameClass);
     }
 
     public static function requestFailed(string $reason, string $message): self
     {
-        return self::createForReason(ControlError::RequestFailed, ['reason' => $reason, 'message' => $message]);
+        return self::createForReason(ControlError::RequestFailed, reason: $reason, message: $message);
     }
 
     public static function requestUnanswerable(Throwable $previous): self
     {
-        return self::createForReason(ControlError::RequestUnanswerable, [], $previous);
+        return self::createForReason(ControlError::RequestUnanswerable, $previous);
     }
 
     public function findBrokerReason(): ?string

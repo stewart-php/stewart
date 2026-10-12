@@ -14,7 +14,7 @@ final class TriggerException extends StewartException
 
     public static function configUnencodable(string $path): self
     {
-        return self::createForReason(TriggerError::ConfigUnencodable, ['path' => $path]);
+        return self::createForReason(TriggerError::ConfigUnencodable, path: $path);
     }
 
     public static function listEmpty(): self
@@ -24,7 +24,7 @@ final class TriggerException extends StewartException
 
     public static function timeInvalid(string $time): self
     {
-        return self::createForReason(TriggerError::TimeInvalid, ['time' => $time]);
+        return self::createForReason(TriggerError::TimeInvalid, time: $time);
     }
 
     public static function timePatternEmpty(): self
@@ -39,7 +39,7 @@ final class TriggerException extends StewartException
 
     public static function zoneInvalid(string $zone): self
     {
-        return self::createForReason(TriggerError::ZoneInvalid, ['zone' => $zone]);
+        return self::createForReason(TriggerError::ZoneInvalid, zone: $zone);
     }
 
     public static function variablesNotMap(): self

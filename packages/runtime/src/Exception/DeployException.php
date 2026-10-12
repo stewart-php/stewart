@@ -13,21 +13,21 @@ final class DeployException extends StewartException
 {
     public static function commitIdInvalid(string $value): self
     {
-        return self::createForReason(DeployError::CommitIdInvalid, ['value' => $value]);
+        return self::createForReason(DeployError::CommitIdInvalid, value: $value);
     }
 
     public static function commandTimedOut(string $command, Duration $timeout, Throwable $previous): self
     {
-        return self::createForReason(DeployError::CommandTimedOut, ['command' => $command, 'timeout' => (string) $timeout], $previous);
+        return self::createForReason(DeployError::CommandTimedOut, $previous, command: $command, timeout: (string) $timeout);
     }
 
     public static function commandFailed(string $command, int $exitCode, string $detail): self
     {
-        return self::createForReason(DeployError::CommandFailed, ['command' => $command, 'exitCode' => $exitCode, 'detail' => $detail]);
+        return self::createForReason(DeployError::CommandFailed, command: $command, exitCode: $exitCode, detail: $detail);
     }
 
     public static function prepareOutputUnexpected(string $output): self
     {
-        return self::createForReason(DeployError::PrepareOutputUnexpected, ['output' => $output]);
+        return self::createForReason(DeployError::PrepareOutputUnexpected, output: $output);
     }
 }

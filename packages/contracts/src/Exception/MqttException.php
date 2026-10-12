@@ -11,12 +11,12 @@ final class MqttException extends StewartException
 {
     public static function topicInvalid(string $topic): self
     {
-        return self::createForReason(MqttError::TopicInvalid, ['topic' => $topic]);
+        return self::createForReason(MqttError::TopicInvalid, topic: $topic);
     }
 
     public static function payloadUnencodable(string $topic, Throwable $previous): self
     {
-        return self::createForReason(MqttError::PayloadUnencodable, ['topic' => $topic], $previous);
+        return self::createForReason(MqttError::PayloadUnencodable, $previous, topic: $topic);
     }
 
     public static function notConfigured(): self
@@ -26,11 +26,11 @@ final class MqttException extends StewartException
 
     public static function publishFailed(string $topic, Throwable $previous): self
     {
-        return self::createForReason(MqttError::PublishFailed, ['topic' => $topic], $previous);
+        return self::createForReason(MqttError::PublishFailed, $previous, topic: $topic);
     }
 
     public static function payloadNotJson(string $topic, Throwable $previous): self
     {
-        return self::createForReason(MqttError::PayloadNotJson, ['topic' => $topic], $previous);
+        return self::createForReason(MqttError::PayloadNotJson, $previous, topic: $topic);
     }
 }

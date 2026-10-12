@@ -13,17 +13,17 @@ final class HaClientException extends StewartException
 {
     public static function closedLocally(string $phase): self
     {
-        return self::createForReason(HaClientError::ClosedLocally, ['phase' => $phase]);
+        return self::createForReason(HaClientError::ClosedLocally, phase: $phase);
     }
 
     public static function connectTimedOut(string $url, Duration $timeout, ?Throwable $previous = null): self
     {
-        return self::createForReason(HaClientError::ConnectTimedOut, ['url' => $url, 'timeout' => (string) $timeout], $previous);
+        return self::createForReason(HaClientError::ConnectTimedOut, $previous, url: $url, timeout: (string) $timeout);
     }
 
     public static function connectFailed(string $url, Throwable $previous): self
     {
-        return self::createForReason(HaClientError::ConnectFailed, ['url' => $url], $previous);
+        return self::createForReason(HaClientError::ConnectFailed, $previous, url: $url);
     }
 
     public static function notConnected(): self
@@ -33,7 +33,7 @@ final class HaClientException extends StewartException
 
     public static function sendFailed(string $command, Throwable $previous): self
     {
-        return self::createForReason(HaClientError::SendFailed, ['command' => $command], $previous);
+        return self::createForReason(HaClientError::SendFailed, $previous, command: $command);
     }
 
     public static function closedDuringAuthentication(): self
@@ -43,7 +43,7 @@ final class HaClientException extends StewartException
 
     public static function connectionDropped(string $detail, ?Throwable $previous = null): self
     {
-        return self::createForReason(HaClientError::ConnectionDropped, ['detail' => $detail], $previous);
+        return self::createForReason(HaClientError::ConnectionDropped, $previous, detail: $detail);
     }
 
     public static function messageTooLarge(): self
@@ -53,47 +53,47 @@ final class HaClientException extends StewartException
 
     public static function protocolViolation(string $detail, ?Throwable $previous = null): self
     {
-        return self::createForReason(HaClientError::ProtocolViolation, ['detail' => $detail], $previous);
+        return self::createForReason(HaClientError::ProtocolViolation, $previous, detail: $detail);
     }
 
     public static function commandTimedOut(string $command, Duration $timeout, Throwable $previous): self
     {
-        return self::createForReason(HaClientError::CommandTimedOut, ['command' => $command, 'timeout' => (string) $timeout], $previous);
+        return self::createForReason(HaClientError::CommandTimedOut, $previous, command: $command, timeout: (string) $timeout);
     }
 
     public static function commandRejected(string $command, string $detail, ?string $errorCode): self
     {
-        return self::createForReason(HaClientError::CommandRejected, ['command' => $command, 'detail' => $detail, 'errorCode' => $errorCode]);
+        return self::createForReason(HaClientError::CommandRejected, command: $command, detail: $detail, errorCode: $errorCode);
     }
 
     public static function commandUnauthorized(string $command, string $detail, string $errorCode): self
     {
-        return self::createForReason(HaClientError::CommandUnauthorized, ['command' => $command, 'detail' => $detail, 'errorCode' => $errorCode]);
+        return self::createForReason(HaClientError::CommandUnauthorized, command: $command, detail: $detail, errorCode: $errorCode);
     }
 
     public static function commandUnencodable(string $command, Throwable $previous): self
     {
-        return self::createForReason(HaClientError::CommandUnencodable, ['command' => $command, 'detail' => 'could not be encoded: ' . $previous->getMessage()], $previous);
+        return self::createForReason(HaClientError::CommandUnencodable, $previous, command: $command, detail: 'could not be encoded: ' . $previous->getMessage());
     }
 
     public static function unexpectedGreeting(string $receivedType): self
     {
-        return self::createForReason(HaClientError::UnexpectedGreeting, ['receivedType' => $receivedType]);
+        return self::createForReason(HaClientError::UnexpectedGreeting, receivedType: $receivedType);
     }
 
     public static function tokenRejected(string $reason): self
     {
-        return self::createForReason(HaClientError::TokenRejected, ['reason' => $reason]);
+        return self::createForReason(HaClientError::TokenRejected, reason: $reason);
     }
 
     public static function administratorRequired(Throwable $previous): self
     {
-        return self::createForReason(HaClientError::AdministratorRequired, [], $previous);
+        return self::createForReason(HaClientError::AdministratorRequired, $previous);
     }
 
     public static function eventBacklogExceeded(int $limit): self
     {
-        return self::createForReason(HaClientError::EventBacklogExceeded, ['limit' => $limit]);
+        return self::createForReason(HaClientError::EventBacklogExceeded, limit: $limit);
     }
 
     public static function eventQueueReentered(): self
@@ -103,12 +103,12 @@ final class HaClientException extends StewartException
 
     public static function urlInvalid(string $url): self
     {
-        return self::createForReason(HaClientError::UrlInvalid, ['url' => $url]);
+        return self::createForReason(HaClientError::UrlInvalid, url: $url);
     }
 
     public static function componentInstanceInvalid(string $instance): self
     {
-        return self::createForReason(HaClientError::ComponentInstanceInvalid, ['instance' => $instance]);
+        return self::createForReason(HaClientError::ComponentInstanceInvalid, instance: $instance);
     }
 
     public function findDetail(): ?string

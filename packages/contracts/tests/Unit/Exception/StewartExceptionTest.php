@@ -17,7 +17,7 @@ final class StewartExceptionTest extends TestCase
 {
     public function testTemplateWithoutPlaceholdersLeavesContextNull(): void
     {
-        $exception = SampleException::createForSampleReason(SampleError::Plain);
+        $exception = SampleException::createForReason(SampleError::Plain);
 
         self::assertSame('Nothing to fill.', $exception->getMessage());
         self::assertSame(SampleError::Plain, $exception->reason);
@@ -26,19 +26,17 @@ final class StewartExceptionTest extends TestCase
 
     public function testPlaceholdersRenderContextValues(): void
     {
-        $context = ['key' => 'k', 'count' => 3, 'flag' => false, 'items' => ['a', 'b'], 'absent' => null];
-
-        $exception = SampleException::createForSampleReason(SampleError::Placeholders, $context);
+        $exception = SampleException::createForReason(SampleError::Placeholders, key: 'k', count: 3, flag: false, items: ['a', 'b'], absent: null);
 
         self::assertSame('Key "k", count 3, flag false, list a, b, missing none.', $exception->getMessage());
-        self::assertSame($context, $exception->context);
+        self::assertSame(['key' => 'k', 'count' => 3, 'flag' => false, 'items' => ['a', 'b'], 'absent' => null], $exception->context);
     }
 
     public function testCauseComesFromPreviousAndStaysOutOfContext(): void
     {
         $previous = new RuntimeException('disk full');
 
-        $exception = SampleException::createForSampleReason(SampleError::Caused, [], $previous);
+        $exception = SampleException::createForReason(SampleError::Caused, $previous);
 
         self::assertSame('Failed: disk full', $exception->getMessage());
         self::assertSame($previous, $exception->getPrevious());
@@ -50,13 +48,23 @@ final class StewartExceptionTest extends TestCase
         $this->expectException(LogicException::class);
         $this->expectExceptionMessageIsOrContains('{key}');
 
-        SampleException::createForSampleReason(SampleError::Placeholders);
+        // @phpstan-ignore stewart.exceptionContextMismatch
+        SampleException::createForReason(SampleError::Placeholders);
     }
 
     public function testCauseWithoutPreviousIsAProgrammerError(): void
     {
         $this->expectException(LogicException::class);
 
-        SampleException::createForSampleReason(SampleError::Caused);
+        // @phpstan-ignore stewart.exceptionContextMismatch
+        SampleException::createForReason(SampleError::Caused);
+    }
+
+    public function testPositionalContextIsAProgrammerError(): void
+    {
+        $this->expectException(LogicException::class);
+
+        // @phpstan-ignore stewart.exceptionContextMismatch
+        SampleException::createForReason(SampleError::Plain, null, 'unnamed');
     }
 }

@@ -14,41 +14,41 @@ final class AppException extends StewartException
 {
     public static function duplicateId(AppId $appId, string $firstClass, string $secondClass): self
     {
-        return self::createForReason(AppError::DuplicateId, ['appId' => $appId->value, 'firstClass' => $firstClass, 'secondClass' => $secondClass]);
+        return self::createForReason(AppError::DuplicateId, appId: $appId->value, firstClass: $firstClass, secondClass: $secondClass);
     }
 
     public static function directoryNotAutoloadable(string $directory): self
     {
-        return self::createForReason(AppError::DirectoryNotAutoloadable, ['directory' => $directory]);
+        return self::createForReason(AppError::DirectoryNotAutoloadable, directory: $directory);
     }
 
     public static function notAnApp(string $className, string $appInterface): self
     {
-        return self::createForReason(AppError::NotAnApp, ['className' => $className, 'appInterface' => $appInterface]);
+        return self::createForReason(AppError::NotAnApp, className: $className, appInterface: $appInterface);
     }
 
     public static function notInstantiable(string $className): self
     {
-        return self::createForReason(AppError::NotInstantiable, ['className' => $className]);
+        return self::createForReason(AppError::NotInstantiable, className: $className);
     }
 
     public static function idInvalid(string $className, string $appId): self
     {
-        return self::createForReason(AppError::IdInvalid, ['className' => $className, 'appId' => $appId]);
+        return self::createForReason(AppError::IdInvalid, className: $className, appId: $appId);
     }
 
     public static function initializeTimedOut(AppId $appId, Duration $timeout, ?Throwable $previous = null): self
     {
-        return self::createForReason(AppError::InitializeTimedOut, ['appId' => $appId->value, 'timeout' => (string) $timeout], $previous);
+        return self::createForReason(AppError::InitializeTimedOut, $previous, appId: $appId->value, timeout: (string) $timeout);
     }
 
     public static function unknown(AppId $appId): self
     {
-        return self::createForReason(AppError::Unknown, ['appId' => $appId->value]);
+        return self::createForReason(AppError::Unknown, appId: $appId->value);
     }
 
     public static function disabled(AppId $appId): self
     {
-        return self::createForReason(AppError::Disabled, ['appId' => $appId->value]);
+        return self::createForReason(AppError::Disabled, appId: $appId->value);
     }
 }

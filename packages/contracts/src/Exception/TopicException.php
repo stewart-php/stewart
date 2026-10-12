@@ -11,11 +11,11 @@ final class TopicException extends StewartException
 {
     public static function payloadInvalid(string $path, string $actualType): self
     {
-        return self::createForReason(TopicError::PayloadInvalid, ['path' => $path, 'actualType' => $actualType]);
+        return self::createForReason(TopicError::PayloadInvalid, path: $path, actualType: $actualType);
     }
 
     public static function publishFailed(string $topic, Throwable $previous): self
     {
-        return self::createForReason(TopicError::PublishFailed, ['topic' => $topic], $previous);
+        return self::createForReason(TopicError::PublishFailed, $previous, topic: $topic);
     }
 }

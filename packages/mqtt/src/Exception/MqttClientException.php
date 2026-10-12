@@ -13,12 +13,12 @@ final class MqttClientException extends StewartException
 {
     public static function connectionRefused(string $refusal): self
     {
-        return self::createForReason(MqttClientError::ConnectionRefused, ['refusal' => $refusal]);
+        return self::createForReason(MqttClientError::ConnectionRefused, refusal: $refusal);
     }
 
     public static function connectionLost(Throwable $previous): self
     {
-        return self::createForReason(MqttClientError::ConnectionLost, [], $previous);
+        return self::createForReason(MqttClientError::ConnectionLost, $previous);
     }
 
     public static function connectionClosed(): self
@@ -28,17 +28,17 @@ final class MqttClientException extends StewartException
 
     public static function keepaliveTimedOut(Duration $keepalive): self
     {
-        return self::createForReason(MqttClientError::KeepaliveTimedOut, ['keepalive' => (string) $keepalive]);
+        return self::createForReason(MqttClientError::KeepaliveTimedOut, keepalive: (string) $keepalive);
     }
 
     public static function packetMalformed(string $packetType): self
     {
-        return self::createForReason(MqttClientError::PacketMalformed, ['packetType' => $packetType]);
+        return self::createForReason(MqttClientError::PacketMalformed, packetType: $packetType);
     }
 
     public static function packetUnexpected(string $packetType): self
     {
-        return self::createForReason(MqttClientError::PacketUnexpected, ['packetType' => $packetType]);
+        return self::createForReason(MqttClientError::PacketUnexpected, packetType: $packetType);
     }
 
     public static function packetIdsExhausted(): self

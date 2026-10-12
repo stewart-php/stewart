@@ -9,22 +9,22 @@ final class TimeException extends StewartException
 {
     public static function durationNegative(int $microseconds): self
     {
-        return self::createForReason(TimeError::DurationNegative, ['microseconds' => $microseconds]);
+        return self::createForReason(TimeError::DurationNegative, microseconds: $microseconds);
     }
 
     public static function durationNotFinite(float $amount): self
     {
-        return self::createForReason(TimeError::DurationNotFinite, ['amount' => var_export($amount, true)]);
+        return self::createForReason(TimeError::DurationNotFinite, amount: var_export($amount, true));
     }
 
     public static function durationUnparsable(string $text): self
     {
-        return self::createForReason(TimeError::DurationUnparsable, ['text' => $text]);
+        return self::createForReason(TimeError::DurationUnparsable, text: $text);
     }
 
     public static function instantUnparsable(string $text): self
     {
-        return self::createForReason(TimeError::InstantUnparsable, ['text' => $text]);
+        return self::createForReason(TimeError::InstantUnparsable, text: $text);
     }
 
     public static function durationTooLarge(): self
@@ -34,6 +34,6 @@ final class TimeException extends StewartException
 
     public static function durationNotPositive(string $usage): self
     {
-        return self::createForReason(TimeError::DurationNotPositive, ['usage' => $usage]);
+        return self::createForReason(TimeError::DurationNotPositive, usage: $usage);
     }
 }

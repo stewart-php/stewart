@@ -16,35 +16,39 @@ final class ContainerException extends StewartException
     {
         return self::createForReason(
             ContainerError::ServiceTypeMismatch,
-            ['serviceId' => $serviceId, 'expectedType' => $expectedType, 'actualType' => $actualType],
+            serviceId: $serviceId,
+            expectedType: $expectedType,
+            actualType: $actualType,
         );
     }
 
     public static function buildFailed(WorkerId $workerId, Throwable $previous): self
     {
-        return self::createForReason(ContainerError::BuildFailed, ['workerId' => $workerId->value], $previous);
+        return self::createForReason(ContainerError::BuildFailed, $previous, workerId: $workerId->value);
     }
 
     public static function appInServicesFile(string $serviceId, string $class): self
     {
-        return self::createForReason(ContainerError::AppInServicesFile, ['serviceId' => $serviceId, 'class' => $class]);
+        return self::createForReason(ContainerError::AppInServicesFile, serviceId: $serviceId, class: $class);
     }
 
     public static function peerStoreWritable(string $class, string $parameter): self
     {
-        return self::createForReason(ContainerError::PeerStoreWritable, ['class' => $class, 'parameter' => $parameter]);
+        return self::createForReason(ContainerError::PeerStoreWritable, class: $class, parameter: $parameter);
     }
 
     public static function peerStoreAppIdInvalid(string $class, string $parameter, Throwable $previous): self
     {
-        return self::createForReason(ContainerError::PeerStoreAppIdInvalid, ['class' => $class, 'parameter' => $parameter], $previous);
+        return self::createForReason(ContainerError::PeerStoreAppIdInvalid, $previous, class: $class, parameter: $parameter);
     }
 
     public static function messageHandlerDuplicated(string $messageClass, string $firstHandler, string $secondHandler): self
     {
         return self::createForReason(
             ContainerError::MessageHandlerDuplicated,
-            ['messageClass' => $messageClass, 'firstHandler' => $firstHandler, 'secondHandler' => $secondHandler],
+            messageClass: $messageClass,
+            firstHandler: $firstHandler,
+            secondHandler: $secondHandler,
         );
     }
 
@@ -52,7 +56,10 @@ final class ContainerException extends StewartException
     {
         return self::createForReason(
             ContainerError::AppOptionInvalid,
-            ['appId' => $appId, 'option' => $option, 'value' => $value, 'expectedType' => $expectedType],
+            appId: $appId,
+            option: $option,
+            value: $value,
+            expectedType: $expectedType,
         );
     }
 
@@ -67,7 +74,7 @@ final class ContainerException extends StewartException
 
     public static function appOptionMissing(AppId $appId, string $option, string $class): self
     {
-        return self::createForReason(ContainerError::AppOptionMissing, ['appId' => $appId->value, 'option' => $option, 'class' => $class]);
+        return self::createForReason(ContainerError::AppOptionMissing, appId: $appId->value, option: $option, class: $class);
     }
 
     /** @param list<string> $parameters */
@@ -75,7 +82,10 @@ final class ContainerException extends StewartException
     {
         return self::createForReason(
             ContainerError::AppOptionAmbiguous,
-            ['appId' => $appId->value, 'option' => $option, 'class' => $class, 'parameters' => implode(', ', array_map(static fn(string $name): string => '$' . $name, $parameters))],
+            appId: $appId->value,
+            option: $option,
+            class: $class,
+            parameters: implode(', ', array_map(static fn(string $name): string => '$' . $name, $parameters)),
         );
     }
 
@@ -83,22 +93,26 @@ final class ContainerException extends StewartException
     {
         return self::createForReason(
             ContainerError::AppOptionRepeated,
-            ['appId' => $appId->value, 'parameter' => $parameter, 'class' => $class, 'firstOption' => $firstOption, 'secondOption' => $secondOption],
+            appId: $appId->value,
+            parameter: $parameter,
+            class: $class,
+            firstOption: $firstOption,
+            secondOption: $secondOption,
         );
     }
 
     public static function appBuildFailed(AppId $appId, Throwable $previous): self
     {
-        return self::createForReason(ContainerError::AppBuildFailed, ['appId' => $appId->value], $previous);
+        return self::createForReason(ContainerError::AppBuildFailed, $previous, appId: $appId->value);
     }
 
     public static function appClassMissing(AppId $appId, string $class): self
     {
-        return self::createForReason(ContainerError::AppClassMissing, ['appId' => $appId->value, 'class' => $class]);
+        return self::createForReason(ContainerError::AppClassMissing, appId: $appId->value, class: $class);
     }
 
     public static function servicesFileMissing(string $path): self
     {
-        return self::createForReason(ContainerError::ServicesFileMissing, ['path' => $path]);
+        return self::createForReason(ContainerError::ServicesFileMissing, path: $path);
     }
 }

@@ -9,16 +9,16 @@ final class SelectorException extends StewartException
 {
     public static function empty(string $selectorKind): self
     {
-        return self::createForReason(SelectorError::Empty, ['selectorKind' => $selectorKind]);
+        return self::createForReason(SelectorError::Empty, selectorKind: $selectorKind);
     }
 
     public static function regexInvalid(string $pattern, string $compileError): self
     {
-        return self::createForReason(SelectorError::RegexInvalid, ['pattern' => $pattern, 'compileError' => $compileError]);
+        return self::createForReason(SelectorError::RegexInvalid, pattern: $pattern, compileError: $compileError);
     }
 
     public static function mqttFilterInvalid(string $filter): self
     {
-        return self::createForReason(SelectorError::MqttFilterInvalid, ['filter' => $filter]);
+        return self::createForReason(SelectorError::MqttFilterInvalid, filter: $filter);
     }
 }

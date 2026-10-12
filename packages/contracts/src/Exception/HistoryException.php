@@ -17,12 +17,12 @@ final class HistoryException extends StewartException
 {
     public static function windowInvalid(Instant $startsAt, Instant $endsAt): self
     {
-        return self::createForReason(HistoryError::WindowInvalid, ['startsAt' => (string) $startsAt, 'endsAt' => (string) $endsAt]);
+        return self::createForReason(HistoryError::WindowInvalid, startsAt: (string) $startsAt, endsAt: (string) $endsAt);
     }
 
     public static function recorderUnavailable(EntityId $entityId, ?Throwable $previous = null): self
     {
-        return self::createForReason(HistoryError::RecorderUnavailable, ['entityId' => $entityId->value], $previous);
+        return self::createForReason(HistoryError::RecorderUnavailable, $previous, entityId: $entityId->value);
     }
 
     public static function rejected(EntityId $entityId, string $detail, ?string $errorCode = null, ?Throwable $previous = null): self
@@ -37,12 +37,12 @@ final class HistoryException extends StewartException
 
     public static function unreachable(EntityId $entityId, string $detail, ?Throwable $previous = null): self
     {
-        return self::createForReason(HistoryError::Unreachable, ['entityId' => $entityId->value, 'detail' => $detail], $previous);
+        return self::createForReason(HistoryError::Unreachable, $previous, entityId: $entityId->value, detail: $detail);
     }
 
     public static function timedOut(EntityId $entityId, string $detail, ?Throwable $previous = null): self
     {
-        return self::createForReason(HistoryError::TimedOut, ['entityId' => $entityId->value, 'detail' => $detail], $previous);
+        return self::createForReason(HistoryError::TimedOut, $previous, entityId: $entityId->value, detail: $detail);
     }
 
     /** @param ExceptionContext|null $context */

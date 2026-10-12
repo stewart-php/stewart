@@ -94,3 +94,4 @@ rules:
     - Stewart\Tests\Architecture\NoRawTimeValueRule
     - Stewart\Tests\Architecture\MethodNameRule
     - Stewart\Tests\Architecture\TypedCollectionRule
+    - Stewart\Tests\Architecture\ExceptionContextRule
