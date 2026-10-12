@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Testing\HaContext;
 
 use Stewart\Contracts\Trigger\TriggerEvent;
-use Stewart\Contracts\Trigger\TriggerSpec;
+use Stewart\Support\Wire\TriggerSpec;
 
 final readonly class PushedTrigger
 {

@@ -7,11 +7,11 @@ namespace Stewart\Runtime\Json;
 use Closure;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
-use Stewart\Contracts\Exception\JsonShapeException;
 use Stewart\Contracts\Registry\AreaId;
 use Stewart\Contracts\Registry\DeviceId;
 use Stewart\Contracts\Registry\FloorId;
 use Stewart\Contracts\Registry\LabelId;
+use Stewart\Support\Exception\JsonShapeException;
 use Stringable;
 
 /** @template T of Stringable */

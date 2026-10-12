@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Ipc\Message;
 
-use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionId;
+use Stewart\Support\Wire\TriggerSpec;
 
 #[IpcMessage(tag: 'subscribe_trigger')]
 final readonly class SubscribeTrigger implements WorkerMessage

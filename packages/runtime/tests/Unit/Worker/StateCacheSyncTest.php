@@ -10,13 +10,13 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
-use Stewart\Contracts\State\Collection\StateChangeCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\State\StateChangeOrigin;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Worker\StateCacheSync;
+use Stewart\Support\State\Collection\StateChangeCollection;
 use Stewart\Testing\Logging\RecordingLogger;
 
 #[CoversClass(StateCacheSync::class)]

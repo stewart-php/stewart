@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Json;
 
-use Stewart\Contracts\Exception\JsonShapeError;
-use Stewart\Contracts\Exception\JsonShapeException;
 use Stewart\Contracts\Exception\TimeException;
 use Stewart\Contracts\Time\Instant;
+use Stewart\Support\Exception\JsonShapeError;
+use Stewart\Support\Exception\JsonShapeException;
 
 final readonly class IsoInstantConverter implements ValueConverter
 {

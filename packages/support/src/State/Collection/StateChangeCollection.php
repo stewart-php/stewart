@@ -2,10 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\State\Collection;
+namespace Stewart\Support\State\Collection;
 
 use Stewart\Contracts\Collection\ListCollection;
 use Stewart\Contracts\State\StateChange;
 
-/** @extends ListCollection<StateChange> */
+/**
+ * @internal
+ * @extends ListCollection<StateChange>
+ */
 final readonly class StateChangeCollection extends ListCollection {}

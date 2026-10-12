@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Broker\Trigger;
 
-use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Broker\SubscriptionRegistry;
 use Stewart\Runtime\Broker\WorkerSlotRegistry;
 use Stewart\Runtime\Ipc\Message\SubscriptionAck;
 use Stewart\Runtime\Model\SubscriptionKind;
+use Stewart\Support\Wire\TriggerSpec;
 
 final readonly class TriggerRejections
 {

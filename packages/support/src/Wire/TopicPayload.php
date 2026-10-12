@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Topic;
+namespace Stewart\Support\Wire;
 
 use Stewart\Contracts\Exception\TopicError;
 use Stewart\Contracts\Exception\TopicException;
 
+/** @internal */
 final readonly class TopicPayload
 {
     /**

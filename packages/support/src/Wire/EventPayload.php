@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Event;
+namespace Stewart\Support\Wire;
 
 use Stewart\Contracts\Exception\EventFireError;
 use Stewart\Contracts\Exception\EventFireException;
 
+/** @internal */
 final readonly class EventPayload
 {
     private const string VALID_EVENT_TYPE_PATTERN = '/\A.{1,64}\z/su';

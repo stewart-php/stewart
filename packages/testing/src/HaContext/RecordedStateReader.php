@@ -9,7 +9,7 @@ use Stewart\Contracts\Registry\EntityFilter;
 use Stewart\Contracts\Selector\Collection\SelectorCollection;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
-use Stewart\Contracts\State\CurrentStateReader;
+use Stewart\Support\State\CurrentStateReader;
 
 final readonly class RecordedStateReader implements CurrentStateReader
 {

@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Tests\Unit\Event;
+namespace Stewart\Support\Tests\Unit\Wire;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use stdClass;
-use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\Exception\EventFireError;
 use Stewart\Contracts\Exception\EventFireException;
+use Stewart\Support\Wire\EventPayload;
 use Stewart\Testing\Exception\AssertsReason;
 
 #[CoversClass(EventPayload::class)]

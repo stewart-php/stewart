@@ -7,8 +7,8 @@ namespace Stewart\Runtime\State;
 use Stewart\Contracts\Registry\EntityFilter;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
-use Stewart\Contracts\State\CurrentStateReader;
 use Stewart\Runtime\Registry\RegistryCache;
+use Stewart\Support\State\CurrentStateReader;
 
 final readonly class CachedStateReader implements CurrentStateReader
 {

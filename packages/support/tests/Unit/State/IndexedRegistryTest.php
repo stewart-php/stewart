@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Tests\Unit\Registry;
+namespace Stewart\Support\Tests\Unit\State;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Registry\EntityPlacement;
-use Stewart\Contracts\Registry\IndexedRegistry;
-use Stewart\Contracts\Tests\Fixtures\Registry\RegistryFixture;
+use Stewart\Support\State\IndexedRegistry;
+use Stewart\Support\Tests\Fixtures\Registry\RegistryFixture;
 
 #[CoversClass(IndexedRegistry::class)]
 #[CoversClass(EntityPlacement::class)]

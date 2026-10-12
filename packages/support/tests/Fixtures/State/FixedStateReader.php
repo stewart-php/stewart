@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Stewart\Support\Tests\Fixtures\State;
 
 use Stewart\Contracts\State\Collection\EntityStateCollection;
-use Stewart\Contracts\State\CurrentStateReader;
 use Stewart\Contracts\State\EntityState;
+use Stewart\Support\State\CurrentStateReader;
 
 final class FixedStateReader implements CurrentStateReader
 {

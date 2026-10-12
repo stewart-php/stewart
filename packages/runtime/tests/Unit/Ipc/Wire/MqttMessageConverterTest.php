@@ -7,10 +7,10 @@ namespace Stewart\Runtime\Tests\Unit\Ipc\Wire;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Stewart\Contracts\Exception\JsonShapeError;
 use Stewart\Contracts\Mqtt\MqttMessage;
 use Stewart\Contracts\Mqtt\MqttQos;
 use Stewart\Runtime\Ipc\Wire\MqttMessageConverter;
+use Stewart\Support\Exception\JsonShapeError;
 use Stewart\Testing\Exception\AssertsReason;
 
 #[CoversClass(MqttMessageConverter::class)]

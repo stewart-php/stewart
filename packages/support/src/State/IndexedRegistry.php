@@ -2,16 +2,28 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Registry;
+namespace Stewart\Support\State;
 
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Registry\Area;
+use Stewart\Contracts\Registry\AreaId;
 use Stewart\Contracts\Registry\Collection\AreaCollection;
 use Stewart\Contracts\Registry\Collection\DeviceCollection;
 use Stewart\Contracts\Registry\Collection\FloorCollection;
 use Stewart\Contracts\Registry\Collection\LabelCollection;
 use Stewart\Contracts\Registry\Collection\LabelIdCollection;
 use Stewart\Contracts\Registry\Collection\RegisteredEntityCollection;
+use Stewart\Contracts\Registry\Device;
+use Stewart\Contracts\Registry\DeviceId;
+use Stewart\Contracts\Registry\EntityPlacement;
+use Stewart\Contracts\Registry\Floor;
+use Stewart\Contracts\Registry\FloorId;
+use Stewart\Contracts\Registry\Label;
+use Stewart\Contracts\Registry\LabelId;
+use Stewart\Contracts\Registry\RegisteredEntity;
+use Stewart\Contracts\Registry\Registry;
 
+/** @internal */
 final readonly class IndexedRegistry implements Registry
 {
     /** @var array<string, EntityPlacement> */

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Tests\Unit\Service;
+namespace Stewart\Support\Tests\Unit\Wire;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Stewart\Contracts\Service\ServiceFields;
+use Stewart\Support\Wire\ServiceFields;
 
 #[CoversClass(ServiceFields::class)]
 final class ServiceFieldsTest extends TestCase

@@ -8,11 +8,11 @@ use Closure;
 use Stewart\Contracts\EventStream;
 use Stewart\Contracts\Exception\StateError;
 use Stewart\Contracts\Exception\StateException;
-use Stewart\Contracts\State\CurrentStateReader;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Timers;
+use Stewart\Support\State\CurrentStateReader;
 
 /**
  * @internal

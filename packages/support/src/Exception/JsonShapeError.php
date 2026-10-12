@@ -2,8 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Exception;
+namespace Stewart\Support\Exception;
 
+use Stewart\Contracts\Exception\ExceptionReason;
+
+/** @internal */
 enum JsonShapeError: string implements ExceptionReason
 {
     case WrongType = 'wrong_type';

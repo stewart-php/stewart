@@ -16,7 +16,6 @@ use Stewart\Contracts\Sun\GeoLocation;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\MonotonicTime;
 use Stewart\Contracts\Trigger\TriggerEvent;
-use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Broker\Component\ComponentSession;
 use Stewart\Runtime\Broker\Exposure\ExposureLink;
 use Stewart\Runtime\Broker\Trigger\HaTriggerLink;
@@ -24,6 +23,7 @@ use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
 use Stewart\Runtime\Ipc\Wire\RegistryFragment;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\StateCache;
+use Stewart\Support\Wire\TriggerSpec;
 use Throwable;
 
 use function Amp\async;

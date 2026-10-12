@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Tests\Unit\Topic;
+namespace Stewart\Support\Tests\Unit\Wire;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 use stdClass;
 use Stewart\Contracts\Exception\TopicError;
 use Stewart\Contracts\Exception\TopicException;
-use Stewart\Contracts\Topic\TopicPayload;
+use Stewart\Support\Wire\TopicPayload;
 use Stewart\Testing\Exception\AssertsReason;
 
 #[CoversClass(TopicPayload::class)]

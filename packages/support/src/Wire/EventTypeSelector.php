@@ -2,14 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Event;
+namespace Stewart\Support\Wire;
 
+use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\Exception\SelectorException;
 use Stewart\Contracts\Exception\StateError;
 use Stewart\Contracts\Exception\StateException;
 use Stewart\Contracts\Selector\Collection\SelectorCollection;
 use Stewart\Contracts\Selector\Selector;
 
+/** @internal */
 final readonly class EventTypeSelector
 {
     private function __construct(public Selector $selector) {}

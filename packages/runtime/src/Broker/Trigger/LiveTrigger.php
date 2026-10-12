@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Broker\Trigger;
 
-use Stewart\Contracts\Trigger\TriggerSpec;
+use Stewart\Support\Wire\TriggerSpec;
 
 final class LiveTrigger
 {

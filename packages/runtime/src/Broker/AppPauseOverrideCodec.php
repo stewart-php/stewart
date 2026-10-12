@@ -6,13 +6,13 @@ namespace Stewart\Runtime\Broker;
 
 use JsonException;
 use Stewart\Contracts\App\AppId;
-use Stewart\Contracts\Exception\JsonShapeException;
 use Stewart\Contracts\Exception\StewartException;
 use Stewart\Runtime\App\AppPauseOverride;
 use Stewart\Runtime\Json\ClassShapeReader;
 use Stewart\Runtime\Json\Collection\ValueConverterCollection;
 use Stewart\Runtime\Json\IsoInstantConverter;
 use Stewart\Runtime\Json\WireMapper;
+use Stewart\Support\Exception\JsonShapeException;
 use Stewart\Support\Json\JsonDecoder;
 
 final readonly class AppPauseOverrideCodec

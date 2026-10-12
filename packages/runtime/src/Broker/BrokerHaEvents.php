@@ -9,7 +9,6 @@ use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Trigger\TriggerEvent;
-use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Broker\Exposure\ExposedEntityCommand;
 use Stewart\Runtime\Broker\Exposure\ExposedEntitySync;
 use Stewart\Runtime\Broker\Exposure\ExposureCommandRouter;
@@ -18,6 +17,7 @@ use Stewart\Runtime\Ipc\Message\ExposedEntitySynced;
 use Stewart\Runtime\Ipc\Message\HaConnectionLost;
 use Stewart\Runtime\Ipc\Message\StateResynced;
 use Stewart\Runtime\Model\ResourceScope;
+use Stewart\Support\Wire\TriggerSpec;
 use Throwable;
 
 final readonly class BrokerHaEvents implements HaSessionListener

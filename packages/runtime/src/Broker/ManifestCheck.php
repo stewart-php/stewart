@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Broker;
 
-use Stewart\Contracts\Generated\GeneratedFormat;
 use Stewart\Contracts\Generated\Manifest;
 use Stewart\Runtime\App\GeneratedRoots;
 use Stewart\Runtime\Config\CodegenConfig;
+use Stewart\Support\Wire\GeneratedFormat;
 
 final readonly class ManifestCheck
 {

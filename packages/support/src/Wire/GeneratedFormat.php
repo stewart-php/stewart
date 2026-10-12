@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Generated;
+namespace Stewart\Support\Wire;
 
+/** @internal */
 final class GeneratedFormat
 {
     public const int VERSION = 6;

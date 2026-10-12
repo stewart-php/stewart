@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Stewart\Support\Stream;
 
 use Closure;
-use Stewart\Contracts\State\CurrentStateReader;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Subscription;
+use Stewart\Support\State\CurrentStateReader;
 
 /**
  * @internal

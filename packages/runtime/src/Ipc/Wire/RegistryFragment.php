@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Ipc\Wire;
 
-use Stewart\Contracts\Exception\JsonShapeException;
 use Stewart\Contracts\Registry\Area;
 use Stewart\Contracts\Registry\Collection\AreaCollection;
 use Stewart\Contracts\Registry\Collection\DeviceCollection;
@@ -13,11 +12,12 @@ use Stewart\Contracts\Registry\Collection\LabelCollection;
 use Stewart\Contracts\Registry\Collection\RegisteredEntityCollection;
 use Stewart\Contracts\Registry\Device;
 use Stewart\Contracts\Registry\Floor;
-use Stewart\Contracts\Registry\IndexedRegistry;
 use Stewart\Contracts\Registry\Label;
 use Stewart\Contracts\Registry\RegisteredEntity;
 use Stewart\Runtime\Json\JsonFragment;
 use Stewart\Runtime\Json\WireMapper;
+use Stewart\Support\Exception\JsonShapeException;
+use Stewart\Support\State\IndexedRegistry;
 
 final class RegistryFragment implements JsonFragment
 {

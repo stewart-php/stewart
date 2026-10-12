@@ -8,7 +8,7 @@ use PHPUnit\Framework\Assert;
 use Stewart\Codegen\Output\FileChange;
 use Stewart\Codegen\Output\FileOutcome;
 use Stewart\Codegen\Snapshot\Snapshot;
-use Stewart\Contracts\Generated\GeneratedFormat;
+use Stewart\Support\Wire\GeneratedFormat;
 
 final readonly class GeneratedTreeComparison
 {

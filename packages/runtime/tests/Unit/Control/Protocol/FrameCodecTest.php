@@ -6,8 +6,6 @@ namespace Stewart\Runtime\Tests\Unit\Control\Protocol;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Stewart\Contracts\Exception\JsonShapeError;
-use Stewart\Contracts\Exception\JsonShapeException;
 use Stewart\Contracts\Exception\ServiceCallError;
 use Stewart\Contracts\Exception\StewartException;
 use Stewart\Contracts\Time\Duration;
@@ -46,6 +44,8 @@ use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Runtime\Tests\Fixtures\Wire\BrokenDurationConverter;
 use Stewart\Store\StoreHealth;
+use Stewart\Support\Exception\JsonShapeError;
+use Stewart\Support\Exception\JsonShapeException;
 use Stewart\Support\Json\JsonShape;
 use Stewart\Testing\Exception\AssertsReason;
 

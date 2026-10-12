@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Worker\Context;
 
 use Amp\CancelledException;
-use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\Time\Duration;
@@ -17,6 +16,7 @@ use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Worker\ConnectionStatus;
 use Stewart\Runtime\Worker\PendingRequests;
 use Stewart\Support\Time\Deadlines;
+use Stewart\Support\Wire\EventPayload;
 use Throwable;
 
 final readonly class EventFirer

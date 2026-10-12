@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Tests\Unit\Trigger;
+namespace Stewart\Support\Tests\Unit\Wire;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -11,7 +11,7 @@ use Stewart\Contracts\Exception\TriggerException;
 use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
 use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Contracts\Trigger\TriggerJson;
-use Stewart\Contracts\Trigger\TriggerSpec;
+use Stewart\Support\Wire\TriggerSpec;
 use Stewart\Testing\Exception\AssertsReason;
 
 #[CoversClass(TriggerSpec::class)]

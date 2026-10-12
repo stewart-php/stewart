@@ -10,12 +10,12 @@ use Amp\DeferredFuture;
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
-use Stewart\Contracts\State\Collection\StateChangeCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\State\StateChangeOrigin;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\State\StateCache;
+use Stewart\Support\State\Collection\StateChangeCollection;
 
 final class StateCacheSync
 {

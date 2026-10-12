@@ -7,11 +7,11 @@ namespace Stewart\Runtime\Dispatch;
 use Closure;
 use Stewart\Contracts\Registry\EntityFilter;
 use Stewart\Contracts\Selector\Selector;
-use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionId;
 use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Support\Stream\SubscriptionScope;
+use Stewart\Support\Wire\TriggerSpec;
 
 final readonly class RegisteredSubscription
 {

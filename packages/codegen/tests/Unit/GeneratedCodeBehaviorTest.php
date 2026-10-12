@@ -13,11 +13,11 @@ use Stewart\Codegen\Tests\Fixtures\Expected\Manifest;
 use Stewart\Codegen\Tests\Fixtures\Expected\Services;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\IdentifierError;
-use Stewart\Contracts\Generated\GeneratedFormat;
 use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Support\Wire\GeneratedFormat;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\HaContext\RecordingHaContext;
 

@@ -2,12 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Trigger;
+namespace Stewart\Support\Wire;
 
 use Stewart\Contracts\Exception\TriggerError;
 use Stewart\Contracts\Exception\TriggerException;
 use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
+use Stewart\Contracts\Trigger\HaTrigger;
+use Stewart\Contracts\Trigger\TriggerJson;
 
+/** @internal */
 final readonly class TriggerSpec
 {
     /** @param array<string, mixed> $variables */

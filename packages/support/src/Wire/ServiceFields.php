@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Service;
+namespace Stewart\Support\Wire;
 
+/** @internal */
 final readonly class ServiceFields
 {
     /** @param array<string, mixed> $fields */

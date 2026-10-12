@@ -15,13 +15,13 @@ use Stewart\Contracts\Registry\Collection\FloorCollection;
 use Stewart\Contracts\Registry\Collection\LabelCollection;
 use Stewart\Contracts\Registry\Collection\RegisteredEntityCollection;
 use Stewart\Contracts\Registry\EntityFilter;
-use Stewart\Contracts\Registry\IndexedRegistry;
 use Stewart\Contracts\Registry\RegisteredEntity;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\CachedStateReader;
 use Stewart\Runtime\State\StateCache;
+use Stewart\Support\State\IndexedRegistry;
 
 #[CoversClass(CachedStateReader::class)]
 final class CachedStateReaderTest extends TestCase

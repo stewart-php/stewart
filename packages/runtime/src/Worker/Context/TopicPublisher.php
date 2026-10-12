@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Worker\Context;
 
 use Stewart\Contracts\Time\Clock;
-use Stewart\Contracts\Topic\TopicPayload;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\Publish;
 use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Worker\AppActivityCounters;
+use Stewart\Support\Wire\TopicPayload;
 
 final readonly class TopicPublisher
 {

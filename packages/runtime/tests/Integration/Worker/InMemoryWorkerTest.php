@@ -19,7 +19,6 @@ use Stewart\Contracts\Registry\Collection\DeviceCollection;
 use Stewart\Contracts\Registry\Collection\FloorCollection;
 use Stewart\Contracts\Registry\Collection\LabelCollection;
 use Stewart\Contracts\Registry\Collection\RegisteredEntityCollection;
-use Stewart\Contracts\Registry\IndexedRegistry;
 use Stewart\Contracts\Registry\RegisteredEntity;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
@@ -42,6 +41,7 @@ use Stewart\Runtime\Tests\Fixtures\Protocol\InitFirer;
 use Stewart\Runtime\Tests\Fixtures\Protocol\KitchenWatcher;
 use Stewart\Runtime\Tests\Fixtures\Protocol\SerialHandler;
 use Stewart\Runtime\Tests\Fixtures\Worker\InMemoryWorkerSpawner;
+use Stewart\Support\State\IndexedRegistry;
 use Stewart\Testing\Logging\RecordedLog;
 use Stewart\Testing\Logging\RecordingLogger;
 

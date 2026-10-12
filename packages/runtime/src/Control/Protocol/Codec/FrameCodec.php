@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Control\Protocol\Codec;
 
 use JsonException;
-use Stewart\Contracts\Exception\JsonShapeException;
 use Stewart\Contracts\Exception\StewartException;
 use Stewart\Runtime\Control\Protocol\Frame\Bye;
 use Stewart\Runtime\Control\Protocol\Frame\ClientFrame;
@@ -28,6 +27,7 @@ use Stewart\Runtime\Json\Collection\ValueConverterCollection;
 use Stewart\Runtime\Json\DurationConverter;
 use Stewart\Runtime\Json\IsoInstantConverter;
 use Stewart\Runtime\Json\WireMapper;
+use Stewart\Support\Exception\JsonShapeException;
 use Stewart\Support\Json\JsonDecoder;
 use Stewart\Support\Json\JsonEncoder;
 use Stewart\Support\Json\JsonShape;

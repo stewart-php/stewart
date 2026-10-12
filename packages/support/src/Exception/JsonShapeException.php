@@ -2,9 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Exception;
+namespace Stewart\Support\Exception;
 
-/** @extends StewartException<JsonShapeError> */
+use Stewart\Contracts\Exception\StewartException;
+
+/**
+ * @internal
+ * @extends StewartException<JsonShapeError>
+ */
 final class JsonShapeException extends StewartException
 {
     public static function wrongType(string $key, string $expected, string $actualType): self
