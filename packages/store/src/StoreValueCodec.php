@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Store;
 
 use JsonException;
+use Stewart\Contracts\Exception\StoreError;
 use Stewart\Contracts\Exception\StoreException;
 use Stewart\Contracts\Store\Storable;
 use Stewart\Support\Json\JsonDecoder;
@@ -24,7 +25,7 @@ final readonly class StoreValueCodec
         $data = $value->toStorage();
 
         if ($data !== [] && array_is_list($data)) {
-            throw StoreException::valueNotAMap($key, $value::class);
+            throw StoreException::createForReason(StoreError::ValueNotAMap, key: $key, class: $value::class);
         }
 
         return $this->encodeJson($key, (object) $data);
@@ -89,7 +90,7 @@ final readonly class StoreValueCodec
         try {
             return $class::fromStorage(JsonShape::treatKeysAsStrings($data));
         } catch (Throwable $e) {
-            throw StoreException::valueRejected($key, $class, $e);
+            throw StoreException::createForReason(StoreError::ValueRejected, $e, key: $key, class: $class);
         }
     }
 
@@ -99,7 +100,7 @@ final readonly class StoreValueCodec
         try {
             return JsonDecoder::decodeJson($raw);
         } catch (JsonException $e) {
-            throw StoreException::valueMalformed($key, $e);
+            throw StoreException::createForReason(StoreError::ValueMalformed, $e, key: $key);
         }
     }
 
@@ -109,13 +110,13 @@ final readonly class StoreValueCodec
         try {
             return JsonEncoder::encodeToJson($value);
         } catch (JsonException $e) {
-            throw StoreException::valueNotEncodable($key, $e);
+            throw StoreException::createForReason(StoreError::ValueNotEncodable, $e, key: $key);
         }
     }
 
     private function typeMismatch(string $key, string $expected, mixed $actual): StoreException
     {
-        return StoreException::typeMismatch($key, $expected, $this->describeJsonType($actual));
+        return StoreException::createForReason(StoreError::TypeMismatch, key: $key, expected: $expected, actual: $this->describeJsonType($actual));
     }
 
     private function describeJsonType(mixed $value): string

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Contracts\Trigger;
 
+use Stewart\Contracts\Exception\TriggerError;
 use Stewart\Contracts\Exception\TriggerException;
 use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
 
@@ -23,13 +24,13 @@ final readonly class TriggerSpec
     public static function fromSpec(HaTrigger|HaTriggerCollection|array $trigger, array $variables = []): self
     {
         $triggers = match (true) {
-            $trigger instanceof HaTrigger => HaTriggerCollection::fromTriggers([$trigger]),
+            $trigger instanceof HaTrigger => HaTriggerCollection::fromList([$trigger]),
             $trigger instanceof HaTriggerCollection => $trigger,
             default => self::parseTriggers($trigger),
         };
 
         if ($triggers->isEmpty()) {
-            throw TriggerException::listEmpty();
+            throw TriggerException::createForReason(TriggerError::ListEmpty);
         }
 
         return new self($triggers, self::parseVariables($variables));
@@ -64,7 +65,7 @@ final readonly class TriggerSpec
     private static function parseTriggers(array $trigger): HaTriggerCollection
     {
         if (!array_is_list($trigger)) {
-            return HaTriggerCollection::fromTriggers([HaTrigger::fromArray($trigger)]);
+            return HaTriggerCollection::fromList([HaTrigger::fromArray($trigger)]);
         }
 
         $triggers = [];
@@ -77,7 +78,7 @@ final readonly class TriggerSpec
             $triggers[] = HaTrigger::fromArray($config);
         }
 
-        return HaTriggerCollection::fromTriggers($triggers);
+        return HaTriggerCollection::fromList($triggers);
     }
 
     /**
@@ -91,7 +92,7 @@ final readonly class TriggerSpec
 
         foreach ($variables as $name => $value) {
             if (!\is_string($name)) {
-                throw TriggerException::variablesNotMap();
+                throw TriggerException::createForReason(TriggerError::VariablesNotMap);
             }
 
             $typedVariables[$name] = $value;

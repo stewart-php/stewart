@@ -14,6 +14,7 @@ use Stewart\Contracts\Mqtt\MqttQos;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\TimerHandle;
 use Stewart\Contracts\Time\Timers;
+use Stewart\Mqtt\Exception\MqttClientError;
 use Stewart\Mqtt\Exception\MqttClientException;
 use Stewart\Mqtt\Packet\ConnAckPacket;
 use Stewart\Mqtt\Packet\DisconnectPacket;
@@ -179,7 +180,7 @@ final class MqttConnection implements InboundPacketHandler
                 $this->packetReader->readPacket($this->bufferedReader)->applyTo($this);
             }
         } catch (Throwable $e) {
-            $this->finishClosing($e instanceof MqttClientException ? $e : MqttClientException::connectionLost($e));
+            $this->finishClosing($e instanceof MqttClientException ? $e : MqttClientException::createForReason(MqttClientError::ConnectionLost, $e));
         }
     }
 
@@ -191,7 +192,7 @@ final class MqttConnection implements InboundPacketHandler
             }
 
             if ($this->awaitingPingResponse) {
-                $this->finishClosing(MqttClientException::keepaliveTimedOut($this->keepalive));
+                $this->finishClosing(MqttClientException::createForReason(MqttClientError::KeepaliveTimedOut, keepalive: (string) $this->keepalive));
 
                 return;
             }
@@ -211,13 +212,13 @@ final class MqttConnection implements InboundPacketHandler
     private function writePacket(OutboundPacket $packet): void
     {
         if ($this->closed->isComplete()) {
-            throw MqttClientException::connectionClosed();
+            throw MqttClientException::createForReason(MqttClientError::ConnectionClosed);
         }
 
         try {
             $this->socket->write($packet->encodePacket());
         } catch (Throwable $e) {
-            $lost = MqttClientException::connectionLost($e);
+            $lost = MqttClientException::createForReason(MqttClientError::ConnectionLost, $e);
             $this->finishClosing($lost);
 
             throw $lost;
@@ -243,7 +244,7 @@ final class MqttConnection implements InboundPacketHandler
             }
         }
 
-        throw MqttClientException::packetIdsExhausted();
+        throw MqttClientException::createForReason(MqttClientError::PacketIdsExhausted);
     }
 
     private function finishClosing(?MqttClientException $reason): void
@@ -254,7 +255,7 @@ final class MqttConnection implements InboundPacketHandler
 
         $this->keepaliveTimer?->cancel();
         $this->socket->close();
-        $failure = $reason ?? MqttClientException::connectionClosed();
+        $failure = $reason ?? MqttClientException::createForReason(MqttClientError::ConnectionClosed);
 
         foreach ([...$this->pendingAcks, ...$this->pendingSubAcks] as $pending) {
             $pending->error($failure);

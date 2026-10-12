@@ -162,6 +162,6 @@ final readonly class IndexedRegistry implements Registry
             }
         }
 
-        return LabelIdCollection::fromIds($unique);
+        return LabelIdCollection::fromList($unique);
     }
 }

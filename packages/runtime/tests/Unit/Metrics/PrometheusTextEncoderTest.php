@@ -7,8 +7,6 @@ namespace Stewart\Runtime\Tests\Unit\Metrics;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Time\Duration;
-use Stewart\Runtime\Metrics\Exposition\Collection\HistogramBucketCollection;
-use Stewart\Runtime\Metrics\Exposition\Collection\MetricFamilyCollection;
 use Stewart\Runtime\Metrics\Exposition\Histogram;
 use Stewart\Runtime\Metrics\Exposition\HistogramBucket;
 use Stewart\Runtime\Metrics\Exposition\MetricFamily;
@@ -46,7 +44,7 @@ final class PrometheusTextEncoderTest extends TestCase
     public function testHistogramWritesBucketsSumAndCount(): void
     {
         $family = new MetricFamily('stewart_call_seconds', 'Calls.', MetricType::Histogram);
-        $buckets = HistogramBucketCollection::fromBuckets([new HistogramBucket(0.005, 1), new HistogramBucket(0.25, 3), new HistogramBucket(INF, 4)]);
+        $buckets = [new HistogramBucket(0.005, 1), new HistogramBucket(0.25, 3), new HistogramBucket(INF, 4)];
         $family->recordHistogram(MetricLabels::fromLabel('outcome', 'ok'), new Histogram($buckets, 4, Duration::milliseconds(1500)));
 
         self::assertSame(
@@ -67,6 +65,6 @@ final class PrometheusTextEncoderTest extends TestCase
 
     private function encode(MetricFamily $family): string
     {
-        return new PrometheusTextEncoder()->encodeFamilies(MetricFamilyCollection::fromFamilies([$family]));
+        return new PrometheusTextEncoder()->encodeFamilies([$family]);
     }
 }

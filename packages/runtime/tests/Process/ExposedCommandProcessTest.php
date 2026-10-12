@@ -46,10 +46,10 @@ final class ExposedCommandProcessTest extends TestCase
         $broker = BrokerKernelFixture::boot(
             $session,
             $pools,
-            WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([
+            WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([
                 new AppDefinition(new AppId('dying-switch'), DyingSwitch::class),
             ]))]),
-            AppIdCollection::fromIds([new AppId('dying-switch')]),
+            AppIdCollection::fromList([new AppId('dying-switch')]),
             $logger,
             ['shutdown_grace' => '1s'],
         );

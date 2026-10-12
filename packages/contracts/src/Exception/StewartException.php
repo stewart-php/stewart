@@ -33,13 +33,16 @@ abstract class StewartException extends RuntimeException
     /**
      * @template TRaisedReason of ExceptionReason
      *
-     * @param TRaisedReason $reason
-     * @param ExceptionContext $context
+     * @param TRaisedReason $exceptionReason
+     * @param scalar|null|list<scalar|null> ...$context
      * @return static<TRaisedReason>
      */
-    final protected static function createForReason(ExceptionReason $reason, array $context = [], ?Throwable $previous = null): static
-    {
-        return self::createForReasonWithAppendedText($reason, $context, null, $previous);
+    final public static function createForReason(
+        ExceptionReason $exceptionReason,
+        ?Throwable $previous = null,
+        string|int|float|bool|array|null ...$context,
+    ): static {
+        return self::createForReasonWithAppendedText($exceptionReason, self::requireNamedContext($context), null, $previous);
     }
 
     /**
@@ -70,6 +73,21 @@ abstract class StewartException extends RuntimeException
         $value = $this->context[$key] ?? null;
 
         return \is_string($value) ? $value : null;
+    }
+
+    /**
+     * @param array<array-key, scalar|null|list<scalar|null>> $context
+     * @return ExceptionContext
+     */
+    private static function requireNamedContext(array $context): array
+    {
+        $named = [];
+
+        foreach ($context as $key => $value) {
+            $named[\is_string($key) ? $key : throw new LogicException('Pass the exception context as named arguments.')] = $value;
+        }
+
+        return $named;
     }
 
     /** @param ExceptionContext $context */

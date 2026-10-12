@@ -20,6 +20,6 @@ final readonly class DiscoveredAppCollection extends ListCollection
 
     public function listAppIds(): AppIdCollection
     {
-        return AppIdCollection::fromIds($this->mapToList(static fn(DiscoveredApp $app): AppId => $app->id));
+        return AppIdCollection::fromList($this->mapToList(static fn(DiscoveredApp $app): AppId => $app->id));
     }
 }

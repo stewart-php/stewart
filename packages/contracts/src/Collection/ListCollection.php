@@ -11,7 +11,7 @@ namespace Stewart\Contracts\Collection;
 abstract readonly class ListCollection extends TypedCollection
 {
     /** @param iterable<T> $elements */
-    protected static function fromList(iterable $elements): static
+    public static function fromList(iterable $elements): static
     {
         $list = [];
 

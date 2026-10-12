@@ -44,11 +44,11 @@ final class SubscriptionRegistryTest extends TestCase
         $registry->add(self::createSubscription('w0:0', 0, 'light.hall'));
         $registry->add(self::createSubscription('w1:0', 1, 'sensor.*'));
 
-        self::assertSame(['w0:0', 'w1:0'], $registry->listSubscriptions()->mapToList(static fn(BrokerSubscription $r): string => $r->subscriptionId->value));
+        self::assertSame(['w0:0', 'w1:0'], array_map(static fn(BrokerSubscription $r): string => $r->subscriptionId->value, $registry->listSubscriptions()));
 
         $registry->removeWorkerSubscriptions(new WorkerId(0));
 
-        self::assertSame(['w1:0'], $registry->listSubscriptions()->mapToList(static fn(BrokerSubscription $r): string => $r->subscriptionId->value));
+        self::assertSame(['w1:0'], array_map(static fn(BrokerSubscription $r): string => $r->subscriptionId->value, $registry->listSubscriptions()));
     }
 
     public function testKindsDoNotMatchEachOther(): void

@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Http;
 use Psr\Log\LoggerInterface;
 use Stewart\Runtime\Broker\Http\Collection\HttpListenerCollection;
 use Stewart\Runtime\Config\HttpConfig;
+use Stewart\Runtime\Exception\ConfigurationError;
 use Stewart\Runtime\Exception\ConfigurationException;
 use Stewart\Runtime\Http\Admin\AdminApiCodec;
 use Stewart\Runtime\Http\Admin\AdminRequestHandler;
@@ -36,10 +37,11 @@ final readonly class HttpListenerFactory
         $admin = $this->http->admin;
 
         if ($admin->listen !== null) {
-            $requests = new AdminRequestHandler($this->adminApps, $this->adminCodec, $this->metricsExporter, $this->logger, $admin->token ?? throw ConfigurationException::adminTokenMissing());
+            $token = $admin->token ?? throw ConfigurationException::createForReason(ConfigurationError::AdminTokenMissing);
+            $requests = new AdminRequestHandler($this->adminApps, $this->adminCodec, $this->metricsExporter, $this->logger, $token);
             $listeners[] = new AmpHttpListener($admin->listen, $requests, HttpListenerRole::Admin, $this->logger);
         }
 
-        return HttpListenerCollection::fromListeners($listeners);
+        return HttpListenerCollection::fromList($listeners);
     }
 }

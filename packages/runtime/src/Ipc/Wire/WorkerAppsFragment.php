@@ -20,7 +20,7 @@ final readonly class WorkerAppsFragment implements JsonFragment
 
     public static function fromDecodedValue(mixed $value, string $path, WireMapper $mapper): static
     {
-        return new self(WorkerAppCollection::fromApps($mapper->decodeObjectList(WorkerApp::class, $value, $path)));
+        return new self(WorkerAppCollection::fromList($mapper->decodeObjectList(WorkerApp::class, $value, $path)));
     }
 
     public function encodeToJson(WireMapper $mapper): string

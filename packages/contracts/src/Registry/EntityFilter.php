@@ -67,7 +67,7 @@ final readonly class EntityFilter
     {
         $added = array_map(AreaId::fromStringOrId(...), $areaIds);
 
-        return new self(AreaIdCollection::fromIds([...$this->areaIds, ...$added]), $this->floorIds, $this->labelIds, $this->deviceIds, $this->domains, $this->selector);
+        return new self(AreaIdCollection::fromList([...$this->areaIds, ...$added]), $this->floorIds, $this->labelIds, $this->deviceIds, $this->domains, $this->selector);
     }
 
     /** @throws IdentifierException */
@@ -75,7 +75,7 @@ final readonly class EntityFilter
     {
         $added = array_map(FloorId::fromStringOrId(...), $floorIds);
 
-        return new self($this->areaIds, FloorIdCollection::fromIds([...$this->floorIds, ...$added]), $this->labelIds, $this->deviceIds, $this->domains, $this->selector);
+        return new self($this->areaIds, FloorIdCollection::fromList([...$this->floorIds, ...$added]), $this->labelIds, $this->deviceIds, $this->domains, $this->selector);
     }
 
     /** @throws IdentifierException */
@@ -83,7 +83,7 @@ final readonly class EntityFilter
     {
         $added = array_map(LabelId::fromStringOrId(...), $labelIds);
 
-        return new self($this->areaIds, $this->floorIds, LabelIdCollection::fromIds([...$this->labelIds, ...$added]), $this->deviceIds, $this->domains, $this->selector);
+        return new self($this->areaIds, $this->floorIds, LabelIdCollection::fromList([...$this->labelIds, ...$added]), $this->deviceIds, $this->domains, $this->selector);
     }
 
     /** @throws IdentifierException */
@@ -91,7 +91,7 @@ final readonly class EntityFilter
     {
         $added = array_map(DeviceId::fromStringOrId(...), $deviceIds);
 
-        return new self($this->areaIds, $this->floorIds, $this->labelIds, DeviceIdCollection::fromIds([...$this->deviceIds, ...$added]), $this->domains, $this->selector);
+        return new self($this->areaIds, $this->floorIds, $this->labelIds, DeviceIdCollection::fromList([...$this->deviceIds, ...$added]), $this->domains, $this->selector);
     }
 
     public function withDomain(string ...$domains): self

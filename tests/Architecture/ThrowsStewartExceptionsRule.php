@@ -45,7 +45,7 @@ final class ThrowsStewartExceptionsRule implements Rule
 
         return [
             RuleErrorBuilder::message(\sprintf(
-                'Throw a StewartException area class from a static factory, not %s.',
+                'Throw a StewartException area class, not %s.',
                 $thrown->describe(VerbosityLevel::typeOnly()),
             ))->identifier('stewart.foreignThrow')->build(),
         ];

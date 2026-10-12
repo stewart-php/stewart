@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
 use Exception;
+use Stewart\Contracts\Exception\TimeError;
 use Stewart\Contracts\Exception\TimeException;
 use Stringable;
 
@@ -32,13 +33,13 @@ final readonly class Instant implements Stringable
     public static function fromIso(string $text): self
     {
         if (preg_match(self::ISO_SHAPE, $text) !== 1) {
-            throw TimeException::instantUnparsable($text);
+            throw TimeException::createForReason(TimeError::InstantUnparsable, text: $text);
         }
 
         try {
             return self::fromDateTime(new DateTimeImmutable($text, new DateTimeZone('UTC')));
         } catch (Exception) {
-            throw TimeException::instantUnparsable($text);
+            throw TimeException::createForReason(TimeError::InstantUnparsable, text: $text);
         }
     }
 

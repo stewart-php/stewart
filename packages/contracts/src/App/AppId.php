@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Contracts\App;
 
+use Stewart\Contracts\Exception\IdentifierError;
 use Stewart\Contracts\Exception\IdentifierException;
 use Stringable;
 
@@ -19,11 +20,11 @@ final readonly class AppId implements Stringable
     public function __construct(string $value)
     {
         if (preg_match(self::PATTERN, $value) !== 1) {
-            throw IdentifierException::appIdInvalid($value);
+            throw IdentifierException::createForReason(IdentifierError::AppIdInvalid, appId: $value);
         }
 
         if (\strlen($value) > self::MAX_LENGTH_LEAVING_ROOM_IN_STORE_KEYS) {
-            throw IdentifierException::appIdTooLong($value, self::MAX_LENGTH_LEAVING_ROOM_IN_STORE_KEYS);
+            throw IdentifierException::createForReason(IdentifierError::AppIdTooLong, appId: $value, limit: self::MAX_LENGTH_LEAVING_ROOM_IN_STORE_KEYS);
         }
 
         $this->value = $value;

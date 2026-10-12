@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Broker;
 
-use Stewart\Runtime\Broker\Collection\BrokerSubscriptionCollection;
 use Stewart\Runtime\Dispatch\SelectorIndex;
 use Stewart\Runtime\Model\Collection\SubscriptionIdCollection;
 use Stewart\Runtime\Model\RoutingStats;
@@ -74,12 +73,13 @@ final class SubscriptionRegistry
 
         ksort($idsByWorker);
 
-        return new SubscriptionRoutes(array_map(SubscriptionIdCollection::fromIds(...), $idsByWorker));
+        return new SubscriptionRoutes(array_map(SubscriptionIdCollection::fromList(...), $idsByWorker));
     }
 
-    public function listSubscriptions(): BrokerSubscriptionCollection
+    /** @return list<BrokerSubscription> */
+    public function listSubscriptions(): array
     {
-        return BrokerSubscriptionCollection::fromSubscriptions($this->subscriptions);
+        return array_values($this->subscriptions);
     }
 
     public function getRoutingStats(): RoutingStats

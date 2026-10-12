@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Stewart\Codegen\Output;
 
 use Stewart\Codegen\Emitter\GeneratedCodePrinter;
+use Stewart\Codegen\Exception\CodegenError;
 use Stewart\Codegen\Exception\CodegenException;
 use Stewart\Codegen\Output\Collection\FileChangeCollection;
-use Stewart\Codegen\Output\Collection\GeneratedFileCollection;
 
 final readonly class OutputDirectory
 {
@@ -15,8 +15,11 @@ final readonly class OutputDirectory
 
     public function __construct(private string $path) {}
 
-    /** @throws CodegenException */
-    public function planChanges(GeneratedFileCollection $files): FileChangeCollection
+    /**
+     * @throws CodegenException
+     * @param list<GeneratedFile> $files
+     */
+    public function planChanges(array $files): FileChangeCollection
     {
         $changes = [];
         $rendered = [];
@@ -33,8 +36,11 @@ final readonly class OutputDirectory
         return FileChangeCollection::fromChangesSortedByPath($changes);
     }
 
-    /** @throws CodegenException */
-    public function writeChanges(GeneratedFileCollection $files, ShrinkPolicy $shrinkPolicy): FileChangeCollection
+    /**
+     * @throws CodegenException
+     * @param list<GeneratedFile> $files
+     */
+    public function writeChanges(array $files, ShrinkPolicy $shrinkPolicy): FileChangeCollection
     {
         $changes = $this->planChanges($files);
 
@@ -77,7 +83,7 @@ final readonly class OutputDirectory
         $current = file_get_contents($target);
 
         if ($current !== false && !GeneratedCodePrinter::isGenerated($current)) {
-            throw CodegenException::unmarkedFileInTheWay($target);
+            throw CodegenException::createForReason(CodegenError::UnmarkedFileInTheWay, path: $target);
         }
 
         return $current === $file->contents ? FileOutcome::Unchanged : FileOutcome::Updated;
@@ -90,7 +96,7 @@ final readonly class OutputDirectory
         $existing = $changes->countExistingFiles();
 
         if ($deleted * 2 > $existing) {
-            throw CodegenException::shrinkRefused($deleted, $existing);
+            throw CodegenException::createForReason(CodegenError::ShrinkRefused, deleted: $deleted, existing: $existing);
         }
     }
 
@@ -130,7 +136,7 @@ final readonly class OutputDirectory
         }
 
         if (!mkdir($this->path, 0o777, true) && !is_dir($this->path)) {
-            throw CodegenException::outputDirectoryNotCreatable($this->path);
+            throw CodegenException::createForReason(CodegenError::OutputDirectoryNotCreatable, path: $this->path);
         }
     }
 
@@ -151,7 +157,7 @@ final readonly class OutputDirectory
     private function removeFile(string $target): void
     {
         if (is_file($target) && !unlink($target)) {
-            throw CodegenException::fileNotDeletable($target);
+            throw CodegenException::createForReason(CodegenError::FileNotDeletable, path: $target);
         }
     }
 }

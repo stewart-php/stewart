@@ -64,7 +64,7 @@ final class ServiceCallProxyTest extends TestCase
         $this->session = new FakeHaSession();
         $this->calls = $this->session->holdCalls();
         $this->metrics = new AppMetrics(
-            WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)]))]),
+            WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)]))]),
             $this->timers->clock,
         );
     }
@@ -110,7 +110,7 @@ final class ServiceCallProxyTest extends TestCase
         $this->timers->delay(Duration::milliseconds(30));
         $this->finishCalls();
 
-        $calls = new AppStatusBuilder($this->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock())), ExposureLinkFixture::createWithoutExposures())->buildAppStatuses()->listValues()[0]->serviceCalls;
+        $calls = new AppStatusBuilder($this->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock())), ExposureLinkFixture::createWithoutExposures())->buildAppStatuses()[0]->serviceCalls;
         self::assertSame(
             [ServiceCallOutcome::Refused, ServiceCallOutcome::Succeeded],
             array_map(static fn(ServiceCallStats $stats): ServiceCallOutcome => $stats->outcome, $calls),

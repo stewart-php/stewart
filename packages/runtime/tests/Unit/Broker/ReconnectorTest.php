@@ -9,6 +9,7 @@ use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use Stewart\Client\Exception\HaClientError;
 use Stewart\Client\Exception\HaClientException;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Broker\Reconnector;
@@ -53,7 +54,7 @@ final class ReconnectorTest extends TestCase
                 function (): void {
                     $this->attemptedAt[] = $this->readElapsedSeconds();
 
-                    throw HaClientException::tokenRejected('token rejected');
+                    throw HaClientException::createForReason(HaClientError::TokenRejected, reason: 'token rejected');
                 },
                 $this->stop->getCancellation(),
             );

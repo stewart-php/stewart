@@ -10,12 +10,6 @@ use Stewart\Runtime\Model\SubscriptionId;
 /** @extends ListCollection<SubscriptionId> */
 final readonly class SubscriptionIdCollection extends ListCollection
 {
-    /** @param iterable<SubscriptionId> $subscriptionIds */
-    public static function fromIds(iterable $subscriptionIds): self
-    {
-        return self::fromList($subscriptionIds);
-    }
-
     /** @return list<string> */
     public function toStrings(): array
     {

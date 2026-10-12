@@ -11,6 +11,7 @@ use Amp\Pipeline\Queue;
 use Closure;
 use Fiber;
 use Psr\Log\LoggerInterface;
+use Stewart\Client\Exception\HaClientError;
 use Stewart\Client\Exception\HaClientException;
 use Throwable;
 
@@ -65,7 +66,7 @@ final class EventDelivery
     public function flush(): void
     {
         if ($this->deliverer !== null && $this->deliverer === Fiber::getCurrent()) {
-            throw HaClientException::eventQueueReentered();
+            throw HaClientException::createForReason(HaClientError::EventQueueReentered);
         }
 
         if ($this->closed) {

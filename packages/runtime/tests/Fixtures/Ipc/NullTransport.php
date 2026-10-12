@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Tests\Fixtures\Ipc;
 
+use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Transport;
 
@@ -17,7 +18,7 @@ final class NullTransport implements Transport
     public function send(object $message): void
     {
         if ($this->closed) {
-            throw TransportException::closed();
+            throw TransportException::createForReason(TransportError::Closed);
         }
 
         $this->sent[] = $message;

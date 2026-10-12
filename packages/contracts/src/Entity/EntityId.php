@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Contracts\Entity;
 
+use Stewart\Contracts\Exception\IdentifierError;
 use Stewart\Contracts\Exception\IdentifierException;
 use Stringable;
 
@@ -21,7 +22,7 @@ final readonly class EntityId implements Stringable
     public function __construct(string $value)
     {
         if (preg_match(self::PATTERN, $value, $parts) !== 1) {
-            throw IdentifierException::entityIdInvalid($value);
+            throw IdentifierException::createForReason(IdentifierError::EntityIdInvalid, entityId: $value);
         }
 
         $this->value = $value;

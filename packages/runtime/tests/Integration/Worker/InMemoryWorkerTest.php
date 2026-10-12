@@ -184,8 +184,8 @@ final class InMemoryWorkerTest extends TestCase
         return BrokerKernelFixture::boot(
             $session,
             $pools,
-            WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition($appId, $appClass)]))]),
-            AppIdCollection::fromIds([$appId]),
+            WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition($appId, $appClass)]))]),
+            AppIdCollection::fromList([$appId]),
             $logger,
             ['shutdown_grace' => '1s'],
         );

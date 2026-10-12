@@ -108,7 +108,7 @@ final class WorkerOperatorQueueTest extends TestCase
         $id = new EntityId($entityId);
         $change = new StateChange($id, new EntityState($id, $from), new EntityState($id, $to));
 
-        $this->transport->deliver(new StateChangeBatch(StateChangesFragment::fromCollection(StateChangeCollection::fromChanges([$change]))));
+        $this->transport->deliver(new StateChangeBatch(StateChangesFragment::fromCollection(StateChangeCollection::fromList([$change]))));
         EventLoopTicks::settle();
     }
 }

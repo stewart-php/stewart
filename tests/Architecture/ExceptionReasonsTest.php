@@ -65,21 +65,6 @@ final class ExceptionReasonsTest extends TestCase
         }
     }
 
-    public function testFactoriesAndReasonCasesMatchOneToOne(): void
-    {
-        foreach (self::listAreaClasses() as $exception) {
-            $factories = array_keys(self::listFactoriesOf($exception));
-            $cases = array_map(
-                static fn(ExceptionReason $case): string => lcfirst($case->name),
-                self::findReasonClassFor($exception)::cases(),
-            );
-            sort($factories);
-            sort($cases);
-
-            self::assertSame($cases, $factories, $exception);
-        }
-    }
-
     public function testEachFactoryRaisesItsOwnReason(): void
     {
         foreach (self::listAreaClasses() as $exception) {
@@ -133,7 +118,7 @@ final class ExceptionReasonsTest extends TestCase
             is_a($type, Throwable::class, true) => new RuntimeException('cause'),
             is_a($type, UnitEnum::class, true) => $type::cases()[0],
             $type === AppId::class => new AppId('demo'),
-            $type === AppIdCollection::class => AppIdCollection::fromIds([new AppId('demo')]),
+            $type === AppIdCollection::class => AppIdCollection::fromList([new AppId('demo')]),
             $type === EntityId::class => new EntityId('light.hall'),
             $type === WorkerId::class => new WorkerId(1),
             $type === ExposedEntityKey::class => new ExposedEntityKey('demo'),

@@ -16,12 +16,12 @@ final class RegistryEditException extends StewartException
 {
     public static function notFound(EntityId $entityId): self
     {
-        return self::createForReason(RegistryEditError::NotFound, ['entityId' => $entityId->value]);
+        return self::createForReason(RegistryEditError::NotFound, entityId: $entityId->value);
     }
 
     public static function nothingToUpdate(EntityId $entityId): self
     {
-        return self::createForReason(RegistryEditError::NothingToUpdate, ['entityId' => $entityId->value]);
+        return self::createForReason(RegistryEditError::NothingToUpdate, entityId: $entityId->value);
     }
 
     public static function rejected(EntityId $entityId, string $detail, ?string $errorCode = null, ?Throwable $previous = null): self
@@ -36,17 +36,12 @@ final class RegistryEditException extends StewartException
 
     public static function unreachable(EntityId $entityId, string $detail, ?Throwable $previous = null): self
     {
-        return self::createForReason(RegistryEditError::Unreachable, ['entityId' => $entityId->value, 'detail' => $detail], $previous);
+        return self::createForReason(RegistryEditError::Unreachable, $previous, entityId: $entityId->value, detail: $detail);
     }
 
     public static function timedOut(EntityId $entityId, string $detail, ?Throwable $previous = null): self
     {
-        return self::createForReason(RegistryEditError::TimedOut, ['entityId' => $entityId->value, 'detail' => $detail], $previous);
-    }
-
-    public static function overloaded(EntityId $entityId, string $detail): self
-    {
-        return self::createForReason(RegistryEditError::Overloaded, ['entityId' => $entityId->value, 'detail' => $detail]);
+        return self::createForReason(RegistryEditError::TimedOut, $previous, entityId: $entityId->value, detail: $detail);
     }
 
     /** @param ExceptionContext|null $context */

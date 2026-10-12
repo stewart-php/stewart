@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Worker\Exposure;
 
 use Amp\CancelledException;
+use Stewart\Contracts\Exception\ExposureError;
 use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exposure\DeviceInfo;
 use Stewart\Contracts\Exposure\ExposedEntityConfig;
@@ -89,7 +90,7 @@ final readonly class ExposureRequester
                 ? ExposureException::stateInvalid($e->getMessage())
                 : ExposureException::unreachable($key, 'the broker is gone: ' . $e->getMessage(), $e);
         } catch (CancelledException) {
-            throw ExposureException::timedOut($key, $this->exposureRequestTimeout);
+            throw ExposureException::createForReason(ExposureError::TimedOut, key: $key->value, timeout: (string) $this->exposureRequestTimeout);
         } finally {
             $this->pending->forget($pending->correlationId);
         }

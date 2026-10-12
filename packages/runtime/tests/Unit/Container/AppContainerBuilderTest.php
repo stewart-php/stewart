@@ -606,7 +606,7 @@ final class AppContainerBuilderTest extends TestCase
     /** @param list<WorkerApp> $apps */
     private function buildAppContainer(array $apps, ?string $servicesFile = null, ?GeneratedRoots $generated = null): AppContainerBuild
     {
-        return new AppContainerBuilder(new AppOptionResolver(new ClosestNameFinder()))->buildAppContainer(WorkerAppCollection::fromApps($apps), $this->createRuntimeServices($generated), $servicesFile, new WorkerId(0));
+        return new AppContainerBuilder(new AppOptionResolver(new ClosestNameFinder()))->buildAppContainer(WorkerAppCollection::fromList($apps), $this->createRuntimeServices($generated), $servicesFile, new WorkerId(0));
     }
 
     private function createRuntimeServices(?GeneratedRoots $generated = null): AppRuntimeServices
@@ -654,7 +654,7 @@ final class AppContainerBuilderTest extends TestCase
 
     private function createBackedStores(): Stores
     {
-        return new KeyspacedStores(new InMemoryStoreBackend(new VirtualClock()), new StorePrefix('stewart'), AppIdCollection::fromIds([new AppId('demo'), new AppId('hall-light'), new AppId('keeper'), new AppId('boiler')]), new StoreValueCodec(), new ClosestNameFinder());
+        return new KeyspacedStores(new InMemoryStoreBackend(new VirtualClock()), new StorePrefix('stewart'), AppIdCollection::fromList([new AppId('demo'), new AppId('hall-light'), new AppId('keeper'), new AppId('boiler')]), new StoreValueCodec(), new ClosestNameFinder());
     }
 
     private static function findRootCause(Throwable $e): Throwable

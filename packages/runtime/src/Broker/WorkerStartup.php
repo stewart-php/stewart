@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Broker;
 use Psr\Log\LoggerInterface;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\Exposure\ExposureReconciler;
+use Stewart\Runtime\Exception\BrokerError;
 use Stewart\Runtime\Exception\BrokerException;
 use Throwable;
 
@@ -38,7 +39,7 @@ final readonly class WorkerStartup
         }
 
         if (!$this->workerSlots->isEmpty() && $this->slots->countLiveWorkers() === 0 && $this->slots->countPendingRestarts() === 0) {
-            throw BrokerException::noWorkersStarted($this->workerSlots->count());
+            throw BrokerException::createForReason(BrokerError::NoWorkersStarted, workers: $this->workerSlots->count());
         }
 
         $this->watchdog->startProbing();

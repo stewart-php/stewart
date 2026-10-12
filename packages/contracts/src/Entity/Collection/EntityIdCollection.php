@@ -10,12 +10,6 @@ use Stewart\Contracts\Entity\EntityId;
 /** @extends ListCollection<EntityId> */
 final readonly class EntityIdCollection extends ListCollection
 {
-    /** @param iterable<EntityId> $entityIds */
-    public static function fromIds(iterable $entityIds): self
-    {
-        return self::fromList($entityIds);
-    }
-
     /** @return list<string> */
     public function toStrings(): array
     {

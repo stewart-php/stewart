@@ -20,12 +20,12 @@ final readonly class WorkerSlot
 
     public function listAppIds(): AppIdCollection
     {
-        return AppIdCollection::fromIds($this->apps->mapToList(static fn(AppDefinition $app) => $app->id));
+        return AppIdCollection::fromList($this->apps->mapToList(static fn(AppDefinition $app) => $app->id));
     }
 
     public function listWorkerApps(): WorkerAppCollection
     {
-        return WorkerAppCollection::fromApps($this->apps->mapToList(
+        return WorkerAppCollection::fromList($this->apps->mapToList(
             static fn(AppDefinition $app): WorkerApp => new WorkerApp($app->id, $app->class, $app->options),
         ));
     }

@@ -147,13 +147,13 @@ final readonly class EntityRegistryUpdate
      */
     private function collectLabelIds(array $labelIds): LabelIdCollection
     {
-        return LabelIdCollection::fromIds(array_map(LabelId::fromStringOrId(...), array_values($labelIds)));
+        return LabelIdCollection::fromList(array_map(LabelId::fromStringOrId(...), array_values($labelIds)));
     }
 
     /** @param array<EntityAlias|string> $aliases */
     private function collectAliases(array $aliases): EntityAliasCollection
     {
-        return EntityAliasCollection::fromAliases(array_map(
+        return EntityAliasCollection::fromList(array_map(
             static fn(EntityAlias|string $alias): EntityAlias => $alias instanceof EntityAlias ? $alias : EntityAlias::named($alias),
             array_values($aliases),
         ));

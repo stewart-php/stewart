@@ -10,6 +10,7 @@ use Monolog\LogRecord;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use Stewart\Contracts\Exception\StoreError;
 use Stewart\Contracts\Exception\StoreException;
 use Stewart\Runtime\Logging\ExceptionContextProcessor;
 use Stewart\Runtime\Model\ExceptionDetails;
@@ -20,7 +21,7 @@ final class ExceptionContextProcessorTest extends TestCase
 {
     public function testLoggedStewartExceptionBringsItsCodeAndContext(): void
     {
-        $error = StoreException::keyInvalid('with space');
+        $error = StoreException::createForReason(StoreError::KeyInvalid, key: 'with space');
 
         $record = new ExceptionContextProcessor()(self::createLogRecord(['exception' => $error]));
 
@@ -33,7 +34,7 @@ final class ExceptionContextProcessorTest extends TestCase
 
     public function testWorkerDetailsMoveFromContextToExtra(): void
     {
-        $details = ExceptionDetails::fromThrowable(StoreException::notConfigured());
+        $details = ExceptionDetails::fromThrowable(StoreException::createForReason(StoreError::NotConfigured));
 
         $record = new ExceptionContextProcessor()(self::createLogRecord(['app' => 'demo', ExceptionDetails::CONTEXT_KEY => $details]));
 
@@ -62,7 +63,7 @@ final class ExceptionContextProcessorTest extends TestCase
 
     public function testStewartExceptionBringsNoTrace(): void
     {
-        $record = new ExceptionContextProcessor()(self::createLogRecord(['exception' => StoreException::notConfigured()]));
+        $record = new ExceptionContextProcessor()(self::createLogRecord(['exception' => StoreException::createForReason(StoreError::NotConfigured)]));
 
         self::assertArrayNotHasKey(ExceptionContextProcessor::TRACE_KEY, $record->extra);
     }

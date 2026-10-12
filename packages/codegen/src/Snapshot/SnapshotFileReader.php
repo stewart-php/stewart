@@ -6,6 +6,7 @@ namespace Stewart\Codegen\Snapshot;
 
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Stewart\Codegen\Exception\CodegenError;
 use Stewart\Codegen\Exception\CodegenException;
 
 final readonly class SnapshotFileReader
@@ -18,7 +19,7 @@ final readonly class SnapshotFileReader
         $snapshotJson = is_file($path) ? file_get_contents($path) : false;
 
         if ($snapshotJson === false) {
-            throw CodegenException::snapshotUnreadable($path);
+            throw CodegenException::createForReason(CodegenError::SnapshotUnreadable, path: $path);
         }
 
         return $this->codec->decodeSnapshot($snapshotJson, $path, $logger);

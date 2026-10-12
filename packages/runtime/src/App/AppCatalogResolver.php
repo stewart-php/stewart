@@ -63,6 +63,6 @@ final readonly class AppCatalogResolver
             );
         }
 
-        return new AppCatalog(AppDefinitionCollection::keyedByAppId($enabled), $knownIds, AppIdCollection::fromIds($unmatchedOverrideIds));
+        return new AppCatalog(AppDefinitionCollection::keyedByAppId($enabled), $knownIds, AppIdCollection::fromList($unmatchedOverrideIds));
     }
 }

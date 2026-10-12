@@ -74,7 +74,7 @@ final class AppCatalogResolverTest extends TestCase
             self::createDiscoveryResult('demo', 'echo', 'porch'),
             AppOverrideCollection::keyedByAppId([self::createOverride('echo', enabled: false)]),
             workers: 0,
-            selection: new AppSelection(AppIdCollection::fromIds([new AppId('echo')])),
+            selection: new AppSelection(AppIdCollection::fromList([new AppId('echo')])),
         );
 
         self::assertSame(['echo'], self::listEnabledIds($catalog));
@@ -83,7 +83,7 @@ final class AppCatalogResolverTest extends TestCase
 
     public function testOnlySelectionOfUnknownAppIsRejected(): void
     {
-        $selection = new AppSelection(AppIdCollection::fromIds([new AppId('ghost')]));
+        $selection = new AppSelection(AppIdCollection::fromList([new AppId('ghost')]));
 
         $e = $this->assertThrowsReason(ConfigurationError::AppSelectionUnknown, fn() => new AppCatalogResolver()->resolveCatalog(self::createDiscoveryResult('demo'), AppOverrideCollection::empty(), workers: 0, selection: $selection));
 
@@ -166,7 +166,7 @@ final class AppCatalogResolverTest extends TestCase
         return new DiscoveryResult(
             $discovered->apps,
             $discovered->unmarked,
-            UnloadableAppFileCollection::fromFiles([new UnloadableAppFile('/apps/Broken.php', new ParseError('syntax error'))]),
+            UnloadableAppFileCollection::fromList([new UnloadableAppFile('/apps/Broken.php', new ParseError('syntax error'))]),
         );
     }
 

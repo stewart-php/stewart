@@ -6,7 +6,7 @@ namespace Stewart\Codegen\Emitter;
 
 use Stewart\Codegen\GenerationTarget;
 use Stewart\Codegen\Model\GenerationModel;
-use Stewart\Codegen\Output\Collection\GeneratedFileCollection;
+use Stewart\Codegen\Output\GeneratedFile;
 
 final readonly class SourceTree
 {
@@ -20,7 +20,8 @@ final readonly class SourceTree
         private GeneratedCodePrinter $printer,
     ) {}
 
-    public function renderFiles(GenerationModel $model, GenerationTarget $target): GeneratedFileCollection
+    /** @return list<GeneratedFile> */
+    public function renderFiles(GenerationModel $model, GenerationTarget $target): array
     {
         $context = new EmitContext($target, $this->printer);
         $files = [];
@@ -37,6 +38,8 @@ final readonly class SourceTree
             }
         }
 
-        return GeneratedFileCollection::fromFilesSortedByPath($files);
+        usort($files, static fn(GeneratedFile $a, GeneratedFile $b): int => strcmp($a->path, $b->path));
+
+        return $files;
     }
 }

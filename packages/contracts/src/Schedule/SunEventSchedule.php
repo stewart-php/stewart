@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Contracts\Schedule;
 
 use DateTimeImmutable;
+use Stewart\Contracts\Exception\ScheduleError;
 use Stewart\Contracts\Exception\ScheduleException;
 use Stewart\Contracts\Exception\SunException;
 use Stewart\Contracts\Sun\SunCalendar;
@@ -27,7 +28,7 @@ final readonly class SunEventSchedule implements WallClockSchedule
         try {
             $calendar->getLocation();
         } catch (SunException $e) {
-            throw ScheduleException::sunLocationUnknown($event->describe(), $e);
+            throw ScheduleException::createForReason(ScheduleError::SunLocationUnknown, $e, event: $event->describe());
         }
 
         return new self($calendar, $event, $offset ?? SunOffset::none());

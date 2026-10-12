@@ -103,7 +103,7 @@ final class StateCacheSync
             }
         }
 
-        return StateChangeCollection::fromChanges($changes);
+        return StateChangeCollection::fromList($changes);
     }
 
     private function hasChanged(EntityState $before, EntityState $after): bool

@@ -192,7 +192,7 @@ final class ExposureReconcilerTest extends TestCase
     public function testNoWorkersRunsAfterStartup(): void
     {
         $reconciler = new ExposureReconciler(
-            WorkerSlotCollection::fromWorkerSlots([]),
+            WorkerSlotCollection::fromList([]),
             $this->exposures,
             $this->client,
             $this->tracker,
@@ -211,7 +211,7 @@ final class ExposureReconcilerTest extends TestCase
     private function createReconciler(bool $prune = true): ExposureReconciler
     {
         return new ExposureReconciler(
-            WorkerSlotCollection::fromWorkerSlots([self::createSlot(0, 'climate'), self::createSlot(1, 'lights')]),
+            WorkerSlotCollection::fromList([self::createSlot(0, 'climate'), self::createSlot(1, 'lights')]),
             $this->exposures,
             $this->client,
             $this->tracker,
@@ -245,7 +245,7 @@ final class ExposureReconcilerTest extends TestCase
 
     private static function listApps(string ...$appIds): AppIdCollection
     {
-        return AppIdCollection::fromIds(array_map(static fn(string $appId): AppId => new AppId($appId), $appIds));
+        return AppIdCollection::fromList(array_map(static fn(string $appId): AppId => new AppId($appId), $appIds));
     }
 
     private function createClient(): HaClient

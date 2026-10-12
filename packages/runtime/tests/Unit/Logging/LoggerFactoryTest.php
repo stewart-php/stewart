@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Tests\Unit\Logging;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use Stewart\Contracts\Exception\StoreError;
 use Stewart\Contracts\Exception\StoreException;
 use Stewart\Runtime\Logging\ExceptionContextProcessor;
 use Stewart\Runtime\Logging\LogFormat;
@@ -64,7 +65,7 @@ final class LoggerFactoryTest extends TestCase
 
     public function testStewartExceptionPrintsNoTrace(): void
     {
-        $this->createFactory()->createStdoutLogger()->error('Store failed', ['exception' => StoreException::notConfigured()]);
+        $this->createFactory()->createStdoutLogger()->error('Store failed', ['exception' => StoreException::createForReason(StoreError::NotConfigured)]);
 
         self::assertSame(1, substr_count($this->readLog(), "\n"));
         self::assertStringNotContainsString('#0 ', $this->readLog());

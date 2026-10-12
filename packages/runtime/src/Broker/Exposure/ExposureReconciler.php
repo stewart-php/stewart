@@ -105,6 +105,6 @@ final class ExposureReconciler
             }
         }
 
-        return new ExposedEntityReconcile($this->expose->instance, $this->exposures->listKeptAddresses(), AppIdCollection::fromIds($keptApps));
+        return new ExposedEntityReconcile($this->expose->instance, $this->exposures->listKeptAddresses(), AppIdCollection::fromList($keptApps));
     }
 }

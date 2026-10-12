@@ -22,6 +22,6 @@ final readonly class TopicMessageHandler implements BrokerMessageHandler
     /** @param TopicMessage $message */
     public function handle(BrokerMessage $message): void
     {
-        $this->dispatcher->dispatchTopic($message->event, SubscriptionIdCollection::fromIds($message->deliverTo));
+        $this->dispatcher->dispatchTopic($message->event, SubscriptionIdCollection::fromList($message->deliverTo));
     }
 }

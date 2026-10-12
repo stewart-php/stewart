@@ -11,6 +11,7 @@ use Psr\Log\NullLogger;
 use Stewart\Client\Registry\EntityRegistryEntry;
 use Stewart\Client\Registry\RegistryDecoder;
 use Stewart\Client\State\EntityStateDecoder;
+use Stewart\Codegen\Exception\CodegenError;
 use Stewart\Codegen\Exception\CodegenException;
 use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Registry\Area;
@@ -108,11 +109,11 @@ final readonly class SnapshotCodec
         try {
             $decoded = JsonDecoder::decodeJson($json);
         } catch (JsonException $e) {
-            throw CodegenException::snapshotNotJson($origin, $e->getMessage());
+            throw CodegenException::createForReason(CodegenError::SnapshotNotJson, path: $origin, reason: $e->getMessage());
         }
 
         if (!\is_array($decoded) || !\array_key_exists('states', $decoded)) {
-            throw CodegenException::notASnapshot($origin);
+            throw CodegenException::createForReason(CodegenError::NotASnapshot, path: $origin);
         }
 
         return $this->buildSnapshotFromDecodedJson($decoded, $logger);

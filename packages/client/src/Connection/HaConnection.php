@@ -25,6 +25,7 @@ use Stewart\Client\Connection\Command\Authenticate;
 use Stewart\Client\Connection\Command\HaCommand;
 use Stewart\Client\Connection\Command\SubscriptionCommand;
 use Stewart\Client\Connection\Command\UnsubscribeEvents;
+use Stewart\Client\Exception\HaClientError;
 use Stewart\Client\Exception\HaClientException;
 use Stewart\Support\Json\JsonDecoder;
 use Stewart\Support\Json\JsonEncoder;
@@ -94,8 +95,13 @@ final class HaConnection
             }
         } catch (CancelledException $e) {
             throw $connecting->isCancelled()
-                ? HaClientException::closedLocally('it was being established')
-                : HaClientException::connectTimedOut((string) $this->config->url, $this->config->connectTimeout, $e);
+                ? HaClientException::createForReason(HaClientError::ClosedLocally, phase: 'it was being established')
+                : HaClientException::createForReason(
+                    HaClientError::ConnectTimedOut,
+                    $e,
+                    url: (string) $this->config->url,
+                    timeout: (string) $this->config->connectTimeout,
+                );
         } finally {
             $this->connecting = null;
         }
@@ -175,7 +181,7 @@ final class HaConnection
         $this->eventHandlers = [];
 
         $this->events->close();
-        $this->correlator->failAll(HaClientException::closedLocally('commands were waiting for an answer'));
+        $this->correlator->failAll(HaClientException::createForReason(HaClientError::ClosedLocally, phase: 'commands were waiting for an answer'));
 
         $socket?->close();
     }
@@ -189,7 +195,7 @@ final class HaConnection
         } catch (CancelledException $e) {
             throw $e;
         } catch (Throwable $e) {
-            throw HaClientException::connectFailed((string) $this->config->url, $e);
+            throw HaClientException::createForReason(HaClientError::ConnectFailed, $e, url: (string) $this->config->url);
         }
     }
 
@@ -213,7 +219,7 @@ final class HaConnection
     /** @return array<string, mixed> */
     private function sendAndAwaitResponse(int $id, HaCommand $command): array
     {
-        $socket = $this->socket ?? throw HaClientException::notConnected();
+        $socket = $this->socket ?? throw HaClientException::createForReason(HaClientError::NotConnected);
         $description = $command->describe();
         $payload = self::encodeMessage([...$command->toMessage(), 'id' => $id], $description);
         $future = $this->correlator->expect($id);
@@ -227,12 +233,17 @@ final class HaConnection
                     $future->await();
                 }
 
-                throw HaClientException::sendFailed($description, $e);
+                throw HaClientException::createForReason(HaClientError::SendFailed, $e, command: $description);
             }
 
             return $future->await($this->deadlines->timeout($this->config->commandTimeout));
         } catch (CancelledException $e) {
-            throw HaClientException::commandTimedOut($description, $this->config->commandTimeout, $e);
+            throw HaClientException::createForReason(
+                HaClientError::CommandTimedOut,
+                $e,
+                command: $description,
+                timeout: (string) $this->config->commandTimeout,
+            );
         } finally {
             $this->correlator->forget($id);
         }
@@ -243,8 +254,9 @@ final class HaConnection
         $greeting = $this->receiveMessage($socket, $cancellation);
 
         if (($greeting['type'] ?? null) !== 'auth_required') {
-            throw HaClientException::unexpectedGreeting(
-                \is_scalar($greeting['type'] ?? null) ? (string) $greeting['type'] : 'nothing',
+            throw HaClientException::createForReason(
+                HaClientError::UnexpectedGreeting,
+                receivedType: \is_scalar($greeting['type'] ?? null) ? (string) $greeting['type'] : 'nothing',
             );
         }
 
@@ -255,8 +267,9 @@ final class HaConnection
         $response = $this->receiveMessage($socket, $cancellation);
 
         if (($response['type'] ?? null) !== 'auth_ok') {
-            throw HaClientException::tokenRejected(
-                \is_string($response['message'] ?? null) ? $response['message'] : 'no reason given',
+            throw HaClientException::createForReason(
+                HaClientError::TokenRejected,
+                reason: \is_string($response['message'] ?? null) ? $response['message'] : 'no reason given',
             );
         }
 
@@ -271,7 +284,7 @@ final class HaConnection
     /** @return array<string, mixed> */
     private function receiveMessage(WebsocketConnection $socket, Cancellation $cancellation): array
     {
-        $message = $socket->receive($cancellation) ?? throw HaClientException::closedDuringAuthentication();
+        $message = $socket->receive($cancellation) ?? throw HaClientException::createForReason(HaClientError::ClosedDuringAuthentication);
 
         return self::decodeMessage($message->buffer());
     }
@@ -359,7 +372,7 @@ final class HaConnection
         }
 
         if ($this->events->enqueue($handler, JsonShape::treatKeysAsStrings($event)) === EnqueueOutcome::Full) {
-            throw HaClientException::eventBacklogExceeded($this->config->eventBufferLimit);
+            throw HaClientException::createForReason(HaClientError::EventBacklogExceeded, limit: $this->config->eventBufferLimit);
         }
     }
 
@@ -369,7 +382,7 @@ final class HaConnection
         $reason = $close->getReason();
 
         return match (true) {
-            $close->getCode() === WebsocketCloseCode::MESSAGE_TOO_LARGE => HaClientException::messageTooLarge(),
+            $close->getCode() === WebsocketCloseCode::MESSAGE_TOO_LARGE => HaClientException::createForReason(HaClientError::MessageTooLarge),
             $close->isByPeer() => HaClientException::connectionDropped($reason === '' ? 'closed by Home Assistant' : 'closed by Home Assistant: ' . $reason),
             default => HaClientException::connectionDropped(ltrim(\sprintf('%s (close code %d)', $reason, $close->getCode()))),
         };
@@ -387,8 +400,8 @@ final class HaConnection
         $code = \is_scalar($error['code'] ?? null) ? (string) $error['code'] : null;
 
         throw $code === self::UNAUTHORIZED_ERROR_CODE
-            ? HaClientException::commandUnauthorized($command->describe(), $message, $code)
-            : HaClientException::commandRejected($command->describe(), $message, $code);
+            ? HaClientException::createForReason(HaClientError::CommandUnauthorized, command: $command->describe(), detail: $message, errorCode: $code)
+            : HaClientException::createForReason(HaClientError::CommandRejected, command: $command->describe(), detail: $message, errorCode: $code);
     }
 
     /** @param array<string, mixed> $message */

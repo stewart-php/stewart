@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Config;
 
 use Stewart\Contracts\Time\Duration;
+use Stewart\Runtime\Exception\ConfigurationError;
 use Stewart\Runtime\Exception\ConfigurationException;
 
 final readonly class SupervisionConfig
@@ -30,7 +31,12 @@ final readonly class SupervisionConfig
         $restartBackoffTotal = $restartBackoff->sumDelaysUpTo($restartAttempts);
 
         if (!$restartWindow->isLongerThan($restartBackoffTotal)) {
-            throw ConfigurationException::restartWindowTooShort((string) $restartWindow, $restartAttempts, (string) $restartBackoffTotal);
+            throw ConfigurationException::createForReason(
+                ConfigurationError::RestartWindowTooShort,
+                window: (string) $restartWindow,
+                attempts: $restartAttempts,
+                backoffTotal: (string) $restartBackoffTotal,
+            );
         }
 
         return new self(

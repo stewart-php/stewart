@@ -15,6 +15,7 @@ use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
+use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\Ping;
 use Stewart\Runtime\Ipc\Message\Shutdown;
@@ -44,7 +45,7 @@ final class WorkerHandleTest extends TestCase
     {
         $logger = new RecordingLogger();
         $process = new FakeWorkerProcess();
-        $process->channel->refuseSendsOf(Shutdown::class, TransportException::sendFailed(new RuntimeException('broken pipe')));
+        $process->channel->refuseSendsOf(Shutdown::class, TransportException::createForReason(TransportError::SendFailed, new RuntimeException('broken pipe')));
         $handle = new WorkerHandle(new WorkerId(0), $process, new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)])), $logger, new OutboxLimits(10, 256));
 
         $handle->send(new Shutdown('stop', Duration::zero()));
@@ -72,7 +73,7 @@ final class WorkerHandleTest extends TestCase
     {
         $logger = new RecordingLogger();
         $process = new FakeWorkerProcess();
-        $process->channel->refuseSendsOf(Shutdown::class, TransportException::sendFailed(new RuntimeException('broken pipe')));
+        $process->channel->refuseSendsOf(Shutdown::class, TransportException::createForReason(TransportError::SendFailed, new RuntimeException('broken pipe')));
         $handle = self::createHandle($process, $logger);
 
         $handle->sendShutdown(new Shutdown('stop', Duration::zero()));

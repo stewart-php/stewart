@@ -59,7 +59,7 @@ final class AppPauseRequestHandlersTest extends TestCase
         $apps = AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class), new AppDefinition(new AppId('porch'), Demo::class, startsPaused: true)]);
         $this->registry = new AppPauseRegistry($apps, new DaemonStartTime($clock));
         $service = new AppPauseService(
-            new AppCatalog($apps, AppIdCollection::fromIds([new AppId('demo'), new AppId('porch')]), AppIdCollection::fromIds([])),
+            new AppCatalog($apps, AppIdCollection::fromList([new AppId('demo'), new AppId('porch')]), AppIdCollection::fromList([])),
             $this->registry,
             new AppPauseOverrideStore(new AppPauseOverrideCodec(AppPauseOverrideCodec::createOverrideWireMapper()), new NullLogger()),
             new WorkerSlotRegistry(),

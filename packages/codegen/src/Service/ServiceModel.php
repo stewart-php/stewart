@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Stewart\Codegen\Service;
 
-use Stewart\Codegen\Service\Collection\FieldModelCollection;
-
 final readonly class ServiceModel
 {
+    /** @param list<FieldModel> $fields */
     public function __construct(
         public string $method,
         public ServiceDefinition $definition,
-        public FieldModelCollection $fields,
+        public array $fields,
     ) {}
 }

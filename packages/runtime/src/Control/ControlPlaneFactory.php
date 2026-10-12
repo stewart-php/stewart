@@ -13,6 +13,7 @@ use Stewart\Runtime\Control\Protocol\Codec\FrameCodec;
 use Stewart\Runtime\Control\Request\ControlRequestDispatcher;
 use Stewart\Runtime\Control\Server\ControlServer;
 use Stewart\Runtime\Control\Server\UnixSocketFile;
+use Stewart\Runtime\Exception\ConfigurationError;
 use Stewart\Runtime\Exception\ConfigurationException;
 use Stewart\Support\Time\Deadlines;
 
@@ -37,7 +38,7 @@ final readonly class ControlPlaneFactory
 
         return new ControlServer(
             address: $this->control->listen,
-            token: $this->control->token ?? throw ConfigurationException::controlTokenMissing(),
+            token: $this->control->token ?? throw ConfigurationException::createForReason(ConfigurationError::ControlTokenMissing),
             requests: $this->requests,
             deadlines: $this->deadlines,
             codec: $this->codec,

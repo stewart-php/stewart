@@ -7,6 +7,7 @@ namespace Stewart\Contracts\Schedule;
 use DateTimeImmutable;
 use DateTimeZone;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Exception\ScheduleError;
 use Stewart\Contracts\Exception\ScheduleException;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\Time\Instant;
@@ -47,7 +48,7 @@ final readonly class EntityTime
     public static function requireSupportedEntity(EntityId $entityId): void
     {
         if ($entityId->domain !== self::INPUT_DATETIME_DOMAIN && $entityId->domain !== self::SENSOR_DOMAIN) {
-            throw ScheduleException::entityTimeDomainUnsupported($entityId->value);
+            throw ScheduleException::createForReason(ScheduleError::EntityTimeDomainUnsupported, entityId: $entityId->value);
         }
     }
 

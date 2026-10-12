@@ -13,6 +13,7 @@ use Stewart\Runtime\App\Collection\UnloadableAppFileCollection;
 use Stewart\Runtime\App\Collection\UnmarkedAppCollection;
 use Stewart\Runtime\Config\AutoloadRoot;
 use Stewart\Runtime\Config\Psr4Map;
+use Stewart\Runtime\Exception\AppError;
 use Stewart\Runtime\Exception\AppException;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
@@ -34,7 +35,10 @@ final readonly class AppDiscovery
             return DiscoveryResult::createEmpty();
         }
 
-        $root = $this->psr4Map->findAutoloadRootContaining($directory) ?? throw AppException::directoryNotAutoloadable($directory);
+        $root = $this->psr4Map->findAutoloadRootContaining($directory) ?? throw AppException::createForReason(
+            AppError::DirectoryNotAutoloadable,
+            directory: $directory,
+        );
         $apps = [];
         $unmarked = [];
         $unloadable = [];
@@ -67,7 +71,7 @@ final readonly class AppDiscovery
             $key = $app->id->toEnvironmentKey();
 
             if (isset($classesByKey[$key])) {
-                throw AppException::duplicateId($app->id, $classesByKey[$key], $app->class);
+                throw AppException::createForReason(AppError::DuplicateId, appId: $app->id->value, firstClass: $classesByKey[$key], secondClass: $app->class);
             }
 
             $classesByKey[$key] = $app->class;
@@ -76,8 +80,8 @@ final readonly class AppDiscovery
 
         return new DiscoveryResult(
             DiscoveredAppCollection::fromApps($apps),
-            UnmarkedAppCollection::fromApps($unmarked),
-            UnloadableAppFileCollection::fromFiles($unloadable),
+            UnmarkedAppCollection::fromList($unmarked),
+            UnloadableAppFileCollection::fromList($unloadable),
         );
     }
 
@@ -105,13 +109,13 @@ final readonly class AppDiscovery
         $class = $reflection->getName();
 
         if (!$reflection->implementsInterface(App::class)) {
-            throw AppException::notAnApp($class, App::class);
+            throw AppException::createForReason(AppError::NotAnApp, className: $class, appInterface: App::class);
         }
 
         if (!$reflection->isInstantiable()) {
-            throw AppException::notInstantiable($class);
+            throw AppException::createForReason(AppError::NotInstantiable, className: $class);
         }
 
-        return AppId::tryFromString($automation->id) ?? throw AppException::idInvalid($class, $automation->id);
+        return AppId::tryFromString($automation->id) ?? throw AppException::createForReason(AppError::IdInvalid, className: $class, appId: $automation->id);
     }
 }

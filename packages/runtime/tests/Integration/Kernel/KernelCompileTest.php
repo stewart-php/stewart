@@ -92,7 +92,7 @@ final class KernelCompileTest extends TestCase
     {
         return new BrokerKernel('test', self::EMPTY_SERVICES_FILE, new ProjectRoot(sys_get_temp_dir()))->createBroker(
             ConfigFixture::createStewartConfig($yaml),
-            new AppCatalog(AppDefinitionCollection::keyedByAppId([]), AppIdCollection::fromIds([]), AppIdCollection::fromIds([])),
+            new AppCatalog(AppDefinitionCollection::keyedByAppId([]), AppIdCollection::fromList([]), AppIdCollection::fromList([])),
             $logger,
         );
     }

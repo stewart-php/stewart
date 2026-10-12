@@ -30,6 +30,7 @@ use Stewart\Contracts\Selector\Collection\SelectorCollection;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
+use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\EventFireRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
@@ -59,8 +60,15 @@ final class WorkerHaContextTest extends TestCase
     /** @return iterable<string, array{Throwable, ServiceCallError}> */
     public static function provideSendFailures(): iterable
     {
-        yield 'a request that cannot be encoded' => [TransportException::unencodable(ServiceCallRequest::class, new RuntimeException('NAN')), ServiceCallError::Rejected];
-        yield 'a channel that is gone' => [TransportException::sendFailed(new RuntimeException('broken pipe')), ServiceCallError::Unreachable];
+        yield 'a request that cannot be encoded' => [TransportException::createForReason(
+            TransportError::Unencodable,
+            new RuntimeException('NAN'),
+            messageClass: ServiceCallRequest::class,
+        ), ServiceCallError::Rejected];
+        yield 'a channel that is gone' => [TransportException::createForReason(
+            TransportError::SendFailed,
+            new RuntimeException('broken pipe'),
+        ), ServiceCallError::Unreachable];
         yield 'anything else' => [new RuntimeException('surprise'), ServiceCallError::Unreachable];
     }
 
@@ -102,7 +110,7 @@ final class WorkerHaContextTest extends TestCase
 
     public function testPublishOnBrokenChannelThrowsTopicError(): void
     {
-        $failure = TransportException::sendFailed(new RuntimeException('broken pipe'));
+        $failure = TransportException::createForReason(TransportError::SendFailed, new RuntimeException('broken pipe'));
 
         try {
             self::createContext(new FailingTransport($failure))->publish('hall.motion', ['on' => true]);

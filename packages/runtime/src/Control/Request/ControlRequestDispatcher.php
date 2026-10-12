@@ -8,6 +8,7 @@ use Stewart\Contracts\Exception\StewartException;
 use Stewart\Runtime\Control\Protocol\Frame\ClientFrame;
 use Stewart\Runtime\Control\Protocol\Frame\ServerFrame;
 use Stewart\Runtime\Exception\ContainerException;
+use Stewart\Runtime\Exception\ControlError;
 use Stewart\Runtime\Exception\ControlException;
 use Stewart\Runtime\Ipc\MessageHandlerIndex;
 
@@ -29,7 +30,10 @@ final readonly class ControlRequestDispatcher
     public function answerRequest(ClientFrame $request): ServerFrame
     {
         /** @var ControlRequestHandler<ClientFrame> $handler */
-        $handler = $this->handlers->findHandlerFor($request) ?? throw ControlException::requestUnexpected($request::class);
+        $handler = $this->handlers->findHandlerFor($request) ?? throw ControlException::createForReason(
+            ControlError::RequestUnexpected,
+            frameClass: $request::class,
+        );
 
         return $handler->answerRequest($request);
     }

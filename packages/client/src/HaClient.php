@@ -59,6 +59,7 @@ use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\Exception\EventFireException;
+use Stewart\Contracts\Exception\HistoryError;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Exception\RegistryEditException;
@@ -328,7 +329,7 @@ final class HaClient
             }
         }
 
-        return new EntityStateHistory($entityId, $window, HistoricalStateCollection::fromStates($states));
+        return new EntityStateHistory($entityId, $window, HistoricalStateCollection::fromList($states));
     }
 
     /**
@@ -476,7 +477,7 @@ final class HaClient
             return $this->connection->subscribeEvents($command, $handler);
         } catch (HaClientException $e) {
             throw $e->reason === HaClientError::CommandUnauthorized
-                ? HaClientException::administratorRequired($e)
+                ? HaClientException::createForReason(HaClientError::AdministratorRequired, $e)
                 : $e;
         }
     }
@@ -520,7 +521,7 @@ final class HaClient
     private function toHistoryException(EntityId $entityId, HaClientException $e): HistoryException
     {
         if ($e->reason === HaClientError::CommandRejected && $e->findErrorCode() === self::UNKNOWN_COMMAND_CODE) {
-            return HistoryException::recorderUnavailable($entityId, $e);
+            return HistoryException::createForReason(HistoryError::RecorderUnavailable, $e, entityId: $entityId->value);
         }
 
         return match ($e->reason) {

@@ -234,8 +234,8 @@ final class AppPauseServiceTest extends TestCase
     {
         return new AppCatalog(
             AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)]),
-            AppIdCollection::fromIds([new AppId('demo'), new AppId('dormant')]),
-            AppIdCollection::fromIds([]),
+            AppIdCollection::fromList([new AppId('demo'), new AppId('dormant')]),
+            AppIdCollection::fromList([]),
         );
     }
 }

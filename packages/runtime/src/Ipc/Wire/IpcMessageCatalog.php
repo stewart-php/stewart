@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Ipc\Wire;
 
 use ReflectionClass;
+use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\BrokerMessage;
 use Stewart\Runtime\Ipc\Message\IpcMessage;
@@ -52,11 +53,19 @@ final readonly class IpcMessageCatalog
         $classesByTag = [];
 
         foreach ($messageClasses as $class) {
-            $attribute = new ReflectionClass($class)->getAttributes(IpcMessage::class)[0] ?? throw TransportException::messageTagMissing($class);
+            $attribute = new ReflectionClass($class)->getAttributes(IpcMessage::class)[0] ?? throw TransportException::createForReason(
+                TransportError::MessageTagMissing,
+                messageClass: $class,
+            );
             $tag = $attribute->newInstance()->tag;
 
             if (isset($classesByTag[$tag])) {
-                throw TransportException::messageTagDuplicated($tag, $classesByTag[$tag], $class);
+                throw TransportException::createForReason(
+                    TransportError::MessageTagDuplicated,
+                    tag: $tag,
+                    firstClass: $classesByTag[$tag],
+                    secondClass: $class,
+                );
             }
 
             $classesByTag[$tag] = $class;

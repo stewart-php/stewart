@@ -92,7 +92,7 @@ final class WorkerPauseTest extends TestCase
         $this->startWorker();
 
         foreach ([1, 2] as $ignored) {
-            $this->transport->deliver(new PausedAppsChanged(AppIdsFragment::fromCollection(AppIdCollection::fromIds([new AppId(self::APP_ID), new AppId('elsewhere')]))));
+            $this->transport->deliver(new PausedAppsChanged(AppIdsFragment::fromCollection(AppIdCollection::fromList([new AppId(self::APP_ID), new AppId('elsewhere')]))));
             EventLoopTicks::settle();
         }
 
@@ -111,7 +111,7 @@ final class WorkerPauseTest extends TestCase
             ->withService(ProcessTimeZone::class, new RecordingProcessTimeZone()));
         $this->transport->deliver(TestBootstrap::createForApps(
             [new WorkerApp(id: new AppId(self::APP_ID), class: SubscribesThenWaits::class, options: [])],
-            pausedAppIds: AppIdCollection::fromIds(array_map(static fn(string $id): AppId => new AppId($id), $pausedAppIds)),
+            pausedAppIds: AppIdCollection::fromList(array_map(static fn(string $id): AppId => new AppId($id), $pausedAppIds)),
         ));
 
         /** @var Future<string> $running */
@@ -126,7 +126,7 @@ final class WorkerPauseTest extends TestCase
         $id = new EntityId('light.hall');
         $change = new StateChange($id, new EntityState($id, 'off'), new EntityState($id, 'on'));
 
-        $this->transport->deliver(new StateChangeBatch(StateChangesFragment::fromCollection(StateChangeCollection::fromChanges([$change]))));
+        $this->transport->deliver(new StateChangeBatch(StateChangesFragment::fromCollection(StateChangeCollection::fromList([$change]))));
         EventLoopTicks::settle();
     }
 }

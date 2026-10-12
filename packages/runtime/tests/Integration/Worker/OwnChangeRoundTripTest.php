@@ -44,10 +44,10 @@ final class OwnChangeRoundTripTest extends TestCase
         $broker = BrokerKernelFixture::boot(
             $session,
             WorkerPoolFixture::createWorkerPool(new InMemoryWorkerSpawner(IpcCodec::createForWorkerBootstrap()), logger: $logger),
-            WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([
+            WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([
                 new AppDefinition(new AppId('own-change-reporter'), OwnChangeReporter::class),
             ]))]),
-            AppIdCollection::fromIds([new AppId('own-change-reporter')]),
+            AppIdCollection::fromList([new AppId('own-change-reporter')]),
             $logger,
             ['shutdown_grace' => '1s'],
         );

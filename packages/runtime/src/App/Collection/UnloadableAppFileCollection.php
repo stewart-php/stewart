@@ -10,12 +10,6 @@ use Stewart\Runtime\App\UnloadableAppFile;
 /** @extends ListCollection<UnloadableAppFile> */
 final readonly class UnloadableAppFileCollection extends ListCollection
 {
-    /** @param iterable<UnloadableAppFile> $files */
-    public static function fromFiles(iterable $files): self
-    {
-        return self::fromList($files);
-    }
-
     /** @return list<string> */
     public function listPaths(): array
     {

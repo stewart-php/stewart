@@ -106,7 +106,7 @@ final class WorkerOutbox
         ++$this->batchesSent;
         $this->largestBatch = max($this->largestBatch, \count($batch));
 
-        return new StateChangeBatch(StateChangesFragment::fromEncodedChanges(EncodedStateChangeCollection::fromChanges($batch)));
+        return new StateChangeBatch(StateChangesFragment::fromEncodedChanges(EncodedStateChangeCollection::fromList($batch)));
     }
 
     public function clear(): void

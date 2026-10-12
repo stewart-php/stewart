@@ -10,12 +10,6 @@ use Stewart\Testing\HaContext\RecordedHistoryQuery;
 /** @extends ListCollection<RecordedHistoryQuery> */
 final readonly class RecordedHistoryQueryCollection extends ListCollection
 {
-    /** @param iterable<RecordedHistoryQuery> $queries */
-    public static function fromQueries(iterable $queries): self
-    {
-        return self::fromList($queries);
-    }
-
     public function withRecordedQuery(RecordedHistoryQuery $query): self
     {
         return $this->withAppendedElement($query);

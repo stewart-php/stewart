@@ -8,11 +8,4 @@ use Stewart\Contracts\Collection\ListCollection;
 use Stewart\Runtime\Broker\Http\HttpListener;
 
 /** @extends ListCollection<HttpListener> */
-final readonly class HttpListenerCollection extends ListCollection
-{
-    /** @param iterable<HttpListener> $listeners */
-    public static function fromListeners(iterable $listeners): self
-    {
-        return self::fromList($listeners);
-    }
-}
+final readonly class HttpListenerCollection extends ListCollection {}

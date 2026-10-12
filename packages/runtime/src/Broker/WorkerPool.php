@@ -12,6 +12,7 @@ use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\TimerHandle;
 use Stewart\Contracts\Time\Timers;
 use Stewart\Runtime\Config\SupervisionConfig;
+use Stewart\Runtime\Exception\BrokerError;
 use Stewart\Runtime\Exception\BrokerException;
 use Stewart\Runtime\Ipc\Message\Shutdown;
 use Stewart\Runtime\Ipc\Message\WorkerMessage;
@@ -147,7 +148,7 @@ final class WorkerPool
         try {
             return $this->spawner->spawn($workerId, $this->timers->timeout($timeout));
         } catch (CancelledException $e) {
-            throw BrokerException::workerSpawnTimedOut($workerId, $timeout, $e);
+            throw BrokerException::createForReason(BrokerError::WorkerSpawnTimedOut, $e, worker: $workerId->value, timeout: (string) $timeout);
         }
     }
 

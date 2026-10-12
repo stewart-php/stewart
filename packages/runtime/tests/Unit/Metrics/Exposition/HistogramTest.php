@@ -21,7 +21,7 @@ final class HistogramTest extends TestCase
 
         self::assertEquals(
             [new HistogramBucket(0.005, 2), new HistogramBucket(0.25, 9), new HistogramBucket(INF, 10)],
-            $histogram->buckets->listValues(),
+            $histogram->buckets,
         );
         self::assertSame(10, $histogram->count);
         self::assertSame(0.08, $histogram->sum->toSeconds());

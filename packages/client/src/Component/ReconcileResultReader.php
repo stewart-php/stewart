@@ -37,6 +37,6 @@ final class ReconcileResultReader
             }
         }
 
-        return EntityIdCollection::fromIds($entityIds);
+        return EntityIdCollection::fromList($entityIds);
     }
 }

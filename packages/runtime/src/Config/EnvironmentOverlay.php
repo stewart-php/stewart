@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Config;
 
 use Closure;
 use Stewart\Runtime\Config\Environment\LeafParserChain;
+use Stewart\Runtime\Exception\ConfigurationError;
 use Stewart\Runtime\Exception\ConfigurationException;
 use Stewart\Support\Text\ClosestNameFinder;
 use Symfony\Component\Config\Definition\ArrayNode;
@@ -59,13 +60,18 @@ final readonly class EnvironmentOverlay
             $target = $this->resolveOverrideTarget($tree, $file, $segments, $name);
 
             if (!$this->leafParserChain->supportsNode($target->node)) {
-                throw ConfigurationException::environmentVariableNamesSection($name, self::SEPARATOR);
+                throw ConfigurationException::createForReason(ConfigurationError::EnvironmentVariableNamesSection, variable: $name, separator: self::SEPARATOR);
             }
 
             $valuePath = implode('.', $target->path);
 
             if (isset($variableByPath[$valuePath])) {
-                throw ConfigurationException::environmentVariableConflict($variableByPath[$valuePath], $name, $valuePath);
+                throw ConfigurationException::createForReason(
+                    ConfigurationError::EnvironmentVariableConflict,
+                    variable: $variableByPath[$valuePath],
+                    otherVariable: $name,
+                    valuePath: $valuePath,
+                );
             }
 
             $variableByPath[$valuePath] = $name;
@@ -93,7 +99,7 @@ final readonly class EnvironmentOverlay
 
         foreach ($segments as $index => $segment) {
             if (!$node instanceof ArrayNode) {
-                throw ConfigurationException::environmentVariableTooDeep($name, implode('.', $path));
+                throw ConfigurationException::createForReason(ConfigurationError::EnvironmentVariableTooDeep, variable: $name, valuePath: implode('.', $path));
             }
 
             if ($node instanceof PrototypedArrayNode) {

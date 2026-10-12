@@ -32,7 +32,7 @@ final class AttributeSelectorTest extends TestCase
 
         self::assertSame(AttributeKind::Float, $selection->typed['color_temp_kelvin'] ?? null);
         self::assertSame(AttributeKind::String, $selection->typed['unit_of_measurement'] ?? null);
-        self::assertTrue($selection->unseen->isEmpty());
+        self::assertSame([], $selection->unseen);
     }
 
     public function testDomainKeyIsTypedWithoutAnyReport(): void
@@ -109,8 +109,8 @@ final class AttributeSelectorTest extends TestCase
     {
         $selection = self::createAttributeSelection('vacuum', [], include: ['battery', 'mop_*']);
 
-        self::assertEquals([new UnseenAttribute('vacuum', 'battery')], $selection->unseen->listValues());
-        self::assertSame('No vacuum entity reports the included attribute battery.', $selection->unseen->getFirst()?->describeWarning());
+        self::assertEquals([new UnseenAttribute('vacuum', 'battery')], $selection->unseen);
+        self::assertSame('No vacuum entity reports the included attribute battery.', ($selection->unseen[0] ?? null)?->describeWarning());
     }
 
     public function testUnseenExactIncludeIsTypedAsMixed(): void
@@ -125,7 +125,7 @@ final class AttributeSelectorTest extends TestCase
         $selection = self::createAttributeSelection(self::UNCATALOGUED_DOMAIN, [], include: ['blade_*']);
 
         self::assertSame([], $selection->typed);
-        self::assertTrue($selection->unseen->isEmpty());
+        self::assertSame([], $selection->unseen);
     }
 
     public function testUnfilteredDomainFallsBackToKnownList(): void

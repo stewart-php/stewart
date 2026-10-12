@@ -287,7 +287,7 @@ final class BrokerLifecycleTest extends TestCase
 
         self::assertCount(1, $acks);
         self::assertFalse($acks[0]->accepted);
-        self::assertSame([], $this->registry->listSubscriptions()->listValues());
+        self::assertSame([], $this->registry->listSubscriptions());
     }
 
     public function testEventOnlyReachesTheWorkersThatAskedForIt(): void
@@ -447,7 +447,7 @@ final class BrokerLifecycleTest extends TestCase
 
     public function testFatalConnectionFailureEndsTheRunWithThatError(): void
     {
-        $this->session->openFailure = HaClientException::tokenRejected('token rejected');
+        $this->session->openFailure = HaClientException::createForReason(HaClientError::TokenRejected, reason: 'token rejected');
 
         $this->assertThrowsReason(HaClientError::TokenRejected, fn() => $this->broker->lifecycle->run());
     }
@@ -474,7 +474,7 @@ final class BrokerLifecycleTest extends TestCase
         $running = async($this->broker->lifecycle->run(...));
         EventLoopTicks::settle();
 
-        $this->session->listener?->connectionFailed(HaClientException::tokenRejected('token rejected'));
+        $this->session->listener?->connectionFailed(HaClientException::createForReason(HaClientError::TokenRejected, reason: 'token rejected'));
         $spawns->open();
 
         $this->assertThrowsReason(HaClientError::TokenRejected, fn() => $running->await());
@@ -722,7 +722,7 @@ final class BrokerLifecycleTest extends TestCase
 
     private function readAppStatusAt(int $index): AppStatus
     {
-        return new AppStatusBuilder($this->metrics, $this->pausedApps, ExposureLinkFixture::createWithoutExposures())->buildAppStatuses()->listValues()[$index];
+        return new AppStatusBuilder($this->metrics, $this->pausedApps, ExposureLinkFixture::createWithoutExposures())->buildAppStatuses()[$index];
     }
 
     private function startBroker(): void
@@ -806,7 +806,7 @@ final class BrokerLifecycleTest extends TestCase
         $pools = WorkerPoolFixture::createWorkerPool($this->spawner, $supervision, $this->timers, $this->logger, new OutboxLimits(100, 256));
         $this->slots = $pools->slots;
         $apps = [new AppDefinition(new AppId('demo'), Demo::class), new AppDefinition(new AppId('echo'), Demo::class)];
-        $assignment = WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([$apps[0]])), new WorkerSlot(new WorkerId(1), AppDefinitionCollection::keyedByAppId([$apps[1]]))]);
+        $assignment = WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([$apps[0]])), new WorkerSlot(new WorkerId(1), AppDefinitionCollection::keyedByAppId([$apps[1]]))]);
         $this->registry = new SubscriptionRegistry();
         $this->connection = new ConnectionTracker($pools->clock);
         $this->metrics = new AppMetrics($assignment, $pools->clock);
@@ -834,14 +834,14 @@ final class BrokerLifecycleTest extends TestCase
         }
 
         if ($this->httpListener !== null) {
-            $overrides = $overrides->withService(HttpListenerCollection::class, HttpListenerCollection::fromListeners([$this->httpListener]));
+            $overrides = $overrides->withService(HttpListenerCollection::class, HttpListenerCollection::fromList([$this->httpListener]));
         }
 
         return BrokerKernelFixture::boot(
             $this->session,
             $pools,
             $assignment,
-            AppIdCollection::fromIds([new AppId('demo'), new AppId('echo'), new AppId('retired')]),
+            AppIdCollection::fromList([new AppId('demo'), new AppId('echo'), new AppId('retired')]),
             $this->logger,
             $yaml,
             $overrides,

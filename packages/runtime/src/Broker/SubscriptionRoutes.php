@@ -20,7 +20,7 @@ final readonly class SubscriptionRoutes
 
     public function listWorkerIds(): WorkerIdCollection
     {
-        return WorkerIdCollection::fromIds(array_map(WorkerId::fromInt(...), array_keys($this->subscriptionIdsByWorker)));
+        return WorkerIdCollection::fromList(array_map(WorkerId::fromInt(...), array_keys($this->subscriptionIdsByWorker)));
     }
 
     public function isEmpty(): bool

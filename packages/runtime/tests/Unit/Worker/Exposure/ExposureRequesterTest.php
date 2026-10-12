@@ -18,6 +18,7 @@ use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\ExposeEntityRequest;
 use Stewart\Runtime\Ipc\Message\ExposeEntityResult;
@@ -98,8 +99,15 @@ final class ExposureRequesterTest extends TestCase
     /** @return iterable<string, array{Throwable, ExposureError}> */
     public static function provideSendFailures(): iterable
     {
-        yield 'a request that cannot be encoded' => [TransportException::unencodable(UpdateExposedEntityRequest::class, new RuntimeException('NAN')), ExposureError::StateInvalid];
-        yield 'a channel that is gone' => [TransportException::sendFailed(new RuntimeException('broken pipe')), ExposureError::Unreachable];
+        yield 'a request that cannot be encoded' => [TransportException::createForReason(
+            TransportError::Unencodable,
+            new RuntimeException('NAN'),
+            messageClass: UpdateExposedEntityRequest::class,
+        ), ExposureError::StateInvalid];
+        yield 'a channel that is gone' => [TransportException::createForReason(
+            TransportError::SendFailed,
+            new RuntimeException('broken pipe'),
+        ), ExposureError::Unreachable];
     }
 
     public function testSilentBrokerTimesOut(): void

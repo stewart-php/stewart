@@ -204,7 +204,7 @@ final class RecordingHaContextTest extends TestCase
 
     public function testStubbedHistoryFailureIsThrown(): void
     {
-        $context = new RecordingHaContext()->stubHistoryFailure('light.hall', HistoryException::recorderUnavailable(new EntityId('light.hall')));
+        $context = new RecordingHaContext()->stubHistoryFailure('light.hall', HistoryException::createForReason(HistoryError::RecorderUnavailable, entityId: 'light.hall'));
 
         $this->assertThrowsReason(HistoryError::RecorderUnavailable, static fn() => $context->getHistory('light.hall', HistoryQuery::lastFor(Duration::minutes(5))));
     }

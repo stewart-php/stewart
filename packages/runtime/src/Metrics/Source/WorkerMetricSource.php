@@ -6,7 +6,6 @@ namespace Stewart\Runtime\Metrics\Source;
 
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
-use Stewart\Runtime\Metrics\Exposition\Collection\MetricFamilyCollection;
 use Stewart\Runtime\Metrics\Exposition\MetricFamily;
 use Stewart\Runtime\Metrics\Exposition\MetricLabels;
 use Stewart\Runtime\Metrics\Exposition\MetricType;
@@ -15,7 +14,8 @@ use Stewart\Runtime\Metrics\RuntimeMetricSource;
 
 final readonly class WorkerMetricSource implements RuntimeMetricSource
 {
-    public function collectMetrics(RuntimeSnapshot $snapshot): MetricFamilyCollection
+    /** @return list<MetricFamily> */
+    public function collectMetrics(RuntimeSnapshot $snapshot): array
     {
         $phases = new MetricFamily('stewart_worker_phase', 'Worker lifecycle phase; 1 for the current one.', MetricType::Gauge);
         $ready = new MetricFamily('stewart_worker_ready', 'Whether the worker finished booting its apps; 1 or 0.', MetricType::Gauge);
@@ -73,9 +73,9 @@ final readonly class WorkerMetricSource implements RuntimeMetricSource
             }
         }
 
-        return MetricFamilyCollection::fromFamilies([
+        return [
             $phases, $ready, $missedProbes, $loopLag, $memory, $lastPong, $restartsInWindow, $restarts, $quarantines, $restartDue, $inFlight,
             $queued, $largestBatch, $dropped, $coalesced, $batchesSent,
-        ]);
+        ];
     }
 }

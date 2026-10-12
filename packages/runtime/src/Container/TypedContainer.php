@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Container;
 
+use Stewart\Runtime\Exception\ContainerError;
 use Stewart\Runtime\Exception\ContainerException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -22,7 +23,12 @@ final readonly class TypedContainer
         $service = $this->container->get($id ?? $type);
 
         if (!$service instanceof $type) {
-            throw ContainerException::serviceTypeMismatch($id ?? $type, $type, get_debug_type($service));
+            throw ContainerException::createForReason(
+                ContainerError::ServiceTypeMismatch,
+                serviceId: $id ?? $type,
+                expectedType: $type,
+                actualType: get_debug_type($service),
+            );
         }
 
         return $service;

@@ -17,6 +17,6 @@ final class HaTriggerCollectionTest extends TestCase
         $sunrise = HaTrigger::onSunrise();
         $sunset = HaTrigger::onSunset();
 
-        self::assertSame([$sunrise, $sunset], HaTriggerCollection::fromTriggers([$sunrise, $sunset])->listValues());
+        self::assertSame([$sunrise, $sunset], HaTriggerCollection::fromList([$sunrise, $sunset])->listValues());
     }
 }

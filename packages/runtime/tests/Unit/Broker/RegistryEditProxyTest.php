@@ -66,7 +66,7 @@ final class RegistryEditProxyTest extends TestCase
             aliases: [EntityAlias::named('Hall lamp')],
         ));
         $this->metrics = new AppMetrics(
-            WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)]))]),
+            WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)]))]),
             $this->timers->clock,
         );
     }

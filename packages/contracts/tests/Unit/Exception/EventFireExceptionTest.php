@@ -31,7 +31,7 @@ final class EventFireExceptionTest extends TestCase
 
     public function testWireRoundTripKeepsReasonMessageAndContext(): void
     {
-        $original = EventFireException::overloaded('doorbell_pressed', 'busy');
+        $original = EventFireException::createForReason(EventFireError::Overloaded, eventType: 'doorbell_pressed', detail: 'busy');
 
         $rebuilt = EventFireException::fromWire($original->reason, $original->getMessage(), $original->context);
 

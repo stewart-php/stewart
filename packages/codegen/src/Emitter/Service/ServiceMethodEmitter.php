@@ -30,7 +30,7 @@ final readonly class ServiceMethodEmitter implements ReservesMemberNames
             'return $this->entity->%s(%s%s);',
             $service->definition->returnsResponse ? 'callServiceForResponse' : 'callService',
             var_export($service->definition->name, true),
-            $service->fields->isEmpty() ? '' : ', ' . $this->buildPayload($service),
+            $service->fields === [] ? '' : ', ' . $this->buildPayload($service),
         ));
     }
 
@@ -49,7 +49,7 @@ final readonly class ServiceMethodEmitter implements ReservesMemberNames
             $service->definition->returnsResponse ? 'callServiceForResponse' : 'callService',
             var_export($service->definition->domain, true),
             var_export($service->definition->name, true),
-            $service->fields->isEmpty() ? '[]' : $this->buildPayload($service),
+            $service->fields === [] ? '[]' : $this->buildPayload($service),
             $service->definition->target->isTargetable ? ', $' . self::TARGET_PARAMETER : '',
         ));
     }

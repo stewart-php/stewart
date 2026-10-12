@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Stewart\Codegen\Output;
 
-use Stewart\Codegen\Model\Collection\GenerationWarningCollection;
+use Stewart\Codegen\Model\GenerationWarning;
 use Stewart\Codegen\Output\Collection\FileChangeCollection;
 
 final readonly class GenerationReport
 {
+    /** @param list<GenerationWarning> $warnings */
     public function __construct(
         public FileChangeCollection $changes,
         public int $entities,
@@ -16,7 +17,7 @@ final readonly class GenerationReport
         public int $services,
         public int $ignored,
         public int $attributes,
-        public GenerationWarningCollection $warnings,
+        public array $warnings,
         public string $haVersion,
     ) {}
 

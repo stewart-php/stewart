@@ -7,6 +7,7 @@ namespace Stewart\Contracts\Schedule;
 use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
+use Stewart\Contracts\Exception\ScheduleError;
 use Stewart\Contracts\Exception\ScheduleException;
 use Stewart\Contracts\Time\Instant;
 
@@ -37,7 +38,7 @@ final readonly class TimeOfDay
     public static function parse(string $time): self
     {
         if (preg_match(self::PATTERN, $time, $matches) !== 1) {
-            throw ScheduleException::timeOfDayInvalid($time);
+            throw ScheduleException::createForReason(ScheduleError::TimeOfDayInvalid, value: $time);
         }
 
         return self::fromHourMinuteSecond((int) $matches[1], (int) $matches[2], (int) ($matches[3] ?? 0));
@@ -105,7 +106,7 @@ final readonly class TimeOfDay
     private static function requireInRange(string $unit, int $value, int $highest): void
     {
         if ($value < 0 || $value > $highest) {
-            throw ScheduleException::timeOfDayOutOfRange($unit, $value, $highest);
+            throw ScheduleException::createForReason(ScheduleError::TimeOfDayOutOfRange, unit: $unit, value: $value, highest: $highest);
         }
     }
 }

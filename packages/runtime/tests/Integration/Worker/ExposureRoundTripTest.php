@@ -41,10 +41,10 @@ final class ExposureRoundTripTest extends TestCase
         $broker = BrokerKernelFixture::boot(
             $session,
             $pools,
-            WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([
+            WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([
                 new AppDefinition(new AppId('tank-level'), TankLevelExposer::class),
             ]))]),
-            AppIdCollection::fromIds([new AppId('tank-level')]),
+            AppIdCollection::fromList([new AppId('tank-level')]),
             $logger,
             ['shutdown_grace' => '1s'],
         );

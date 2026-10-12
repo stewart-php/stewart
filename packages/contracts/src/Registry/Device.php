@@ -29,7 +29,7 @@ final readonly class Device
 
     public function listLabelIds(): LabelIdCollection
     {
-        return LabelIdCollection::fromIds($this->labelIds);
+        return LabelIdCollection::fromList($this->labelIds);
     }
 
     public function isDisabled(): bool

@@ -73,8 +73,8 @@ final class AppPauseRoundTripTest extends TestCase
         $broker = BrokerKernelFixture::boot(
             $session,
             $pools,
-            WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition($appId, SerialHandler::class)]))]),
-            AppIdCollection::fromIds([$appId]),
+            WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition($appId, SerialHandler::class)]))]),
+            AppIdCollection::fromList([$appId]),
             $logger,
             ['shutdown_grace' => '1s', 'control' => ['listen' => 'unix://' . $socketPath, 'token' => self::CONTROL_TOKEN]],
         );
@@ -113,11 +113,11 @@ final class AppPauseRoundTripTest extends TestCase
         $broker = BrokerKernelFixture::boot(
             $session,
             $pools,
-            WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([
+            WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([
                 new AppDefinition($running, SerialHandler::class),
                 new AppDefinition($paused, SerialHandler::class, startsPaused: true),
             ]))]),
-            AppIdCollection::fromIds([$running, $paused]),
+            AppIdCollection::fromList([$running, $paused]),
             $logger,
             ['shutdown_grace' => '1s'],
         );
@@ -174,8 +174,8 @@ final class AppPauseRoundTripTest extends TestCase
         $broker = BrokerKernelFixture::boot(
             $session,
             $pools,
-            WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition($appId, SerialHandler::class)]))]),
-            AppIdCollection::fromIds([$appId]),
+            WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition($appId, SerialHandler::class)]))]),
+            AppIdCollection::fromList([$appId]),
             $logger,
             [
                 'shutdown_grace' => '1s',

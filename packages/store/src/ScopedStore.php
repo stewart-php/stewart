@@ -86,7 +86,7 @@ final readonly class ScopedStore implements Store
             $detail = $e->findDetail();
 
             throw $e->reason === StoreError::ValueNotIncrementable && $detail !== null
-                ? StoreException::notIncrementable($key, $detail, $e)
+                ? StoreException::createForReason(StoreError::NotIncrementable, $e, key: $key, detail: $detail)
                 : $e;
         }
     }

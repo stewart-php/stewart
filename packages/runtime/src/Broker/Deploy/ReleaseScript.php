@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Broker\Deploy;
 use Amp\Cancellation;
 use Amp\CancelledException;
 use Stewart\Runtime\Config\GitDeployConfig;
+use Stewart\Runtime\Exception\DeployError;
 use Stewart\Runtime\Exception\DeployException;
 
 final readonly class ReleaseScript
@@ -73,7 +74,12 @@ final readonly class ReleaseScript
         $result = $this->commands->runCommand($command, $this->gitDeploy->prepareTimeout, $cancellation);
 
         if (!$result->isSuccessful()) {
-            throw DeployException::commandFailed(implode(' ', $command), $result->exitCode, $result->findLastErrorLine());
+            throw DeployException::createForReason(
+                DeployError::CommandFailed,
+                command: implode(' ', $command),
+                exitCode: $result->exitCode,
+                detail: $result->findLastErrorLine(),
+            );
         }
 
         return $result;

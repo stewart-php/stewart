@@ -52,7 +52,7 @@ final class PendingRequestsTest extends TestCase
     {
         $query = $this->pending->open(new HistoryQuerySubject(new EntityId('light.hall')));
 
-        $this->pending->reject($query->correlationId, HistoryException::recorderUnavailable(new EntityId('light.hall')));
+        $this->pending->reject($query->correlationId, HistoryException::createForReason(HistoryError::RecorderUnavailable, entityId: 'light.hall'));
 
         $this->assertThrowsReason(HistoryError::RecorderUnavailable, static fn() => $query->getFuture()->await());
     }
@@ -61,7 +61,7 @@ final class PendingRequestsTest extends TestCase
     {
         $call = $this->pending->open(new ServiceCallSubject('light', 'turn_on'));
 
-        $this->pending->resolve($call->correlationId, HistoricalStateCollection::fromStates([]));
+        $this->pending->resolve($call->correlationId, HistoricalStateCollection::fromList([]));
 
         $this->assertThrowsReason(ServiceCallError::Unreachable, static fn() => $call->getFuture()->await());
     }

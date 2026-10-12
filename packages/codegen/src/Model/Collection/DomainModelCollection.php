@@ -10,12 +10,6 @@ use Stewart\Contracts\Collection\ListCollection;
 /** @extends ListCollection<DomainModel> */
 final readonly class DomainModelCollection extends ListCollection
 {
-    /** @param iterable<DomainModel> $domains */
-    public static function fromDomains(iterable $domains): self
-    {
-        return self::fromList($domains);
-    }
-
     public function havingEntities(): self
     {
         return $this->filter(static fn(DomainModel $domain): bool => $domain->hasEntities());

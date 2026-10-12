@@ -9,6 +9,6 @@ final class CommandException extends StewartException
 {
     public static function rejected(string $reason): self
     {
-        return self::createForReason(CommandError::Rejected, ['reason' => $reason]);
+        return self::createForReason(CommandError::Rejected, reason: $reason);
     }
 }

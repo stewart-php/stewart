@@ -29,8 +29,9 @@ final class TriggerRejectionsTest extends TestCase
 
         new TriggerRejections($registry, new WorkerSlotRegistry())->refuseSubscribers(TriggerSpec::fromSpec(HaTrigger::onSunset()), 'Invalid trigger');
 
-        self::assertSame(['w1:1'], $registry->listSubscriptions()->mapToList(
+        self::assertSame(['w1:1'], array_map(
             static fn(BrokerSubscription $subscription): string => $subscription->subscriptionId->value,
+            $registry->listSubscriptions(),
         ));
         self::assertCount(1, $session->unsubscribedTriggers);
     }

@@ -22,6 +22,6 @@ final readonly class TriggerFiredHandler implements BrokerMessageHandler
     /** @param TriggerFired $message */
     public function handle(BrokerMessage $message): void
     {
-        $this->dispatcher->dispatchTrigger($message->event, SubscriptionIdCollection::fromIds($message->deliverTo));
+        $this->dispatcher->dispatchTrigger($message->event, SubscriptionIdCollection::fromList($message->deliverTo));
     }
 }

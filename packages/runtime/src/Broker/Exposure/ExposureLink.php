@@ -16,6 +16,7 @@ use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Exception\ExposureError;
 use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
@@ -225,7 +226,7 @@ final class ExposureLink
 
     public function listKeptAddresses(): ExposedEntityAddressCollection
     {
-        return ExposedEntityAddressCollection::fromAddresses(array_map(static fn(LiveExposure $live) => $live->address, array_values($this->exposuresByAddress)));
+        return ExposedEntityAddressCollection::fromList(array_map(static fn(LiveExposure $live) => $live->address, array_values($this->exposuresByAddress)));
     }
 
     /** @throws HaClientException */
@@ -254,9 +255,9 @@ final class ExposureLink
     private function assertComponentUsable(ExposedEntityKey $key): void
     {
         match ($this->tracker->detection->state) {
-            ComponentState::Missing => throw ExposureException::componentMissing($key),
-            ComponentState::ProtocolMismatch => throw ExposureException::protocolMismatch($key),
-            ComponentState::Refused => throw ExposureException::componentRefused($key),
+            ComponentState::Missing => throw ExposureException::createForReason(ExposureError::ComponentMissing, key: $key->value),
+            ComponentState::ProtocolMismatch => throw ExposureException::createForReason(ExposureError::ProtocolMismatch, key: $key->value),
+            ComponentState::Refused => throw ExposureException::createForReason(ExposureError::ComponentRefused, key: $key->value),
             ComponentState::Unchecked, ComponentState::Replaced, ComponentState::Active => null,
         };
     }

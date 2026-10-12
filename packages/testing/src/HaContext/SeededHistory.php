@@ -52,7 +52,7 @@ final class SeededHistory
         return new EntityStateHistory(
             $entityId,
             $window,
-            HistoricalStateCollection::fromStates($detail->includesAttributes() ? $states : array_map(self::stripAttributes(...), $states)),
+            HistoricalStateCollection::fromList($detail->includesAttributes() ? $states : array_map(self::stripAttributes(...), $states)),
         );
     }
 

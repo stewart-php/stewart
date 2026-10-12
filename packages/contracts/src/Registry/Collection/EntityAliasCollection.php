@@ -10,12 +10,6 @@ use Stewart\Contracts\Registry\EntityAlias;
 /** @extends ListCollection<EntityAlias> */
 final readonly class EntityAliasCollection extends ListCollection
 {
-    /** @param iterable<EntityAlias> $aliases */
-    public static function fromAliases(iterable $aliases): self
-    {
-        return self::fromList($aliases);
-    }
-
     public function contains(EntityAlias $alias): bool
     {
         return $this->containsWhere($alias->equals(...));

@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 namespace Stewart\Codegen\Service;
 
-use Stewart\Codegen\Service\Collection\ServiceFieldCollection;
-
 final readonly class ServiceDefinition
 {
+    /** @param list<ServiceField> $fields */
     public function __construct(
         public string $domain,
         public string $name,
         public ?string $title,
         public ?string $description,
-        public ServiceFieldCollection $fields,
+        public array $fields,
         public ServiceTargetSpec $target,
         public bool $returnsResponse,
     ) {}

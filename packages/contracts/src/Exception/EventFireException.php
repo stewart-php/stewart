@@ -13,21 +13,6 @@ use Throwable;
  */
 final class EventFireException extends StewartException
 {
-    public static function typeInvalid(string $eventType): self
-    {
-        return self::createForReason(EventFireError::TypeInvalid, ['eventType' => $eventType]);
-    }
-
-    public static function dataInvalid(string $eventType, string $path, string $actualType): self
-    {
-        return self::createForReason(EventFireError::DataInvalid, ['eventType' => $eventType, 'path' => $path, 'actualType' => $actualType]);
-    }
-
-    public static function dataNotKeyed(string $eventType): self
-    {
-        return self::createForReason(EventFireError::DataNotKeyed, ['eventType' => $eventType]);
-    }
-
     public static function rejected(string $eventType, string $detail, ?string $errorCode = null, ?Throwable $previous = null): self
     {
         return self::createForReasonWithAppendedText(
@@ -40,17 +25,12 @@ final class EventFireException extends StewartException
 
     public static function unreachable(string $eventType, string $detail, ?Throwable $previous = null): self
     {
-        return self::createForReason(EventFireError::Unreachable, ['eventType' => $eventType, 'detail' => $detail], $previous);
+        return self::createForReason(EventFireError::Unreachable, $previous, eventType: $eventType, detail: $detail);
     }
 
     public static function timedOut(string $eventType, string $detail, ?Throwable $previous = null): self
     {
-        return self::createForReason(EventFireError::TimedOut, ['eventType' => $eventType, 'detail' => $detail], $previous);
-    }
-
-    public static function overloaded(string $eventType, string $detail): self
-    {
-        return self::createForReason(EventFireError::Overloaded, ['eventType' => $eventType, 'detail' => $detail]);
+        return self::createForReason(EventFireError::TimedOut, $previous, eventType: $eventType, detail: $detail);
     }
 
     /** @param ExceptionContext|null $context */

@@ -12,6 +12,7 @@ use ReflectionParameter;
 use ReflectionType;
 use ReflectionUnionType;
 use Stewart\Runtime\Config\BooleanSpelling;
+use Stewart\Runtime\Exception\ContainerError;
 use Stewart\Runtime\Exception\ContainerException;
 use Stewart\Runtime\Ipc\WorkerApp;
 use Stewart\Support\Text\ClosestNameFinder;
@@ -32,7 +33,7 @@ final readonly class AppOptionResolver
     public function resolveOptionArguments(WorkerApp $app): array
     {
         if (!class_exists($app->class)) {
-            throw ContainerException::appClassMissing($app->id, $app->class);
+            throw ContainerException::createForReason(ContainerError::AppClassMissing, appId: $app->id->value, class: $app->class);
         }
 
         $parameters = $this->listConstructorParameters($app->class);
@@ -50,7 +51,14 @@ final readonly class AppOptionResolver
             $name = $parameter->getName();
 
             if (isset($optionsByParameter[$name])) {
-                throw ContainerException::appOptionRepeated($app->id, $name, $app->class, $optionsByParameter[$name], $option);
+                throw ContainerException::createForReason(
+                    ContainerError::AppOptionRepeated,
+                    appId: $app->id->value,
+                    parameter: $name,
+                    class: $app->class,
+                    firstOption: $optionsByParameter[$name],
+                    secondOption: $option,
+                );
             }
 
             $optionsByParameter[$name] = $option;
@@ -59,7 +67,7 @@ final readonly class AppOptionResolver
 
         foreach ($parameters as $name => $parameter) {
             if (!isset($optionsByParameter[$name]) && $this->needsExplicitValue($parameter)) {
-                throw ContainerException::appOptionMissing($app->id, $name, $app->class);
+                throw ContainerException::createForReason(ContainerError::AppOptionMissing, appId: $app->id->value, option: $name, class: $app->class);
             }
         }
 
@@ -152,7 +160,13 @@ final readonly class AppOptionResolver
             default => is_numeric(trim($value)) ? (float) trim($value) : null,
         };
 
-        return $coerced ?? throw ContainerException::appOptionInvalid($app->id->value, $parameter->getName(), $value, $type->getName());
+        return $coerced ?? throw ContainerException::createForReason(
+            ContainerError::AppOptionInvalid,
+            appId: $app->id->value,
+            option: $parameter->getName(),
+            value: $value,
+            expectedType: $type->getName(),
+        );
     }
 
     // Symfony resolves %name% in arguments; app options are literals.

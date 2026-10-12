@@ -32,24 +32,24 @@ final readonly class EntityLabelsChange
     public function withAdded(LabelIdCollection $labelIds): self
     {
         if ($this->replacement !== null) {
-            return self::replacingWith(LabelIdCollection::fromIds($this->replacement)->withAddedMembers($labelIds));
+            return self::replacingWith(LabelIdCollection::fromList($this->replacement)->withAddedMembers($labelIds));
         }
 
         return new self(
-            added: LabelIdCollection::fromIds($this->added)->withAddedMembers($labelIds)->listValues(),
-            removed: LabelIdCollection::fromIds($this->removed)->withoutMembers($labelIds)->listValues(),
+            added: LabelIdCollection::fromList($this->added)->withAddedMembers($labelIds)->listValues(),
+            removed: LabelIdCollection::fromList($this->removed)->withoutMembers($labelIds)->listValues(),
         );
     }
 
     public function withRemoved(LabelIdCollection $labelIds): self
     {
         if ($this->replacement !== null) {
-            return self::replacingWith(LabelIdCollection::fromIds($this->replacement)->withoutMembers($labelIds));
+            return self::replacingWith(LabelIdCollection::fromList($this->replacement)->withoutMembers($labelIds));
         }
 
         return new self(
-            added: LabelIdCollection::fromIds($this->added)->withoutMembers($labelIds)->listValues(),
-            removed: LabelIdCollection::fromIds($this->removed)->withAddedMembers($labelIds)->listValues(),
+            added: LabelIdCollection::fromList($this->added)->withoutMembers($labelIds)->listValues(),
+            removed: LabelIdCollection::fromList($this->removed)->withAddedMembers($labelIds)->listValues(),
         );
     }
 
@@ -65,8 +65,8 @@ final readonly class EntityLabelsChange
 
     public function applyTo(LabelIdCollection $current): LabelIdCollection
     {
-        $base = $this->replacement === null ? $current : LabelIdCollection::fromIds($this->replacement);
+        $base = $this->replacement === null ? $current : LabelIdCollection::fromList($this->replacement);
 
-        return $base->withAddedMembers(LabelIdCollection::fromIds($this->added))->withoutMembers(LabelIdCollection::fromIds($this->removed));
+        return $base->withAddedMembers(LabelIdCollection::fromList($this->added))->withoutMembers(LabelIdCollection::fromList($this->removed));
     }
 }

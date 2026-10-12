@@ -10,6 +10,7 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\LogRecord;
 use Stewart\Runtime\Ipc\Message\Shutdown;
@@ -44,7 +45,7 @@ final class WorkerSessionStartupTest extends TestCase
             ->withService(Clock::class, $timers->clock)
             ->withService(ProcessTimeZone::class, new RecordingProcessTimeZone()));
 
-        $transport->refuseSendsOf(WorkerReady::class, TransportException::closed());
+        $transport->refuseSendsOf(WorkerReady::class, TransportException::createForReason(TransportError::Closed));
         $transport->deliver(TestBootstrap::createForApps([new WorkerApp(id: new AppId('healthy'), class: Healthy::class, options: [])]));
 
         $running = async(fn(): string => $kernel->run($transport));

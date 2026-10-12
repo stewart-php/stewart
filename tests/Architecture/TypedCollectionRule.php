@@ -20,7 +20,7 @@ use Stewart\Contracts\Collection\TypedCollection;
 /** @implements Rule<Node\Stmt> */
 final readonly class TypedCollectionRule implements Rule
 {
-    private const string FRAMEWORK_SOURCE = '#/packages/[^/]+/src/#';
+    private const string APP_BOUNDARY_SOURCE = '#/packages/(contracts|testing)/src/#';
 
     private const string STEWART_NAMESPACE = 'Stewart\\';
 
@@ -41,8 +41,8 @@ final readonly class TypedCollectionRule implements Rule
 
         $docComment = $node->getDocComment();
 
-        // Private state stays inside one object; only what travels between objects needs a collection.
-        if ($docComment === null || $node->isPrivate() || preg_match(self::FRAMEWORK_SOURCE, $scope->getFile()) !== 1 || ($node instanceof Property && $this->hasWireListAttribute($node->attrGroups))) {
+        // Only what crosses the app boundary needs a collection; private state never does.
+        if ($docComment === null || $node->isPrivate() || preg_match(self::APP_BOUNDARY_SOURCE, $scope->getFile()) !== 1 || ($node instanceof Property && $this->hasWireListAttribute($node->attrGroups))) {
             return [];
         }
 

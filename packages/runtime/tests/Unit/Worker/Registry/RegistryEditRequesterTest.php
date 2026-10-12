@@ -15,6 +15,7 @@ use Stewart\Contracts\Exception\RegistryEditException;
 use Stewart\Contracts\Registry\RegisteredEntity;
 use Stewart\Contracts\Registry\Update\EntityRegistryUpdate;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateFailed;
 use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateRequest;
@@ -121,8 +122,15 @@ final class RegistryEditRequesterTest extends TestCase
     /** @return iterable<string, array{Throwable, RegistryEditError}> */
     public static function provideSendFailures(): iterable
     {
-        yield 'a request that cannot be encoded' => [TransportException::unencodable(RegistryEntityUpdateRequest::class, new RuntimeException('NAN')), RegistryEditError::Rejected];
-        yield 'a channel that is gone' => [TransportException::sendFailed(new RuntimeException('broken pipe')), RegistryEditError::Unreachable];
+        yield 'a request that cannot be encoded' => [TransportException::createForReason(
+            TransportError::Unencodable,
+            new RuntimeException('NAN'),
+            messageClass: RegistryEntityUpdateRequest::class,
+        ), RegistryEditError::Rejected];
+        yield 'a channel that is gone' => [TransportException::createForReason(
+            TransportError::SendFailed,
+            new RuntimeException('broken pipe'),
+        ), RegistryEditError::Unreachable];
     }
 
     public function testSilentBrokerTimesOut(): void

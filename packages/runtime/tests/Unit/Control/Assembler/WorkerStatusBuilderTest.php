@@ -40,7 +40,7 @@ final class WorkerStatusBuilderTest extends TestCase
 
     public function testPoolThatStartedNothingHasNoWorkers(): void
     {
-        self::assertSame([], $this->createBuilder()->buildWorkerStatuses()->listValues());
+        self::assertSame([], $this->createBuilder()->buildWorkerStatuses());
     }
 
     public function testDescribesLiveWorkerFromBrokerState(): void
@@ -157,7 +157,7 @@ final class WorkerStatusBuilderTest extends TestCase
         $this->broker->startWorker(1);
         $this->broker->startWorker(0);
 
-        self::assertSame([0, 1], array_map(static fn(WorkerStatus $status): int => $status->workerId, $this->createBuilder()->buildWorkerStatuses()->listValues()));
+        self::assertSame([0, 1], array_map(static fn(WorkerStatus $status): int => $status->workerId, $this->createBuilder()->buildWorkerStatuses()));
     }
 
     private function createBuilder(): WorkerStatusBuilder

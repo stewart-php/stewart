@@ -16,6 +16,7 @@ use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\HistoryRequest;
 use Stewart\Runtime\Ipc\Transport;
@@ -66,7 +67,7 @@ final class HistoryReaderTest extends TestCase
         self::assertTrue($request->window->getDuration()->equals(Duration::minutes(5)));
         self::assertSame(HistoryDetail::StateChangesWithAttributes, $request->detail);
 
-        $this->pending->resolve($request->correlationId, HistoricalStateCollection::fromStates([]));
+        $this->pending->resolve($request->correlationId, HistoricalStateCollection::fromList([]));
 
         $history = $fetch->await();
         self::assertInstanceOf(EntityStateHistory::class, $history);
@@ -93,8 +94,15 @@ final class HistoryReaderTest extends TestCase
     /** @return iterable<string, array{Throwable, HistoryError}> */
     public static function provideSendFailures(): iterable
     {
-        yield 'a request that cannot be encoded' => [TransportException::unencodable(HistoryRequest::class, new RuntimeException('NAN')), HistoryError::Rejected];
-        yield 'a channel that is gone' => [TransportException::sendFailed(new RuntimeException('broken pipe')), HistoryError::Unreachable];
+        yield 'a request that cannot be encoded' => [TransportException::createForReason(
+            TransportError::Unencodable,
+            new RuntimeException('NAN'),
+            messageClass: HistoryRequest::class,
+        ), HistoryError::Rejected];
+        yield 'a channel that is gone' => [TransportException::createForReason(
+            TransportError::SendFailed,
+            new RuntimeException('broken pipe'),
+        ), HistoryError::Unreachable];
     }
 
     public function testSilentBrokerTimesOut(): void

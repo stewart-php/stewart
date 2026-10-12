@@ -8,19 +8,15 @@ use Stewart\Codegen\Attribute\AttributeKind;
 use Stewart\Codegen\Attribute\AttributeKindInference;
 use Stewart\Codegen\Attribute\AttributeModel;
 use Stewart\Codegen\Attribute\AttributeSelector;
-use Stewart\Codegen\Attribute\Collection\AttributeModelCollection;
 use Stewart\Codegen\Entity\EntitySelector;
 use Stewart\Codegen\Entity\UnmatchedEntitySelector;
 use Stewart\Codegen\Exception\CodegenException;
 use Stewart\Codegen\GenerationOptions;
 use Stewart\Codegen\Model\Collection\DomainModelCollection;
-use Stewart\Codegen\Model\Collection\GenerationWarningCollection;
 use Stewart\Codegen\Php\Identifier;
 use Stewart\Codegen\Php\MemberReservations;
 use Stewart\Codegen\Php\MemberScope;
-use Stewart\Codegen\Service\Collection\FieldModelCollection;
 use Stewart\Codegen\Service\Collection\ServiceDefinitionCollection;
-use Stewart\Codegen\Service\Collection\ServiceModelCollection;
 use Stewart\Codegen\Service\FieldModel;
 use Stewart\Codegen\Service\ServiceCatalog;
 use Stewart\Codegen\Service\ServiceCatalogParser;
@@ -80,18 +76,18 @@ final readonly class GenerationModelFactory
         }
 
         return new GenerationModel(
-            domains: DomainModelCollection::fromDomains($domains),
+            domains: DomainModelCollection::fromList($domains),
             entityIds: $selection->listEntityIds(),
             ignoredEntityIds: $selection->ignored,
-            warnings: GenerationWarningCollection::fromWarnings([
+            warnings: [
                 ...$options->inclusionRules->listUnmatchedIncludes($snapshot->states)->mapToList(
                     static fn(Selector $include): UnmatchedEntitySelector => new UnmatchedEntitySelector($include->getPattern()),
                 ),
                 ...$unseenAttributes,
-            ]),
-            areaIds: AreaIdCollection::fromIds($snapshot->areas->mapToList(static fn(Area $area): AreaId => $area->areaId)),
-            floorIds: FloorIdCollection::fromIds($snapshot->floors->mapToList(static fn(Floor $floor): FloorId => $floor->floorId)),
-            labelIds: LabelIdCollection::fromIds($snapshot->labels->mapToList(static fn(Label $label): LabelId => $label->labelId)),
+            ],
+            areaIds: AreaIdCollection::fromList($snapshot->areas->mapToList(static fn(Area $area): AreaId => $area->areaId)),
+            floorIds: FloorIdCollection::fromList($snapshot->floors->mapToList(static fn(Floor $floor): FloorId => $floor->floorId)),
+            labelIds: LabelIdCollection::fromList($snapshot->labels->mapToList(static fn(Label $label): LabelId => $label->labelId)),
         );
     }
 
@@ -104,8 +100,11 @@ final readonly class GenerationModelFactory
         return $domains;
     }
 
-    /** @param array<string, AttributeKind> $typed */
-    private function buildAttributeModels(array $typed): AttributeModelCollection
+    /**
+     * @param array<string, AttributeKind> $typed
+     * @return list<AttributeModel>
+     */
+    private function buildAttributeModels(array $typed): array
     {
         $names = $this->memberReservations->createAllocatorFor(MemberScope::StateView);
         $attributes = [];
@@ -115,10 +114,11 @@ final readonly class GenerationModelFactory
             $attributes[] = new AttributeModel($names->claim('get' . ucfirst(Identifier::convertToCamelCase($key))), $key, $kind);
         }
 
-        return AttributeModelCollection::fromAttributes($attributes);
+        return $attributes;
     }
 
-    private function buildServiceModels(ServiceDefinitionCollection $definitions, MemberScope $methodScope): ServiceModelCollection
+    /** @return list<ServiceModel> */
+    private function buildServiceModels(ServiceDefinitionCollection $definitions, MemberScope $methodScope): array
     {
         $names = $this->memberReservations->createAllocatorFor($methodScope);
         $services = [];
@@ -131,7 +131,7 @@ final readonly class GenerationModelFactory
             );
         }
 
-        return ServiceModelCollection::fromServices($services);
+        return $services;
     }
 
     private function selectParameterScope(MemberScope $methodScope, ServiceDefinition $definition): MemberScope
@@ -141,7 +141,8 @@ final readonly class GenerationModelFactory
             : MemberScope::Parameters;
     }
 
-    private function buildFieldModels(ServiceDefinition $definition, MemberScope $parameterScope): FieldModelCollection
+    /** @return list<FieldModel> */
+    private function buildFieldModels(ServiceDefinition $definition, MemberScope $parameterScope): array
     {
         $names = $this->memberReservations->createAllocatorFor($parameterScope);
         $models = [];
@@ -150,6 +151,6 @@ final readonly class GenerationModelFactory
             $models[] = new FieldModel($names->claim(Identifier::convertToCamelCase($field->name)), $field);
         }
 
-        return FieldModelCollection::fromFields($models);
+        return $models;
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Contracts\Time;
 
+use Stewart\Contracts\Exception\TimeError;
 use Stewart\Contracts\Exception\TimeException;
 use Stringable;
 
@@ -22,7 +23,7 @@ final readonly class Duration implements Stringable
     public static function microseconds(int $microseconds): self
     {
         if ($microseconds < 0) {
-            throw TimeException::durationNegative($microseconds);
+            throw TimeException::createForReason(TimeError::DurationNegative, microseconds: $microseconds);
         }
 
         return new self($microseconds);
@@ -60,7 +61,7 @@ final readonly class Duration implements Stringable
 
         foreach ($segments === false || $segments === [] ? [$text] : $segments as $segment) {
             if (preg_match('/\A(\d+(?:\.\d+)?)(us|ms|s|m|h)\z/', $segment, $match) !== 1) {
-                throw TimeException::durationUnparsable($text);
+                throw TimeException::createForReason(TimeError::DurationUnparsable, text: $text);
             }
 
             $microseconds += self::scale((float) $match[1], self::UNITS[$match[2]]);
@@ -73,7 +74,7 @@ final readonly class Duration implements Stringable
     public function requireAtLeastOneMillisecond(string $usage): self
     {
         if ($this->microseconds < self::UNITS['ms']) {
-            throw TimeException::durationNotPositive($usage);
+            throw TimeException::createForReason(TimeError::DurationNotPositive, usage: $usage);
         }
 
         return $this;
@@ -98,7 +99,7 @@ final readonly class Duration implements Stringable
     public function plus(self $other): self
     {
         if ($this->microseconds > \PHP_INT_MAX - $other->microseconds) {
-            throw TimeException::durationTooLarge();
+            throw TimeException::createForReason(TimeError::DurationTooLarge);
         }
 
         return new self($this->microseconds + $other->microseconds);
@@ -154,7 +155,7 @@ final readonly class Duration implements Stringable
         $scaled = round($amount * $factor);
 
         if (abs($scaled) > \PHP_INT_MAX) {
-            throw TimeException::durationTooLarge();
+            throw TimeException::createForReason(TimeError::DurationTooLarge);
         }
 
         return (int) $scaled;

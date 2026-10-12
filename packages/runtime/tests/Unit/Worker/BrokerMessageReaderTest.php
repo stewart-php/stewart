@@ -11,6 +11,7 @@ use RuntimeException;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\LogRecord;
 use Stewart\Runtime\Ipc\Message\Ping;
@@ -71,7 +72,7 @@ final class BrokerMessageReaderTest extends TestCase
 
     public function testUndecodableFrameIsDroppedAndReadingContinues(): void
     {
-        $this->transport->fail(TransportException::undecodableFrame('mystery', 'no codec'));
+        $this->transport->fail(TransportException::createForReason(TransportError::UndecodableFrame, messageType: 'mystery', reason: 'no codec'));
         $this->transport->deliver(new Ping(1, $this->timers->clock->getNow()));
         EventLoopTicks::settleUntil(fn(): bool => $this->transport->listSentOfType(Pong::class) !== []);
 
@@ -80,9 +81,9 @@ final class BrokerMessageReaderTest extends TestCase
 
     public function testTransportFailureStopsWorkerAsBrokerLoss(): void
     {
-        $this->transport->fail(TransportException::closed());
+        $this->transport->fail(TransportException::createForReason(TransportError::Closed));
 
-        self::assertStringContainsString('(broker gone: ' . TransportException::closed()->getMessage(), $this->running->await());
+        self::assertStringContainsString('(broker gone: ' . TransportException::createForReason(TransportError::Closed)->getMessage(), $this->running->await());
     }
 
     public function testClosedChannelStopsWorker(): void

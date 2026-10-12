@@ -90,7 +90,7 @@ final class EntityStateHistoryTest extends TestCase
         return new EntityStateHistory(
             $entityId,
             new HistoryWindow($start, $start->plus(Duration::hours(1))),
-            HistoricalStateCollection::fromStates($states),
+            HistoricalStateCollection::fromList($states),
         );
     }
 }

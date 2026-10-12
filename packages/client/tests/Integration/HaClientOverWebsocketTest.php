@@ -147,7 +147,7 @@ final class HaClientOverWebsocketTest extends TestCase
         $received = new DeferredFuture();
 
         $subscriptionId = $client->subscribeTrigger(
-            HaTriggerCollection::fromTriggers([HaTrigger::onSunset(id: 'dusk')]),
+            HaTriggerCollection::fromList([HaTrigger::onSunset(id: 'dusk')]),
             ['room' => 'hall'],
             static function (TriggerEvent $event) use ($received): void {
                 $received->complete($event);
@@ -177,7 +177,7 @@ final class HaClientOverWebsocketTest extends TestCase
         $this->assertThrowsReason(
             HaClientError::CommandRejected,
             static fn() => $client->subscribeTrigger(
-                HaTriggerCollection::fromTriggers([HaTrigger::fromArray(['trigger' => 'nonsense'])]),
+                HaTriggerCollection::fromList([HaTrigger::fromArray(['trigger' => 'nonsense'])]),
                 [],
                 static function (TriggerEvent $event): void {},
             ),
@@ -190,7 +190,7 @@ final class HaClientOverWebsocketTest extends TestCase
         $delivered = [];
 
         $subscriptionId = $client->subscribeTrigger(
-            HaTriggerCollection::fromTriggers([HaTrigger::onSunrise()]),
+            HaTriggerCollection::fromList([HaTrigger::onSunrise()]),
             [],
             static function (TriggerEvent $event) use (&$delivered): void {
                 $delivered[] = $event;

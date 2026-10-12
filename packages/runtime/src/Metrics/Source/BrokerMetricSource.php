@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Metrics\Source;
 
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
-use Stewart\Runtime\Metrics\Exposition\Collection\MetricFamilyCollection;
 use Stewart\Runtime\Metrics\Exposition\MetricFamily;
 use Stewart\Runtime\Metrics\Exposition\MetricLabels;
 use Stewart\Runtime\Metrics\Exposition\MetricType;
@@ -13,13 +12,14 @@ use Stewart\Runtime\Metrics\RuntimeMetricSource;
 
 final readonly class BrokerMetricSource implements RuntimeMetricSource
 {
-    public function collectMetrics(RuntimeSnapshot $snapshot): MetricFamilyCollection
+    /** @return list<MetricFamily> */
+    public function collectMetrics(RuntimeSnapshot $snapshot): array
     {
         $broker = $snapshot->broker;
         $routing = $broker->routing;
         $none = MetricLabels::none();
 
-        return MetricFamilyCollection::fromFamilies([
+        return [
             MetricFamily::createWithSample('stewart_workers', 'Worker slots the broker supervises.', MetricType::Gauge, $none, $broker->workers),
             MetricFamily::createWithSample('stewart_workers_live', 'Worker processes currently running.', MetricType::Gauge, $none, $broker->liveWorkers),
             MetricFamily::createWithSample('stewart_service_calls_in_flight', 'Home Assistant calls awaiting an answer.', MetricType::Gauge, $none, $broker->inFlightServiceCalls),
@@ -29,6 +29,6 @@ final readonly class BrokerMetricSource implements RuntimeMetricSource
             MetricFamily::createWithSample('stewart_routing_cached_keys', 'Routing keys with a cached match.', MetricType::Gauge, $none, $routing->cachedKeys),
             MetricFamily::createWithSample('stewart_routing_cache_hits_total', 'Routing lookups answered from the cache.', MetricType::Counter, $none, $routing->cacheHits),
             MetricFamily::createWithSample('stewart_routing_cache_misses_total', 'Routing lookups that missed the cache.', MetricType::Counter, $none, $routing->cacheMisses),
-        ]);
+        ];
     }
 }

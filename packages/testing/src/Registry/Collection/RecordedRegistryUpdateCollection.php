@@ -11,12 +11,6 @@ use Stewart\Testing\Registry\RecordedRegistryUpdate;
 /** @extends ListCollection<RecordedRegistryUpdate> */
 final readonly class RecordedRegistryUpdateCollection extends ListCollection
 {
-    /** @param iterable<RecordedRegistryUpdate> $updates */
-    public static function fromUpdates(iterable $updates): self
-    {
-        return self::fromList($updates);
-    }
-
     public function withRecordedUpdate(RecordedRegistryUpdate $update): self
     {
         return $this->withAppendedElement($update);

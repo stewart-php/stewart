@@ -36,7 +36,7 @@ final readonly class DomainServicesEmitter implements DomainFileEmitter, Reserve
             $context->importClass($namespace, ServiceResponse::class, $domain->getServicesClass());
         }
 
-        if ($domain->services->containsWhere(static fn(ServiceModel $service): bool => !$service->definition->returnsResponse)) {
+        if (array_any($domain->services, static fn(ServiceModel $service): bool => !$service->definition->returnsResponse)) {
             $context->importClass($namespace, EventContext::class, $domain->getServicesClass());
         }
 

@@ -22,7 +22,7 @@ use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Timers;
 use Stewart\Runtime\App\GeneratedRoots;
 use Stewart\Runtime\Container\Collection\AppBuildFailureCollection;
-use Stewart\Runtime\Container\Collection\AppRegistrationCollection;
+use Stewart\Runtime\Exception\ContainerError;
 use Stewart\Runtime\Exception\ContainerException;
 use Stewart\Runtime\Ipc\Collection\WorkerAppCollection;
 use Stewart\Runtime\Model\WorkerId;
@@ -114,38 +114,37 @@ final readonly class AppContainerBuilder
             }
         }
 
-        $registered = AppRegistrationCollection::fromRegistrations($registrations);
-
         try {
-            $container = $this->compileContainerFor($registered, $runtime, $servicesFile, $workerId);
+            $container = $this->compileContainerFor($registrations, $runtime, $servicesFile, $workerId);
         } catch (Throwable $e) {
-            if ($registered->isEmpty()) {
+            if ($registrations === []) {
                 throw $this->explainWorkerFailure($workerId, $e);
             }
 
-            return $this->isolateUnbuildableApps($registered, $failures, $runtime, $servicesFile, $workerId);
+            return $this->isolateUnbuildableApps($registrations, $failures, $runtime, $servicesFile, $workerId);
         }
 
         return new AppContainerBuild($container, AppBuildFailureCollection::keyedByAppId($failures));
     }
 
     /**
+     * @param list<AppRegistration> $registrations
      * @param list<AppBuildFailure> $failures
      * @throws StewartException
      */
     private function isolateUnbuildableApps(
-        AppRegistrationCollection $registrations,
+        array $registrations,
         array $failures,
         AppRuntimeServices $runtime,
         ?string $servicesFile,
         WorkerId $workerId,
     ): AppContainerBuild {
-        $this->compileOrFailWorker(AppRegistrationCollection::empty(), $runtime, $servicesFile, $workerId);
+        $this->compileOrFailWorker([], $runtime, $servicesFile, $workerId);
         $isolated = [];
 
         foreach ($registrations as $registration) {
             try {
-                $this->compileContainerFor(AppRegistrationCollection::fromRegistrations([$registration]), $runtime, $servicesFile, $workerId);
+                $this->compileContainerFor([$registration], $runtime, $servicesFile, $workerId);
             } catch (Throwable $e) {
                 $failures[] = new AppBuildFailure($registration->app->id, $this->explainAppFailure($registration->app->id, $e));
                 $isolated[] = $registration->app->id->value;
@@ -156,13 +155,16 @@ final readonly class AppContainerBuilder
             $runtime->logger->warning('The app container failed to compile; apps that cannot be built were left out', ['apps' => $isolated]);
         }
 
-        $survivors = $registrations->filter(static fn(AppRegistration $registration): bool => !\in_array($registration->app->id->value, $isolated, true));
+        $survivors = array_values(array_filter($registrations, static fn(AppRegistration $registration): bool => !\in_array($registration->app->id->value, $isolated, true)));
 
         return new AppContainerBuild($this->compileOrFailWorker($survivors, $runtime, $servicesFile, $workerId), AppBuildFailureCollection::keyedByAppId($failures));
     }
 
-    /** @throws StewartException */
-    private function compileOrFailWorker(AppRegistrationCollection $registrations, AppRuntimeServices $runtime, ?string $servicesFile, WorkerId $workerId): TypedContainer
+    /**
+     * @param list<AppRegistration> $registrations
+     * @throws StewartException
+     */
+    private function compileOrFailWorker(array $registrations, AppRuntimeServices $runtime, ?string $servicesFile, WorkerId $workerId): TypedContainer
     {
         try {
             return $this->compileContainerFor($registrations, $runtime, $servicesFile, $workerId);
@@ -171,8 +173,11 @@ final readonly class AppContainerBuilder
         }
     }
 
-    /** @throws Throwable */
-    private function compileContainerFor(AppRegistrationCollection $registrations, AppRuntimeServices $runtime, ?string $servicesFile, WorkerId $workerId): TypedContainer
+    /**
+     * @param list<AppRegistration> $registrations
+     * @throws Throwable
+     */
+    private function compileContainerFor(array $registrations, AppRuntimeServices $runtime, ?string $servicesFile, WorkerId $workerId): TypedContainer
     {
         $container = new ContainerBuilder();
         $container->setParameter('stewart.worker_id', $workerId->value);
@@ -206,20 +211,24 @@ final readonly class AppContainerBuilder
     /** @return StewartException<ExceptionReason> */
     private function explainAppFailure(AppId $appId, Throwable $error): StewartException
     {
-        return $error instanceof StewartException ? $error : ContainerException::appBuildFailed($appId, $error);
+        return $error instanceof StewartException ? $error : ContainerException::createForReason(ContainerError::AppBuildFailed, $error, appId: $appId->value);
     }
 
     /** @return StewartException<ExceptionReason> */
     private function explainWorkerFailure(WorkerId $workerId, Throwable $error): StewartException
     {
-        return $error instanceof StewartException ? $error : ContainerException::buildFailed($workerId, $error);
+        return $error instanceof StewartException ? $error : ContainerException::createForReason(
+            ContainerError::BuildFailed,
+            $error,
+            workerId: $workerId->value,
+        );
     }
 
     /** @throws ContainerException */
     private function loadUserServices(ContainerBuilder $container, string $servicesFile): void
     {
         if (!is_file($servicesFile)) {
-            throw ContainerException::servicesFileMissing($servicesFile);
+            throw ContainerException::createForReason(ContainerError::ServicesFileMissing, path: $servicesFile);
         }
 
         new PhpFileLoader($container, new FileLocator(\dirname($servicesFile)))->load(basename($servicesFile));
@@ -275,7 +284,7 @@ final readonly class AppContainerBuilder
             $class = $definition->getClass() ?? $id;
 
             if (is_a($class, App::class, true)) {
-                throw ContainerException::appInServicesFile($id, $class);
+                throw ContainerException::createForReason(ContainerError::AppInServicesFile, serviceId: $id, class: $class);
             }
         }
     }

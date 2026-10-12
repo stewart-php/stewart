@@ -53,7 +53,7 @@ final class AppMetricsTest extends TestCase
     protected function setUp(): void
     {
         $this->metrics = new AppMetrics(
-            WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)])), new WorkerSlot(new WorkerId(1), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('echo'), Demo::class)]))]),
+            WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)])), new WorkerSlot(new WorkerId(1), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('echo'), Demo::class)]))]),
             SystemClock::inUtc(),
         );
         $this->pausedApps = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock()));
@@ -83,7 +83,7 @@ final class AppMetricsTest extends TestCase
 
         $statuses = new AppStatusBuilder($this->metrics, $this->pausedApps, ExposureLinkFixture::createWithoutExposures())->buildHostedAppStatuses();
 
-        self::assertSame(['demo', 'echo'], $statuses->mapToList(static fn(AppStatus $app): string => $app->id));
+        self::assertSame(['demo', 'echo'], array_map(static fn(AppStatus $app): string => $app->id, $statuses));
     }
 
     public function testAppStatusIsFoundById(): void
@@ -150,7 +150,7 @@ final class AppMetricsTest extends TestCase
     /** @return list<AppStatus> */
     private function listAppStatuses(): array
     {
-        return new AppStatusBuilder($this->metrics, $this->pausedApps, ExposureLinkFixture::createWithoutExposures())->buildAppStatuses()->listValues();
+        return new AppStatusBuilder($this->metrics, $this->pausedApps, ExposureLinkFixture::createWithoutExposures())->buildAppStatuses();
     }
 
     private static function createHandle(int $workerId): WorkerHandle

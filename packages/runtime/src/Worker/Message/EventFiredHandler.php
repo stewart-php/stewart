@@ -22,6 +22,6 @@ final readonly class EventFiredHandler implements BrokerMessageHandler
     /** @param EventFired $message */
     public function handle(BrokerMessage $message): void
     {
-        $this->dispatcher->dispatchEvent($message->event, SubscriptionIdCollection::fromIds($message->deliverTo));
+        $this->dispatcher->dispatchEvent($message->event, SubscriptionIdCollection::fromList($message->deliverTo));
     }
 }
