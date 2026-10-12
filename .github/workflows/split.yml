@@ -58,13 +58,15 @@ jobs:
           find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
           cp -a "$GITHUB_WORKSPACE/$DIRECTORY/." .
           git add --all
-          if ! git diff --cached --quiet; then
-            git commit --quiet --message "$message"
-            git push --quiet origin main
-          fi
-          if [ "$GITHUB_REF_TYPE" = tag ] && ! git ls-remote --exit-code --tags origin "refs/tags/$GITHUB_REF_NAME" > /dev/null; then
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            if git ls-remote --exit-code --tags origin "refs/tags/$GITHUB_REF_NAME" > /dev/null; then exit 0; fi
+            # The main run owns split main; a tree that differs from it is tagged on an unpushed commit.
+            git diff --cached --quiet || git commit --quiet --message "$message"
             git tag --annotate "$GITHUB_REF_NAME" --message "$GITHUB_REF_NAME"
             git push --quiet origin "refs/tags/$GITHUB_REF_NAME"
+          elif ! git diff --cached --quiet; then
+            git commit --quiet --message "$message"
+            git push --quiet origin main
           fi
         env:
           TOKEN: ${{ steps.token.outputs.token }}
