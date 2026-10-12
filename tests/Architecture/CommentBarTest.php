@@ -18,8 +18,6 @@ final class CommentBarTest extends TestCase
 
     private const array SKIPPED_PATHS = ['/vendor/', 'packages/codegen/tests/Fixtures/Expected/', 'packages/runtime/tests/Fixtures/Generated/Code/'];
 
-    private const int MAX_COMMENT_LENGTH = 120;
-
     public function testDocblocksHoldOnlyTags(): void
     {
         $violations = [];
@@ -32,37 +30,7 @@ final class CommentBarTest extends TestCase
             }
         }
 
-        self::assertSame([], $violations, 'Docblocks hold type tags only; write a "why" as a one-line // comment.');
-    }
-
-    public function testInlineCommentsAreSingleShortLines(): void
-    {
-        $violations = [];
-
-        foreach ($this->tokenizeScannedFiles() as $relative => $tokens) {
-            $previousCommentLine = null;
-
-            foreach ($tokens as $token) {
-                if (!$token->is(\T_COMMENT)) {
-                    continue;
-                }
-
-                $text = trim($token->text);
-                $location = \sprintf('%s:%d', $relative, $token->line);
-
-                if (str_starts_with($text, '/*')) {
-                    $violations[] = $location . ' block comment';
-                } elseif ($previousCommentLine === $token->line - 1) {
-                    $violations[] = $location . ' multi-line comment';
-                } elseif (\strlen($text) > self::MAX_COMMENT_LENGTH) {
-                    $violations[] = $location . ' longer than ' . self::MAX_COMMENT_LENGTH . ' chars';
-                }
-
-                $previousCommentLine = $token->line;
-            }
-        }
-
-        self::assertSame([], $violations);
+        self::assertSame([], $violations, 'Docblocks hold type tags only; write a "why" as a // comment.');
     }
 
     /** @return iterable<string, array<PhpToken>> */

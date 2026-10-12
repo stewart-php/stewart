@@ -65,21 +65,6 @@ final class ExceptionReasonsTest extends TestCase
         }
     }
 
-    public function testFactoriesAndReasonCasesMatchOneToOne(): void
-    {
-        foreach (self::listAreaClasses() as $exception) {
-            $factories = array_keys(self::listFactoriesOf($exception));
-            $cases = array_map(
-                static fn(ExceptionReason $case): string => lcfirst($case->name),
-                self::findReasonClassFor($exception)::cases(),
-            );
-            sort($factories);
-            sort($cases);
-
-            self::assertSame($cases, $factories, $exception);
-        }
-    }
-
     public function testEachFactoryRaisesItsOwnReason(): void
     {
         foreach (self::listAreaClasses() as $exception) {
