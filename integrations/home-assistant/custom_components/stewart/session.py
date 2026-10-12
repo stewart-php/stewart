@@ -102,4 +102,5 @@ class SessionRegistry:
     @callback
     def end_all_sessions(self) -> None:
         for session in list(self._sessions.values()):
+            session.send_event({"type": "session_ended"})
             session.end()

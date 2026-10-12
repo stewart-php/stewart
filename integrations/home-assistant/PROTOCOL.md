@@ -21,6 +21,7 @@ Every command requires an administrator; anyone else gets Home Assistant's `unau
   `stewart/session/subscribe`, which fails with `protocol_mismatch` when they differ.
 - Version 1 stays open until the first release that ships the component. After that, any change to a message shape,
   an error code or a platform rule bumps it.
+- A new session event type is additive and does not bump it; both sides ignore event types they do not know.
 
 ## Identity
 
@@ -68,7 +69,11 @@ Result: `null`, then events.
 
 - One live session per instance. A new subscribe for the same instance takes over: the old subscription gets a
   `session_replaced` event, its pending commands fail, and it sends nothing more.
-- When the session ends (unsubscribe, socket closed, takeover), every entity of the instance becomes unavailable.
+- When the integration unloads (reload, removal, or Home Assistant reloading it after an entity is enabled or
+  disabled), every session gets a `session_ended` event, its pending commands fail, and it sends nothing more. Stewart
+  subscribes again once `stewart/version` answers.
+- When the session ends (unsubscribe, socket closed, takeover, unload), every entity of the instance becomes
+  unavailable.
 - An entity is available while its instance has a session and its own `available` flag is `true`.
 
 ### Events
@@ -77,6 +82,7 @@ Result: `null`, then events.
 |---|---|---|
 | `command` | `command_id`, `app`, `key`, `action`, `data`, `context` | See [Commands](#commands). `command_id` is an opaque string; `context` is the service call's `{id, parent_id, user_id}`. |
 | `session_replaced` | — | The last event of a session that another subscribe took over. |
+| `session_ended` | — | The last event of a session that ended because the integration unloaded. |
 | `sentence` | — | Reserved. |
 
 ## Messages
