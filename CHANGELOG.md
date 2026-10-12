@@ -53,6 +53,8 @@ minor release may break; its "Upgrading" section says what to change.
   and the worker no longer keeps a counter per timer
 - Publishing to an MQTT topic that is not valid UTF-8 fails with `mqtt_topic_invalid` instead of making the server
   drop the connection, which for QoS 1 repeated on every reconnect
+- A QoS 1 MQTT message the server has not acknowledged after 5 sends is dropped with an error naming its topic,
+  instead of being sent again on every reconnect
 
 ### Changed
 

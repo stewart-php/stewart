@@ -152,9 +152,14 @@ final class ReconnectingMqttLink implements MqttLink
             $this->subscribeOn($connection, (string) $topicFilter);
         }
 
-        $this->outbound->replayPendingMessages(function (int $sequence, MqttMessage $message) use ($connection): void {
-            $this->sendAtLeastOnce($connection, $sequence, $message);
-        });
+        $this->outbound->replayPendingMessages(
+            function (int $sequence, MqttMessage $message) use ($connection): void {
+                $this->sendAtLeastOnce($connection, $sequence, $message);
+            },
+            function (MqttMessage $message, int $sendAttempts): void {
+                $this->logger->error('MQTT message dropped; the server never acknowledged it', ['topic' => $message->topic, 'attempts' => $sendAttempts]);
+            },
+        );
 
         $lostBecause = $connection->awaitClosed();
         $this->connection = null;
@@ -180,10 +185,14 @@ final class ReconnectingMqttLink implements MqttLink
     private function sendAtLeastOnce(MqttConnection $connection, int $sequence, MqttMessage $message): void
     {
         try {
-            $connection->publishMessage($message)->map(fn() => $this->outbound->acknowledgeMessage($sequence))->ignore();
+            $acknowledged = $connection->publishMessage($message);
         } catch (MqttClientException) {
             // Still buffered; the next connection sends it again.
+            return;
         }
+
+        $this->outbound->recordSendAttempt($sequence);
+        $acknowledged->map(fn() => $this->outbound->acknowledgeMessage($sequence))->ignore();
     }
 
     private function subscribeOn(MqttConnection $connection, string $topicFilter): void
