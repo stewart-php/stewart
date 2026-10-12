@@ -45,7 +45,7 @@ final class TopicPayloadTest extends TestCase
     public function testNonFiniteFloatIsRejected(): void
     {
         $this->expectException(TopicException::class);
-        $this->expectExceptionMessage('Topic payload at payload[ratio] is float(NAN); expected null, a finite scalar or an array of those.');
+        $this->expectExceptionMessageIsOrContains('Topic payload at payload[ratio] is float(NAN); expected null, a finite scalar or an array of those.');
 
         new TopicPayload(['ratio' => \NAN]);
     }

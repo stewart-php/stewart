@@ -41,7 +41,7 @@ final class HttpListenerFactoryTest extends TestCase
         $admin = new HttpAdminConfig(new HttpListenAddress('127.0.0.1', 8081), 'secret');
         $factory = $this->createFactory(new HttpConfig(new HttpListenAddress('127.0.0.1', 8080), $admin));
 
-        self::assertSame(2, $factory->createHttpListeners()->count());
+        self::assertCount(2, $factory->createHttpListeners());
     }
 
     public function testAdminListenWithoutTokenIsRefused(): void

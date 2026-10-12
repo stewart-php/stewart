@@ -33,7 +33,6 @@ final class TypedCollectionTest extends TestCase
 
         $globs = $selectors->filter(static fn(Selector $selector): bool => $selector->getPattern() === 'light.*');
 
-        self::assertInstanceOf(SelectorCollection::class, $globs);
         self::assertSame([0], array_keys(iterator_to_array($globs)));
         self::assertCount(3, $selectors);
     }

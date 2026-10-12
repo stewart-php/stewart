@@ -8,7 +8,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Store\Exception\StoreSetupError;
-use Stewart\Store\GuardedStoreBackend;
 use Stewart\Store\StoreBackendConnector;
 use Stewart\Store\StoreBackendRegistry;
 use Stewart\Store\StoreDsn;
@@ -30,7 +29,6 @@ final class StoreBackendConnectorTest extends TestCase
 
         $backend = new StoreBackendConnector(new StoreBackendRegistry([$factory]), new VirtualClock())->connectToBackend($dsn, $timing);
 
-        self::assertInstanceOf(GuardedStoreBackend::class, $backend);
         self::assertSame($dsn, $factory->openedDsn);
         self::assertSame($timing, $factory->openedTiming);
     }

@@ -36,3 +36,4 @@ composer config prefer-stable true
 composer update --no-interaction --no-progress ${LOWEST:+--prefer-lowest}
 
 vendor/bin/phpunit ${SUITE:+--testsuite="$SUITE"}
+php ../../../vendor/bin/composer-dependency-analyser --config=../../../composer-dependency-analyser.php

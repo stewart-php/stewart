@@ -1,0 +1,27 @@
+{
+    "$schema": "tools/infection/vendor/infection/infection/resources/schema.json",
+    "source": {
+        "directories": [
+            "packages/client/src",
+            "packages/codegen/src",
+            "packages/contracts/src",
+            "packages/mqtt/src",
+            "packages/runtime/src",
+            "packages/store/src",
+            "packages/store-redis/src",
+            "packages/sun/src",
+            "packages/support/src"
+        ]
+    },
+    "tmpDir": "var/infection",
+    "testFramework": "phpunit",
+    "testFrameworkOptions": "--testsuite=unit,integration,process,persistence",
+    "logs": {
+        "html": "var/reports/infection/index.html",
+        "summary": "var/reports/infection/summary.txt",
+        "json": "var/reports/infection/infection.json"
+    },
+    "mutators": {
+        "@default": true
+    }
+}

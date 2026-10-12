@@ -475,7 +475,6 @@ final class AppContainerBuilderTest extends TestCase
         $warnings = array_values(array_filter($this->transport->sent, static fn(object $message): bool => $message instanceof LogRecord && $message->level === LogLevel::Warning));
 
         self::assertCount(1, $warnings);
-        self::assertInstanceOf(LogRecord::class, $warnings[0]);
         self::assertSame(['apps' => ['unregistered', 'missing']], $warnings[0]->context);
     }
 
@@ -567,7 +566,7 @@ final class AppContainerBuilderTest extends TestCase
     {
         $build = $this->buildAppContainer($apps, $servicesFile, $generated);
 
-        self::assertSame(0, $build->failures->count());
+        self::assertCount(0, $build->failures);
 
         return $build->container;
     }

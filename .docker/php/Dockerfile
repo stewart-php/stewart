@@ -69,5 +69,15 @@ USER ${RUNTIME_UID}:${RUNTIME_UID}
 # The monorepo toolchain: plain commands, no boot steps.
 FROM runtime-dev AS dev
 
+ARG RUNTIME_UID
+
+USER root
+
+RUN install-php-extensions intl pcov
+
+COPY .docker/php/conf.d/pcov.ini /usr/local/etc/php/conf.d/zz-pcov.ini
+
+USER ${RUNTIME_UID}:${RUNTIME_UID}
+
 ENTRYPOINT []
 CMD ["sh"]

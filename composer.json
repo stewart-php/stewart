@@ -22,7 +22,12 @@
         "friendsofphp/php-cs-fixer": "^3.75",
         "phpat/phpat": "^0.12.5",
         "phpstan/phpstan": "^2.2",
+        "phpstan/phpstan-deprecation-rules": "^2.0",
+        "phpstan/phpstan-phpunit": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^13.3",
+        "shipmonk/composer-dependency-analyser": "^1.8",
+        "staabm/annotate-pull-request-from-checkstyle": "^1.8",
         "stewart-php/codegen": "0.x-dev",
         "stewart-php/testing": "0.x-dev"
     },

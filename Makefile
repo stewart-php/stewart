@@ -12,6 +12,9 @@ RUN     := $(DC) run --rm --no-deps php
 RUN_APP := $(DC) run --rm php
 RUNTIME_IMAGE ?= stewart-runtime:local
 HELM    := $(DOCKER) run --rm -v "$(CURDIR):/work" -w /work -u "$(UID):$(GID)" -e HOME=/tmp alpine/helm:4.3.0
+LINT_RUN := $(DOCKER) run --rm -v "$(CURDIR):/repo" -w /repo
+WORKFLOWS := .github/workflows/*.yml skeleton/.github/workflows/*.yml
+DOCKERFILES := .docker/php/Dockerfile .docker/ha/Dockerfile skeleton/Dockerfile
 KUBECONFORM := $(DOCKER) run --rm -i ghcr.io/yannh/kubeconform:v0.8.0 -schema-location default \
 	-schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
 
@@ -28,8 +31,9 @@ build: ## Build the dev image
 	$(DC) build php
 
 .PHONY: install
-install: ## composer install
+install: ## composer install, including the isolated tools under tools/
 	$(RUN) composer install --no-interaction
+	@for tool in tools/*/; do $(RUN) composer install --no-interaction --working-dir=$$tool || exit 1; done
 
 .PHONY: update
 update: ## composer update
@@ -88,13 +92,23 @@ docs-preview: ## Serve the built documentation site
 .PHONY: check
 check: stan cs test test-integration test-process test-persistence test-architecture ha-check ## Run every check
 
+.PHONY: lint-ci
+lint-ci: ## Lint and security-audit the GitHub workflows, lint the Dockerfiles
+	$(LINT_RUN) rhysd/actionlint:1.7.12 -no-color $(WORKFLOWS)
+	$(LINT_RUN) -e GH_TOKEN ghcr.io/zizmorcore/zizmor:1.30.1 --format=$(if $(GITHUB_ACTIONS),github,plain) $(WORKFLOWS)
+	$(LINT_RUN) hadolint/hadolint:v2.15.1 hadolint --no-color $(DOCKERFILES)
+
 .PHONY: stan
 stan: ## PHPStan at max level and dependency check (phpat)
 	$(RUN) vendor/bin/phpstan analyse --memory-limit=1G
 
 .PHONY: cs
 cs: ## Check code style
+ifdef GITHUB_ACTIONS
+	$(RUN) sh -c 'set -o pipefail; vendor/bin/php-cs-fixer check --format=checkstyle | vendor/bin/cs2pr'
+else
 	$(RUN) vendor/bin/php-cs-fixer check --diff
+endif
 
 .PHONY: cs-fix
 cs-fix: ## Fix code style
@@ -102,29 +116,70 @@ cs-fix: ## Fix code style
 
 .PHONY: test
 test: ## Unit tests (no Home Assistant needed)
-	$(RUN) vendor/bin/phpunit --testsuite=unit
+	$(RUN) vendor/bin/phpunit --testsuite=unit --log-junit var/reports/junit/unit.xml
 
 .PHONY: test-process
 test-process: ## Worker process smoke tests against Valkey (no Home Assistant needed)
-	$(RUN_APP) vendor/bin/phpunit --testsuite=process
+	$(RUN_APP) vendor/bin/phpunit --testsuite=process --log-junit var/reports/junit/process.xml
 
 .PHONY: test-persistence
 test-persistence: ## Tests against the Valkey and Mosquitto services (no Home Assistant needed)
-	$(RUN_APP) vendor/bin/phpunit --testsuite=persistence
+	$(RUN_APP) vendor/bin/phpunit --testsuite=persistence --log-junit var/reports/junit/persistence.xml
 
 .PHONY: test-integration
 test-integration: ## Cross-package tests over real sockets (no Home Assistant needed)
-	$(RUN) vendor/bin/phpunit --testsuite=integration
+	$(RUN) vendor/bin/phpunit --testsuite=integration --log-junit var/reports/junit/integration.xml
 
 .PHONY: test-architecture
 test-architecture: ## Repository-wide guards over every package (monorepo only)
-	$(RUN) vendor/bin/phpunit --testsuite=architecture
+	$(RUN) vendor/bin/phpunit --testsuite=architecture --log-junit var/reports/junit/architecture.xml
 
 PACKAGES := $(notdir $(wildcard packages/*))
 
 .PHONY: test-package
-test-package: ## Install one package on its own and run its tests (PKG=name [SUITE=unit] [LOWEST=1])
+test-package: ## Install one package on its own, run its tests and check its declared dependencies (PKG=name [SUITE=unit] [LOWEST=1])
 	$(RUN_APP) env SUITE=$(SUITE) LOWEST=$(LOWEST) sh bin/test-package.sh $(PKG)
+
+.PHONY: coverage
+coverage: ## Coverage of every suite but architecture: clover, HTML and the XML and JUnit logs Infection reads
+	$(RUN_APP) php -d pcov.enabled=1 -d pcov.directory=/app/packages -d 'pcov.exclude=~/(tests|vendor)/~' vendor/bin/phpunit \
+		--testsuite=unit,integration,process,persistence \
+		--coverage-clover var/reports/coverage/clover.xml \
+		--coverage-html var/reports/coverage/html \
+		--coverage-xml var/reports/coverage/coverage-xml \
+		--log-junit var/reports/coverage/junit.xml \
+		--coverage-text=var/reports/coverage/summary.txt --only-summary-for-coverage-text
+
+.PHONY: infection
+infection: ## Mutation testing over the coverage run; INFECTION_BASE=origin/main limits it to lines changed since that ref
+	$(RUN_APP) tools/infection/vendor/bin/infection --coverage=var/reports/coverage --skip-initial-tests --threads=max --no-progress \
+		$(if $(INFECTION_BASE),--git-diff-lines --git-diff-base=$(INFECTION_BASE)) $(if $(GITHUB_ACTIONS),--logger-github)
+
+.PHONY: metrics
+metrics: ## phpmetrics HTML, JSON and violation reports; on CI, METRICS_BASE=<ref> annotates the violations in files changed since that ref
+	@mkdir -p var/reports/metrics
+	$(RUN) php -d 'error_reporting=E_ALL & ~E_DEPRECATED' tools/phpmetrics/vendor/bin/phpmetrics packages \
+		--report-html=var/reports/metrics/html \
+		--report-json=var/reports/metrics/metrics.json \
+		--report-summary-json=var/reports/metrics/summary.json \
+		--report-violations=var/reports/metrics/violations.xml
+ifdef GITHUB_ACTIONS
+ifdef METRICS_BASE
+	$(RUN) php bin/annotate-metric-violations.php var/reports/metrics/violations.xml $(METRICS_BASE)
+endif
+endif
+
+.PHONY: quality-summary
+quality-summary: ## Headline numbers from var/reports into summary.json and summary.md; QUALITY_BASELINE=<summary.json> adds changes
+	$(RUN) php bin/quality-summary.php var/reports $(QUALITY_BASELINE)
+
+.PHONY: bc-check
+bc-check: ## Public API backwards-compatibility breaks per package since BC_BASE (default: the latest tag)
+	$(RUN) env BC_FORMAT=$(if $(GITHUB_ACTIONS),github-actions,console) sh bin/bc-check.sh $(or $(BC_BASE),$(shell git describe --tags --abbrev=0))
+
+.PHONY: audit
+audit: ## Report known vulnerabilities and abandoned packages in the locked dependencies
+	$(RUN) composer audit --locked --abandoned=report
 
 .PHONY: test-packages
 test-packages: ## Run test-package for every package

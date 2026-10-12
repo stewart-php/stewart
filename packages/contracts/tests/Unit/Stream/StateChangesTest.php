@@ -481,8 +481,6 @@ final class StateChangesTest extends TestCase
             ->debounce(Duration::milliseconds(100))
             ->whenChangedTo('on');
 
-        self::assertInstanceOf(StateChangeStream::class, $chained);
-
         $this->listen($chained);
 
         $this->push($this->createChange('off', 'on'));

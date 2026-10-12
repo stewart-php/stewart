@@ -48,7 +48,7 @@ final class StewartExceptionTest extends TestCase
     public function testUnknownPlaceholderIsAProgrammerError(): void
     {
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('{key}');
+        $this->expectExceptionMessageIsOrContains('{key}');
 
         SampleException::createForSampleReason(SampleError::Placeholders);
     }

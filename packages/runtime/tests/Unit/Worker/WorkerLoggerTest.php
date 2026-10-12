@@ -26,7 +26,7 @@ final class WorkerLoggerTest extends TestCase
         $logger = new WorkerLogger(new NullTransport(), new StderrFallback(new WorkerId(0)), ResourceScope::forApp(new AppId('demo')));
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unknown log level "trace"');
+        $this->expectExceptionMessageIsOrContains('Unknown log level "trace"');
 
         $logger->log('trace', 'nope');
     }

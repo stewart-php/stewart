@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c33ab8c7cd732cca18b062a7223b0832",
+    "content-hash": "3052086a2ebf1f0d117d934ba374c3fe",
     "packages": [
         {
             "name": "amphp/amp",
@@ -2227,7 +2227,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/client",
-                "reference": "b45505bc017c0a1db0df2047b58edc7b2e9fdc6c"
+                "reference": "d1b60b726aaf47bec3365176c84328d61d573653"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2237,7 +2237,6 @@
                 "ext-json": "*",
                 "php": ">=8.5",
                 "psr/log": "^3.0",
-                "revolt/event-loop": "^1.0.9",
                 "stewart-php/contracts": "self.version",
                 "stewart-php/support": "self.version"
             },
@@ -2251,6 +2250,7 @@
                 "amphp/socket": "^2.4",
                 "amphp/websocket-server": "^4.0",
                 "phpunit/phpunit": "^13.3",
+                "revolt/event-loop": "^1.0.9",
                 "stewart-php/testing": "self.version"
             },
             "suggest": {
@@ -2287,10 +2287,11 @@
             "dist": {
                 "type": "path",
                 "url": "packages/contracts",
-                "reference": "867fb0e5d80f52810701283534c79a5294261378"
+                "reference": "9718455b7d9b124ede80bc53f37c738e1ca9ce89"
             },
             "require": {
                 "dragonmantank/cron-expression": "^3.4",
+                "ext-filter": "*",
                 "php": ">=8.5"
             },
             "require-dev": {
@@ -2376,7 +2377,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/runtime",
-                "reference": "d91b0718d7ab99e74da650d73a2e20f384032df5"
+                "reference": "4a5e675286fc8ff0a94063276c43c1bfd7c5d256"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2389,6 +2390,7 @@
                 "amphp/sync": "^2.3",
                 "composer-runtime-api": "^2.2",
                 "ext-ctype": "*",
+                "ext-filter": "*",
                 "ext-json": "*",
                 "ext-pcntl": "*",
                 "monolog/monolog": "^3.12",
@@ -2410,6 +2412,7 @@
                 "symfony/yaml": "^7.4 || ^8.0"
             },
             "require-dev": {
+                "ext-posix": "*",
                 "phpunit/phpunit": "^13.3",
                 "psr/container": "^2.0",
                 "stewart-php/store-redis": "self.version",
@@ -2498,13 +2501,12 @@
             "dist": {
                 "type": "path",
                 "url": "packages/store-redis",
-                "reference": "4ba8e9b2f6c3e5342f983b57f500432fca0b1a50"
+                "reference": "25b7d4e7e783b1ed1ef2de24d5ee07e717fa53ea"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
                 "amphp/redis": "^2.0.4",
                 "php": ">=8.5",
-                "revolt/event-loop": "^1.0.9",
                 "stewart-php/contracts": "self.version",
                 "stewart-php/store": "self.version",
                 "stewart-php/support": "self.version",
@@ -5250,6 +5252,167 @@
             "time": "2026-09-03T20:38:19+00:00"
         },
         {
+            "name": "phpstan/phpstan-deprecation-rules",
+            "version": "2.0.5",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/phpstan/phpstan-deprecation-rules.git",
+                "reference": "67bedd65c24bc72840afc45aed48b1059dd44bec"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phpstan/phpstan-deprecation-rules/zipball/67bedd65c24bc72840afc45aed48b1059dd44bec",
+                "reference": "67bedd65c24bc72840afc45aed48b1059dd44bec",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.4 || ^8.0",
+                "phpstan/phpstan": "^2.1.39"
+            },
+            "require-dev": {
+                "php-parallel-lint/php-parallel-lint": "^1.2",
+                "phpstan/phpstan-phpunit": "^2.0",
+                "phpunit/phpunit": "^9.6",
+                "shipmonk/name-collision-detector": "^2.1"
+            },
+            "type": "phpstan-extension",
+            "extra": {
+                "phpstan": {
+                    "includes": [
+                        "rules.neon"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "PHPStan\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "PHPStan rules for detecting usage of deprecated classes, methods, properties, constants and traits.",
+            "keywords": [
+                "static analysis"
+            ],
+            "support": {
+                "issues": "https://github.com/phpstan/phpstan-deprecation-rules/issues",
+                "source": "https://github.com/phpstan/phpstan-deprecation-rules/tree/2.0.5"
+            },
+            "time": "2026-07-22T06:50:43+00:00"
+        },
+        {
+            "name": "phpstan/phpstan-phpunit",
+            "version": "2.0.21",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/phpstan/phpstan-phpunit.git",
+                "reference": "8dbdc3a3e2d7c5dfea655d20ecca5bc9b1b1e441"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phpstan/phpstan-phpunit/zipball/8dbdc3a3e2d7c5dfea655d20ecca5bc9b1b1e441",
+                "reference": "8dbdc3a3e2d7c5dfea655d20ecca5bc9b1b1e441",
+                "shasum": ""
+            },
+            "require": {
+                "phar-io/version": "^3.2",
+                "php": "^7.4 || ^8.0",
+                "phpstan/phpstan": "^2.2.6"
+            },
+            "conflict": {
+                "phpunit/phpunit": "<7.0"
+            },
+            "require-dev": {
+                "nikic/php-parser": "^5",
+                "php-parallel-lint/php-parallel-lint": "^1.2",
+                "phpstan/phpstan-deprecation-rules": "^2.0",
+                "phpstan/phpstan-strict-rules": "^2.0",
+                "phpunit/phpunit": "^9.6",
+                "shipmonk/name-collision-detector": "^2.1"
+            },
+            "type": "phpstan-extension",
+            "extra": {
+                "phpstan": {
+                    "includes": [
+                        "extension.neon",
+                        "rules.neon"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "PHPStan\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "PHPUnit extensions and rules for PHPStan",
+            "keywords": [
+                "static analysis"
+            ],
+            "support": {
+                "issues": "https://github.com/phpstan/phpstan-phpunit/issues",
+                "source": "https://github.com/phpstan/phpstan-phpunit/tree/2.0.21"
+            },
+            "time": "2026-10-01T11:59:29+00:00"
+        },
+        {
+            "name": "phpstan/phpstan-strict-rules",
+            "version": "2.0.12",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/phpstan/phpstan-strict-rules.git",
+                "reference": "2bc5ae19ae965663b62ac907ee6342c3903ec93b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phpstan/phpstan-strict-rules/zipball/2bc5ae19ae965663b62ac907ee6342c3903ec93b",
+                "reference": "2bc5ae19ae965663b62ac907ee6342c3903ec93b",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.4 || ^8.0",
+                "phpstan/phpstan": "^2.1.52"
+            },
+            "require-dev": {
+                "php-parallel-lint/php-parallel-lint": "^1.2",
+                "phpstan/phpstan-deprecation-rules": "^2.0",
+                "phpstan/phpstan-phpunit": "^2.0",
+                "phpunit/phpunit": "^9.6",
+                "shipmonk/name-collision-detector": "^2.1"
+            },
+            "type": "phpstan-extension",
+            "extra": {
+                "phpstan": {
+                    "includes": [
+                        "rules.neon"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "PHPStan\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Extra strict and opinionated rules for PHPStan",
+            "keywords": [
+                "static analysis"
+            ],
+            "support": {
+                "issues": "https://github.com/phpstan/phpstan-strict-rules/issues",
+                "source": "https://github.com/phpstan/phpstan-strict-rules/tree/2.0.12"
+            },
+            "time": "2026-07-19T07:24:06+00:00"
+        },
+        {
             "name": "phpunit/php-code-coverage",
             "version": "14.4.1",
             "source": {
@@ -7405,6 +7568,124 @@
                 }
             ],
             "time": "2026-02-06T04:52:52+00:00"
+        },
+        {
+            "name": "shipmonk/composer-dependency-analyser",
+            "version": "1.8.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/shipmonk-rnd/composer-dependency-analyser.git",
+                "reference": "975e5873b519d5180b1017a5dfb43d80781abd45"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/shipmonk-rnd/composer-dependency-analyser/zipball/975e5873b519d5180b1017a5dfb43d80781abd45",
+                "reference": "975e5873b519d5180b1017a5dfb43d80781abd45",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "ext-tokenizer": "*",
+                "php": "^7.2 || ^8.0"
+            },
+            "require-dev": {
+                "editorconfig-checker/editorconfig-checker": "^10.7.0",
+                "ergebnis/composer-normalize": "^2.19.0",
+                "ext-dom": "*",
+                "ext-libxml": "*",
+                "phpcompatibility/php-compatibility": "^9.3.5",
+                "phpstan/phpstan": "^1.12.26",
+                "phpstan/phpstan-phpunit": "^1.4.2",
+                "phpstan/phpstan-strict-rules": "^1.6.2",
+                "phpunit/phpunit": "^8.5.42 || ^9.6.23",
+                "shipmonk/name-collision-detector": "^2.1.1",
+                "slevomat/coding-standard": "^8.15.0"
+            },
+            "bin": [
+                "bin/composer-dependency-analyser"
+            ],
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "ShipMonk\\ComposerDependencyAnalyser\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Fast detection of composer dependency issues (dead dependencies, shadow dependencies, misplaced dependencies)",
+            "keywords": [
+                "analyser",
+                "composer",
+                "composer dependency",
+                "dead code",
+                "dead dependency",
+                "detector",
+                "dev",
+                "misplaced dependency",
+                "shadow dependency",
+                "static analysis",
+                "unused code",
+                "unused dependency"
+            ],
+            "support": {
+                "issues": "https://github.com/shipmonk-rnd/composer-dependency-analyser/issues",
+                "source": "https://github.com/shipmonk-rnd/composer-dependency-analyser/tree/1.8.4"
+            },
+            "time": "2025-11-25T14:38:16+00:00"
+        },
+        {
+            "name": "staabm/annotate-pull-request-from-checkstyle",
+            "version": "1.8.7",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/staabm/annotate-pull-request-from-checkstyle.git",
+                "reference": "9cab4b00e2f2e86dc54fb88e2a1b4bf15443d6dd"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/staabm/annotate-pull-request-from-checkstyle/zipball/9cab4b00e2f2e86dc54fb88e2a1b4bf15443d6dd",
+                "reference": "9cab4b00e2f2e86dc54fb88e2a1b4bf15443d6dd",
+                "shasum": ""
+            },
+            "require": {
+                "ext-libxml": "*",
+                "ext-simplexml": "*",
+                "php": "^5.3 || ^7.0 || ^8.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^2.16.1"
+            },
+            "bin": [
+                "cs2pr"
+            ],
+            "type": "library",
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Markus Staab"
+                }
+            ],
+            "keywords": [
+                "Github Actions",
+                "continous integration",
+                "dev"
+            ],
+            "support": {
+                "issues": "https://github.com/staabm/annotate-pull-request-from-checkstyle/issues",
+                "source": "https://github.com/staabm/annotate-pull-request-from-checkstyle/tree/1.8.7"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/staabm",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-05-05T12:33:44+00:00"
         },
         {
             "name": "staabm/side-effects-detector",

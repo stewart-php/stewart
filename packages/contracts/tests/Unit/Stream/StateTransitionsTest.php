@@ -12,7 +12,6 @@ use Stewart\Contracts\Exception\StateException;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
-use Stewart\Contracts\StateTransitionStream;
 use Stewart\Contracts\Stream\StateChanges;
 use Stewart\Contracts\Stream\StateTransitions;
 use Stewart\Contracts\Stream\WhenChangedToOperator;
@@ -149,8 +148,6 @@ final class StateTransitionsTest extends TestCase
     public function testOperatorsAfterFromKeepTransitionStream(): void
     {
         $chained = $this->stream->whenChangedTo('on')->from('off')->take(1);
-
-        self::assertInstanceOf(StateTransitionStream::class, $chained);
 
         $this->listen($chained);
 
