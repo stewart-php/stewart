@@ -129,6 +129,37 @@ final class ComponentLinkTest extends TestCase
         self::assertSame(ComponentState::Replaced, $this->tracker->detection->state);
     }
 
+    public function testEndedSessionIsHandedOn(): void
+    {
+        $ended = 0;
+        $this->link->onSessionEnded(static function () use (&$ended): void {
+            ++$ended;
+        });
+        $this->replyWithVersion(1);
+        $this->replyToSessionSubscribe();
+        $this->connectAndEstablish();
+
+        $this->pushSessionEvent(['type' => 'session_ended']);
+
+        self::assertSame(1, $ended);
+    }
+
+    public function testEndedSessionAfterLostLinkIsIgnored(): void
+    {
+        $ended = 0;
+        $this->link->onSessionEnded(static function () use (&$ended): void {
+            ++$ended;
+        });
+        $this->replyWithVersion(1);
+        $this->replyToSessionSubscribe();
+        $this->connectAndEstablish();
+
+        $this->link->markLinkLost();
+        $this->pushSessionEvent(['type' => 'session_ended']);
+
+        self::assertSame(0, $ended);
+    }
+
     public function testEventAfterLostLinkIsIgnored(): void
     {
         $this->replyWithVersion(1);

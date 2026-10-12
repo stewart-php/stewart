@@ -31,6 +31,7 @@ final class ComponentSession
         private readonly LoggerInterface $logger,
     ) {
         $link->onCommand($exposures->receiveCommand(...));
+        $link->onSessionEnded($this->relinkAfterSessionEnded(...));
         $exposures->onSessionLost($this->relinkAfterSessionEnded(...));
     }
 

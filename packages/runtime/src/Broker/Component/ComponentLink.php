@@ -11,6 +11,7 @@ use Stewart\Client\Component\ComponentProtocol;
 use Stewart\Client\Component\ComponentSessionEvent;
 use Stewart\Client\Component\ComponentSessionRequest;
 use Stewart\Client\Component\ComponentVersion;
+use Stewart\Client\Component\SessionEnded;
 use Stewart\Client\Component\SessionReplaced;
 use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
@@ -25,6 +26,9 @@ final class ComponentLink
     /** @var Closure(ComponentCommand): void */
     private Closure $onCommand;
 
+    /** @var Closure(): void */
+    private Closure $onSessionEnded;
+
     public function __construct(
         private readonly HaClient $client,
         private readonly LoggerInterface $logger,
@@ -33,12 +37,19 @@ final class ComponentLink
         private readonly string $componentSessionStewartVersion,
     ) {
         $this->onCommand = static function (): void {};
+        $this->onSessionEnded = static function (): void {};
     }
 
     /** @param Closure(ComponentCommand): void $handler */
     public function onCommand(Closure $handler): void
     {
         $this->onCommand = $handler;
+    }
+
+    /** @param Closure(): void $handler */
+    public function onSessionEnded(Closure $handler): void
+    {
+        $this->onSessionEnded = $handler;
     }
 
     /** @throws HaClientException */
@@ -116,6 +127,12 @@ final class ComponentLink
 
         if ($event instanceof ComponentCommand) {
             ($this->onCommand)($event);
+
+            return;
+        }
+
+        if ($event instanceof SessionEnded) {
+            ($this->onSessionEnded)();
 
             return;
         }

@@ -6,6 +6,11 @@ minor release may break; its "Upgrading" section says what to change.
 
 ## [Unreleased]
 
+### Fixed
+
+- Reloading the `stewart` integration, or enabling or disabling one of its entities, no longer leaves exposed entities
+  unavailable until Home Assistant reconnects: the daemon opens a new session and sends its entities again
+
 ## [0.10.0] - 2026-10-12
 
 A maintenance release: quieter worker shutdown, tighter package manifests and a hardened skeleton CI.
