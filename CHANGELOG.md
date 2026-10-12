@@ -12,6 +12,14 @@ minor release may break; its "Upgrading" section says what to change.
   within `shutdown_grace` first, a quarantined or backing-off one starts at once. While it stops, `stewart status`
   and `stewart_worker_phase` show the new `stopping` phase
 - `POST /api/workers/{id}/restart` on the HTTP admin API does the same as `worker:restart`; an unknown worker is 404
+- `Timers::waitFor()` suspends the calling fiber until its `PendingWait` is resolved or failed, or returns null once
+  its timeout passes
+- `EventStream::waitForNext(?Duration $timeout)` returns the stream's next event, or null once the timeout passes;
+  it throws `WaitException` when the stream completes first or the app stops. An awaited exposed-entity command is
+  accepted when it is returned. A wait the app's stop abandons is not reported as a failure
+- `HaContext::waitForState($entity, 'on', timeout:)` and `Entity::waitForState()` return the entity's state once it
+  is in the given state, at once if it already is, or null once the timeout passes. Generated entity handles get it
+  with their typed state
 
 ### Fixed
 
@@ -37,9 +45,18 @@ minor release may break; its "Upgrading" section says what to change.
 ### Added
 
 - `FakeWebsocketConnection::answerEverySend()` in `stewart-php/testing` answers every command of a type
+- `ManualScheduler` in `stewart-php/testing` runs every `Scheduler` method on virtual time, with sun events from
+  `FixedSunCalendar`, whose event times a test sets
+- `AppHarness` in `stewart-php/testing` builds an app with its options and recording fakes; tests push states,
+  events and commands, call `advanceTime()` for timers, schedules and waits, and inspect what the app did
 
 ### Changed
 
+- Generated code format 6; regenerate after upgrading
+- `stewart-php/testing` is public, for testing apps, and its API is covered by the backward-compatibility check
+- The `stewart-php/testing` fakes run each handler in its own fiber, so a handler that waits suspends only itself;
+  `ManualTimers::delay()` lets resumed handlers run before the next timer is due, and the recording exposures share
+  their context's `ManualTimers`
 - `stewart.yaml` may name an app with `_` in place of `-` (`hall_light:` for `hall-light`); this no longer fails with
   "the automation ID is …"
 - Stewart exceptions are raised with `XException::createForReason(XError::Case, $previous, key: $value)`; most
@@ -62,9 +79,14 @@ minor release may break; its "Upgrading" section says what to change.
 3. Replace calls to removed collection factories such as `AppIdCollection::fromIds($ids)` with `fromList($ids)`.
    Factories that do more, such as `SelectorCollection::fromSpecs()` and `DayOfWeekCollection::fromDistinctDays()`,
    stay.
-3. `ServiceCallException::fromWire()`, `EventFireException::fromWire()`, `HistoryException::fromWire()`,
+4. `ServiceCallException::fromWire()`, `EventFireException::fromWire()`, `HistoryException::fromWire()`,
    `RegistryEditException::fromWire()` and `ExposureException::fromWire()` are gone; call
    `XException::restoreFromWire($reason, $message, $context)` instead.
+5. Classes that implement `Stewart\Contracts\Time\Timers` add `waitFor()`.
+6. Classes that implement `Stewart\Contracts\EventStream` directly add `waitForNext()`; streams built on
+   `ComposedStream` already have it.
+7. Classes that implement `Stewart\Contracts\HaContext` add `waitForState()`.
+8. Run `make generate`.
 
 ## [0.10.0] - 2026-10-12
 

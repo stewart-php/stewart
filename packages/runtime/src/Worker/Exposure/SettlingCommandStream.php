@@ -61,4 +61,16 @@ final readonly class SettlingCommandStream implements EventStream
     {
         return new self($this->commands->takeUntil($notifier), $this->settlements);
     }
+
+    // A command handed to a waiting app counts as handled, like one whose handler returned.
+    public function waitForNext(?Duration $timeout = null): mixed
+    {
+        $command = $this->commands->waitForNext($timeout);
+
+        if ($command !== null) {
+            $this->settlements->acceptCommand($command);
+        }
+
+        return $command;
+    }
 }

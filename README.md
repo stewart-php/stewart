@@ -71,7 +71,7 @@ and the skeleton (`skeleton/`) share one version; see [RELEASING.md](RELEASING.m
 | `stewart-php/sun` | Sunrise, sunset, twilight, golden hour and sun position, computed locally |
 | `stewart-php/codegen` | Generates typed entity and service classes |
 | `stewart-php/support` | Internal helpers shared by the packages; not app-facing |
-| `stewart-php/testing` | Shared test doubles; a development dependency |
+| `stewart-php/testing` | App harness, recording fakes and virtual time for testing apps; a development dependency |
 
 ## Development
 

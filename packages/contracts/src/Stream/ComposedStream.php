@@ -6,8 +6,11 @@ namespace Stewart\Contracts\Stream;
 
 use Closure;
 use Stewart\Contracts\EventStream;
+use Stewart\Contracts\Exception\WaitError;
+use Stewart\Contracts\Exception\WaitException;
 use Stewart\Contracts\Subscription;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Contracts\Time\PendingWait;
 use Stewart\Contracts\Time\Timers;
 
 /**
@@ -24,11 +27,22 @@ abstract readonly class ComposedStream implements EventStream
 
     final public function subscribe(Closure $handler): Subscription
     {
-        $scope = new SubscriptionScope();
-        $subscription = $this->source->attach($scope, $handler);
-        $scope->attachedTo($subscription);
+        return $this->attachWithin(new SubscriptionScope(), $handler);
+    }
 
-        return $subscription;
+    /** @return T|null */
+    final public function waitForNext(?Duration $timeout = null): mixed
+    {
+        return $this->timers->waitFor(function (PendingWait $wait): Closure {
+            $scope = new SubscriptionScope();
+            // Registered before attaching, so a stream that completes at once fails the wait instead of hanging it.
+            $scope->onTeardown(static function () use ($wait): void {
+                $wait->fail(WaitException::createForReason(WaitError::Abandoned));
+            });
+            $this->attachWithin($scope, $wait->resolve(...));
+
+            return $scope->close(...);
+        }, $timeout);
     }
 
     public function filter(Closure $predicate): static
@@ -64,6 +78,15 @@ abstract readonly class ComposedStream implements EventStream
     public function takeUntil(EventStream $notifier): static
     {
         return $this->extendWith(new TakeUntilOperator($this->source, $notifier));
+    }
+
+    /** @param Closure(T): void $handler */
+    private function attachWithin(SubscriptionScope $scope, Closure $handler): Subscription
+    {
+        $subscription = $this->source->attach($scope, $handler);
+        $scope->attachedTo($subscription);
+
+        return $subscription;
     }
 
     /**

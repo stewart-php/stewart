@@ -11,6 +11,7 @@ use Stewart\Contracts\Exposure\ExposedSensor;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\SensorConfig;
+use Stewart\Testing\Time\ManualTimers;
 
 final class RecordingExposedSensor extends RecordingExposedEntity implements ExposedSensor
 {
@@ -18,8 +19,9 @@ final class RecordingExposedSensor extends RecordingExposedEntity implements Exp
         ExposedEntityKey $key,
         public private(set) SensorConfig $config,
         ?ExposedEntitySnapshot $seeded,
+        ManualTimers $timers,
     ) {
-        parent::__construct($key, $seeded);
+        parent::__construct($key, $seeded, $timers);
     }
 
     public function getConfig(): SensorConfig

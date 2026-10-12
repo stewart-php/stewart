@@ -6,10 +6,14 @@ namespace Stewart\Support\Tests\Unit\Time;
 
 use Amp\CancelledException;
 use Amp\DeferredCancellation;
+use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Revolt\EventLoop;
+use RuntimeException;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Contracts\Time\PendingWait;
+use Stewart\Support\Time\DeferredWait;
 use Stewart\Support\Time\RevoltTimerHandle;
 use Stewart\Support\Time\RevoltTimers;
 
@@ -17,6 +21,7 @@ use function Amp\delay;
 
 #[CoversClass(RevoltTimers::class)]
 #[CoversClass(RevoltTimerHandle::class)]
+#[CoversClass(DeferredWait::class)]
 final class RevoltTimersTest extends TestCase
 {
     private RevoltTimers $timers;
@@ -124,5 +129,70 @@ final class RevoltTimersTest extends TestCase
         $this->expectException(CancelledException::class);
 
         $this->timers->delay(Duration::seconds(60), $stop->getCancellation());
+    }
+
+    public function testWaitEndsWithTheResolvedValue(): void
+    {
+        $tornDown = 0;
+
+        $outcome = $this->timers->waitFor(static function (PendingWait $wait) use (&$tornDown): Closure {
+            EventLoop::defer(static fn() => $wait->resolve('on'));
+
+            return static function () use (&$tornDown): void {
+                ++$tornDown;
+            };
+        }, Duration::seconds(10));
+
+        self::assertSame('on', $outcome);
+        self::assertSame(1, $tornDown);
+    }
+
+    public function testWaitEndsWithNullOnceItsTimeoutPasses(): void
+    {
+        $tornDown = 0;
+
+        $outcome = $this->timers->waitFor(static function (PendingWait $wait) use (&$tornDown): Closure {
+            return static function () use (&$tornDown): void {
+                ++$tornDown;
+            };
+        }, Duration::milliseconds(10));
+
+        self::assertNull($outcome);
+        self::assertSame(1, $tornDown);
+    }
+
+    public function testFailedWaitThrowsAndStillTearsDown(): void
+    {
+        $failure = new RuntimeException('stream closed');
+        $tornDown = 0;
+
+        try {
+            $this->timers->waitFor(static function (PendingWait $wait) use ($failure, &$tornDown): Closure {
+                EventLoop::defer(static fn() => $wait->fail($failure));
+
+                return static function () use (&$tornDown): void {
+                    ++$tornDown;
+                };
+            }, Duration::seconds(10));
+            self::fail('The failure should be thrown.');
+        } catch (RuntimeException $e) {
+            self::assertSame($failure, $e);
+        }
+
+        self::assertSame(1, $tornDown);
+    }
+
+    public function testWaitResolvedWhileArmingReturnsAtOnce(): void
+    {
+        $before = EventLoop::getIdentifiers();
+
+        $outcome = $this->timers->waitFor(static function (PendingWait $wait): Closure {
+            $wait->resolve('already');
+
+            return static fn() => null;
+        }, Duration::seconds(10));
+
+        self::assertSame('already', $outcome);
+        self::assertSame([], array_values(array_diff(EventLoop::getIdentifiers(), $before)), 'The timeout watcher is cancelled.');
     }
 }

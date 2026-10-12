@@ -38,6 +38,12 @@ it, the app logs why and keeps running.
 Import generated classes with `use App\Generated\…;`. Inside `namespace App`, a qualified `App\Generated\X` would
 resolve against the imported `Stewart\Contracts\App` interface instead.
 
+### Testing an app
+
+`tests/HelloAppTest.php` shows the pattern: `AppHarness` from `stewart-php/testing` builds the app with its options
+and fakes, the test pushes states and commands, and `advanceTime()` runs timers, schedules and waits without waiting.
+Run `make test`.
+
 ### Generated classes
 
 `generated/` is committed: builds and deployments never need Home Assistant to produce it. Run `make generate` after

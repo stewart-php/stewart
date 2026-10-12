@@ -87,6 +87,11 @@ final class QueuedStreamFixture
         EventLoopTicks::settle();
     }
 
+    public function cancelSubscriptions(): void
+    {
+        $this->dispatcher->cancelSubscriptionsOf($this->scope);
+    }
+
     public function countSubscriptions(): int
     {
         return $this->dispatcher->countFor($this->scope);

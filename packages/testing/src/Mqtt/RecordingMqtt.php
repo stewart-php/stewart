@@ -24,12 +24,17 @@ final class RecordingMqtt implements Mqtt
     public function __construct(public readonly ManualTimers $timers = new ManualTimers())
     {
         $this->published = MqttMessageCollection::empty();
-        $this->incoming = new PushSource();
+        $this->incoming = new PushSource($timers->handlerFibers);
     }
 
     public function pushMessage(MqttMessage $message): void
     {
         $this->incoming->push($message);
+    }
+
+    public function cancelSubscriptions(): void
+    {
+        $this->incoming->cancelAttachments();
     }
 
     public function publish(string $topic, string|array $payload, MqttQos $qos = MqttQos::AtMostOnce, bool $retain = false): void

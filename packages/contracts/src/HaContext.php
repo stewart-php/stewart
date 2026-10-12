@@ -16,6 +16,7 @@ use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exception\StateException;
 use Stewart\Contracts\Exception\TopicException;
 use Stewart\Contracts\Exception\TriggerException;
+use Stewart\Contracts\Exception\WaitException;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Registry\EntityFilter;
@@ -27,6 +28,7 @@ use Stewart\Contracts\Service\ServiceTargetSource;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
+use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Topic\TopicEvent;
 use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
 use Stewart\Contracts\Trigger\HaTrigger;
@@ -49,6 +51,10 @@ interface HaContext
     public function listStates(string|EntityId|Selector|SelectorCollection|EntityFilter|null $selector = null): EntityStateCollection;
 
     public function watchStateChanges(string|EntityId|Selector|SelectorCollection|EntityFilter $selector): StateChangeStream;
+
+    // Returns at once when the entity is already in $state, and null once the timeout passes.
+    /** @throws WaitException|IdentifierException */
+    public function waitForState(EntityId|string $entityId, string $state, ?Duration $timeout = null): ?EntityState;
 
     public function getRegistry(): Registry;
 

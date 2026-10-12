@@ -10,16 +10,24 @@ use Amp\TimeoutException;
 use Closure;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\MonotonicTime;
+use Stewart\Contracts\Time\PendingWait;
 use Stewart\Contracts\Time\TimerHandle;
 use Stewart\Contracts\Time\Timers;
 use Stewart\Support\Time\Deadlines;
+use Stewart\Support\Time\DeferredWait;
+use Stewart\Testing\Async\HandlerFibers;
 
 final class ManualTimers implements Timers, Deadlines
 {
     /** @var array<int, ManualTimer> */
     private array $timers = [];
 
-    public function __construct(public readonly VirtualClock $clock = new VirtualClock()) {}
+    public readonly HandlerFibers $handlerFibers;
+
+    public function __construct(public readonly VirtualClock $clock = new VirtualClock())
+    {
+        $this->handlerFibers = new HandlerFibers();
+    }
 
     public function startTimer(Duration $delay, Closure $callback): TimerHandle
     {
@@ -32,6 +40,26 @@ final class ManualTimers implements Timers, Deadlines
         $this->timers[spl_object_id($timer)] = $timer;
 
         return $timer;
+    }
+
+    /**
+     * @template T
+     * @param Closure(PendingWait<T>): (Closure(): void) $arm
+     * @return T|null
+     */
+    public function waitFor(Closure $arm, ?Duration $timeout = null): mixed
+    {
+        /** @var DeferredWait<T> $wait */
+        $wait = new DeferredWait();
+        $teardown = $arm($wait);
+        $timeoutTimer = $timeout === null ? null : $this->startTimer($timeout, $wait->expire(...));
+
+        try {
+            return $wait->awaitOutcome();
+        } finally {
+            $timeoutTimer?->cancel();
+            $teardown();
+        }
     }
 
     public function timeout(Duration $limit): Cancellation
@@ -53,6 +81,8 @@ final class ManualTimers implements Timers, Deadlines
         while (($due = $this->findEarliestDueBy($target)) !== null) {
             $this->clock->moveTo($due->dueAt);
             $due->fire();
+            // Fibers the timer resumed run before the next timer is due, so the timers they start count.
+            EventLoopTicks::settle();
             $cancellation?->throwIfRequested();
         }
 

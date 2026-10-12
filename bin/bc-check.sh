@@ -27,8 +27,8 @@ commit_package_state() {
 status=0
 
 for package in $packages; do
-    # Internal packages carry no public API promise.
-    case "$package" in support|testing) continue ;; esac
+    # The internal package carries no public API promise.
+    case "$package" in support) continue ;; esac
 
     if ! git cat-file -e "$base:packages/$package/composer.json" 2>/dev/null; then
         echo "--- $package is new since $base"

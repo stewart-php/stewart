@@ -1,9 +1,21 @@
 # stewart-php/testing
 
-Shared test doubles for the Stewart packages. A development dependency, not part of the app-facing API.
+Test Stewart apps without Home Assistant. `AppHarness` builds an app with its options and recording fakes, and
+runs timers, schedules and waits on virtual time.
 
 ```bash
 composer require --dev stewart-php/testing
+```
+
+```php
+$harness = new AppHarness();
+$harness->ha->seedState('binary_sensor.front_door', 'off');
+$harness->startApp(DoorAlarmApp::class, ['door' => 'binary_sensor.front_door']);
+
+$harness->ha->pushState('binary_sensor.front_door', 'on');
+$harness->advanceTime(Duration::minutes(5));
+
+self::assertSame('notify.notify', $harness->ha->getLastCall()->getServiceName());
 ```
 
 Part of [Stewart](https://github.com/stewart-php/stewart): Home Assistant automations in PHP. Start a project from

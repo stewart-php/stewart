@@ -6,6 +6,7 @@ namespace Stewart\Contracts;
 
 use Closure;
 use Stewart\Contracts\Exception\TimeException;
+use Stewart\Contracts\Exception\WaitException;
 use Stewart\Contracts\Stream\Edge;
 use Stewart\Contracts\Time\Duration;
 
@@ -35,4 +36,11 @@ interface EventStream
 
     /** @param EventStream<mixed> $notifier */
     public function takeUntil(EventStream $notifier): static;
+
+    // Returns null once the timeout passes; without one it waits until an event arrives or the stream completes.
+    /**
+     * @return T|null
+     * @throws WaitException
+     */
+    public function waitForNext(?Duration $timeout = null): mixed;
 }

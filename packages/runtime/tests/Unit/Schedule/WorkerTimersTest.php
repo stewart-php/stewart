@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Tests\Unit\Schedule;
 
+use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Contracts\Time\PendingWait;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Schedule\ScheduledTimerHandle;
 use Stewart\Runtime\Schedule\WorkerTimers;
@@ -17,6 +19,9 @@ use Stewart\Runtime\Tests\Fixtures\Schedule\WorkerSchedulerFixture;
 use Stewart\Runtime\Tests\Fixtures\Worker\AppResourcesFixture;
 use Stewart\Runtime\Tests\Fixtures\Worker\RecordingScheduleListener;
 use Stewart\Sun\UnlocatedSunCalendar;
+use Stewart\Testing\Time\EventLoopTicks;
+
+use function Amp\async;
 
 #[CoversClass(WorkerTimers::class)]
 #[CoversClass(ScheduledTimerHandle::class)]
@@ -34,7 +39,7 @@ final class WorkerTimersTest extends TestCase
     {
         $this->listener = new RecordingScheduleListener();
         $this->fixture = new AppResourcesFixture(scheduleListener: $this->listener);
-        $this->timers = new WorkerTimers(WorkerSchedulerFixture::createWorkerScheduler($this->fixture->schedules, new UnlocatedSunCalendar(), new NullLogger(), self::createScope(), $this->fixture->timers));
+        $this->timers = new WorkerTimers(WorkerSchedulerFixture::createWorkerScheduler($this->fixture->schedules, new UnlocatedSunCalendar(), new NullLogger(), self::createScope(), $this->fixture->timers), $this->fixture->timers);
         $this->fired = 0;
     }
 
@@ -116,6 +121,16 @@ final class WorkerTimersTest extends TestCase
         $this->fixture->timers->delay(Duration::milliseconds(1));
 
         self::assertSame(1, $this->fired);
+    }
+
+    public function testWaitTimesOutWhileItsScopeIsNotLive(): void
+    {
+        $outcome = async(fn(): mixed => $this->timers->waitFor(static fn(PendingWait $wait): Closure => static fn() => null, Duration::seconds(5)));
+        EventLoopTicks::settle();
+
+        $this->fixture->timers->delay(Duration::seconds(5));
+
+        self::assertNull($outcome->await(), 'A wait times out on the loop timers, which a paused or starting app does not hold back.');
     }
 
     private function countFiring(): void

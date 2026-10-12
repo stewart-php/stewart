@@ -7,6 +7,7 @@ namespace Stewart\Contracts\Entity;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exception\StateException;
+use Stewart\Contracts\Exception\WaitException;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryQuery;
@@ -15,7 +16,9 @@ use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\Service\ServiceTargetSource;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
+use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
+use Stewart\Contracts\Time\Duration;
 
 final readonly class Entity implements ServiceTargetSource
 {
@@ -54,6 +57,21 @@ final readonly class Entity implements ServiceTargetSource
     public function watchStateChanges(): StateChangeStream
     {
         return $this->ha->watchStateChanges($this->id);
+    }
+
+    /** @throws WaitException */
+    public function waitForState(string $state, ?Duration $timeout = null): ?EntityState
+    {
+        $current = $this->getState();
+
+        if ($current?->state === $state) {
+            return $current;
+        }
+
+        return $this->watchStateChanges()
+            ->filter(static fn(StateChange $change): bool => $change->to?->state === $state)
+            ->map(static fn(StateChange $change): ?EntityState => $change->to)
+            ->waitForNext($timeout);
     }
 
     public function toServiceTarget(): ServiceTarget

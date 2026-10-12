@@ -11,10 +11,14 @@ use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\StateError;
 use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Service\ServiceTarget;
+use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\HaContext\RecordingHaContext;
+use Stewart\Testing\Time\EventLoopTicks;
+
+use function Amp\async;
 
 #[CoversClass(Entity::class)]
 #[CoversClass(ServiceTarget::class)]
@@ -52,6 +56,53 @@ final class EntityTest extends TestCase
         self::assertNull($entity->getState());
 
         $this->assertThrowsReason(StateError::EntityNotFound, fn() => $entity->requireState());
+    }
+
+    public function testWaitForAStateTheEntityIsAlreadyInReturnsAtOnce(): void
+    {
+        $ha = new RecordingHaContext()->seedState('lock.front', 'locked');
+
+        self::assertSame('locked', $ha->getEntity('lock.front')->waitForState('locked')?->state);
+    }
+
+    public function testWaitEndsWhenTheEntityReachesTheState(): void
+    {
+        $ha = new RecordingHaContext()->seedState('lock.front', 'unlocked');
+        $outcome = async(static fn(): ?EntityState => $ha->getEntity('lock.front')->waitForState('locked', Duration::seconds(10)));
+        EventLoopTicks::settle();
+
+        $ha->pushState('lock.front', 'locking');
+        $ha->pushState('lock.kitchen', 'locked');
+        $ha->pushState('lock.front', 'locked');
+
+        $state = $outcome->await();
+        self::assertInstanceOf(EntityState::class, $state);
+        self::assertSame('locked', $state->state);
+    }
+
+    public function testWaitIgnoresTheEntityBeingRemoved(): void
+    {
+        $ha = new RecordingHaContext()->seedState('lock.front', 'unlocked');
+        $outcome = async(static fn(): ?EntityState => $ha->getEntity('lock.front')->waitForState('locked'));
+        EventLoopTicks::settle();
+
+        $ha->pushStateChange(new StateChange(new EntityId('lock.front'), new EntityState(new EntityId('lock.front'), 'unlocked'), null));
+        $ha->pushState('lock.front', 'locked');
+
+        $state = $outcome->await();
+        self::assertInstanceOf(EntityState::class, $state);
+        self::assertSame('locked', $state->state);
+    }
+
+    public function testWaitEndsWithNullOnceItsTimeoutPasses(): void
+    {
+        $ha = new RecordingHaContext()->seedState('lock.front', 'unlocked');
+        $outcome = async(static fn(): ?EntityState => $ha->getEntity('lock.front')->waitForState('locked', Duration::seconds(10)));
+        EventLoopTicks::settle();
+
+        $ha->timers->delay(Duration::seconds(10));
+
+        self::assertNull($outcome->await());
     }
 
     public function testCallsTargetItsOwnDomainAndItself(): void

@@ -27,6 +27,7 @@ use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\StateChangeStream;
+use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Topic\TopicPayload;
 use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
 use Stewart\Contracts\Trigger\HaTrigger;
@@ -94,6 +95,11 @@ final readonly class WorkerHaContext implements HaContext
     public function watchStateChanges(string|EntityId|Selector|SelectorCollection|EntityFilter $selector): StateChangeStream
     {
         return $this->streams->watchStateChanges($this->resourceScope, $selector instanceof EntityFilter ? $selector : Selector::fromSpec($selector));
+    }
+
+    public function waitForState(EntityId|string $entityId, string $state, ?Duration $timeout = null): ?EntityState
+    {
+        return $this->getEntity($entityId)->waitForState($state, $timeout);
     }
 
     public function getRegistry(): Registry

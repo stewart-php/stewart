@@ -36,6 +36,7 @@ use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
 use Stewart\Contracts\Stream\OperatorStream;
 use Stewart\Contracts\Stream\StateChanges;
+use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Topic\Collection\TopicEventCollection;
 use Stewart\Contracts\Topic\TopicEvent;
@@ -115,11 +116,11 @@ final class RecordingHaContext implements HaContext
         $this->states = EntityStateCollection::empty();
         $this->historyQueries = RecordedHistoryQueryCollection::empty();
         $this->history = new SeededHistory();
-        $this->stateChanges = new PushSource();
-        $this->events = new PushSource();
-        $this->topics = new PushSource();
-        $this->connectionEvents = new PushSource();
-        $this->triggers = new PushSource();
+        $this->stateChanges = new PushSource($timers->handlerFibers);
+        $this->events = new PushSource($timers->handlerFibers);
+        $this->topics = new PushSource($timers->handlerFibers);
+        $this->connectionEvents = new PushSource($timers->handlerFibers);
+        $this->triggers = new PushSource($timers->handlerFibers);
         $this->watchedTriggers = TriggerSpecCollection::empty();
     }
 
@@ -169,6 +170,13 @@ final class RecordingHaContext implements HaContext
         $this->eventFireFailures[$eventType] = $failure;
 
         return $this;
+    }
+
+    public function cancelSubscriptions(): void
+    {
+        foreach ([$this->stateChanges, $this->events, $this->topics, $this->connectionEvents, $this->triggers] as $source) {
+            $source->cancelAttachments();
+        }
     }
 
     public function pushStateChange(StateChange $change): void
@@ -281,6 +289,11 @@ final class RecordingHaContext implements HaContext
         }
 
         return new StateChanges($this->stateChanges, $this->timers, new RecordedStateReader($this, $selector))->filter($matches);
+    }
+
+    public function waitForState(EntityId|string $entityId, string $state, ?Duration $timeout = null): ?EntityState
+    {
+        return $this->getEntity($entityId)->waitForState($state, $timeout);
     }
 
     public function getRegistry(): Registry

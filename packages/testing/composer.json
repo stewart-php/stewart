@@ -1,6 +1,6 @@
 {
     "name": "stewart-php/testing",
-    "description": "Shared test doubles for the Stewart packages. A development dependency, not part of the app-facing API",
+    "description": "Test Stewart apps without Home Assistant: an app harness, recording fakes and virtual time",
     "type": "library",
     "license": "MIT",
     "require": {

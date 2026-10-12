@@ -32,12 +32,28 @@ use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\HaContext\RecordingHaContext;
 use Stewart\Testing\HaContext\SeededHistory;
+use Stewart\Testing\Time\EventLoopTicks;
+
+use function Amp\async;
 
 #[CoversClass(RecordingHaContext::class)]
 #[CoversClass(SeededHistory::class)]
 final class RecordingHaContextTest extends TestCase
 {
     use AssertsReason;
+
+    public function testWaitForStateEndsOnThePushedState(): void
+    {
+        $ha = new RecordingHaContext()->seedState('cover.garage', 'opening');
+        $outcome = async(static fn(): ?EntityState => $ha->waitForState('cover.garage', 'open'));
+        EventLoopTicks::settle();
+
+        $ha->pushState('cover.garage', 'open');
+
+        $state = $outcome->await();
+        self::assertInstanceOf(EntityState::class, $state);
+        self::assertSame('open', $state->state);
+    }
 
     public function testPushedTriggerReachesOnlyEqualSpec(): void
     {
