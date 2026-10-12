@@ -29,6 +29,7 @@ use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\Component\ComponentLink;
+use Stewart\Runtime\Broker\Component\ComponentSession;
 use Stewart\Runtime\Broker\Component\ComponentTracker;
 use Stewart\Runtime\Broker\Exposure\ExposureLink;
 use Stewart\Runtime\Broker\Exposure\ExposureReconciler;
@@ -466,11 +467,14 @@ final class WebsocketHaSessionTest extends TestCase
 
         $client = new HaClient($connection, new EventDecoder(new EntityStateDecoder()), new EntityStateDecoder(), new RegistryDecoder(), new ComponentEventDecoder(), new NullLogger());
         $expose = new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10));
+        $backoff = new BackoffPolicy(Duration::seconds(1), Duration::seconds(4));
+        $this->componentTracker = new ComponentTracker($this->timers->clock);
+        $exposures = new ExposureLink($client, new NullLogger(), $this->componentTracker, $expose);
 
         return $this->session = new WebsocketHaSession(
             $client,
             new Reconnector(
-                reconnectBackoff: new BackoffPolicy(Duration::seconds(1), Duration::seconds(4)),
+                reconnectBackoff: $backoff,
                 logger: new NullLogger(),
                 deadlines: $this->timers,
             ),
@@ -479,9 +483,16 @@ final class WebsocketHaSessionTest extends TestCase
             new StateCache(),
             new RegistryCache(),
             new HaTriggerLink($client, new NullLogger()),
-            new ComponentLink($client, new NullLogger(), $this->componentTracker = new ComponentTracker($this->timers->clock), $expose, '0.9.0'),
-            $exposures = new ExposureLink($client, new NullLogger(), $this->componentTracker, $expose),
-            new ExposureReconciler(WorkerSlotCollection::fromWorkerSlots([]), $exposures, $client, $this->componentTracker, $expose, $this->timers, new NullLogger()),
+            new ComponentSession(
+                new ComponentLink($client, new NullLogger(), $this->componentTracker, $expose, '0.9.0'),
+                $exposures,
+                new ExposureReconciler(WorkerSlotCollection::fromWorkerSlots([]), $exposures, $client, $this->componentTracker, $expose, $this->timers, new NullLogger()),
+                $this->componentTracker,
+                $backoff,
+                $this->timers,
+                new NullLogger(),
+            ),
+            $exposures,
         );
     }
 

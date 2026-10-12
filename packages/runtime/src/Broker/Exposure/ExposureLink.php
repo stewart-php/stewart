@@ -39,6 +39,9 @@ final class ExposureLink
     /** @var Closure(ExposedEntityCommand): void */
     private Closure $onCommanded;
 
+    /** @var Closure(): void */
+    private Closure $onSessionLost;
+
     public function __construct(
         private readonly HaClient $client,
         private readonly LoggerInterface $logger,
@@ -47,6 +50,7 @@ final class ExposureLink
     ) {
         $this->onSynced = static function (): void {};
         $this->onCommanded = static function (): void {};
+        $this->onSessionLost = static function (): void {};
     }
 
     /** @param Closure(ExposedEntitySync): void $handler */
@@ -59,6 +63,12 @@ final class ExposureLink
     public function onEntityCommanded(Closure $handler): void
     {
         $this->onCommanded = $handler;
+    }
+
+    /** @param Closure(): void $handler */
+    public function onSessionLost(Closure $handler): void
+    {
+        $this->onSessionLost = $handler;
     }
 
     public function receiveCommand(ComponentCommand $command): void
@@ -187,6 +197,7 @@ final class ExposureLink
                 'entity' => $live->address->describe(),
                 'exception' => $e,
             ]);
+            $this->reportIfSessionLost($e);
         }
     }
 
@@ -258,6 +269,7 @@ final class ExposureLink
         } catch (HaClientException $e) {
             $this->throwIfAppCaused($e);
             $this->logger->debug('Exposed entity waits for the next stewart integration session', ['entity' => $live->address->describe(), 'exception' => $e]);
+            $this->reportIfSessionLost($e);
 
             return null;
         }
@@ -285,6 +297,7 @@ final class ExposureLink
 
         if (ComponentErrorCode::tryFromException($e) !== ComponentErrorCode::NotFound) {
             $this->logger->debug('Exposed entity state waits for the next stewart integration session', ['entity' => $live->address->describe(), 'exception' => $e]);
+            $this->reportIfSessionLost($e);
 
             return;
         }
@@ -293,6 +306,13 @@ final class ExposureLink
 
         if ($snapshot !== null) {
             $this->syncOwner($live, $snapshot);
+        }
+    }
+
+    private function reportIfSessionLost(HaClientException $e): void
+    {
+        if (ComponentErrorCode::tryFromException($e) === ComponentErrorCode::NoSession) {
+            ($this->onSessionLost)();
         }
     }
 
@@ -324,6 +344,7 @@ final class ExposureLink
                     'entity' => $live->address->describe(),
                     'exception' => $e,
                 ]);
+                $this->reportIfSessionLost($e);
             }
         }
     }
