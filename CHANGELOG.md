@@ -14,6 +14,9 @@ minor release may break; its "Upgrading" section says what to change.
 - `POST /api/workers/{id}/restart` on the HTTP admin API does the same as `worker:restart`; an unknown worker is 404
 - `Timers::waitFor()` suspends the calling fiber until its `PendingWait` is resolved or failed, or returns null once
   its timeout passes
+- `EventStream::waitForNext(?Duration $timeout)` returns the stream's next event, or null once the timeout passes;
+  it throws `WaitException` when the stream completes first or the app stops. An awaited exposed-entity command is
+  accepted when it is returned. A wait the app's stop abandons is not reported as a failure
 
 ### Fixed
 
@@ -68,6 +71,8 @@ minor release may break; its "Upgrading" section says what to change.
    `RegistryEditException::fromWire()` and `ExposureException::fromWire()` are gone; call
    `XException::restoreFromWire($reason, $message, $context)` instead.
 5. Classes that implement `Stewart\Contracts\Time\Timers` add `waitFor()`.
+6. Classes that implement `Stewart\Contracts\EventStream` directly add `waitForNext()`; streams built on
+   `ComposedStream` already have it.
 
 ## [0.10.0] - 2026-10-12
 

@@ -69,6 +69,8 @@ use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
 
+use function Amp\async;
+
 #[CoversClass(WorkerEntityExposure::class)]
 #[CoversClass(WorkerExposedEntity::class)]
 #[CoversClass(WorkerExposedSensor::class)]
@@ -344,6 +346,19 @@ final class WorkerEntityExposureTest extends TestCase
         $this->deliverCommand('heater', self::createSwitchCommand(SwitchAction::TurnOn));
 
         self::assertCount(1, $received);
+        self::assertTrue($this->requireOnlyAnswer()->accepted);
+        self::assertTrue($heater->getValue());
+    }
+
+    public function testAwaitedCommandIsAccepted(): void
+    {
+        $heater = $this->createClimateExposure()->exposeSwitch('heater');
+        $awaited = async(static fn(): ?SwitchCommand => $heater->watchCommands()->waitForNext());
+        EventLoopTicks::settle();
+
+        $this->deliverCommand('heater', self::createSwitchCommand(SwitchAction::TurnOn));
+
+        self::assertInstanceOf(SwitchCommand::class, $awaited->await());
         self::assertTrue($this->requireOnlyAnswer()->accepted);
         self::assertTrue($heater->getValue());
     }
