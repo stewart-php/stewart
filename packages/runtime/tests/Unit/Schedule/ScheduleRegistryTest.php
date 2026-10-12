@@ -564,13 +564,11 @@ final class ScheduleRegistryTest extends TestCase
     private function pause(string $appId): void
     {
         $this->scopes->pauseScope(self::createScope($appId));
-        $this->registry->pauseEntriesOf(self::createScope($appId));
     }
 
     private function resume(string $appId): void
     {
         $this->scopes->resumeScope(self::createScope($appId));
-        $this->registry->resumeEntriesOf(self::createScope($appId));
     }
 
     private function release(string $appId): void

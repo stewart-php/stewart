@@ -650,7 +650,7 @@ final class LocalDispatcherTest extends TestCase
 
         $this->pause($dispatcher, 'app');
         $this->goLive($dispatcher, 'app');
-        $this->resume($dispatcher, 'app');
+        $this->resume('app');
         EventLoopTicks::settle();
 
         self::assertSame(0, $handled, 'Events queued before the pause are not replayed on resume.');
@@ -668,7 +668,7 @@ final class LocalDispatcherTest extends TestCase
         $this->pause($dispatcher, 'app');
         $dispatcher->dispatchTopic(new TopicEvent('t', 'missed', new AppId('x'), Instant::fromEpochMicroseconds(0)), self::listDeliveryTargets($subscription));
 
-        $this->resume($dispatcher, 'app');
+        $this->resume('app');
         $dispatcher->dispatchTopic(new TopicEvent('t', 'fresh', new AppId('x'), Instant::fromEpochMicroseconds(0)), self::listDeliveryTargets($subscription));
         EventLoopTicks::settleUntil(static function () use (&$handled): bool {
             return \count($handled) === 1;
@@ -790,19 +790,18 @@ final class LocalDispatcherTest extends TestCase
     private function pause(LocalDispatcher $dispatcher, string $appId): void
     {
         $this->scopes->pauseScope(self::createScope($appId));
-        $dispatcher->pauseQueuesOf(self::createScope($appId));
+        $dispatcher->discardPendingWorkOf(self::createScope($appId));
     }
 
-    private function resume(LocalDispatcher $dispatcher, string $appId): void
+    private function resume(string $appId): void
     {
         $this->scopes->resumeScope(self::createScope($appId));
-        $dispatcher->resumeQueuesOf(self::createScope($appId));
     }
 
     private function goLive(LocalDispatcher $dispatcher, string $appId): void
     {
         $this->scopes->activateScope(self::createScope($appId));
-        $dispatcher->activateQueuesOf(self::createScope($appId));
+        $dispatcher->startDrainingQueuesOf(self::createScope($appId));
     }
 
     private function release(LocalDispatcher $dispatcher, string $appId): void

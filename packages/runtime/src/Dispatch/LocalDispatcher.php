@@ -69,7 +69,9 @@ final class LocalDispatcher
 
         $id = SubscriptionId::fromString($this->subscriptionIdPrefix . ':' . $this->counter++);
 
-        if ($this->scopes->isClosed($scope)) {
+        $scopeState = $this->scopes->findOrCreateStateOf($scope);
+
+        if ($scopeState->isClosed()) {
             return $this->refusedSubscription($id, $subscriptionScope);
         }
 
@@ -84,13 +86,7 @@ final class LocalDispatcher
             $entityFilter,
         );
 
-        $queue = new SubscriptionQueue(
-            $subscription,
-            $this->subscriptionQueueLimit,
-            $this->listener,
-            $this->scopes->isLive($scope),
-            $this->scopes->isPaused($scope),
-        );
+        $queue = new SubscriptionQueue($subscription, $this->subscriptionQueueLimit, $this->listener, $scopeState);
 
         $this->queues[$subscription->id->value] = $queue;
         $subscriptionScope->deliverVia($queue->emit(...));
@@ -115,24 +111,17 @@ final class LocalDispatcher
         return new LocalSubscription($subscription->id, $this->cancel(...));
     }
 
-    public function activateQueuesOf(ResourceScope $scope): void
+    public function startDrainingQueuesOf(ResourceScope $scope): void
     {
         foreach ($this->listQueuesOf($scope) as $queue) {
-            $queue->activate();
+            $queue->startDrainingIfPending();
         }
     }
 
-    public function pauseQueuesOf(ResourceScope $scope): void
+    public function discardPendingWorkOf(ResourceScope $scope): void
     {
         foreach ($this->listQueuesOf($scope) as $queue) {
-            $queue->pause();
-        }
-    }
-
-    public function resumeQueuesOf(ResourceScope $scope): void
-    {
-        foreach ($this->listQueuesOf($scope) as $queue) {
-            $queue->resume();
+            $queue->discardPendingWork();
         }
     }
 

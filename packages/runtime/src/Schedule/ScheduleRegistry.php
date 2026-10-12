@@ -38,16 +38,18 @@ final class ScheduleRegistry
     public function armUnderTaskId(string $taskId, ResourceScope $scope, WallClockSchedule|ElapsedSchedule $schedule, LoggerInterface $logger, Closure $handler): ScheduledTask
     {
         $trigger = $this->triggers->createTriggerFor($schedule);
+        $scopeState = $this->scopes->findOrCreateStateOf($scope);
         $entry = new ScheduleEntry(
             new ScheduleOrigin($scope, $taskId, $trigger->describe()),
             $trigger,
             $logger,
             $this->context,
+            $scopeState,
             $handler,
             $this->forgetEntry(...),
         );
 
-        if ($this->scopes->isClosed($scope)) {
+        if ($scopeState->isClosed()) {
             $logger->debug('Ignored a schedule armed after its app stopped', ['schedule' => $entry->origin->description]);
             $entry->cancel();
 
@@ -60,12 +62,8 @@ final class ScheduleRegistry
 
         $this->entries[$entry->origin->taskId] = $entry;
 
-        if ($this->scopes->isPaused($scope)) {
-            $entry->pause();
-        }
-
-        if ($this->scopes->isLive($scope)) {
-            $this->goLive($entry);
+        if ($scopeState->isLive()) {
+            $this->startEntry($entry);
         }
 
         return $entry->task;
@@ -79,23 +77,9 @@ final class ScheduleRegistry
     public function startEntriesOf(ResourceScope $scope): void
     {
         foreach ($this->listEntriesOf($scope) as $entry) {
-            if (!$entry->live) {
-                $this->goLive($entry);
+            if (!$entry->started) {
+                $this->startEntry($entry);
             }
-        }
-    }
-
-    public function pauseEntriesOf(ResourceScope $scope): void
-    {
-        foreach ($this->listEntriesOf($scope) as $entry) {
-            $entry->pause();
-        }
-    }
-
-    public function resumeEntriesOf(ResourceScope $scope): void
-    {
-        foreach ($this->listEntriesOf($scope) as $entry) {
-            $entry->resume();
         }
     }
 
@@ -144,10 +128,10 @@ final class ScheduleRegistry
         return true;
     }
 
-    private function goLive(ScheduleEntry $entry): void
+    private function startEntry(ScheduleEntry $entry): void
     {
         try {
-            $live = $entry->activate();
+            $started = $entry->start();
         } catch (Throwable $e) {
             $this->context->listener->scheduleFailed($entry->origin, $e);
             $entry->cancel();
@@ -155,7 +139,7 @@ final class ScheduleRegistry
             return;
         }
 
-        if (!$live) {
+        if (!$started) {
             $entry->cancel();
         }
     }

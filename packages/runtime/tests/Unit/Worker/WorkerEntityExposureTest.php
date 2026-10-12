@@ -459,7 +459,7 @@ final class WorkerEntityExposureTest extends TestCase
         $heater->watchCommands()->subscribe(static function (): void {});
 
         $this->commandHandler->handle(new ExposedEntityCommanded('3f2b9c0e8d7a4f61', ResourceScope::forApp(new AppId('climate')), new ExposedEntityKey('heater'), self::createSwitchCommand(SwitchAction::TurnOn)));
-        $this->dispatcher->pauseQueuesOf(ResourceScope::forApp(new AppId('climate')));
+        $this->dispatcher->discardPendingWorkOf(ResourceScope::forApp(new AppId('climate')));
         EventLoopTicks::settle();
 
         self::assertSame('App climate was paused before it handled the command.', $this->requireOnlyAnswer()->rejection);

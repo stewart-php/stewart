@@ -74,7 +74,7 @@ final class QueuedStreamFixture
     public function pauseScope(): void
     {
         $this->scopes->pauseScope($this->scope);
-        $this->dispatcher->pauseQueuesOf($this->scope);
+        $this->dispatcher->discardPendingWorkOf($this->scope);
     }
 
     public function advanceTime(Duration $by): void

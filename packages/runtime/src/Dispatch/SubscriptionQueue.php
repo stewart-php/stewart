@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Dispatch;
 
 use Closure;
 use SplQueue;
+use Stewart\Runtime\Scope\ScopeState;
 use Throwable;
 
 use function Amp\async;
@@ -27,8 +28,7 @@ final class SubscriptionQueue
         public readonly RegisteredSubscription $subscription,
         private readonly int $limit,
         private readonly DispatchListener $listener,
-        public private(set) bool $live = true,
-        public private(set) bool $paused = false,
+        private readonly ScopeState $scopeState,
     ) {
         $this->pending = new SplQueue();
     }
@@ -42,7 +42,7 @@ final class SubscriptionQueue
             return;
         }
 
-        if ($this->paused) {
+        if ($this->scopeState->isPaused()) {
             $this->listener->eventSuppressed($this->subscription);
             $onDiscarded?->__invoke(QueueDiscardReason::Paused);
 
@@ -69,7 +69,7 @@ final class SubscriptionQueue
             return;
         }
 
-        if ($this->paused) {
+        if ($this->scopeState->isPaused()) {
             $this->listener->eventSuppressed($this->subscription);
 
             return;
@@ -78,26 +78,19 @@ final class SubscriptionQueue
         $this->enqueue(QueuedWork::forStreamEmission($emission));
     }
 
-    public function activate(): void
+    public function startDrainingIfPending(): void
     {
-        if ($this->cancelled || $this->live) {
-            return;
-        }
-
-        $this->live = true;
-
-        if (!$this->pending->isEmpty()) {
+        if (!$this->cancelled && !$this->pending->isEmpty()) {
             $this->startDraining();
         }
     }
 
-    public function pause(): void
+    public function discardPendingWork(): void
     {
-        if ($this->cancelled || $this->paused) {
+        if ($this->cancelled) {
             return;
         }
 
-        $this->paused = true;
         $discarded = $this->pending;
         $this->pending = new SplQueue();
         $this->pendingEvents = 0;
@@ -106,11 +99,6 @@ final class SubscriptionQueue
             $this->listener->eventSuppressed($this->subscription);
             $work->discard(QueueDiscardReason::Paused);
         }
-    }
-
-    public function resume(): void
-    {
-        $this->paused = false;
     }
 
     public function cancel(): void
@@ -157,7 +145,7 @@ final class SubscriptionQueue
     {
         $this->pending->enqueue($work);
 
-        if ($this->live) {
+        if ($this->scopeState->isLive()) {
             $this->startDraining();
         }
     }
@@ -176,7 +164,7 @@ final class SubscriptionQueue
     private function drain(): void
     {
         try {
-            while (!$this->cancelled && !$this->paused && !$this->pending->isEmpty()) {
+            while (!$this->cancelled && !$this->scopeState->isPaused() && !$this->pending->isEmpty()) {
                 $work = $this->pending->dequeue();
 
                 if ($work->droppable) {

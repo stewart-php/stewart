@@ -11,6 +11,7 @@ use Stewart\Contracts\Schedule\ScheduledTask;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Time\TimerHandle;
+use Stewart\Runtime\Scope\ScopeState;
 use Throwable;
 
 final class ScheduleEntry
@@ -19,9 +20,7 @@ final class ScheduleEntry
 
     public private(set) bool $active = true;
 
-    public private(set) bool $live = false;
-
-    public private(set) bool $paused = false;
+    public private(set) bool $started = false;
 
     private bool $running = false;
 
@@ -41,6 +40,7 @@ final class ScheduleEntry
         private readonly Trigger $trigger,
         private readonly LoggerInterface $logger,
         private readonly ScheduleContext $context,
+        private readonly ScopeState $scopeState,
         Closure $handler,
         private readonly Closure $onCancel,
     ) {
@@ -60,26 +60,16 @@ final class ScheduleEntry
     }
 
     /** @throws Throwable */
-    public function activate(): bool
+    public function start(): bool
     {
         if (!$this->trigger->start()) {
             return false;
         }
 
-        $this->live = true;
+        $this->started = true;
         $this->armTimerForNextOccurrence();
 
         return true;
-    }
-
-    public function pause(): void
-    {
-        $this->paused = true;
-    }
-
-    public function resume(): void
-    {
-        $this->paused = false;
     }
 
     public function getNextRunAt(): ?Instant
@@ -163,7 +153,7 @@ final class ScheduleEntry
     {
         $run = new ScheduledRun($this->task, $scheduledFor, $this->context->clock->getNow(), $missed);
 
-        if ($this->paused) {
+        if ($this->scopeState->isPaused()) {
             $this->context->listener->scheduledRunSuppressed($this->origin, $run);
 
             return;

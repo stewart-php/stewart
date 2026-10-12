@@ -20,14 +20,15 @@ final readonly class PausedAppsSync
     {
         foreach ($this->apps->listSlots() as $slot) {
             $scope = $slot->scope();
+            $scopeState = $this->scopes->findOrCreateStateOf($scope);
 
-            if ($this->scopes->isClosed($scope)) {
+            if ($scopeState->isClosed()) {
                 continue;
             }
 
             $shouldPause = $pausedAppIds->containsId($slot->id());
 
-            if ($shouldPause === $this->scopes->isPaused($scope)) {
+            if ($shouldPause === $scopeState->isPaused()) {
                 continue;
             }
 
