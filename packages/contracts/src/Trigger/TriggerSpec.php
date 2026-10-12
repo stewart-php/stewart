@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Contracts\Trigger;
 
+use Stewart\Contracts\Exception\TriggerError;
 use Stewart\Contracts\Exception\TriggerException;
 use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
 
@@ -29,7 +30,7 @@ final readonly class TriggerSpec
         };
 
         if ($triggers->isEmpty()) {
-            throw TriggerException::listEmpty();
+            throw TriggerException::createForReason(TriggerError::ListEmpty);
         }
 
         return new self($triggers, self::parseVariables($variables));
@@ -91,7 +92,7 @@ final readonly class TriggerSpec
 
         foreach ($variables as $name => $value) {
             if (!\is_string($name)) {
-                throw TriggerException::variablesNotMap();
+                throw TriggerException::createForReason(TriggerError::VariablesNotMap);
             }
 
             $typedVariables[$name] = $value;

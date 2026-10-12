@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Contracts\History;
 
+use Stewart\Contracts\Exception\HistoryError;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
@@ -16,7 +17,7 @@ final readonly class HistoryWindow
         public Instant $endsAt,
     ) {
         if (!$endsAt->isAfter($startsAt)) {
-            throw HistoryException::windowInvalid($startsAt, $endsAt);
+            throw HistoryException::createForReason(HistoryError::WindowInvalid, startsAt: (string) $startsAt, endsAt: (string) $endsAt);
         }
     }
 

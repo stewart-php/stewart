@@ -59,6 +59,7 @@ use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\Exception\EventFireException;
+use Stewart\Contracts\Exception\HistoryError;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Exception\RegistryEditException;
@@ -520,7 +521,7 @@ final class HaClient
     private function toHistoryException(EntityId $entityId, HaClientException $e): HistoryException
     {
         if ($e->reason === HaClientError::CommandRejected && $e->findErrorCode() === self::UNKNOWN_COMMAND_CODE) {
-            return HistoryException::recorderUnavailable($entityId, $e);
+            return HistoryException::createForReason(HistoryError::RecorderUnavailable, $e, entityId: $entityId->value);
         }
 
         return match ($e->reason) {

@@ -67,7 +67,7 @@ final class HistoryProxyTest extends TestCase
 
     public function testHomeAssistantFailureKeepsItsReason(): void
     {
-        $this->session->historyFailure = HistoryException::recorderUnavailable(new EntityId('light.hall'));
+        $this->session->historyFailure = HistoryException::createForReason(HistoryError::RecorderUnavailable, entityId: 'light.hall');
 
         $this->forwardRequest();
 

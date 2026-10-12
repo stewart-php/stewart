@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Sun;
 
 use DateTimeImmutable;
+use Stewart\Contracts\Exception\SunError;
 use Stewart\Contracts\Exception\SunException;
 use Stewart\Contracts\Sun\GeoLocation;
 use Stewart\Contracts\Sun\SunCalendar;
@@ -18,31 +19,31 @@ final readonly class UnlocatedSunCalendar implements SunCalendar
 {
     public function getLocation(): GeoLocation
     {
-        throw SunException::locationUnknown();
+        throw SunException::createForReason(SunError::LocationUnknown);
     }
 
     public function findNextEvent(SunEvent $event, ?SunOffset $offset = null, ?Instant $after = null): ?Instant
     {
-        throw SunException::locationUnknown();
+        throw SunException::createForReason(SunError::LocationUnknown);
     }
 
     public function getDayOn(DateTimeImmutable $day): SunDay
     {
-        throw SunException::locationUnknown();
+        throw SunException::createForReason(SunError::LocationUnknown);
     }
 
     public function getPositionAt(Instant $moment): SunPosition
     {
-        throw SunException::locationUnknown();
+        throw SunException::createForReason(SunError::LocationUnknown);
     }
 
     public function getCurrentPosition(): SunPosition
     {
-        throw SunException::locationUnknown();
+        throw SunException::createForReason(SunError::LocationUnknown);
     }
 
     public function isSunUp(): bool
     {
-        throw SunException::locationUnknown();
+        throw SunException::createForReason(SunError::LocationUnknown);
     }
 }

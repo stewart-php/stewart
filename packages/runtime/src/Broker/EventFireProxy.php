@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Broker;
 
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\Event\EventPayload;
+use Stewart\Contracts\Exception\EventFireError;
 use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\MonotonicTime;
@@ -109,7 +110,7 @@ final readonly class EventFireProxy
         $this->metrics->recordRefusedCall($handle->id, $request->scope);
         $handle->send(EventFireFailed::fromException(
             $request->correlationId,
-            EventFireException::overloaded($request->eventType, $reason),
+            EventFireException::createForReason(EventFireError::Overloaded, eventType: $request->eventType, detail: $reason),
         ));
     }
 }

@@ -6,6 +6,7 @@ namespace Stewart\Contracts\Trigger;
 
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\IdentifierException;
+use Stewart\Contracts\Exception\TriggerError;
 use Stewart\Contracts\Exception\TriggerException;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\SunOffset;
@@ -70,7 +71,7 @@ final readonly class HaTrigger
         $entityId = \is_string($time) ? EntityId::tryFromString($time) : $time;
 
         if ($entityId === null || !\in_array($entityId->domain, self::TIME_ENTITY_DOMAINS, true)) {
-            throw TriggerException::timeInvalid((string) $time);
+            throw TriggerException::createForReason(TriggerError::TimeInvalid, time: (string) $time);
         }
 
         return self::createWithId(['trigger' => 'time', 'at' => $entityId->value], $id);
@@ -89,7 +90,7 @@ final readonly class HaTrigger
         );
 
         if ($pattern === []) {
-            throw TriggerException::timePatternEmpty();
+            throw TriggerException::createForReason(TriggerError::TimePatternEmpty);
         }
 
         return self::createWithId(['trigger' => 'time_pattern', ...$pattern], $id);
@@ -99,7 +100,7 @@ final readonly class HaTrigger
     public static function whenTemplateTrue(string $template, ?Duration $for = null, ?string $id = null): self
     {
         if (trim($template) === '') {
-            throw TriggerException::templateEmpty();
+            throw TriggerException::createForReason(TriggerError::TemplateEmpty);
         }
 
         $config = ['trigger' => 'template', 'value_template' => $template];
@@ -121,7 +122,7 @@ final readonly class HaTrigger
         $zoneId = EntityId::fromStringOrId($zone);
 
         if ($zoneId->domain !== 'zone') {
-            throw TriggerException::zoneInvalid($zoneId->value);
+            throw TriggerException::createForReason(TriggerError::ZoneInvalid, zone: $zoneId->value);
         }
 
         return self::createWithId([

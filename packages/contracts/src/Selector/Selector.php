@@ -6,6 +6,7 @@ namespace Stewart\Contracts\Selector;
 
 use LogicException;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Exception\SelectorError;
 use Stewart\Contracts\Exception\SelectorException;
 use Stewart\Contracts\Selector\Collection\SelectorCollection;
 
@@ -36,7 +37,7 @@ final readonly class Selector
     public static function exact(string $value): self
     {
         if ($value === '') {
-            throw SelectorException::empty('An exact selector');
+            throw SelectorException::createForReason(SelectorError::Empty, selectorKind: 'An exact selector');
         }
 
         return new self(SelectorKind::Exact, $value);
@@ -46,7 +47,7 @@ final readonly class Selector
     public static function glob(string $pattern): self
     {
         if ($pattern === '') {
-            throw SelectorException::empty('A glob selector');
+            throw SelectorException::createForReason(SelectorError::Empty, selectorKind: 'A glob selector');
         }
 
         return new self(SelectorKind::Glob, $pattern, self::compileGlob($pattern));
@@ -58,7 +59,7 @@ final readonly class Selector
         $compileError = self::findRegexCompileError($regex);
 
         if ($compileError !== null) {
-            throw SelectorException::regexInvalid($regex, $compileError);
+            throw SelectorException::createForReason(SelectorError::RegexInvalid, pattern: $regex, compileError: $compileError);
         }
 
         return new self(SelectorKind::Regex, $regex);
@@ -68,7 +69,7 @@ final readonly class Selector
     public static function mqttFilter(string $filter): self
     {
         if ($filter === '') {
-            throw SelectorException::empty('An MQTT topic filter');
+            throw SelectorException::createForReason(SelectorError::Empty, selectorKind: 'An MQTT topic filter');
         }
 
         return new self(SelectorKind::MqttFilter, $filter, self::compileMqttFilter($filter));
@@ -78,7 +79,7 @@ final readonly class Selector
     public static function anyOf(string|EntityId|self ...$selectors): self
     {
         if ($selectors === []) {
-            throw SelectorException::empty('An any-of selector');
+            throw SelectorException::createForReason(SelectorError::Empty, selectorKind: 'An any-of selector');
         }
 
         return new self(SelectorKind::AnyOf, '', members: SelectorCollection::fromSpecs(...$selectors));
@@ -221,7 +222,7 @@ final readonly class Selector
     private static function compileMqttFilter(string $filter): string
     {
         if (\strlen($filter) > self::MQTT_MAX_FILTER_BYTES || str_contains($filter, "\0")) {
-            throw SelectorException::mqttFilterInvalid($filter);
+            throw SelectorException::createForReason(SelectorError::MqttFilterInvalid, filter: $filter);
         }
 
         $levels = explode(self::MQTT_LEVEL_SEPARATOR, $filter);
@@ -243,7 +244,7 @@ final readonly class Selector
             }
 
             if (str_contains($level, self::MQTT_SINGLE_LEVEL) || str_contains($level, self::MQTT_MULTI_LEVEL)) {
-                throw SelectorException::mqttFilterInvalid($filter);
+                throw SelectorException::createForReason(SelectorError::MqttFilterInvalid, filter: $filter);
             }
 
             $compiledLevels[] = preg_quote($level, '#');

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Contracts\Event;
 
+use Stewart\Contracts\Exception\EventFireError;
 use Stewart\Contracts\Exception\EventFireException;
 
 final readonly class EventPayload
@@ -19,11 +20,11 @@ final readonly class EventPayload
         public array $data = [],
     ) {
         if (preg_match(self::VALID_EVENT_TYPE_PATTERN, $eventType) !== 1) {
-            throw EventFireException::typeInvalid($eventType);
+            throw EventFireException::createForReason(EventFireError::TypeInvalid, eventType: $eventType);
         }
 
         if ($data !== [] && array_is_list($data)) {
-            throw EventFireException::dataNotKeyed($eventType);
+            throw EventFireException::createForReason(EventFireError::DataNotKeyed, eventType: $eventType);
         }
 
         foreach ($data as $key => $value) {
@@ -35,7 +36,12 @@ final readonly class EventPayload
     private function assertTransportable(mixed $value, string $path): void
     {
         if (\is_float($value) && !is_finite($value)) {
-            throw EventFireException::dataInvalid($this->eventType, $path, \sprintf('float(%s)', is_nan($value) ? 'NAN' : ($value > 0 ? 'INF' : '-INF')));
+            throw EventFireException::createForReason(
+                EventFireError::DataInvalid,
+                eventType: $this->eventType,
+                path: $path,
+                actualType: \sprintf('float(%s)', is_nan($value) ? 'NAN' : ($value > 0 ? 'INF' : '-INF')),
+            );
         }
 
         if ($value === null || \is_scalar($value)) {
@@ -43,7 +49,12 @@ final readonly class EventPayload
         }
 
         if (!\is_array($value)) {
-            throw EventFireException::dataInvalid($this->eventType, $path, get_debug_type($value));
+            throw EventFireException::createForReason(
+                EventFireError::DataInvalid,
+                eventType: $this->eventType,
+                path: $path,
+                actualType: get_debug_type($value),
+            );
         }
 
         foreach ($value as $key => $item) {

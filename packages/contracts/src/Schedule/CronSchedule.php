@@ -10,6 +10,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use InvalidArgumentException;
 use RuntimeException;
+use Stewart\Contracts\Exception\ScheduleError;
 use Stewart\Contracts\Exception\ScheduleException;
 
 /** @internal */
@@ -32,7 +33,7 @@ final readonly class CronSchedule implements WallClockSchedule
         try {
             $parsed = new CronExpression($expression);
         } catch (InvalidArgumentException $e) {
-            throw ScheduleException::cronInvalid($expression, $e);
+            throw ScheduleException::createForReason(ScheduleError::CronInvalid, $e, expression: $expression);
         }
 
         $parsed->setMaxIterationCount(self::MAX_CANDIDATE_EVALUATIONS);

@@ -67,7 +67,7 @@ final class ExposureProxyTest extends TestCase
 
     public function testRefusalKeepsItsReason(): void
     {
-        $this->session->exposureFailure = ExposureException::componentMissing(new ExposedEntityKey('level'));
+        $this->session->exposureFailure = ExposureException::createForReason(ExposureError::ComponentMissing, key: 'level');
 
         $this->forwardExpose(ResourceScope::forApp(new AppId('demo')));
 

@@ -6,7 +6,6 @@ namespace Stewart\Contracts\Exception;
 
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
-use Stewart\Contracts\Time\Duration;
 use Throwable;
 
 /**
@@ -16,29 +15,9 @@ use Throwable;
  */
 final class ExposureException extends StewartException
 {
-    public static function componentMissing(ExposedEntityKey $key): self
-    {
-        return self::createForReason(ExposureError::ComponentMissing, key: $key->value);
-    }
-
-    public static function protocolMismatch(ExposedEntityKey $key): self
-    {
-        return self::createForReason(ExposureError::ProtocolMismatch, key: $key->value);
-    }
-
-    public static function componentRefused(ExposedEntityKey $key): self
-    {
-        return self::createForReason(ExposureError::ComponentRefused, key: $key->value);
-    }
-
     public static function outsideApp(ExposedEntityKey $key): self
     {
         return self::createForReason(ExposureError::OutsideApp, key: $key->value);
-    }
-
-    public static function keyInvalid(string $key, int $limit): self
-    {
-        return self::createForReason(ExposureError::KeyInvalid, key: $key, limit: $limit);
     }
 
     public static function keyTaken(AppId $appId, ExposedEntityKey $key): self
@@ -64,11 +43,6 @@ final class ExposureException extends StewartException
     public static function unreachable(ExposedEntityKey $key, string $detail, ?Throwable $previous = null): self
     {
         return self::createForReason(ExposureError::Unreachable, $previous, key: $key->value, detail: $detail);
-    }
-
-    public static function timedOut(ExposedEntityKey $key, Duration $timeout): self
-    {
-        return self::createForReason(ExposureError::TimedOut, key: $key->value, timeout: (string) $timeout);
     }
 
     /** @param ExceptionContext|null $context */

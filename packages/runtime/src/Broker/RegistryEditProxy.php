@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker;
 
 use Psr\Log\LoggerInterface;
+use Stewart\Contracts\Exception\RegistryEditError;
 use Stewart\Contracts\Exception\RegistryEditException;
 use Stewart\Contracts\Registry\RegisteredEntity;
 use Stewart\Contracts\Time\Clock;
@@ -137,7 +138,7 @@ final readonly class RegistryEditProxy
         $this->metrics->recordRefusedCall($handle->id, $request->scope);
         $handle->send(RegistryEntityUpdateFailed::fromException(
             $request->correlationId,
-            RegistryEditException::overloaded($request->entityId, $reason),
+            RegistryEditException::createForReason(RegistryEditError::Overloaded, entityId: $request->entityId->value, detail: $reason),
         ));
     }
 }

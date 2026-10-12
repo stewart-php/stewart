@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Stewart\Contracts\Exception;
 
-use Throwable;
-
 /** @extends StewartException<JsonShapeError> */
 final class JsonShapeException extends StewartException
 {
@@ -24,10 +22,5 @@ final class JsonShapeException extends StewartException
         $shown = \is_string($value) ? '"' . $value . '"' : (\is_scalar($value) ? var_export($value, true) : get_debug_type($value));
 
         return self::createForReason(JsonShapeError::UnexpectedValue, key: $key, expected: $expected, value: $shown);
-    }
-
-    public static function instantInvalid(string $key, Throwable $previous): self
-    {
-        return self::createForReason(JsonShapeError::InstantInvalid, $previous, key: $key);
     }
 }

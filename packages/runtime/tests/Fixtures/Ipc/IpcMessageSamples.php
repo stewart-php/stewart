@@ -11,6 +11,7 @@ use Stewart\Contracts\Event\EventOrigin;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\Exception\ExposureException;
+use Stewart\Contracts\Exception\HistoryError;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\RegistryEditException;
 use Stewart\Contracts\Exception\ServiceCallException;
@@ -183,7 +184,7 @@ final class IpcMessageSamples
             'unsubscribe' => IpcMessageSample::createRoundTrip(new Unsubscribe(new SubscriptionId('w0:1'))),
             'history_request' => IpcMessageSample::createRoundTrip(new HistoryRequest(new CorrelationId('w0:3'), $demo, new EntityId('light.hall'), new HistoryWindow($at, $at->plus(Duration::minutes(30))), HistoryDetail::AllChanges)),
             'history_result' => new IpcMessageSample(self::createHistoryResult($at), self::createHistoryResult($at)),
-            'history_error' => IpcMessageSample::createRoundTrip(HistoryFailed::fromException(new CorrelationId('w0:3'), HistoryException::recorderUnavailable(new EntityId('light.hall')))),
+            'history_error' => IpcMessageSample::createRoundTrip(HistoryFailed::fromException(new CorrelationId('w0:3'), HistoryException::createForReason(HistoryError::RecorderUnavailable, entityId: 'light.hall'))),
             'service_call_request' => IpcMessageSample::createRoundTrip(new ServiceCallRequest(new CorrelationId('w0:2'), $demo, 'light', 'turn_on', ['transition' => 1.5], new ServiceTarget(entityIds: [new EntityId('light.hall')], areaIds: ['hall']), false)),
             'registry_entity_update_request' => IpcMessageSample::createRoundTrip(new RegistryEntityUpdateRequest(
                 new CorrelationId('w0:7'),

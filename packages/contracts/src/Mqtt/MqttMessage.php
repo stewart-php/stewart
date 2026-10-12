@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Contracts\Mqtt;
 
 use JsonException;
+use Stewart\Contracts\Exception\MqttError;
 use Stewart\Contracts\Exception\MqttException;
 
 final readonly class MqttMessage
@@ -25,7 +26,7 @@ final readonly class MqttMessage
     public static function createForPublish(string $topic, string|array $payload, MqttQos $qos, bool $retain): self
     {
         if ($topic === '' || \strlen($topic) > self::MAX_TOPIC_BYTES || strpbrk($topic, "+#\0") !== false) {
-            throw MqttException::topicInvalid($topic);
+            throw MqttException::createForReason(MqttError::TopicInvalid, topic: $topic);
         }
 
         if (\is_string($payload)) {
@@ -35,7 +36,7 @@ final readonly class MqttMessage
         try {
             return new self($topic, json_encode($payload, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE), $qos, $retain);
         } catch (JsonException $e) {
-            throw MqttException::payloadUnencodable($topic, $e);
+            throw MqttException::createForReason(MqttError::PayloadUnencodable, $e, topic: $topic);
         }
     }
 
@@ -45,7 +46,7 @@ final readonly class MqttMessage
         try {
             return json_decode($this->payload, true, flags: \JSON_THROW_ON_ERROR);
         } catch (JsonException $e) {
-            throw MqttException::payloadNotJson($this->topic, $e);
+            throw MqttException::createForReason(MqttError::PayloadNotJson, $e, topic: $this->topic);
         }
     }
 }

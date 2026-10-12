@@ -6,6 +6,7 @@ namespace Stewart\Contracts\Tests\Fixtures\Sun;
 
 use DateTimeImmutable;
 use LogicException;
+use Stewart\Contracts\Exception\SunError;
 use Stewart\Contracts\Exception\SunException;
 use Stewart\Contracts\Sun\GeoLocation;
 use Stewart\Contracts\Sun\SunCalendar;
@@ -30,7 +31,7 @@ final class StubSunCalendar implements SunCalendar
 
     public function getLocation(): GeoLocation
     {
-        return $this->location ?? throw SunException::locationUnknown();
+        return $this->location ?? throw SunException::createForReason(SunError::LocationUnknown);
     }
 
     public function findNextEvent(SunEvent $event, ?SunOffset $offset = null, ?Instant $after = null): ?Instant

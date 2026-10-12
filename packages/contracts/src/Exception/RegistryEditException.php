@@ -44,11 +44,6 @@ final class RegistryEditException extends StewartException
         return self::createForReason(RegistryEditError::TimedOut, $previous, entityId: $entityId->value, detail: $detail);
     }
 
-    public static function overloaded(EntityId $entityId, string $detail): self
-    {
-        return self::createForReason(RegistryEditError::Overloaded, entityId: $entityId->value, detail: $detail);
-    }
-
     /** @param ExceptionContext|null $context */
     public static function fromWire(RegistryEditError $reason, string $message, ?array $context): self
     {

@@ -257,7 +257,7 @@ final class WorkerEntityExposureTest extends TestCase
     public function testRefusedExposureFreesItsKey(): void
     {
         $exposure = $this->createClimateExposure();
-        $this->broker->failure = ExposureException::componentMissing(new ExposedEntityKey('level'));
+        $this->broker->failure = ExposureException::createForReason(ExposureError::ComponentMissing, key: 'level');
 
         $this->assertThrowsReason(ExposureError::ComponentMissing, static fn() => $exposure->exposeSensor('level'));
         $this->broker->failure = null;

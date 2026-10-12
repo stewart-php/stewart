@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Contracts\Exposure;
 
+use Stewart\Contracts\Exception\ExposureError;
 use Stewart\Contracts\Exception\ExposureException;
 use Stringable;
 
@@ -19,7 +20,7 @@ final readonly class ExposedEntityKey implements Stringable
     public function __construct(string $value)
     {
         if (preg_match(self::PATTERN, $value) !== 1 || \strlen($value) > self::MAX_LENGTH) {
-            throw ExposureException::keyInvalid($value, self::MAX_LENGTH);
+            throw ExposureException::createForReason(ExposureError::KeyInvalid, key: $value, limit: self::MAX_LENGTH);
         }
 
         $this->value = $value;

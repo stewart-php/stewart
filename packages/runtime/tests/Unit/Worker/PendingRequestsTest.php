@@ -52,7 +52,7 @@ final class PendingRequestsTest extends TestCase
     {
         $query = $this->pending->open(new HistoryQuerySubject(new EntityId('light.hall')));
 
-        $this->pending->reject($query->correlationId, HistoryException::recorderUnavailable(new EntityId('light.hall')));
+        $this->pending->reject($query->correlationId, HistoryException::createForReason(HistoryError::RecorderUnavailable, entityId: 'light.hall'));
 
         $this->assertThrowsReason(HistoryError::RecorderUnavailable, static fn() => $query->getFuture()->await());
     }

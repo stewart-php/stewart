@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Contracts\Stream;
 
+use Stewart\Contracts\Exception\StateError;
 use Stewart\Contracts\Exception\StateException;
 use Stewart\Contracts\State\CurrentStateReader;
 use Stewart\Contracts\State\StateChange;
@@ -40,7 +41,7 @@ final readonly class StateTransitions extends ComposedStateChangeStream implemen
     private function withPreviousStateRule(PreviousStateRule $rule): static
     {
         if ($this->transition === null) {
-            throw StateException::transitionAlreadyExtended();
+            throw StateException::createForReason(StateError::TransitionAlreadyExtended);
         }
 
         $transition = $this->transition->withPreviousStateRule($rule);

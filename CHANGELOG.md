@@ -25,6 +25,14 @@ minor release may break; its "Upgrading" section says what to change.
 
 - `stewart.yaml` may name an app with `_` in place of `-` (`hall_light:` for `hall-light`); this no longer fails with
   "the automation ID is …"
+- Stewart exceptions are raised with `XException::createForReason(XError::Case, $previous, key: $value)`; most
+  one-line factories in `stewart-php/contracts` are gone
+
+### Upgrading
+
+1. Code that built a contracts exception through a removed factory, such as `StoreException::typeMismatch(…)` or
+   `ScheduleException::cronInvalid(…)`, calls `createForReason()` with the reason case and its context as named
+   arguments instead. `CommandException::rejected()` and the factories shared across packages stay.
 
 ## [0.10.0] - 2026-10-12
 

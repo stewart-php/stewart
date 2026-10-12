@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Contracts\Event;
 
 use Stewart\Contracts\Exception\SelectorException;
+use Stewart\Contracts\Exception\StateError;
 use Stewart\Contracts\Exception\StateException;
 use Stewart\Contracts\Selector\Collection\SelectorCollection;
 use Stewart\Contracts\Selector\Selector;
@@ -19,7 +20,7 @@ final readonly class EventTypeSelector
         $selector = Selector::fromSpec($spec);
 
         if ($selector->hasExactPattern(HaEvent::STATE_CHANGED)) {
-            throw StateException::stateChangedViaEvents(HaEvent::STATE_CHANGED);
+            throw StateException::createForReason(StateError::StateChangedViaEvents, eventType: HaEvent::STATE_CHANGED);
         }
 
         return new self($selector);

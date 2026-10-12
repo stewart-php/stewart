@@ -17,7 +17,6 @@ use Stewart\Contracts\Exposure\Command\NumberCommand;
 use Stewart\Contracts\Exposure\Command\SelectCommand;
 use Stewart\Contracts\Exposure\Command\SwitchAction;
 use Stewart\Contracts\Exposure\Command\SwitchCommand;
-use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
@@ -224,7 +223,7 @@ final class RecordingEntityExposureTest extends TestCase
     public function testRefusalIsThrown(): void
     {
         $exposure = new RecordingEntityExposure();
-        $exposure->refuseExposures(ExposureException::componentMissing(new ExposedEntityKey('level')));
+        $exposure->refuseExposures(ExposureException::createForReason(ExposureError::ComponentMissing, key: 'level'));
 
         $this->assertThrowsReason(ExposureError::ComponentMissing, static fn() => $exposure->exposeSensor('level'));
         self::assertTrue($exposure->exposures->isEmpty());

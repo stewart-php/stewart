@@ -11,6 +11,7 @@ use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\Event\EventTypeSelector;
 use Stewart\Contracts\EventStream;
 use Stewart\Contracts\Exception\StateException;
+use Stewart\Contracts\Exception\TopicError;
 use Stewart\Contracts\Exception\TopicException;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\History\EntityStateHistory;
@@ -132,7 +133,7 @@ final readonly class WorkerHaContext implements HaContext
         try {
             $this->topics->publish($this->resourceScope, $topic, $topicPayload);
         } catch (TransportException $e) {
-            throw TopicException::publishFailed($topic, $e);
+            throw TopicException::createForReason(TopicError::PublishFailed, $e, topic: $topic);
         }
     }
 

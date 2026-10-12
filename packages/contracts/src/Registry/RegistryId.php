@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Contracts\Registry;
 
+use Stewart\Contracts\Exception\IdentifierError;
 use Stewart\Contracts\Exception\IdentifierException;
 use Stringable;
 
@@ -15,7 +16,7 @@ abstract readonly class RegistryId implements Stringable
     final public function __construct(string $value)
     {
         if ($value === '') {
-            throw IdentifierException::registryIdEmpty($this->describeKind());
+            throw IdentifierException::createForReason(IdentifierError::RegistryIdEmpty, kind: $this->describeKind());
         }
 
         $this->value = $value;

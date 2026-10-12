@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Store;
 
 use Stewart\Contracts\App\AppId;
+use Stewart\Contracts\Exception\StoreError;
 use Stewart\Contracts\Exception\StoreException;
 
 final readonly class Keyspace
@@ -33,7 +34,7 @@ final readonly class Keyspace
     public function buildFullKey(string $key): string
     {
         if (preg_match(self::KEY_PATTERN, $key) !== 1) {
-            throw StoreException::keyInvalid($key);
+            throw StoreException::createForReason(StoreError::KeyInvalid, key: $key);
         }
 
         return $this->prefix . $key;

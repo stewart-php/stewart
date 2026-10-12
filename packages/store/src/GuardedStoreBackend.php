@@ -85,7 +85,7 @@ final class GuardedStoreBackend implements StoreBackend
     private function runGuarded(Closure $operation): mixed
     {
         if ($this->isPaused()) {
-            throw StoreException::recentlyFailed((string) $this->dsn, $this->lastFailure ?? '');
+            throw StoreException::createForReason(StoreError::RecentlyFailed, target: (string) $this->dsn, detail: $this->lastFailure ?? '');
         }
 
         try {

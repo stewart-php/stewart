@@ -61,7 +61,7 @@ final class RecordingRegistryEditorTest extends TestCase
     public function testRefusalIsThrownWithoutRecording(): void
     {
         $editor = new RecordingRegistryEditor();
-        $editor->refuseUpdates(RegistryEditException::overloaded(new EntityId('light.hall'), 'busy'));
+        $editor->refuseUpdates(RegistryEditException::createForReason(RegistryEditError::Overloaded, entityId: 'light.hall', detail: 'busy'));
 
         $this->assertThrowsReason(RegistryEditError::Overloaded, static fn() => $editor->updateEntity('light.hall', new EntityRegistryUpdate()->withName('Hall')));
         self::assertTrue($editor->updates->isEmpty());

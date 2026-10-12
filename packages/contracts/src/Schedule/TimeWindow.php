@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Contracts\Schedule;
 
 use DateTimeInterface;
+use Stewart\Contracts\Exception\ScheduleError;
 use Stewart\Contracts\Exception\ScheduleException;
 
 final readonly class TimeWindow
@@ -21,7 +22,7 @@ final readonly class TimeWindow
         $end = TimeOfDay::fromTimeOrString($end);
 
         if ($start->equals($end)) {
-            throw ScheduleException::timeWindowEmpty($start->format());
+            throw ScheduleException::createForReason(ScheduleError::TimeWindowEmpty, time: $start->format());
         }
 
         return new self($start, $end);

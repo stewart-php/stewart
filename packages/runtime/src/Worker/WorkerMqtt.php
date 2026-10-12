@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Worker;
 
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\EventStream;
+use Stewart\Contracts\Exception\MqttError;
 use Stewart\Contracts\Exception\MqttException;
 use Stewart\Contracts\Mqtt\Mqtt;
 use Stewart\Contracts\Mqtt\MqttMessage;
@@ -43,7 +44,7 @@ final readonly class WorkerMqtt implements Mqtt
         try {
             $this->transport->send(new MqttPublish($message, $this->resourceScope));
         } catch (TransportException $e) {
-            throw MqttException::publishFailed($topic, $e);
+            throw MqttException::createForReason(MqttError::PublishFailed, $e, topic: $topic);
         }
 
         $this->activityCounters->findOrCreateActivityForScope($this->resourceScope)->recordPublish();
@@ -60,7 +61,7 @@ final readonly class WorkerMqtt implements Mqtt
     private function assertBrokerMqttEnabled(): void
     {
         if (!$this->brokerMqttEnabled) {
-            throw MqttException::notConfigured();
+            throw MqttException::createForReason(MqttError::NotConfigured);
         }
     }
 }
