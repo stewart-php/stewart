@@ -96,7 +96,7 @@ final class SelectorIndex
             $this->cache = [];
         }
 
-        return $this->cache[$cacheKey] = SubscriptionIdCollection::fromIds($matched);
+        return $this->cache[$cacheKey] = SubscriptionIdCollection::fromList($matched);
     }
 
     public function getRoutingStats(): RoutingStats

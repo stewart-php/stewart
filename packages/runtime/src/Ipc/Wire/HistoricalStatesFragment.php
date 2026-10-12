@@ -22,7 +22,7 @@ final class HistoricalStatesFragment implements JsonFragment
 
     public static function fromDecodedValue(mixed $value, string $path, WireMapper $mapper): static
     {
-        return new self(HistoricalStateCollection::fromStates($mapper->decodeObjectList(EntityState::class, $value, $path)));
+        return new self(HistoricalStateCollection::fromList($mapper->decodeObjectList(EntityState::class, $value, $path)));
     }
 
     public function encodeToJson(WireMapper $mapper): string

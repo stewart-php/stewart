@@ -11,11 +11,4 @@ use Stewart\Contracts\Collection\ListCollection;
  * @internal
  * @extends ListCollection<RawMap>
  */
-final readonly class RawMapCollection extends ListCollection
-{
-    /** @param iterable<RawMap> $maps */
-    public static function fromMaps(iterable $maps): self
-    {
-        return self::fromList($maps);
-    }
-}
+final readonly class RawMapCollection extends ListCollection {}

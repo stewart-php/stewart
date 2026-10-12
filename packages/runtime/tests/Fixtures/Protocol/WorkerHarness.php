@@ -51,7 +51,7 @@ final class WorkerHarness
 
     public function sendChanges(StateChange ...$changes): void
     {
-        $this->send(new StateChangeBatch(StateChangesFragment::fromCollection(StateChangeCollection::fromChanges($changes))));
+        $this->send(new StateChangeBatch(StateChangesFragment::fromCollection(StateChangeCollection::fromList($changes))));
     }
 
     /**

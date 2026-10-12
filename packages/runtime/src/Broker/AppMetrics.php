@@ -87,7 +87,7 @@ final class AppMetrics
 
     public function listRunningTotals(): AppRunningTotalsCollection
     {
-        return AppRunningTotalsCollection::fromTotals($this->runningTotals);
+        return AppRunningTotalsCollection::fromList($this->runningTotals);
     }
 
     public function findAppRunningTotals(AppId $appId): ?AppRunningTotals

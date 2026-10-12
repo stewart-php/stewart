@@ -38,7 +38,7 @@ final class KeyspacedStoresTest extends TestCase
     {
         $backend = new InMemoryStoreBackend(new VirtualClock());
 
-        $this->stores = new KeyspacedStores($backend, new StorePrefix('stewart'), AppIdCollection::fromIds([new AppId('heating'), new AppId('boiler'), new AppId('lights')]), new StoreValueCodec(), new ClosestNameFinder());
+        $this->stores = new KeyspacedStores($backend, new StorePrefix('stewart'), AppIdCollection::fromList([new AppId('heating'), new AppId('boiler'), new AppId('lights')]), new StoreValueCodec(), new ClosestNameFinder());
     }
 
     public function testPeerSeesOwnerWrites(): void
@@ -79,7 +79,7 @@ final class KeyspacedStoresTest extends TestCase
         $stores = new KeyspacedStores(
             new InMemoryStoreBackend(new VirtualClock()),
             new StorePrefix('stewart'),
-            AppIdCollection::fromIds([new AppId('heating'), new AppId('retired')]),
+            AppIdCollection::fromList([new AppId('heating'), new AppId('retired')]),
             new StoreValueCodec(),
             new ClosestNameFinder(),
         );

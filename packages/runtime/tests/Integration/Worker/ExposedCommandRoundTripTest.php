@@ -55,10 +55,10 @@ final class ExposedCommandRoundTripTest extends TestCase
         $this->broker = BrokerKernelFixture::boot(
             $this->session,
             $pools,
-            WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([
+            WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([
                 new AppDefinition(new AppId('heater'), HeaterSwitch::class),
             ]))]),
-            AppIdCollection::fromIds([new AppId('heater')]),
+            AppIdCollection::fromList([new AppId('heater')]),
             $logger,
             ['shutdown_grace' => '1s'],
         );

@@ -8,11 +8,4 @@ use Stewart\Contracts\Collection\ListCollection;
 use Stewart\Runtime\Control\Protocol\Status\AppStatus;
 
 /** @extends ListCollection<AppStatus> */
-final readonly class AppStatusCollection extends ListCollection
-{
-    /** @param iterable<AppStatus> $statuses */
-    public static function fromStatuses(iterable $statuses): self
-    {
-        return self::fromList($statuses);
-    }
-}
+final readonly class AppStatusCollection extends ListCollection {}

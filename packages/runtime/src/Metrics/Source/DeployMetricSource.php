@@ -24,6 +24,6 @@ final readonly class DeployMetricSource implements RuntimeMetricSource
             $failures->recordSample(MetricLabels::none(), $deploy->failures);
         }
 
-        return MetricFamilyCollection::fromFamilies([$info, $failures]);
+        return MetricFamilyCollection::fromList([$info, $failures]);
     }
 }

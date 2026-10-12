@@ -463,11 +463,11 @@ final class ComponentGoldenTest extends TestCase
 
         $removed = $this->connectClient()->reconcileExposedEntities(new ExposedEntityReconcile(
             ComponentInstance::parse('default'),
-            ExposedEntityAddressCollection::fromAddresses([
+            ExposedEntityAddressCollection::fromList([
                 self::createAddress('climate', 'average_temperature'),
                 self::createAddress('lights', 'night_mode'),
             ]),
-            AppIdCollection::fromIds([new AppId('heating')]),
+            AppIdCollection::fromList([new AppId('heating')]),
         ));
 
         self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/reconcile'));

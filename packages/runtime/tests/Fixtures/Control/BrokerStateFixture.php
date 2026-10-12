@@ -59,7 +59,7 @@ final readonly class BrokerStateFixture
         $this->session = FakeHaSession::createOpened();
         $this->heldServiceCalls = $this->session->holdCalls();
         $this->registry = new SubscriptionRegistry();
-        $this->metrics = new AppMetrics(WorkerSlotCollection::fromWorkerSlots([self::createSlot(0), self::createSlot(1)]), $this->timers->clock);
+        $this->metrics = new AppMetrics(WorkerSlotCollection::fromList([self::createSlot(0), self::createSlot(1)]), $this->timers->clock);
         $policy = ConfigFixture::createServiceCallPolicy();
         $this->callSlots = new HaCallSlots($policy, new NullLogger());
         $this->serviceCalls = new ServiceCallProxy($this->session, $this->callSlots, $this->metrics, $policy, $this->timers->clock, new NullLogger());

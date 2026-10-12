@@ -21,7 +21,7 @@ final readonly class AppIdsFragment implements JsonFragment
 
     public static function fromDecodedValue(mixed $value, string $path, WireMapper $mapper): static
     {
-        return new self(AppIdCollection::fromIds($mapper->decodeObjectList(AppId::class, $value, $path)));
+        return new self(AppIdCollection::fromList($mapper->decodeObjectList(AppId::class, $value, $path)));
     }
 
     public function encodeToJson(WireMapper $mapper): string

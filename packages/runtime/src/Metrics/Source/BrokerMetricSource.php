@@ -19,7 +19,7 @@ final readonly class BrokerMetricSource implements RuntimeMetricSource
         $routing = $broker->routing;
         $none = MetricLabels::none();
 
-        return MetricFamilyCollection::fromFamilies([
+        return MetricFamilyCollection::fromList([
             MetricFamily::createWithSample('stewart_workers', 'Worker slots the broker supervises.', MetricType::Gauge, $none, $broker->workers),
             MetricFamily::createWithSample('stewart_workers_live', 'Worker processes currently running.', MetricType::Gauge, $none, $broker->liveWorkers),
             MetricFamily::createWithSample('stewart_service_calls_in_flight', 'Home Assistant calls awaiting an answer.', MetricType::Gauge, $none, $broker->inFlightServiceCalls),

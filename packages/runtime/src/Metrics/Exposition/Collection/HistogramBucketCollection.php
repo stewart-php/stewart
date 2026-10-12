@@ -8,11 +8,4 @@ use Stewart\Contracts\Collection\ListCollection;
 use Stewart\Runtime\Metrics\Exposition\HistogramBucket;
 
 /** @extends ListCollection<HistogramBucket> */
-final readonly class HistogramBucketCollection extends ListCollection
-{
-    /** @param iterable<HistogramBucket> $buckets */
-    public static function fromBuckets(iterable $buckets): self
-    {
-        return self::fromList($buckets);
-    }
-}
+final readonly class HistogramBucketCollection extends ListCollection {}

@@ -24,7 +24,7 @@ final readonly class TriggerSpec
     public static function fromSpec(HaTrigger|HaTriggerCollection|array $trigger, array $variables = []): self
     {
         $triggers = match (true) {
-            $trigger instanceof HaTrigger => HaTriggerCollection::fromTriggers([$trigger]),
+            $trigger instanceof HaTrigger => HaTriggerCollection::fromList([$trigger]),
             $trigger instanceof HaTriggerCollection => $trigger,
             default => self::parseTriggers($trigger),
         };
@@ -65,7 +65,7 @@ final readonly class TriggerSpec
     private static function parseTriggers(array $trigger): HaTriggerCollection
     {
         if (!array_is_list($trigger)) {
-            return HaTriggerCollection::fromTriggers([HaTrigger::fromArray($trigger)]);
+            return HaTriggerCollection::fromList([HaTrigger::fromArray($trigger)]);
         }
 
         $triggers = [];
@@ -78,7 +78,7 @@ final readonly class TriggerSpec
             $triggers[] = HaTrigger::fromArray($config);
         }
 
-        return HaTriggerCollection::fromTriggers($triggers);
+        return HaTriggerCollection::fromList($triggers);
     }
 
     /**

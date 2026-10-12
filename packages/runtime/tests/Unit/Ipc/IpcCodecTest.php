@@ -175,7 +175,7 @@ final class IpcCodecTest extends TestCase
         $mapper = IpcCodec::createIpcWireMapper();
 
         self::assertSame($change->encodeToJson($mapper), $change->encodeToJson(IpcCodec::createIpcWireMapper()));
-        self::assertSame('[' . $change->encodeToJson($mapper) . ']', StateChangesFragment::fromEncodedChanges(EncodedStateChangeCollection::fromChanges([$change]))->encodeToJson($mapper));
+        self::assertSame('[' . $change->encodeToJson($mapper) . ']', StateChangesFragment::fromEncodedChanges(EncodedStateChangeCollection::fromList([$change]))->encodeToJson($mapper));
     }
 
     public function testNumericAttributeKeysComeBackAsStrings(): void

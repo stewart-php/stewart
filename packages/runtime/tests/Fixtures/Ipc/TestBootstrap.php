@@ -41,10 +41,10 @@ final class TestBootstrap
             workerId: new WorkerId(0),
             timeZone: $timeZone,
             location: $location,
-            apps: WorkerAppsFragment::fromCollection(WorkerAppCollection::fromApps($apps)),
+            apps: WorkerAppsFragment::fromCollection(WorkerAppCollection::fromList($apps)),
             settings: self::createSettings($callTimeout ?? Duration::seconds(30), $initializeTimeout, $servicesFile, $mqttEnabled),
             store: $store,
-            knownAppIds: AppIdsFragment::fromCollection(AppIdCollection::fromIds(array_map(static fn(WorkerApp $app): AppId => $app->id, $apps))),
+            knownAppIds: AppIdsFragment::fromCollection(AppIdCollection::fromList(array_map(static fn(WorkerApp $app): AppId => $app->id, $apps))),
             pausedAppIds: AppIdsFragment::fromCollection($pausedAppIds ?? AppIdCollection::empty()),
             haUserId: $haUserId,
         );

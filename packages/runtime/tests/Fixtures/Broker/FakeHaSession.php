@@ -309,7 +309,7 @@ final class FakeHaSession implements HaSession
             throw $this->historyFailure;
         }
 
-        return new EntityStateHistory($entityId, $window, HistoricalStateCollection::fromStates($this->historicalStates));
+        return new EntityStateHistory($entityId, $window, HistoricalStateCollection::fromList($this->historicalStates));
     }
 
     public function subscribeTrigger(TriggerSpec $spec): void

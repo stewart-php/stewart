@@ -522,7 +522,7 @@ final class WebsocketHaSessionTest extends TestCase
             new ComponentSession(
                 new ComponentLink($client, new NullLogger(), $this->componentTracker, $expose, '0.9.0'),
                 $exposures,
-                new ExposureReconciler(WorkerSlotCollection::fromWorkerSlots([]), $exposures, $client, $this->componentTracker, $expose, $this->timers, new NullLogger()),
+                new ExposureReconciler(WorkerSlotCollection::fromList([]), $exposures, $client, $this->componentTracker, $expose, $this->timers, new NullLogger()),
                 $this->componentTracker,
                 $backoff,
                 $this->timers,

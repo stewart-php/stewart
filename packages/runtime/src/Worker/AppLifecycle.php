@@ -40,7 +40,7 @@ final class AppLifecycle
         private readonly AppFailureReporter $failures,
         private readonly AppContainerBuilder $containers,
     ) {
-        $this->slots = AppSlotCollection::fromSlots(
+        $this->slots = AppSlotCollection::fromList(
             $this->bootstrap->apps->collection->mapToList(static fn(WorkerApp $definition): AppSlot => new AppSlot($definition)),
         );
     }
@@ -110,7 +110,7 @@ final class AppLifecycle
 
     public function listAppIdsInState(AppState $state): AppIdCollection
     {
-        return AppIdCollection::fromIds($this->slots
+        return AppIdCollection::fromList($this->slots
             ->filter(static fn(AppSlot $slot): bool => $slot->isInState($state))
             ->mapToList(static fn(AppSlot $slot) => $slot->id()));
     }
@@ -144,7 +144,7 @@ final class AppLifecycle
             $slot->moveTo(AppState::Abandoned);
         }
 
-        return AppIdCollection::fromIds($abandoned->mapToList(static fn(AppSlot $slot) => $slot->id()));
+        return AppIdCollection::fromList($abandoned->mapToList(static fn(AppSlot $slot) => $slot->id()));
     }
 
     private function isStopRequested(): bool

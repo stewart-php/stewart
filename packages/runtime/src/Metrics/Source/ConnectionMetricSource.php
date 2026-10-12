@@ -29,7 +29,7 @@ final readonly class ConnectionMetricSource implements RuntimeMetricSource
             $lastOutage->recordSample(MetricLabels::none(), $connection->lastOutage->toSeconds());
         }
 
-        return MetricFamilyCollection::fromFamilies([
+        return MetricFamilyCollection::fromList([
             $phases,
             MetricFamily::createWithSample('stewart_ha_reconnects_total', 'Home Assistant reconnects since the daemon started.', MetricType::Counter, MetricLabels::none(), $connection->reconnects),
             $lastOutage,

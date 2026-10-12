@@ -31,7 +31,7 @@ final readonly class AppPlacement
             $slots[] = new WorkerSlot(WorkerId::fromInt($workerId), AppDefinitionCollection::keyedByAppId($pinned));
         }
 
-        return WorkerSlotCollection::fromWorkerSlots($slots);
+        return WorkerSlotCollection::fromList($slots);
     }
 
     private function resolvePoolSize(AppDefinitionCollection $apps, int $workers): int

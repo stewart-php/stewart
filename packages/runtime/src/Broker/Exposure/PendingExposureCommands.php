@@ -47,7 +47,7 @@ final class PendingExposureCommands
 
     public function takeCommandsOf(WorkerId $workerId): ExposedEntityCommandCollection
     {
-        $taken = ExposedEntityCommandCollection::fromCommands(array_filter($this->commandsById, static fn(ExposedEntityCommand $command): bool => $command->owner?->equals($workerId) === true));
+        $taken = ExposedEntityCommandCollection::fromList(array_filter($this->commandsById, static fn(ExposedEntityCommand $command): bool => $command->owner?->equals($workerId) === true));
 
         foreach ($taken as $command) {
             $this->forgetCommand($command->commandId);

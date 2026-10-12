@@ -38,7 +38,7 @@ final readonly class EntityStateCollection extends KeyedCollection
 
     public function listEntityIds(): EntityIdCollection
     {
-        return EntityIdCollection::fromIds($this->mapToList(static fn(EntityState $state): EntityId => $state->entityId));
+        return EntityIdCollection::fromList($this->mapToList(static fn(EntityState $state): EntityId => $state->entityId));
     }
 
     public function filterBySelector(Selector $selector): self

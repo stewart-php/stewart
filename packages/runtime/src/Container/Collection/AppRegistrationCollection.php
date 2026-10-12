@@ -8,11 +8,4 @@ use Stewart\Contracts\Collection\ListCollection;
 use Stewart\Runtime\Container\AppRegistration;
 
 /** @extends ListCollection<AppRegistration> */
-final readonly class AppRegistrationCollection extends ListCollection
-{
-    /** @param iterable<AppRegistration> $registrations */
-    public static function fromRegistrations(iterable $registrations): self
-    {
-        return self::fromList($registrations);
-    }
-}
+final readonly class AppRegistrationCollection extends ListCollection {}

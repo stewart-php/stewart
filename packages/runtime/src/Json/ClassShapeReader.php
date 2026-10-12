@@ -63,7 +63,7 @@ final class ClassShapeReader
                 $constructor?->getParameters() ?? [],
             );
 
-            return $this->classShapes[$class] = new ClassShape($class, FieldShapeCollection::fromFieldShapes($fields));
+            return $this->classShapes[$class] = new ClassShape($class, FieldShapeCollection::fromList($fields));
         } finally {
             unset($this->classesBeingDescribed[$class]);
         }

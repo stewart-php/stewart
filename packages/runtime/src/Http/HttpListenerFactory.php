@@ -42,6 +42,6 @@ final readonly class HttpListenerFactory
             $listeners[] = new AmpHttpListener($admin->listen, $requests, HttpListenerRole::Admin, $this->logger);
         }
 
-        return HttpListenerCollection::fromListeners($listeners);
+        return HttpListenerCollection::fromList($listeners);
     }
 }

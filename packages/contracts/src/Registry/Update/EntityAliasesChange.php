@@ -32,24 +32,24 @@ final readonly class EntityAliasesChange
     public function withAdded(EntityAliasCollection $aliases): self
     {
         if ($this->replacement !== null) {
-            return self::replacingWith(EntityAliasCollection::fromAliases($this->replacement)->withAddedMembers($aliases));
+            return self::replacingWith(EntityAliasCollection::fromList($this->replacement)->withAddedMembers($aliases));
         }
 
         return new self(
-            added: EntityAliasCollection::fromAliases($this->added)->withAddedMembers($aliases)->listValues(),
-            removed: EntityAliasCollection::fromAliases($this->removed)->withoutMembers($aliases)->listValues(),
+            added: EntityAliasCollection::fromList($this->added)->withAddedMembers($aliases)->listValues(),
+            removed: EntityAliasCollection::fromList($this->removed)->withoutMembers($aliases)->listValues(),
         );
     }
 
     public function withRemoved(EntityAliasCollection $aliases): self
     {
         if ($this->replacement !== null) {
-            return self::replacingWith(EntityAliasCollection::fromAliases($this->replacement)->withoutMembers($aliases));
+            return self::replacingWith(EntityAliasCollection::fromList($this->replacement)->withoutMembers($aliases));
         }
 
         return new self(
-            added: EntityAliasCollection::fromAliases($this->added)->withoutMembers($aliases)->listValues(),
-            removed: EntityAliasCollection::fromAliases($this->removed)->withAddedMembers($aliases)->listValues(),
+            added: EntityAliasCollection::fromList($this->added)->withoutMembers($aliases)->listValues(),
+            removed: EntityAliasCollection::fromList($this->removed)->withAddedMembers($aliases)->listValues(),
         );
     }
 
@@ -65,8 +65,8 @@ final readonly class EntityAliasesChange
 
     public function applyTo(EntityAliasCollection $current): EntityAliasCollection
     {
-        $base = $this->replacement === null ? $current : EntityAliasCollection::fromAliases($this->replacement);
+        $base = $this->replacement === null ? $current : EntityAliasCollection::fromList($this->replacement);
 
-        return $base->withAddedMembers(EntityAliasCollection::fromAliases($this->added))->withoutMembers(EntityAliasCollection::fromAliases($this->removed));
+        return $base->withAddedMembers(EntityAliasCollection::fromList($this->added))->withoutMembers(EntityAliasCollection::fromList($this->removed));
     }
 }

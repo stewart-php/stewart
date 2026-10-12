@@ -24,7 +24,7 @@ final readonly class WorkerStatusBuilder
 
     public function buildWorkerStatuses(): WorkerStatusCollection
     {
-        return WorkerStatusCollection::fromStatuses($this->slots->listSlotStates()->mapToList($this->buildWorkerStatus(...)));
+        return WorkerStatusCollection::fromList($this->slots->listSlotStates()->mapToList($this->buildWorkerStatus(...)));
     }
 
     private function buildWorkerStatus(WorkerSlotState $state): WorkerStatus

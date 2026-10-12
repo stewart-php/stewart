@@ -8,11 +8,4 @@ use Stewart\Codegen\Attribute\AttributeModel;
 use Stewart\Contracts\Collection\ListCollection;
 
 /** @extends ListCollection<AttributeModel> */
-final readonly class AttributeModelCollection extends ListCollection
-{
-    /** @param iterable<AttributeModel> $attributes */
-    public static function fromAttributes(iterable $attributes): self
-    {
-        return self::fromList($attributes);
-    }
-}
+final readonly class AttributeModelCollection extends ListCollection {}

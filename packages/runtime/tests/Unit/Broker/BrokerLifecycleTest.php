@@ -806,7 +806,7 @@ final class BrokerLifecycleTest extends TestCase
         $pools = WorkerPoolFixture::createWorkerPool($this->spawner, $supervision, $this->timers, $this->logger, new OutboxLimits(100, 256));
         $this->slots = $pools->slots;
         $apps = [new AppDefinition(new AppId('demo'), Demo::class), new AppDefinition(new AppId('echo'), Demo::class)];
-        $assignment = WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([$apps[0]])), new WorkerSlot(new WorkerId(1), AppDefinitionCollection::keyedByAppId([$apps[1]]))]);
+        $assignment = WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([$apps[0]])), new WorkerSlot(new WorkerId(1), AppDefinitionCollection::keyedByAppId([$apps[1]]))]);
         $this->registry = new SubscriptionRegistry();
         $this->connection = new ConnectionTracker($pools->clock);
         $this->metrics = new AppMetrics($assignment, $pools->clock);
@@ -834,14 +834,14 @@ final class BrokerLifecycleTest extends TestCase
         }
 
         if ($this->httpListener !== null) {
-            $overrides = $overrides->withService(HttpListenerCollection::class, HttpListenerCollection::fromListeners([$this->httpListener]));
+            $overrides = $overrides->withService(HttpListenerCollection::class, HttpListenerCollection::fromList([$this->httpListener]));
         }
 
         return BrokerKernelFixture::boot(
             $this->session,
             $pools,
             $assignment,
-            AppIdCollection::fromIds([new AppId('demo'), new AppId('echo'), new AppId('retired')]),
+            AppIdCollection::fromList([new AppId('demo'), new AppId('echo'), new AppId('retired')]),
             $this->logger,
             $yaml,
             $overrides,

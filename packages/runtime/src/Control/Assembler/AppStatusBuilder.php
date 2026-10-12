@@ -22,14 +22,14 @@ final readonly class AppStatusBuilder
 
     public function buildAppStatuses(): AppStatusCollection
     {
-        return AppStatusCollection::fromStatuses($this->metrics->listRunningTotals()->mapToList(fn(AppRunningTotals $totals): AppStatus => $totals->buildAppStatus($this->pausedApps, $this->exposures)));
+        return AppStatusCollection::fromList($this->metrics->listRunningTotals()->mapToList(fn(AppRunningTotals $totals): AppStatus => $totals->buildAppStatus($this->pausedApps, $this->exposures)));
     }
 
     public function buildHostedAppStatuses(): AppStatusCollection
     {
         $appTotals = $this->metrics->listRunningTotals()->filter(static fn(AppRunningTotals $totals): bool => !$totals->isSharedScope());
 
-        return AppStatusCollection::fromStatuses($appTotals->mapToList(fn(AppRunningTotals $totals): AppStatus => $totals->buildAppStatus($this->pausedApps, $this->exposures)));
+        return AppStatusCollection::fromList($appTotals->mapToList(fn(AppRunningTotals $totals): AppStatus => $totals->buildAppStatus($this->pausedApps, $this->exposures)));
     }
 
     public function findAppStatus(AppId $appId): ?AppStatus

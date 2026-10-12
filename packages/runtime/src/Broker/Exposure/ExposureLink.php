@@ -226,7 +226,7 @@ final class ExposureLink
 
     public function listKeptAddresses(): ExposedEntityAddressCollection
     {
-        return ExposedEntityAddressCollection::fromAddresses(array_map(static fn(LiveExposure $live) => $live->address, array_values($this->exposuresByAddress)));
+        return ExposedEntityAddressCollection::fromList(array_map(static fn(LiveExposure $live) => $live->address, array_values($this->exposuresByAddress)));
     }
 
     /** @throws HaClientException */

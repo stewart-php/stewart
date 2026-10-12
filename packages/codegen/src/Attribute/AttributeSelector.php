@@ -39,7 +39,7 @@ final readonly class AttributeSelector
         $typed = array_filter($typed, fn(string|int $key): bool => $this->isTypeable((string) $key, $filter), \ARRAY_FILTER_USE_KEY);
         ksort($typed, \SORT_STRING);
 
-        return new AttributeSelection($typed, UnseenAttributeCollection::fromAttributes($unseen));
+        return new AttributeSelection($typed, UnseenAttributeCollection::fromList($unseen));
     }
 
     // friendly_name has its own accessor; an include glob can match keys that are not identifiers.

@@ -198,7 +198,7 @@ final class ReleasePollerTest extends TestCase
     {
         $pools = WorkerPoolFixture::createWorkerPool(new FakeWorkerSpawner(), timers: $this->timers, logger: $this->logger, outboxLimits: new OutboxLimits(100, 256));
         $app = new AppDefinition(new AppId('demo'), Demo::class);
-        $slots = WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([$app]))]);
+        $slots = WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([$app]))]);
         $overrides = new SyntheticServices()
             ->withService(RevoltTimers::class, $this->timers)
             ->withService(ExternalCommandRunner::class, $this->commands)
@@ -209,7 +209,7 @@ final class ReleasePollerTest extends TestCase
             new FakeHaSession(),
             $pools,
             $slots,
-            AppIdCollection::fromIds([new AppId('demo')]),
+            AppIdCollection::fromList([new AppId('demo')]),
             $this->logger,
             ['shutdown_grace' => '10ms', 'deploy' => ['git' => ['poll' => $poll]]],
             $overrides,

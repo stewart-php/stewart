@@ -26,7 +26,7 @@ final readonly class EntitySelector
             $generated[] = $state;
         }
 
-        return new EntitySelection(EntityStateCollection::keyedByEntityId($generated), EntityIdCollection::fromIds($ignored));
+        return new EntitySelection(EntityStateCollection::keyedByEntityId($generated), EntityIdCollection::fromList($ignored));
     }
 
     private function isHiddenAway(?EntityRegistryEntry $entry): bool

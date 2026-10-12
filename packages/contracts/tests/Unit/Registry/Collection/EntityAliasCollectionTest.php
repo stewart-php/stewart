@@ -14,9 +14,9 @@ final class EntityAliasCollectionTest extends TestCase
 {
     public function testAddsOnlyMissingAliases(): void
     {
-        $aliases = EntityAliasCollection::fromAliases([EntityAlias::named('Lamp')]);
+        $aliases = EntityAliasCollection::fromList([EntityAlias::named('Lamp')]);
 
-        $merged = $aliases->withAddedMembers(EntityAliasCollection::fromAliases([
+        $merged = $aliases->withAddedMembers(EntityAliasCollection::fromList([
             EntityAlias::named('Lamp'),
             EntityAlias::entityName(),
             EntityAlias::entityName(),
@@ -27,9 +27,9 @@ final class EntityAliasCollectionTest extends TestCase
 
     public function testRemovesEqualAliases(): void
     {
-        $aliases = EntityAliasCollection::fromAliases([EntityAlias::named('Lamp'), EntityAlias::entityName()]);
+        $aliases = EntityAliasCollection::fromList([EntityAlias::named('Lamp'), EntityAlias::entityName()]);
 
-        $remaining = $aliases->withoutMembers(EntityAliasCollection::fromAliases([new EntityAlias(null)]));
+        $remaining = $aliases->withoutMembers(EntityAliasCollection::fromList([new EntityAlias(null)]));
 
         self::assertEquals([EntityAlias::named('Lamp')], $remaining->listValues());
         self::assertFalse($remaining->contains(EntityAlias::entityName()));

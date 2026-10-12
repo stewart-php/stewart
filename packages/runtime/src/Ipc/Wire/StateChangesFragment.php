@@ -19,20 +19,20 @@ final readonly class StateChangesFragment implements JsonFragment
 
     public static function fromCollection(StateChangeCollection $changes): self
     {
-        return self::fromEncodedChanges(EncodedStateChangeCollection::fromChanges($changes->mapToList(static fn(StateChange $change): EncodedStateChange => new EncodedStateChange($change))));
+        return self::fromEncodedChanges(EncodedStateChangeCollection::fromList($changes->mapToList(static fn(StateChange $change): EncodedStateChange => new EncodedStateChange($change))));
     }
 
     public static function fromEncodedChanges(EncodedStateChangeCollection $encodedChanges): self
     {
         return new self(
-            StateChangeCollection::fromChanges($encodedChanges->mapToList(static fn(EncodedStateChange $encoded): StateChange => $encoded->change)),
+            StateChangeCollection::fromList($encodedChanges->mapToList(static fn(EncodedStateChange $encoded): StateChange => $encoded->change)),
             $encodedChanges,
         );
     }
 
     public static function fromDecodedValue(mixed $value, string $path, WireMapper $mapper): static
     {
-        return new self(StateChangeCollection::fromChanges($mapper->decodeObjectList(StateChange::class, $value, $path)), null);
+        return new self(StateChangeCollection::fromList($mapper->decodeObjectList(StateChange::class, $value, $path)), null);
     }
 
     public function encodeToJson(WireMapper $mapper): string

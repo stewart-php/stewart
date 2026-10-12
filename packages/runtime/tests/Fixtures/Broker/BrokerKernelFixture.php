@@ -65,7 +65,7 @@ final class BrokerKernelFixture
 
         $lifecycle = new BrokerKernel('test', '/nonexistent/services.php', new ProjectRoot(sys_get_temp_dir()), $services)->createBroker(
             $config,
-            new AppCatalog(self::listEnabledApps($workerSlots), $knownAppIds, AppIdCollection::fromIds([])),
+            new AppCatalog(self::listEnabledApps($workerSlots), $knownAppIds, AppIdCollection::fromList([])),
             $logger,
         );
 

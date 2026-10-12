@@ -149,7 +149,7 @@ final class RunCommand extends StewartCommand
             return new AppSelection();
         }
 
-        return new AppSelection(AppIdCollection::fromIds(array_map(static fn(string $id): AppId => new AppId($id), array_values(array_filter($only, \is_string(...))))));
+        return new AppSelection(AppIdCollection::fromList(array_map(static fn(string $id): AppId => new AppId($id), array_values(array_filter($only, \is_string(...))))));
     }
 
     private function logFormatFromOptions(InputInterface $input, LogFormat $configured): LogFormat

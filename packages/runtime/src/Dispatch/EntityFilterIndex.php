@@ -64,6 +64,6 @@ final class EntityFilterIndex
             }
         }
 
-        return SubscriptionIdCollection::fromIds($matched);
+        return SubscriptionIdCollection::fromList($matched);
     }
 }

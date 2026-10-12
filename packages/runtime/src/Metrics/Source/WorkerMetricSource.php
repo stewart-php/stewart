@@ -73,7 +73,7 @@ final readonly class WorkerMetricSource implements RuntimeMetricSource
             }
         }
 
-        return MetricFamilyCollection::fromFamilies([
+        return MetricFamilyCollection::fromList([
             $phases, $ready, $missedProbes, $loopLag, $memory, $lastPong, $restartsInWindow, $restarts, $quarantines, $restartDue, $inFlight,
             $queued, $largestBatch, $dropped, $coalesced, $batchesSent,
         ]);

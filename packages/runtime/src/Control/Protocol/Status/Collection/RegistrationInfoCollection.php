@@ -8,11 +8,4 @@ use Stewart\Contracts\Collection\ListCollection;
 use Stewart\Runtime\Control\Protocol\Status\RegistrationInfo;
 
 /** @extends ListCollection<RegistrationInfo> */
-final readonly class RegistrationInfoCollection extends ListCollection
-{
-    /** @param iterable<RegistrationInfo> $infos */
-    public static function fromInfos(iterable $infos): self
-    {
-        return self::fromList($infos);
-    }
-}
+final readonly class RegistrationInfoCollection extends ListCollection {}

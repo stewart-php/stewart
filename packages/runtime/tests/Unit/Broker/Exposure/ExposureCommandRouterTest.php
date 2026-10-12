@@ -64,7 +64,7 @@ final class ExposureCommandRouterTest extends TestCase
         $this->clock = new VirtualClock();
         $this->slots = new WorkerSlotRegistry();
         $slot = new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)]));
-        $this->metrics = new AppMetrics(WorkerSlotCollection::fromWorkerSlots([$slot]), $this->clock);
+        $this->metrics = new AppMetrics(WorkerSlotCollection::fromList([$slot]), $this->clock);
         $this->worker = new WorkerHandle(new WorkerId(0), new FakeWorkerProcess(), $slot, new NullLogger(), new OutboxLimits(100, 256));
         $state = $this->slots->findOrCreateSlotState($slot, new RecordingPoolListener());
         $state->beginSpawn();

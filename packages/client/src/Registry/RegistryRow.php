@@ -50,6 +50,6 @@ final readonly class RegistryRow
     /** @param array<array-key, mixed> $raw */
     public static function readLabelIds(array $raw): LabelIdCollection
     {
-        return LabelIdCollection::fromIds(array_filter(array_map(LabelId::tryFromString(...), self::readStrings($raw, 'labels'))));
+        return LabelIdCollection::fromList(array_filter(array_map(LabelId::tryFromString(...), self::readStrings($raw, 'labels'))));
     }
 }

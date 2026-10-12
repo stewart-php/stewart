@@ -153,7 +153,7 @@ final class HaClientTest extends TestCase
 
         $socket->replyWhenSent('subscribe_trigger', ['type' => 'result', 'success' => true, 'result' => null]);
         $id = $client->subscribeTrigger(
-            HaTriggerCollection::fromTriggers([HaTrigger::onSunset()]),
+            HaTriggerCollection::fromList([HaTrigger::onSunset()]),
             [],
             static function (TriggerEvent $event) use (&$platforms): void {
                 $platforms[] = $event->getPlatform();
@@ -181,7 +181,7 @@ final class HaClientTest extends TestCase
 
         $this->assertThrowsReason(
             HaClientError::AdministratorRequired,
-            fn() => $client->subscribeTrigger(HaTriggerCollection::fromTriggers([HaTrigger::onSunset()]), [], static function (): void {}),
+            fn() => $client->subscribeTrigger(HaTriggerCollection::fromList([HaTrigger::onSunset()]), [], static function (): void {}),
         );
     }
 

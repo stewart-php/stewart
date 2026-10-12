@@ -65,7 +65,7 @@ final class EventFireProxyTest extends TestCase
         $this->session = new FakeHaSession();
         $this->calls = $this->session->holdCalls();
         $this->metrics = new AppMetrics(
-            WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)]))]),
+            WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)]))]),
             $this->timers->clock,
         );
     }

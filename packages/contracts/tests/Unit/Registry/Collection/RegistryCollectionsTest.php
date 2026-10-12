@@ -56,22 +56,22 @@ final class RegistryCollectionsTest extends TestCase
 
     public function testIdCollectionContainsAnyOf(): void
     {
-        $ids = AreaIdCollection::fromIds([new AreaId('kitchen'), new AreaId('hall')]);
+        $ids = AreaIdCollection::fromList([new AreaId('kitchen'), new AreaId('hall')]);
 
         self::assertTrue($ids->contains(new AreaId('hall')));
         self::assertFalse($ids->contains(new AreaId('attic')));
-        self::assertTrue($ids->containsAnyOf(AreaIdCollection::fromIds([new AreaId('attic'), new AreaId('kitchen')])));
+        self::assertTrue($ids->containsAnyOf(AreaIdCollection::fromList([new AreaId('attic'), new AreaId('kitchen')])));
         self::assertFalse($ids->containsAnyOf(AreaIdCollection::empty()));
-        self::assertSame(['up'], FloorIdCollection::fromIds([new FloorId('up')])->toStrings());
-        self::assertSame(['d1'], DeviceIdCollection::fromIds([new DeviceId('d1')])->toStrings());
-        self::assertSame(['night'], LabelIdCollection::fromIds([new LabelId('night')])->toStrings());
+        self::assertSame(['up'], FloorIdCollection::fromList([new FloorId('up')])->toStrings());
+        self::assertSame(['d1'], DeviceIdCollection::fromList([new DeviceId('d1')])->toStrings());
+        self::assertSame(['night'], LabelIdCollection::fromList([new LabelId('night')])->toStrings());
     }
 
     public function testIdCollectionAddsOnlyMissingMembers(): void
     {
-        $labels = LabelIdCollection::fromIds([new LabelId('night')]);
+        $labels = LabelIdCollection::fromList([new LabelId('night')]);
 
-        $merged = $labels->withAddedMembers(LabelIdCollection::fromIds([new LabelId('night'), new LabelId('hue'), new LabelId('hue')]));
+        $merged = $labels->withAddedMembers(LabelIdCollection::fromList([new LabelId('night'), new LabelId('hue'), new LabelId('hue')]));
 
         self::assertSame(['night', 'hue'], $merged->toStrings());
         self::assertSame(['hue'], $merged->withoutMembers($labels)->toStrings());

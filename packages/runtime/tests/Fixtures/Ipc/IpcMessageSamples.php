@@ -174,7 +174,7 @@ final class IpcMessageSamples
             'shutdown' => IpcMessageSample::createRoundTrip(new Shutdown('stopping', Duration::seconds(5))),
             'worker_ready' => IpcMessageSample::createRoundTrip(new WorkerReady(self::createAppIds('demo'), self::createAppIds('broken'), 12_345_678)),
             'subscribe_trigger' => IpcMessageSample::createRoundTrip(new SubscribeTrigger(new SubscriptionId('w0:5'), $demo, TriggerSpec::fromSpec(
-                HaTriggerCollection::fromTriggers([
+                HaTriggerCollection::fromList([
                     HaTrigger::onSunset(SunOffset::before(Duration::minutes(30)), 'dusk'),
                     HaTrigger::fromArray(['platform' => 'state', 'entity_id' => ['light.hall'], 'to' => 'on']),
                 ]),
@@ -245,7 +245,7 @@ final class IpcMessageSamples
 
     private static function createHistoryResult(Instant $at): HistoryResult
     {
-        return new HistoryResult(new CorrelationId('w0:3'), HistoricalStatesFragment::fromCollection(HistoricalStateCollection::fromStates([
+        return new HistoryResult(new CorrelationId('w0:3'), HistoricalStatesFragment::fromCollection(HistoricalStateCollection::fromList([
             new EntityState(new EntityId('light.hall'), 'off', lastChangedAt: $at, lastUpdatedAt: $at),
             new EntityState(new EntityId('light.hall'), 'on', ['brightness' => 254], $at->plus(Duration::minutes(5)), $at->plus(Duration::minutes(5))),
         ])));
@@ -258,7 +258,7 @@ final class IpcMessageSamples
             workerId: new WorkerId(1),
             timeZone: 'Europe/Budapest',
             location: new GeoLocation(47.4979, 19.0402, 96.0),
-            apps: WorkerAppsFragment::fromCollection(WorkerAppCollection::fromApps([new WorkerApp(new AppId('demo'), 'Stewart\Runtime\Tests\Fixtures\Apps\Demo', ['watch' => 'input_boolean.hall']), new WorkerApp(new AppId('echo'), 'Stewart\Runtime\Tests\Fixtures\Apps\Relay', [])])),
+            apps: WorkerAppsFragment::fromCollection(WorkerAppCollection::fromList([new WorkerApp(new AppId('demo'), 'Stewart\Runtime\Tests\Fixtures\Apps\Demo', ['watch' => 'input_boolean.hall']), new WorkerApp(new AppId('echo'), 'Stewart\Runtime\Tests\Fixtures\Apps\Relay', [])])),
             settings: new WorkerSettings(LogLevel::Info, Duration::seconds(35), Duration::seconds(5), 100, Duration::seconds(60), '/app/services.php', 'Stewart\Generated', true),
             store: new StoreSettings('redis://:not-a-secret@valkey:6379/0', 'stewart', Duration::seconds(5), Duration::seconds(5)),
             knownAppIds: self::createAppIds('demo', 'echo'),
@@ -306,11 +306,11 @@ final class IpcMessageSamples
             new EventContext('ctx'),
         );
 
-        return new StateChangeBatch(StateChangesFragment::fromCollection(StateChangeCollection::fromChanges([$change])));
+        return new StateChangeBatch(StateChangesFragment::fromCollection(StateChangeCollection::fromList([$change])));
     }
 
     private static function createAppIds(string ...$ids): AppIdsFragment
     {
-        return AppIdsFragment::fromCollection(AppIdCollection::fromIds(array_map(static fn(string $id): AppId => new AppId($id), $ids)));
+        return AppIdsFragment::fromCollection(AppIdCollection::fromList(array_map(static fn(string $id): AppId => new AppId($id), $ids)));
     }
 }

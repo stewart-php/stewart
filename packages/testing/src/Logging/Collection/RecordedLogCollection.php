@@ -10,12 +10,6 @@ use Stewart\Testing\Logging\RecordedLog;
 /** @extends ListCollection<RecordedLog> */
 final readonly class RecordedLogCollection extends ListCollection
 {
-    /** @param iterable<RecordedLog> $logs */
-    public static function fromLogs(iterable $logs): self
-    {
-        return self::fromList($logs);
-    }
-
     public function withRecordedLog(RecordedLog $log): self
     {
         return $this->withAppendedElement($log);

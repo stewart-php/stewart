@@ -80,18 +80,18 @@ final readonly class GenerationModelFactory
         }
 
         return new GenerationModel(
-            domains: DomainModelCollection::fromDomains($domains),
+            domains: DomainModelCollection::fromList($domains),
             entityIds: $selection->listEntityIds(),
             ignoredEntityIds: $selection->ignored,
-            warnings: GenerationWarningCollection::fromWarnings([
+            warnings: GenerationWarningCollection::fromList([
                 ...$options->inclusionRules->listUnmatchedIncludes($snapshot->states)->mapToList(
                     static fn(Selector $include): UnmatchedEntitySelector => new UnmatchedEntitySelector($include->getPattern()),
                 ),
                 ...$unseenAttributes,
             ]),
-            areaIds: AreaIdCollection::fromIds($snapshot->areas->mapToList(static fn(Area $area): AreaId => $area->areaId)),
-            floorIds: FloorIdCollection::fromIds($snapshot->floors->mapToList(static fn(Floor $floor): FloorId => $floor->floorId)),
-            labelIds: LabelIdCollection::fromIds($snapshot->labels->mapToList(static fn(Label $label): LabelId => $label->labelId)),
+            areaIds: AreaIdCollection::fromList($snapshot->areas->mapToList(static fn(Area $area): AreaId => $area->areaId)),
+            floorIds: FloorIdCollection::fromList($snapshot->floors->mapToList(static fn(Floor $floor): FloorId => $floor->floorId)),
+            labelIds: LabelIdCollection::fromList($snapshot->labels->mapToList(static fn(Label $label): LabelId => $label->labelId)),
         );
     }
 
@@ -115,7 +115,7 @@ final readonly class GenerationModelFactory
             $attributes[] = new AttributeModel($names->claim('get' . ucfirst(Identifier::convertToCamelCase($key))), $key, $kind);
         }
 
-        return AttributeModelCollection::fromAttributes($attributes);
+        return AttributeModelCollection::fromList($attributes);
     }
 
     private function buildServiceModels(ServiceDefinitionCollection $definitions, MemberScope $methodScope): ServiceModelCollection
@@ -131,7 +131,7 @@ final readonly class GenerationModelFactory
             );
         }
 
-        return ServiceModelCollection::fromServices($services);
+        return ServiceModelCollection::fromList($services);
     }
 
     private function selectParameterScope(MemberScope $methodScope, ServiceDefinition $definition): MemberScope
@@ -150,6 +150,6 @@ final readonly class GenerationModelFactory
             $models[] = new FieldModel($names->claim(Identifier::convertToCamelCase($field->name)), $field);
         }
 
-        return FieldModelCollection::fromFields($models);
+        return FieldModelCollection::fromList($models);
     }
 }

@@ -22,6 +22,6 @@ final readonly class MqttMessageDeliveryHandler implements BrokerMessageHandler
     /** @param MqttMessageDelivery $message */
     public function handle(BrokerMessage $message): void
     {
-        $this->dispatcher->dispatchMqttMessage($message->message, SubscriptionIdCollection::fromIds($message->deliverTo));
+        $this->dispatcher->dispatchMqttMessage($message->message, SubscriptionIdCollection::fromList($message->deliverTo));
     }
 }

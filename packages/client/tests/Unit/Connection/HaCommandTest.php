@@ -72,7 +72,7 @@ final class HaCommandTest extends TestCase
 
     public function testTriggerSubscriptionOmitsEmptyVariables(): void
     {
-        $command = new SubscribeTrigger(HaTriggerCollection::fromTriggers([HaTrigger::onSunset(), HaTrigger::atTime('07:00')]));
+        $command = new SubscribeTrigger(HaTriggerCollection::fromList([HaTrigger::onSunset(), HaTrigger::atTime('07:00')]));
 
         self::assertSame(
             ['type' => 'subscribe_trigger', 'trigger' => [['trigger' => 'sun', 'event' => 'sunset'], ['trigger' => 'time', 'at' => '07:00']]],
@@ -83,7 +83,7 @@ final class HaCommandTest extends TestCase
 
     public function testTriggerSubscriptionCarriesVariables(): void
     {
-        $message = new SubscribeTrigger(HaTriggerCollection::fromTriggers([HaTrigger::onSunrise()]), ['room' => 'hall'])->toMessage();
+        $message = new SubscribeTrigger(HaTriggerCollection::fromList([HaTrigger::onSunrise()]), ['room' => 'hall'])->toMessage();
 
         self::assertSame(['room' => 'hall'], $message['variables'] ?? null);
     }

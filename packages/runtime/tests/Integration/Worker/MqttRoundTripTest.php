@@ -47,8 +47,8 @@ final class MqttRoundTripTest extends TestCase
         $broker = BrokerKernelFixture::boot(
             new FakeHaSession(),
             $pools,
-            WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('mqtt-relay'), MqttRelay::class)]))]),
-            AppIdCollection::fromIds([new AppId('mqtt-relay')]),
+            WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('mqtt-relay'), MqttRelay::class)]))]),
+            AppIdCollection::fromList([new AppId('mqtt-relay')]),
             $logger,
             ['shutdown_grace' => '1s', 'mqtt' => ['url' => 'mqtt://broker.test']],
             mqttLink: $link,

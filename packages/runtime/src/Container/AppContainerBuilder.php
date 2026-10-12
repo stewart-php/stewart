@@ -115,7 +115,7 @@ final readonly class AppContainerBuilder
             }
         }
 
-        $registered = AppRegistrationCollection::fromRegistrations($registrations);
+        $registered = AppRegistrationCollection::fromList($registrations);
 
         try {
             $container = $this->compileContainerFor($registered, $runtime, $servicesFile, $workerId);
@@ -146,7 +146,7 @@ final readonly class AppContainerBuilder
 
         foreach ($registrations as $registration) {
             try {
-                $this->compileContainerFor(AppRegistrationCollection::fromRegistrations([$registration]), $runtime, $servicesFile, $workerId);
+                $this->compileContainerFor(AppRegistrationCollection::fromList([$registration]), $runtime, $servicesFile, $workerId);
             } catch (Throwable $e) {
                 $failures[] = new AppBuildFailure($registration->app->id, $this->explainAppFailure($registration->app->id, $e));
                 $isolated[] = $registration->app->id->value;

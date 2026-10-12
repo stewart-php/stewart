@@ -31,6 +31,6 @@ final readonly class Histogram
 
         $buckets[] = new HistogramBucket(INF, $latency->count);
 
-        return new self(HistogramBucketCollection::fromBuckets($buckets), $latency->count, $latency->sum);
+        return new self(HistogramBucketCollection::fromList($buckets), $latency->count, $latency->sum);
     }
 }

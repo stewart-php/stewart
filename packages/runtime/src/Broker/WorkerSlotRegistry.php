@@ -47,7 +47,7 @@ final class WorkerSlotRegistry
             }
         }
 
-        return WorkerHandleCollection::fromHandles($live);
+        return WorkerHandleCollection::fromList($live);
     }
 
     public function broadcast(BrokerMessage $message): void

@@ -15,7 +15,7 @@ final readonly class RuntimeMetricsCollector
 
     public function collectMetrics(RuntimeSnapshot $snapshot): MetricFamilyCollection
     {
-        return MetricFamilyCollection::fromFamilies($this->yieldFamilies($snapshot));
+        return MetricFamilyCollection::fromList($this->yieldFamilies($snapshot));
     }
 
     /** @return iterable<MetricFamily> */

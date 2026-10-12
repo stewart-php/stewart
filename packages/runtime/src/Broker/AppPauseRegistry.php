@@ -93,7 +93,7 @@ final class AppPauseRegistry
 
     public function listPausedAppIds(): AppIdCollection
     {
-        return AppIdCollection::fromIds([
+        return AppIdCollection::fromList([
             ...array_values(array_diff_key($this->configPausedAppIds, $this->overrides)),
             ...array_map(
                 static fn(AppPauseOverride $override): AppId => $override->appId,

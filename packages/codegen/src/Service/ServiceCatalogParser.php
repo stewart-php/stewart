@@ -26,7 +26,7 @@ final readonly class ServiceCatalogParser
             }
 
             ksort($definitions);
-            $byDomain[$domain] = ServiceDefinitionCollection::fromDefinitions($definitions);
+            $byDomain[$domain] = ServiceDefinitionCollection::fromList($definitions);
         }
 
         ksort($byDomain);
@@ -63,7 +63,7 @@ final readonly class ServiceCatalogParser
             $flat[] = $this->parseField($name, $field);
         }
 
-        return ServiceFieldCollection::fromFields($flat);
+        return ServiceFieldCollection::fromList($flat);
     }
 
     private function parseField(string $name, RawMap $field): ServiceField
@@ -89,6 +89,6 @@ final readonly class ServiceCatalogParser
         $required = $fields->filter(static fn(ServiceField $field): bool => $field->required)->sortedBy($byName);
         $optional = $fields->filter(static fn(ServiceField $field): bool => !$field->required)->sortedBy($byName);
 
-        return ServiceFieldCollection::fromFields([...$required, ...$optional]);
+        return ServiceFieldCollection::fromList([...$required, ...$optional]);
     }
 }

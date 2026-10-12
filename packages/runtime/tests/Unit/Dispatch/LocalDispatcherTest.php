@@ -881,6 +881,6 @@ final class LocalDispatcherTest extends TestCase
 
     private static function listDeliveryTargets(Subscription ...$subscriptions): SubscriptionIdCollection
     {
-        return SubscriptionIdCollection::fromIds(array_map(static fn(Subscription $subscription): SubscriptionId => SubscriptionId::fromString($subscription->getId()), $subscriptions));
+        return SubscriptionIdCollection::fromList(array_map(static fn(Subscription $subscription): SubscriptionId => SubscriptionId::fromString($subscription->getId()), $subscriptions));
     }
 }

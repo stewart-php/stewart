@@ -74,12 +74,12 @@ final class SubscriptionRegistry
 
         ksort($idsByWorker);
 
-        return new SubscriptionRoutes(array_map(SubscriptionIdCollection::fromIds(...), $idsByWorker));
+        return new SubscriptionRoutes(array_map(SubscriptionIdCollection::fromList(...), $idsByWorker));
     }
 
     public function listSubscriptions(): BrokerSubscriptionCollection
     {
-        return BrokerSubscriptionCollection::fromSubscriptions($this->subscriptions);
+        return BrokerSubscriptionCollection::fromList($this->subscriptions);
     }
 
     public function getRoutingStats(): RoutingStats

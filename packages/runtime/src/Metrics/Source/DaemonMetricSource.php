@@ -20,7 +20,7 @@ final readonly class DaemonMetricSource implements RuntimeMetricSource
         $none = MetricLabels::none();
         $build = MetricLabels::fromLabel('version', $daemon->version)->withLabel('ha_version', $daemon->haVersion ?? '');
 
-        return MetricFamilyCollection::fromFamilies([
+        return MetricFamilyCollection::fromList([
             MetricFamily::createWithSample('stewart_build_info', 'Stewart and Home Assistant versions; always 1.', MetricType::Gauge, $build, 1),
             MetricFamily::createWithSample('stewart_start_time_seconds', 'Unix time the daemon started.', MetricType::Gauge, $none, PrometheusNumber::convertToEpochSeconds($daemon->startedAt)),
             MetricFamily::createWithSample('stewart_broker_memory_bytes', 'Memory the broker process holds.', MetricType::Gauge, $none, $daemon->memoryBytes),

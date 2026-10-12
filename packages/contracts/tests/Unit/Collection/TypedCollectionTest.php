@@ -87,7 +87,7 @@ final class TypedCollectionTest extends TestCase
 
     public function testAppIdCollectionLooksUpById(): void
     {
-        $appIds = AppIdCollection::fromIds([new AppId('boiler'), new AppId('hall-light')]);
+        $appIds = AppIdCollection::fromList([new AppId('boiler'), new AppId('hall-light')]);
 
         self::assertTrue($appIds->containsId(new AppId('boiler')));
         self::assertFalse($appIds->containsId(new AppId('hall_light')));

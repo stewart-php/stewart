@@ -13,12 +13,6 @@ use Stewart\Contracts\Registry\RegistryId;
  */
 abstract readonly class RegistryIdCollection extends ListCollection
 {
-    /** @param iterable<T> $ids */
-    public static function fromIds(iterable $ids): static
-    {
-        return static::fromList($ids);
-    }
-
     /** @param T $id */
     public function contains(RegistryId $id): bool
     {

@@ -10,12 +10,6 @@ use Stewart\Runtime\App\UnmarkedApp;
 /** @extends ListCollection<UnmarkedApp> */
 final readonly class UnmarkedAppCollection extends ListCollection
 {
-    /** @param iterable<UnmarkedApp> $apps */
-    public static function fromApps(iterable $apps): self
-    {
-        return self::fromList($apps);
-    }
-
     /** @return list<class-string> */
     public function listClasses(): array
     {

@@ -68,10 +68,10 @@ final readonly class RawMap
         }
 
         if (!array_is_list($value)) {
-            return RawMapCollection::fromMaps([self::fromValue($value)]);
+            return RawMapCollection::fromList([self::fromValue($value)]);
         }
 
-        return RawMapCollection::fromMaps(array_map(self::fromValue(...), array_filter($value, \is_array(...))));
+        return RawMapCollection::fromList(array_map(self::fromValue(...), array_filter($value, \is_array(...))));
     }
 
     /** @return list<string> */

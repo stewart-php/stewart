@@ -30,6 +30,6 @@ final readonly class ComponentMetricSource implements RuntimeMetricSource
             }
         }
 
-        return MetricFamilyCollection::fromFamilies([$info, $states]);
+        return MetricFamilyCollection::fromList([$info, $states]);
     }
 }

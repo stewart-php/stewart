@@ -47,11 +47,11 @@ final class TriggerRoundTripTest extends TestCase
         $broker = BrokerKernelFixture::boot(
             $session,
             $pools,
-            WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([
+            WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([
                 new AppDefinition(new AppId('dusk-one'), SunsetWatcher::class),
                 new AppDefinition(new AppId('dusk-two'), SunsetWatcher::class),
             ]))]),
-            AppIdCollection::fromIds([new AppId('dusk-one'), new AppId('dusk-two')]),
+            AppIdCollection::fromList([new AppId('dusk-one'), new AppId('dusk-two')]),
             $logger,
             ['shutdown_grace' => '1s'],
         );

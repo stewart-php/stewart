@@ -76,8 +76,8 @@ final class AppPauseCommandsTest extends TestCase
         $this->broker = BrokerKernelFixture::boot(
             new FakeHaSession(),
             $pools,
-            WorkerSlotCollection::fromWorkerSlots([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition($appId, SerialHandler::class)]))]),
-            AppIdCollection::fromIds([$appId, new AppId('dormant')]),
+            WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition($appId, SerialHandler::class)]))]),
+            AppIdCollection::fromList([$appId, new AppId('dormant')]),
             $logger,
             ['shutdown_grace' => '1s', 'control' => ['listen' => 'unix://' . $this->path, 'token' => self::TOKEN], 'persistence' => ['url' => self::STORE_URL]],
             new SyntheticServices()->withService(GuardedStoreBackend::class, new GuardedStoreBackend($this->store, StoreDsn::parse(self::STORE_URL), new StoreTiming(Duration::seconds(2), Duration::seconds(5)), $pools->clock)),

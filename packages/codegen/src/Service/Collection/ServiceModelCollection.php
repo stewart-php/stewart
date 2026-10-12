@@ -8,11 +8,4 @@ use Stewart\Codegen\Service\ServiceModel;
 use Stewart\Contracts\Collection\ListCollection;
 
 /** @extends ListCollection<ServiceModel> */
-final readonly class ServiceModelCollection extends ListCollection
-{
-    /** @param iterable<ServiceModel> $services */
-    public static function fromServices(iterable $services): self
-    {
-        return self::fromList($services);
-    }
-}
+final readonly class ServiceModelCollection extends ListCollection {}

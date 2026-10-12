@@ -33,12 +33,12 @@ final readonly class RegisteredEntity
 
     public function listLabelIds(): LabelIdCollection
     {
-        return LabelIdCollection::fromIds($this->labelIds);
+        return LabelIdCollection::fromList($this->labelIds);
     }
 
     public function listAliases(): ?EntityAliasCollection
     {
-        return $this->aliases === null ? null : EntityAliasCollection::fromAliases($this->aliases);
+        return $this->aliases === null ? null : EntityAliasCollection::fromList($this->aliases);
     }
 
     public function isHidden(): bool

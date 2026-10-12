@@ -52,6 +52,6 @@ final class MetricFamily
 
     public function listSamples(): MetricSampleCollection
     {
-        return MetricSampleCollection::fromSamples($this->samples);
+        return MetricSampleCollection::fromList($this->samples);
     }
 }

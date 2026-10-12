@@ -61,7 +61,7 @@ final class PendingRequestsTest extends TestCase
     {
         $call = $this->pending->open(new ServiceCallSubject('light', 'turn_on'));
 
-        $this->pending->resolve($call->correlationId, HistoricalStateCollection::fromStates([]));
+        $this->pending->resolve($call->correlationId, HistoricalStateCollection::fromList([]));
 
         $this->assertThrowsReason(ServiceCallError::Unreachable, static fn() => $call->getFuture()->await());
     }

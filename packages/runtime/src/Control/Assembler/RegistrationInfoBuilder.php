@@ -15,7 +15,7 @@ final readonly class RegistrationInfoBuilder
 
     public function buildRegistrationInfos(): RegistrationInfoCollection
     {
-        return RegistrationInfoCollection::fromInfos($this->registry->listSubscriptions()->mapToList($this->describeSubscription(...)));
+        return RegistrationInfoCollection::fromList($this->registry->listSubscriptions()->mapToList($this->describeSubscription(...)));
     }
 
     private function describeSubscription(BrokerSubscription $subscription): RegistrationInfo

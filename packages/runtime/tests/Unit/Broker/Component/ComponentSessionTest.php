@@ -72,7 +72,7 @@ final class ComponentSessionTest extends TestCase
         $this->session = new ComponentSession(
             new ComponentLink($client, $this->logger, $this->tracker, $expose, '0.11.0'),
             $this->exposures,
-            new ExposureReconciler(WorkerSlotCollection::fromWorkerSlots([]), $this->exposures, $client, $this->tracker, $expose, $this->timers, new NullLogger()),
+            new ExposureReconciler(WorkerSlotCollection::fromList([]), $this->exposures, $client, $this->tracker, $expose, $this->timers, new NullLogger()),
             $this->tracker,
             new BackoffPolicy(Duration::seconds(1), Duration::seconds(4)),
             $this->timers,

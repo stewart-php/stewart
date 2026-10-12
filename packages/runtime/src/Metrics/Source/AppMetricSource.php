@@ -77,7 +77,7 @@ final readonly class AppMetricSource implements RuntimeMetricSource
             }
         }
 
-        return MetricFamilyCollection::fromFamilies([
+        return MetricFamilyCollection::fromList([
             $info, $states, $paused, $subscriptions, $schedules, $exposedEntities, $delivered, $subscriptionDropped, $scheduleRuns, $publishes,
             $failures, $suppressed, $lastFailure, $serviceCalls, $serviceCallDuration, $exposedCommands,
         ]);

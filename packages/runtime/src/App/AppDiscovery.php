@@ -80,8 +80,8 @@ final readonly class AppDiscovery
 
         return new DiscoveryResult(
             DiscoveredAppCollection::fromApps($apps),
-            UnmarkedAppCollection::fromApps($unmarked),
-            UnloadableAppFileCollection::fromFiles($unloadable),
+            UnmarkedAppCollection::fromList($unmarked),
+            UnloadableAppFileCollection::fromList($unloadable),
         );
     }
 

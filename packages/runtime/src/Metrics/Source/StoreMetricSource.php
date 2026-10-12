@@ -28,6 +28,6 @@ final readonly class StoreMetricSource implements RuntimeMetricSource
             $lastFailure->recordSample(MetricLabels::none(), PrometheusNumber::convertToEpochSeconds($store->lastFailureAt));
         }
 
-        return MetricFamilyCollection::fromFamilies([$available, $lastFailure]);
+        return MetricFamilyCollection::fromList([$available, $lastFailure]);
     }
 }

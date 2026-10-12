@@ -329,7 +329,7 @@ final class HaClient
             }
         }
 
-        return new EntityStateHistory($entityId, $window, HistoricalStateCollection::fromStates($states));
+        return new EntityStateHistory($entityId, $window, HistoricalStateCollection::fromList($states));
     }
 
     /**

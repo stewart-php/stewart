@@ -27,12 +27,17 @@ minor release may break; its "Upgrading" section says what to change.
   "the automation ID is …"
 - Stewart exceptions are raised with `XException::createForReason(XError::Case, $previous, key: $value)`; most
   one-line factories in `stewart-php/contracts` are gone
+- List collections are built with `XCollection::fromList(...)`; the named factories that only forwarded to it, such
+  as `EntityIdCollection::fromIds()` and `HaTriggerCollection::fromTriggers()`, are gone
 
 ### Upgrading
 
 1. Code that built a contracts exception through a removed factory, such as `StoreException::typeMismatch(…)` or
    `ScheduleException::cronInvalid(…)`, calls `createForReason()` with the reason case and its context as named
    arguments instead. `CommandException::rejected()` and the factories shared across packages stay.
+2. Replace calls to removed collection factories such as `AppIdCollection::fromIds($ids)` with `fromList($ids)`.
+   Factories that do more, such as `SelectorCollection::fromSpecs()` and `DayOfWeekCollection::fromDistinctDays()`,
+   stay.
 
 ## [0.10.0] - 2026-10-12
 

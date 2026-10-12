@@ -10,12 +10,6 @@ use Stewart\Contracts\Collection\ListCollection;
 /** @extends ListCollection<AppId> */
 final readonly class AppIdCollection extends ListCollection
 {
-    /** @param iterable<AppId> $appIds */
-    public static function fromIds(iterable $appIds): self
-    {
-        return self::fromList($appIds);
-    }
-
     public function containsId(AppId $appId): bool
     {
         return $this->containsWhere(static fn(AppId $candidate): bool => $candidate->equals($appId));

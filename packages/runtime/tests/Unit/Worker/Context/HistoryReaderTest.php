@@ -67,7 +67,7 @@ final class HistoryReaderTest extends TestCase
         self::assertTrue($request->window->getDuration()->equals(Duration::minutes(5)));
         self::assertSame(HistoryDetail::StateChangesWithAttributes, $request->detail);
 
-        $this->pending->resolve($request->correlationId, HistoricalStateCollection::fromStates([]));
+        $this->pending->resolve($request->correlationId, HistoricalStateCollection::fromList([]));
 
         $history = $fetch->await();
         self::assertInstanceOf(EntityStateHistory::class, $history);
