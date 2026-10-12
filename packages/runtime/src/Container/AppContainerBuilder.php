@@ -66,6 +66,8 @@ final readonly class AppContainerBuilder
 
     private const string TIMERS = '.stewart.timers';
 
+    private const string LOOP_TIMERS = '.stewart.loop_timers';
+
     private const string LOGGER_SUFFIX = '.logger';
 
     private const string CONTEXT_SUFFIX = '.context';
@@ -193,6 +195,7 @@ final readonly class AppContainerBuilder
             self::LOGGER => $runtime->logger,
             self::CONTEXT => $runtime->context,
             self::SCHEDULER => $runtime->scheduler,
+            self::LOOP_TIMERS => $runtime->timers,
             self::STORES => $runtime->stores,
             self::MQTT => $runtime->mqtt,
             self::EXPOSURE => $runtime->exposure,
@@ -249,7 +252,7 @@ final readonly class AppContainerBuilder
         $container->register(self::READ_ONLY_GLOBAL_STORE, ReadOnlyStore::class)
             ->setArguments([new Reference(self::GLOBAL_STORE)]);
         $container->register(self::TIMERS, WorkerTimers::class)
-            ->setArguments([new Reference(self::SCHEDULER)]);
+            ->setArguments([new Reference(self::SCHEDULER), new Reference(self::LOOP_TIMERS)]);
 
         $container->setAlias(LoggerInterface::class, self::LOGGER)->setPublic(true);
         $container->setAlias(HaContext::class, self::CONTEXT)->setPublic(true);
@@ -331,7 +334,7 @@ final readonly class AppContainerBuilder
             ->setArguments([$appId, new Reference($serviceId . self::LOGGER_SUFFIX)]);
 
         $container->register($serviceId . self::TIMERS_SUFFIX, WorkerTimers::class)
-            ->setArguments([new Reference($serviceId . self::SCHEDULER_SUFFIX)]);
+            ->setArguments([new Reference($serviceId . self::SCHEDULER_SUFFIX), new Reference(self::LOOP_TIMERS)]);
 
         $container->register($serviceId . self::STORE_SUFFIX, ScopedStore::class)
             ->setFactory([new Reference(self::STORES), 'openAppStore'])

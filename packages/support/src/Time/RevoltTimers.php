@@ -9,6 +9,7 @@ use Amp\TimeoutCancellation;
 use Closure;
 use Revolt\EventLoop;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Contracts\Time\PendingWait;
 use Stewart\Contracts\Time\TimerHandle;
 use Stewart\Contracts\Time\Timers;
 
@@ -32,6 +33,30 @@ final class RevoltTimers implements Timers, Deadlines
         $handle->attachWatcher($identifier);
 
         return $handle;
+    }
+
+    /**
+     * @template T
+     * @param Closure(PendingWait<T>): (Closure(): void) $arm
+     * @return T|null
+     */
+    public function waitFor(Closure $arm, ?Duration $timeout = null): mixed
+    {
+        /** @var DeferredWait<T> $wait */
+        $wait = new DeferredWait();
+        $teardown = $arm($wait);
+        // Referenced, unlike startTimer(), so a wait in {main} keeps the loop running until it ends.
+        $timeoutWatcher = $timeout === null ? null : EventLoop::delay($timeout->toSeconds(), $wait->expire(...));
+
+        try {
+            return $wait->awaitOutcome();
+        } finally {
+            if ($timeoutWatcher !== null) {
+                EventLoop::cancel($timeoutWatcher);
+            }
+
+            $teardown();
+        }
     }
 
     public function timeout(Duration $limit): Cancellation

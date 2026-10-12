@@ -65,7 +65,7 @@ final class AppRuntimeServicesFixture
         return new AppRuntimeServices(
             logger: $logger,
             clock: $timers->clock,
-            deadlines: $timers,
+            timers: $timers,
             scheduler: WorkerSchedulerFixture::createWorkerScheduler($resources->schedules, $sunCalendar, $logger, ResourceScope::shared(), $timers, $stateCache, $resources->dispatcher),
             context: WorkerHaContextFixture::createWorkerHaContext(
                 transport: $transport,

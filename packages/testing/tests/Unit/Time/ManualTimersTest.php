@@ -10,9 +10,13 @@ use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Contracts\Time\PendingWait;
+use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimeout;
 use Stewart\Testing\Time\ManualTimer;
 use Stewart\Testing\Time\ManualTimers;
+
+use function Amp\async;
 
 #[CoversClass(ManualTimers::class)]
 #[CoversClass(ManualTimer::class)]
@@ -173,6 +177,32 @@ final class ManualTimersTest extends TestCase
 
         self::assertSame(['due'], $this->fired);
         self::assertSame(3_000_000, $this->timers->clock->getMonotonicTime()->toMicroseconds());
+    }
+
+    public function testWaitTimesOutInVirtualTime(): void
+    {
+        $outcome = async(fn(): mixed => $this->timers->waitFor(fn(PendingWait $wait): Closure => $this->record('torn down'), Duration::minutes(5)));
+        EventLoopTicks::settle();
+
+        $this->timers->delay(Duration::seconds(299));
+        self::assertFalse($outcome->isComplete());
+
+        $this->timers->delay(Duration::seconds(1));
+
+        self::assertNull($outcome->await());
+        self::assertSame(['torn down'], $this->fired);
+    }
+
+    public function testResolvedWaitReleasesItsTimeout(): void
+    {
+        $outcome = $this->timers->waitFor(static function (PendingWait $wait): Closure {
+            async(static fn() => $wait->resolve('on'));
+
+            return static fn() => null;
+        }, Duration::minutes(5));
+
+        self::assertSame('on', $outcome);
+        self::assertSame(0, $this->timers->countPendingTimers());
     }
 
     /** @return Closure(): void */

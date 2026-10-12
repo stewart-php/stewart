@@ -12,6 +12,8 @@ minor release may break; its "Upgrading" section says what to change.
   within `shutdown_grace` first, a quarantined or backing-off one starts at once. While it stops, `stewart status`
   and `stewart_worker_phase` show the new `stopping` phase
 - `POST /api/workers/{id}/restart` on the HTTP admin API does the same as `worker:restart`; an unknown worker is 404
+- `Timers::waitFor()` suspends the calling fiber until its `PendingWait` is resolved or failed, or returns null once
+  its timeout passes
 
 ### Fixed
 
@@ -62,9 +64,10 @@ minor release may break; its "Upgrading" section says what to change.
 3. Replace calls to removed collection factories such as `AppIdCollection::fromIds($ids)` with `fromList($ids)`.
    Factories that do more, such as `SelectorCollection::fromSpecs()` and `DayOfWeekCollection::fromDistinctDays()`,
    stay.
-3. `ServiceCallException::fromWire()`, `EventFireException::fromWire()`, `HistoryException::fromWire()`,
+4. `ServiceCallException::fromWire()`, `EventFireException::fromWire()`, `HistoryException::fromWire()`,
    `RegistryEditException::fromWire()` and `ExposureException::fromWire()` are gone; call
    `XException::restoreFromWire($reason, $message, $context)` instead.
+5. Classes that implement `Stewart\Contracts\Time\Timers` add `waitFor()`.
 
 ## [0.10.0] - 2026-10-12
 

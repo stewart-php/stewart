@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Container;
 use Stewart\Contracts\Identity\StewartIdentity;
 use Stewart\Contracts\Sun\SunCalendar;
 use Stewart\Contracts\Time\Clock;
+use Stewart\Contracts\Time\Timers;
 use Stewart\Runtime\App\GeneratedRoots;
 use Stewart\Runtime\Schedule\WorkerScheduler;
 use Stewart\Runtime\Worker\WorkerEntityExposure;
@@ -22,7 +23,7 @@ final readonly class AppRuntimeServices
     public function __construct(
         public WorkerLogger $logger,
         public Clock $clock,
-        public Deadlines $deadlines,
+        public Timers&Deadlines $timers,
         public WorkerScheduler $scheduler,
         public WorkerHaContext $context,
         public Stores $stores,

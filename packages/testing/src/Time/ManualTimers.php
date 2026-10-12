@@ -10,9 +10,11 @@ use Amp\TimeoutException;
 use Closure;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\MonotonicTime;
+use Stewart\Contracts\Time\PendingWait;
 use Stewart\Contracts\Time\TimerHandle;
 use Stewart\Contracts\Time\Timers;
 use Stewart\Support\Time\Deadlines;
+use Stewart\Support\Time\DeferredWait;
 
 final class ManualTimers implements Timers, Deadlines
 {
@@ -32,6 +34,26 @@ final class ManualTimers implements Timers, Deadlines
         $this->timers[spl_object_id($timer)] = $timer;
 
         return $timer;
+    }
+
+    /**
+     * @template T
+     * @param Closure(PendingWait<T>): (Closure(): void) $arm
+     * @return T|null
+     */
+    public function waitFor(Closure $arm, ?Duration $timeout = null): mixed
+    {
+        /** @var DeferredWait<T> $wait */
+        $wait = new DeferredWait();
+        $teardown = $arm($wait);
+        $timeoutTimer = $timeout === null ? null : $this->startTimer($timeout, $wait->expire(...));
+
+        try {
+            return $wait->awaitOutcome();
+        } finally {
+            $timeoutTimer?->cancel();
+            $teardown();
+        }
     }
 
     public function timeout(Duration $limit): Cancellation

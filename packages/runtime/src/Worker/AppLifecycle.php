@@ -195,7 +195,7 @@ final class AppLifecycle
         });
 
         $timeout = $this->bootstrap->settings->initializeTimeout;
-        $deadline = $timeout === null ? null : $this->runtime->deadlines->timeout($timeout);
+        $deadline = $timeout === null ? null : $this->runtime->timers->timeout($timeout);
 
         try {
             $attempt->await($deadline);
