@@ -147,6 +147,16 @@ final class GeneratedCodeBehaviorTest extends TestCase
         self::assertSame(['binary_sensor.hall_motion'], $seen);
     }
 
+    public function testHandleWaitsForATypedState(): void
+    {
+        $ha = new RecordingHaContext()->seedState('light.hall', 'on');
+
+        $state = new Entities($ha)->light->getEntity('light.hall')->waitForState('on');
+
+        self::assertInstanceOf(LightState::class, $state);
+        self::assertTrue($state->isOn());
+    }
+
     public function testHandleReadsOwnHistory(): void
     {
         $ha = new RecordingHaContext()->seedState('light.hall', 'on');

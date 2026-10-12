@@ -16,11 +16,13 @@ use Stewart\Contracts\Entity\TypedEntity;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Exception\StateException;
+use Stewart\Contracts\Exception\WaitException;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\StateChangeStream;
+use Stewart\Contracts\Time\Duration;
 
 /**
  * One `sensor` entity.
@@ -83,6 +85,14 @@ final readonly class SensorEntity implements TypedEntity
     public function getHistory(HistoryQuery $query): EntityStateHistory
     {
         return $this->entity->getHistory($query);
+    }
+
+    /**
+     * @throws WaitException
+     */
+    public function waitForState(string $state, ?Duration $timeout = null): ?SensorState
+    {
+        return SensorState::fromNullableState($this->entity->waitForState($state, $timeout));
     }
 
     /**

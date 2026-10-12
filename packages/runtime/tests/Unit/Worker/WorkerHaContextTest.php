@@ -30,6 +30,8 @@ use Stewart\Contracts\Selector\Collection\SelectorCollection;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
+use Stewart\Contracts\State\StateChange;
+use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\EventFireRequest;
@@ -38,9 +40,11 @@ use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Registry\RegistryCache;
+use Stewart\Runtime\Scope\ScopeLifecycle;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Tests\Fixtures\Ipc\FailingTransport;
 use Stewart\Runtime\Tests\Fixtures\Ipc\NullTransport;
+use Stewart\Runtime\Tests\Fixtures\Worker\RecordingDispatchListener;
 use Stewart\Runtime\Tests\Fixtures\Worker\WorkerHaContextFixture;
 use Stewart\Runtime\Worker\ConnectionStatus;
 use Stewart\Runtime\Worker\CorrelationIdSequence;
@@ -86,6 +90,24 @@ final class WorkerHaContextTest extends TestCase
         }
 
         self::assertSame(1, $transport->attempts);
+    }
+
+    public function testDispatchedChangeEndsAWaitForState(): void
+    {
+        $scope = ResourceScope::forApp(new AppId('demo'));
+        $scopes = new ScopeLifecycle();
+        $scopes->activateScope($scope);
+        $dispatcher = RecordingDispatchListener::createDispatcher('w0', 10, scopes: $scopes);
+        $ha = WorkerHaContextFixture::createWorkerHaContext(new NullTransport(), $scope, dispatcher: $dispatcher);
+        $outcome = async(static fn(): ?EntityState => $ha->waitForState('lock.front', 'locked', Duration::seconds(10)));
+        EventLoopTicks::settle();
+
+        $dispatcher->dispatchStateChange(new StateChange(new EntityId('lock.front'), new EntityState(new EntityId('lock.front'), 'unlocked'), new EntityState(new EntityId('lock.front'), 'locked')));
+
+        $state = $outcome->await();
+        self::assertInstanceOf(EntityState::class, $state);
+        self::assertSame('locked', $state->state);
+        self::assertSame(0, $dispatcher->countFor($scope));
     }
 
     public function testEntityFilterListsStatesByRegistry(): void

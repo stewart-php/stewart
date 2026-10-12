@@ -18,6 +18,7 @@ use Stewart\Contracts\Entity\TypedEntity;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Exception\StateException;
+use Stewart\Contracts\Exception\WaitException;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryQuery;
@@ -25,10 +26,11 @@ use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\StateChangeStream;
+use Stewart\Contracts\Time\Duration;
 
 final readonly class EntityHandleEmitter implements DomainFileEmitter, ReservesMemberNames
 {
-    private const array RESERVED_MEMBER_NAMES = ['id', 'getDomain', 'isGeneratedEntityId', 'getState', 'requireState', 'watchStateChanges', 'getHistory', 'listAttributes', 'getEntity', 'toServiceTarget', 'ha'];
+    private const array RESERVED_MEMBER_NAMES = ['id', 'getDomain', 'isGeneratedEntityId', 'getState', 'requireState', 'watchStateChanges', 'getHistory', 'waitForState', 'listAttributes', 'getEntity', 'toServiceTarget', 'ha'];
 
     private const string ENTITY_IDS_CONSTANT = 'GENERATED_ENTITY_IDS';
 
@@ -46,8 +48,9 @@ final readonly class EntityHandleEmitter implements DomainFileEmitter, ReservesM
         $stateException = $context->importClass($namespace, StateException::class, $declared);
         $identifierException = $context->importClass($namespace, IdentifierException::class, $declared);
         $historyException = $context->importClass($namespace, HistoryException::class, $declared);
+        $waitException = $context->importClass($namespace, WaitException::class, $declared);
 
-        foreach ([Entity::class, EntityId::class, HaContext::class, EntityStateHistory::class, HistoryQuery::class, StateChangeStream::class, ServiceTarget::class, TypedEntity::class] as $import) {
+        foreach ([Entity::class, EntityId::class, HaContext::class, EntityStateHistory::class, HistoryQuery::class, StateChangeStream::class, ServiceTarget::class, TypedEntity::class, Duration::class] as $import) {
             $context->importClass($namespace, $import, $declared);
         }
 
@@ -110,6 +113,13 @@ final readonly class EntityHandleEmitter implements DomainFileEmitter, ReservesM
             ->setBody('return $this->entity->getHistory($query);')
             ->addParameter('query')
             ->setType(HistoryQuery::class);
+
+        $waitForState = $class->addMethod('waitForState')
+            ->setReturnType('?' . $context->resolveClassName($domain->getStateClass()))
+            ->addComment('@throws ' . $waitException)
+            ->setBody(\sprintf('return %s::fromNullableState($this->entity->waitForState($state, $timeout));', $domain->getStateClass()));
+        $waitForState->addParameter('state')->setType('string');
+        $waitForState->addParameter('timeout', null)->setType(Duration::class)->setNullable();
 
         $class->addMethod('listAttributes')
             ->setReturnType('array')

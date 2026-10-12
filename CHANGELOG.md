@@ -17,6 +17,9 @@ minor release may break; its "Upgrading" section says what to change.
 - `EventStream::waitForNext(?Duration $timeout)` returns the stream's next event, or null once the timeout passes;
   it throws `WaitException` when the stream completes first or the app stops. An awaited exposed-entity command is
   accepted when it is returned. A wait the app's stop abandons is not reported as a failure
+- `HaContext::waitForState($entity, 'on', timeout:)` and `Entity::waitForState()` return the entity's state once it
+  is in the given state, at once if it already is, or null once the timeout passes. Generated entity handles get it
+  with their typed state
 
 ### Fixed
 
@@ -45,6 +48,7 @@ minor release may break; its "Upgrading" section says what to change.
 
 ### Changed
 
+- Generated code format 6; regenerate after upgrading
 - `stewart.yaml` may name an app with `_` in place of `-` (`hall_light:` for `hall-light`); this no longer fails with
   "the automation ID is …"
 - Stewart exceptions are raised with `XException::createForReason(XError::Case, $previous, key: $value)`; most
@@ -73,6 +77,8 @@ minor release may break; its "Upgrading" section says what to change.
 5. Classes that implement `Stewart\Contracts\Time\Timers` add `waitFor()`.
 6. Classes that implement `Stewart\Contracts\EventStream` directly add `waitForNext()`; streams built on
    `ComposedStream` already have it.
+7. Classes that implement `Stewart\Contracts\HaContext` add `waitForState()`.
+8. Run `make generate`.
 
 ## [0.10.0] - 2026-10-12
 

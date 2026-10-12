@@ -36,6 +36,7 @@ use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
 use Stewart\Contracts\Stream\OperatorStream;
 use Stewart\Contracts\Stream\StateChanges;
+use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Topic\Collection\TopicEventCollection;
 use Stewart\Contracts\Topic\TopicEvent;
@@ -281,6 +282,11 @@ final class RecordingHaContext implements HaContext
         }
 
         return new StateChanges($this->stateChanges, $this->timers, new RecordedStateReader($this, $selector))->filter($matches);
+    }
+
+    public function waitForState(EntityId|string $entityId, string $state, ?Duration $timeout = null): ?EntityState
+    {
+        return $this->getEntity($entityId)->waitForState($state, $timeout);
     }
 
     public function getRegistry(): Registry
