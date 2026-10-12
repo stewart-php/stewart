@@ -20,6 +20,8 @@ minor release may break; its "Upgrading" section says what to change.
   pushed together
 - A release requires a passing CI run on its commit and the skeleton, image and chart checks, and the runtime image
   is scanned before it is tagged and signed
+- Stewart stops with "None of N workers could be started." when no worker comes up at startup, instead of retrying a
+  broken bootstrap until the crash budget runs out; a worker that fails while others start still retries
 
 ### Changed
 

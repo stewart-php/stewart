@@ -126,14 +126,13 @@ final class WorkerPoolTest extends TestCase
         EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) === WorkerPhase::RestartScheduled);
 
         self::assertSame(WorkerPhase::RestartScheduled, $this->getPhaseOf(0));
-        self::assertSame(1, $this->slots->countPendingRestarts());
 
         $this->timers->delay(Duration::milliseconds(self::RESTART_DELAY_SECONDS * 1_000 - 1));
         self::assertSame(1, $this->spawner->countSpawnedProcesses());
 
         $this->timers->delay(Duration::milliseconds(1));
         self::assertSame(2, $this->spawner->countSpawnedProcesses());
-        self::assertSame(0, $this->slots->countPendingRestarts());
+        self::assertSame(WorkerPhase::Live, $this->getPhaseOf(0));
     }
 
     public function testWorkerIsQuarantinedOnceItsBudgetIsSpent(): void
@@ -148,7 +147,6 @@ final class WorkerPoolTest extends TestCase
         self::assertSame(3, $this->spawner->countSpawnedProcesses(), 'One start plus two restarts, then nothing.');
         self::assertSame(WorkerPhase::Quarantined, $this->getPhaseOf(0));
         self::assertSame(0, $this->slots->countLiveWorkers());
-        self::assertSame(0, $this->slots->countPendingRestarts());
         self::assertSame([0], $this->listener->quarantined);
     }
 
@@ -171,12 +169,11 @@ final class WorkerPoolTest extends TestCase
         $this->spawner->failNext(1);
 
         self::assertFalse($pool->startWorker(self::createSlot(0), $this->listener));
-        self::assertSame(1, $this->slots->countPendingRestarts());
+        self::assertSame(WorkerPhase::RestartScheduled, $this->getPhaseOf(0));
 
         $this->timers->delay(self::getRestartDelay());
 
         self::assertSame(1, $this->slots->countLiveWorkers());
-        self::assertSame(0, $this->slots->countPendingRestarts());
     }
 
     public function testWorkerThatNeverStartsIsQuarantined(): void
@@ -188,7 +185,6 @@ final class WorkerPoolTest extends TestCase
         $this->timers->delay(Duration::seconds(10));
 
         self::assertSame(3, $this->spawner->attempts, 'One start plus two retries, then nothing.');
-        self::assertSame(0, $this->slots->countPendingRestarts());
         self::assertSame(WorkerPhase::Quarantined, $this->getPhaseOf(0));
     }
 
@@ -200,7 +196,6 @@ final class WorkerPoolTest extends TestCase
         self::assertFalse($pool->startWorker(self::createSlot(0), $this->listener));
 
         self::assertSame(0, $this->spawner->attempts);
-        self::assertSame(0, $this->slots->countPendingRestarts());
     }
 
     public function testSpawnFinishingAfterShutdownIsClosed(): void
@@ -213,7 +208,6 @@ final class WorkerPoolTest extends TestCase
         EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) === WorkerPhase::Spawning);
 
         self::assertSame(WorkerPhase::Spawning, $this->getPhaseOf(0));
-        self::assertSame(1, $this->slots->countPendingRestarts(), 'A spawn in progress is not a failure to start.');
 
         $pool->shutdown('test', Duration::seconds(0.01));
         $spawning->open();

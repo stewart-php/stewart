@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker;
 
 use Stewart\Runtime\Ipc\Message\BrokerMessage;
-use Stewart\Runtime\Lifecycle\WorkerPhase;
 use Stewart\Runtime\Model\WorkerId;
 
 final class WorkerSlotRegistry
@@ -68,14 +67,5 @@ final class WorkerSlotRegistry
     public function countLiveWorkers(): int
     {
         return \count($this->listLiveHandles());
-    }
-
-    public function countPendingRestarts(): int
-    {
-        return \count(array_filter($this->states, static fn(WorkerSlotState $state): bool => \in_array(
-            $state->phase,
-            [WorkerPhase::Spawning, WorkerPhase::RestartScheduled],
-            true,
-        )));
     }
 }

@@ -38,7 +38,7 @@ final readonly class WorkerStartup
             return;
         }
 
-        if (!$this->workerSlots->isEmpty() && $this->slots->countLiveWorkers() === 0 && $this->slots->countPendingRestarts() === 0) {
+        if (!$this->workerSlots->isEmpty() && $this->slots->countLiveWorkers() === 0) {
             throw BrokerException::createForReason(BrokerError::NoWorkersStarted, workers: $this->workerSlots->count());
         }
 

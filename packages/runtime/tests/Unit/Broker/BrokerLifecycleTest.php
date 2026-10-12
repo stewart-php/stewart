@@ -54,6 +54,7 @@ use Stewart\Runtime\Broker\WorkerStartup;
 use Stewart\Runtime\Config\SupervisionConfig;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
 use Stewart\Runtime\Control\Protocol\Status\AppStatus;
+use Stewart\Runtime\Exception\BrokerError;
 use Stewart\Runtime\Ipc\Message\AppActivityReport;
 use Stewart\Runtime\Ipc\Message\AppFailed;
 use Stewart\Runtime\Ipc\Message\Bootstrap;
@@ -478,6 +479,31 @@ final class BrokerLifecycleTest extends TestCase
         $spawns->open();
 
         $this->assertThrowsReason(HaClientError::TokenRejected, fn() => $running->await());
+    }
+
+    public function testRunEndsWhenNoWorkerStarts(): void
+    {
+        $this->spawner->failNext(2);
+
+        $this->assertThrowsReason(BrokerError::NoWorkersStarted, fn() => $this->broker->lifecycle->run());
+
+        $this->timers->delay(Duration::seconds(60));
+        EventLoopTicks::settle();
+
+        self::assertSame(2, $this->spawner->attempts, 'Nothing is respawned once the run has ended.');
+    }
+
+    public function testWorkerThatFailsToStartRetriesWhileTheOtherRuns(): void
+    {
+        $this->spawner->failNext(1);
+        $this->startBroker();
+
+        self::assertSame(1, $this->slots?->countLiveWorkers());
+
+        $this->timers->delay(Duration::seconds(1));
+        EventLoopTicks::settle();
+
+        self::assertSame(2, $this->slots->countLiveWorkers());
     }
 
     public function testStopEndsTheRunAndStopsTheWorkers(): void
