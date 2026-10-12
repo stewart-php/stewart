@@ -7,7 +7,6 @@ namespace Stewart\Runtime\Broker;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Duration;
-use Stewart\Runtime\Broker\Collection\AppRunningTotalsCollection;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Control\Protocol\Status\FailureReport;
 use Stewart\Runtime\Ipc\Message\AppActivityReport;
@@ -85,9 +84,10 @@ final class AppMetrics
         );
     }
 
-    public function listRunningTotals(): AppRunningTotalsCollection
+    /** @return list<AppRunningTotals> */
+    public function listRunningTotals(): array
     {
-        return AppRunningTotalsCollection::fromList($this->runningTotals);
+        return array_values($this->runningTotals);
     }
 
     public function findAppRunningTotals(AppId $appId): ?AppRunningTotals

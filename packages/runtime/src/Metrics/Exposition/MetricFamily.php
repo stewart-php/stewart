@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Metrics\Exposition;
 
-use Stewart\Runtime\Metrics\Exposition\Collection\MetricSampleCollection;
-
 final class MetricFamily
 {
     private const string BUCKET_BOUND_LABEL = 'le';
@@ -50,8 +48,9 @@ final class MetricFamily
         return $this->samples !== [];
     }
 
-    public function listSamples(): MetricSampleCollection
+    /** @return list<MetricSample> */
+    public function listSamples(): array
     {
-        return MetricSampleCollection::fromList($this->samples);
+        return $this->samples;
     }
 }

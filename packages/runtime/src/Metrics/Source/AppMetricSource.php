@@ -6,7 +6,6 @@ namespace Stewart\Runtime\Metrics\Source;
 
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
 use Stewart\Runtime\Lifecycle\AppState;
-use Stewart\Runtime\Metrics\Exposition\Collection\MetricFamilyCollection;
 use Stewart\Runtime\Metrics\Exposition\Histogram;
 use Stewart\Runtime\Metrics\Exposition\MetricFamily;
 use Stewart\Runtime\Metrics\Exposition\MetricLabels;
@@ -17,7 +16,8 @@ use Stewart\Runtime\Model\ResourceScope;
 
 final readonly class AppMetricSource implements RuntimeMetricSource
 {
-    public function collectMetrics(RuntimeSnapshot $snapshot): MetricFamilyCollection
+    /** @return list<MetricFamily> */
+    public function collectMetrics(RuntimeSnapshot $snapshot): array
     {
         $info = new MetricFamily('stewart_app_info', 'App class per app; always 1.', MetricType::Gauge);
         $states = new MetricFamily('stewart_app_state', 'App lifecycle state; 1 for the current one.', MetricType::Gauge);
@@ -77,9 +77,9 @@ final readonly class AppMetricSource implements RuntimeMetricSource
             }
         }
 
-        return MetricFamilyCollection::fromList([
+        return [
             $info, $states, $paused, $subscriptions, $schedules, $exposedEntities, $delivered, $subscriptionDropped, $scheduleRuns, $publishes,
             $failures, $suppressed, $lastFailure, $serviceCalls, $serviceCallDuration, $exposedCommands,
-        ]);
+        ];
     }
 }

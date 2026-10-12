@@ -7,12 +7,12 @@ namespace Stewart\Runtime\Metrics\Exposition;
 use LogicException;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Control\Protocol\Status\LatencyHistogram;
-use Stewart\Runtime\Metrics\Exposition\Collection\HistogramBucketCollection;
 
 final readonly class Histogram
 {
+    /** @param list<HistogramBucket> $buckets */
     public function __construct(
-        public HistogramBucketCollection $buckets,
+        public array $buckets,
         public int $count,
         public Duration $sum,
     ) {}
@@ -31,6 +31,6 @@ final readonly class Histogram
 
         $buckets[] = new HistogramBucket(INF, $latency->count);
 
-        return new self(HistogramBucketCollection::fromList($buckets), $latency->count, $latency->sum);
+        return new self($buckets, $latency->count, $latency->sum);
     }
 }

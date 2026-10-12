@@ -63,7 +63,7 @@ final class WireMapperTest extends TestCase
     {
         self::assertSame(
             ['name', 'count', 'ratio', 'enabled', 'note', 'color', 'label', 'labels', 'numbers', 'tags', 'payload', 'seen_at_us', 'lag_us'],
-            $this->mapper->shapes->resolveClassShape(Everything::class)->fields->mapToList(static fn(FieldShape $field): string => $field->key),
+            array_map(static fn(FieldShape $field): string => $field->key, $this->mapper->shapes->resolveClassShape(Everything::class)->fields),
         );
     }
 

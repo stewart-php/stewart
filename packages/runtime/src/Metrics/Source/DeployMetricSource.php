@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Metrics\Source;
 
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
-use Stewart\Runtime\Metrics\Exposition\Collection\MetricFamilyCollection;
 use Stewart\Runtime\Metrics\Exposition\MetricFamily;
 use Stewart\Runtime\Metrics\Exposition\MetricLabels;
 use Stewart\Runtime\Metrics\Exposition\MetricType;
@@ -13,7 +12,8 @@ use Stewart\Runtime\Metrics\RuntimeMetricSource;
 
 final readonly class DeployMetricSource implements RuntimeMetricSource
 {
-    public function collectMetrics(RuntimeSnapshot $snapshot): MetricFamilyCollection
+    /** @return list<MetricFamily> */
+    public function collectMetrics(RuntimeSnapshot $snapshot): array
     {
         $deploy = $snapshot->deploy;
         $info = new MetricFamily('stewart_deploy_info', 'Commit the daemon runs while it polls for new ones; always 1.', MetricType::Gauge);
@@ -24,6 +24,6 @@ final readonly class DeployMetricSource implements RuntimeMetricSource
             $failures->recordSample(MetricLabels::none(), $deploy->failures);
         }
 
-        return MetricFamilyCollection::fromList([$info, $failures]);
+        return [$info, $failures];
     }
 }

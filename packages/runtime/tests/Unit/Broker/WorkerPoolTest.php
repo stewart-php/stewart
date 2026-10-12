@@ -316,7 +316,7 @@ final class WorkerPoolTest extends TestCase
         $pool->startWorker(self::createSlot(2), $this->listener);
         $pool->startWorker(self::createSlot(0), $this->listener);
 
-        self::assertSame([0, 2], $this->slots->listSlotStates()->mapToList(static fn(WorkerSlotState $state): int => $state->slot->workerId->value));
+        self::assertSame([0, 2], array_map(static fn(WorkerSlotState $state): int => $state->slot->workerId->value, $this->slots->listSlotStates()));
     }
 
     public function testShutdownStopsAllWorkersConcurrently(): void

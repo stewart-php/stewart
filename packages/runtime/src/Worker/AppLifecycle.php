@@ -21,7 +21,6 @@ use Stewart\Runtime\Lifecycle\AppFailurePhase;
 use Stewart\Runtime\Lifecycle\AppLifecyclePhase;
 use Stewart\Runtime\Lifecycle\AppState;
 use Stewart\Runtime\Model\ResourceScope;
-use Stewart\Runtime\Worker\Collection\AppSlotCollection;
 use Throwable;
 
 use function Amp\async;
@@ -29,7 +28,8 @@ use function Amp\Future\await;
 
 final class AppLifecycle
 {
-    private readonly AppSlotCollection $slots;
+    /** @var list<AppSlot> */
+    private readonly array $slots;
 
     private AppLifecyclePhase $phase = AppLifecyclePhase::Starting;
 
@@ -40,9 +40,7 @@ final class AppLifecycle
         private readonly AppFailureReporter $failures,
         private readonly AppContainerBuilder $containers,
     ) {
-        $this->slots = AppSlotCollection::fromList(
-            $this->bootstrap->apps->collection->mapToList(static fn(WorkerApp $definition): AppSlot => new AppSlot($definition)),
-        );
+        $this->slots = $this->bootstrap->apps->collection->mapToList(static fn(WorkerApp $definition): AppSlot => new AppSlot($definition));
     }
 
     public function constructApps(): void
@@ -103,16 +101,17 @@ final class AppLifecycle
         }
     }
 
-    public function listSlots(): AppSlotCollection
+    /** @return list<AppSlot> */
+    public function listSlots(): array
     {
         return $this->slots;
     }
 
     public function listAppIdsInState(AppState $state): AppIdCollection
     {
-        return AppIdCollection::fromList($this->slots
-            ->filter(static fn(AppSlot $slot): bool => $slot->isInState($state))
-            ->mapToList(static fn(AppSlot $slot) => $slot->id()));
+        $inState = array_filter($this->slots, static fn(AppSlot $slot): bool => $slot->isInState($state));
+
+        return AppIdCollection::fromList(array_map(static fn(AppSlot $slot) => $slot->id(), $inState));
     }
 
     public function markStopping(): void
@@ -138,13 +137,13 @@ final class AppLifecycle
     {
         $this->moveToPhase(AppLifecyclePhase::Closed);
 
-        $abandoned = $this->slots->filter(static fn(AppSlot $slot): bool => !$slot->state->isTerminal());
+        $abandoned = array_filter($this->slots, static fn(AppSlot $slot): bool => !$slot->state->isTerminal());
 
         foreach ($abandoned as $slot) {
             $slot->moveTo(AppState::Abandoned);
         }
 
-        return AppIdCollection::fromList($abandoned->mapToList(static fn(AppSlot $slot) => $slot->id()));
+        return AppIdCollection::fromList(array_map(static fn(AppSlot $slot) => $slot->id(), $abandoned));
     }
 
     private function isStopRequested(): bool

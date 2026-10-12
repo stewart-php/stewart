@@ -14,7 +14,6 @@ use ReflectionParameter;
 use ReflectionProperty;
 use ReflectionUnionType;
 use Stewart\Contracts\Wire\ListOf;
-use Stewart\Runtime\Json\Collection\FieldShapeCollection;
 use Stewart\Runtime\Json\Collection\ValueConverterCollection;
 
 final class ClassShapeReader
@@ -63,7 +62,7 @@ final class ClassShapeReader
                 $constructor?->getParameters() ?? [],
             );
 
-            return $this->classShapes[$class] = new ClassShape($class, FieldShapeCollection::fromList($fields));
+            return $this->classShapes[$class] = new ClassShape($class, $fields);
         } finally {
             unset($this->classesBeingDescribed[$class]);
         }

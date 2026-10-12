@@ -287,7 +287,7 @@ final class BrokerLifecycleTest extends TestCase
 
         self::assertCount(1, $acks);
         self::assertFalse($acks[0]->accepted);
-        self::assertSame([], $this->registry->listSubscriptions()->listValues());
+        self::assertSame([], $this->registry->listSubscriptions());
     }
 
     public function testEventOnlyReachesTheWorkersThatAskedForIt(): void
@@ -722,7 +722,7 @@ final class BrokerLifecycleTest extends TestCase
 
     private function readAppStatusAt(int $index): AppStatus
     {
-        return new AppStatusBuilder($this->metrics, $this->pausedApps, ExposureLinkFixture::createWithoutExposures())->buildAppStatuses()->listValues()[$index];
+        return new AppStatusBuilder($this->metrics, $this->pausedApps, ExposureLinkFixture::createWithoutExposures())->buildAppStatuses()[$index];
     }
 
     private function startBroker(): void

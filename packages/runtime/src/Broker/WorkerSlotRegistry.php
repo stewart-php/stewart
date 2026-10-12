@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Broker;
 
-use Stewart\Runtime\Broker\Collection\WorkerHandleCollection;
-use Stewart\Runtime\Broker\Collection\WorkerSlotStateCollection;
 use Stewart\Runtime\Ipc\Message\BrokerMessage;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
 use Stewart\Runtime\Model\WorkerId;
@@ -30,12 +28,17 @@ final class WorkerSlotRegistry
         return $this->findSlotState($workerId)?->handle;
     }
 
-    public function listSlotStates(): WorkerSlotStateCollection
+    /** @return list<WorkerSlotState> */
+    public function listSlotStates(): array
     {
-        return WorkerSlotStateCollection::fromStatesInWorkerOrder($this->states);
+        $states = $this->states;
+        ksort($states);
+
+        return array_values($states);
     }
 
-    public function listLiveHandles(): WorkerHandleCollection
+    /** @return list<WorkerHandle> */
+    public function listLiveHandles(): array
     {
         $live = [];
 
@@ -47,7 +50,7 @@ final class WorkerSlotRegistry
             }
         }
 
-        return WorkerHandleCollection::fromList($live);
+        return $live;
     }
 
     public function broadcast(BrokerMessage $message): void
@@ -64,7 +67,7 @@ final class WorkerSlotRegistry
 
     public function countLiveWorkers(): int
     {
-        return $this->listLiveHandles()->count();
+        return \count($this->listLiveHandles());
     }
 
     public function countPendingRestarts(): int

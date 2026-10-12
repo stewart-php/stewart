@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Metrics;
 
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
-use Stewart\Runtime\Metrics\Exposition\Collection\MetricFamilyCollection;
 use Stewart\Runtime\Metrics\Exposition\MetricFamily;
 
 final readonly class RuntimeMetricsCollector
@@ -13,9 +12,10 @@ final readonly class RuntimeMetricsCollector
     /** @param iterable<RuntimeMetricSource> $runtimeMetricSources */
     public function __construct(private iterable $runtimeMetricSources) {}
 
-    public function collectMetrics(RuntimeSnapshot $snapshot): MetricFamilyCollection
+    /** @return list<MetricFamily> */
+    public function collectMetrics(RuntimeSnapshot $snapshot): array
     {
-        return MetricFamilyCollection::fromList($this->yieldFamilies($snapshot));
+        return iterator_to_array($this->yieldFamilies($snapshot), false);
     }
 
     /** @return iterable<MetricFamily> */

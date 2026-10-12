@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Metrics;
 
-use Stewart\Runtime\Metrics\Exposition\Collection\MetricFamilyCollection;
 use Stewart\Runtime\Metrics\Exposition\MetricFamily;
 use Stewart\Runtime\Metrics\Exposition\MetricLabels;
 use Stewart\Runtime\Metrics\Exposition\MetricSample;
@@ -18,7 +17,8 @@ final readonly class PrometheusTextEncoder
 
     private const array LABEL_VALUE_ESCAPES = ['\\' => '\\\\', '"' => '\\"', "\n" => '\\n'];
 
-    public function encodeFamilies(MetricFamilyCollection $families): string
+    /** @param list<MetricFamily> $families */
+    public function encodeFamilies(array $families): string
     {
         $text = '';
 

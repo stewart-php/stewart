@@ -6,7 +6,6 @@ namespace Stewart\Runtime\Broker\Exposure;
 
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\MonotonicTime;
-use Stewart\Runtime\Broker\Exposure\Collection\ExposedEntityCommandCollection;
 use Stewart\Runtime\Config\ExposeConfig;
 use Stewart\Runtime\Model\WorkerId;
 
@@ -45,9 +44,10 @@ final class PendingExposureCommands
         return $command;
     }
 
-    public function takeCommandsOf(WorkerId $workerId): ExposedEntityCommandCollection
+    /** @return list<ExposedEntityCommand> */
+    public function takeCommandsOf(WorkerId $workerId): array
     {
-        $taken = ExposedEntityCommandCollection::fromList(array_filter($this->commandsById, static fn(ExposedEntityCommand $command): bool => $command->owner?->equals($workerId) === true));
+        $taken = array_values(array_filter($this->commandsById, static fn(ExposedEntityCommand $command): bool => $command->owner?->equals($workerId) === true));
 
         foreach ($taken as $command) {
             $this->forgetCommand($command->commandId);

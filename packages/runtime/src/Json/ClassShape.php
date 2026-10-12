@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Json;
 
-use Stewart\Runtime\Json\Collection\FieldShapeCollection;
-
 final readonly class ClassShape
 {
     public bool $holdsFragment;
 
-    /** @param class-string $class */
+    /**
+     * @param class-string $class
+     * @param list<FieldShape> $fields
+     */
     public function __construct(
         public string $class,
-        public FieldShapeCollection $fields,
+        public array $fields,
     ) {
-        $this->holdsFragment = $fields->containsWhere(static fn(FieldShape $field): bool => $field->value->kind === ValueKind::Fragment);
+        $this->holdsFragment = array_any($fields, static fn(FieldShape $field): bool => $field->value->kind === ValueKind::Fragment);
     }
 }

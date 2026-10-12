@@ -25,7 +25,7 @@ final readonly class AppsAdminApi
 
     public function listApps(): AdminAppList
     {
-        return new AdminAppList($this->appStatuses->buildHostedAppStatuses()->mapToList(AdminAppView::fromAppStatus(...)));
+        return new AdminAppList(array_map(AdminAppView::fromAppStatus(...), $this->appStatuses->buildHostedAppStatuses()));
     }
 
     /** @throws AppException */

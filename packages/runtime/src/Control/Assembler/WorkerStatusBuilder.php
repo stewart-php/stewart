@@ -9,7 +9,6 @@ use Stewart\Runtime\Broker\WorkerRestartPolicy;
 use Stewart\Runtime\Broker\WorkerSlotRegistry;
 use Stewart\Runtime\Broker\WorkerSlotState;
 use Stewart\Runtime\Broker\WorkerWatchdog;
-use Stewart\Runtime\Control\Protocol\Status\Collection\WorkerStatusCollection;
 use Stewart\Runtime\Control\Protocol\Status\WorkerStatus;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
 
@@ -22,9 +21,10 @@ final readonly class WorkerStatusBuilder
         private HaCallSlots $callSlots,
     ) {}
 
-    public function buildWorkerStatuses(): WorkerStatusCollection
+    /** @return list<WorkerStatus> */
+    public function buildWorkerStatuses(): array
     {
-        return WorkerStatusCollection::fromList($this->slots->listSlotStates()->mapToList($this->buildWorkerStatus(...)));
+        return array_map($this->buildWorkerStatus(...), $this->slots->listSlotStates());
     }
 
     private function buildWorkerStatus(WorkerSlotState $state): WorkerStatus
