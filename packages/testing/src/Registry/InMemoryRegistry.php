@@ -157,7 +157,7 @@ final class InMemoryRegistry implements Registry
         return $this->getIndexedRegistry()->findEntityPlacement($entityId);
     }
 
-    public function getIndexedRegistry(): IndexedRegistry
+    private function getIndexedRegistry(): IndexedRegistry
     {
         return $this->indexed ??= IndexedRegistry::fromParts(
             AreaCollection::keyedByAreaId($this->areas),

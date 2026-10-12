@@ -96,10 +96,12 @@ final class RecordingHaContextTest extends TestCase
     {
         $ha = new RecordingHaContext();
 
-        $ha->watchTrigger(HaTrigger::atTime('07:30'));
+        $ha->watchTrigger([['trigger' => 'time', 'at' => '07:30']], ['room' => 'hall']);
 
+        $watched = $ha->listWatchedTriggers()->getFirst();
         self::assertCount(1, $ha->listWatchedTriggers());
-        self::assertSame([['trigger' => 'time', 'at' => '07:30']], $ha->listWatchedTriggers()->getFirst()?->listTriggerConfigs());
+        self::assertSame([['trigger' => 'time', 'at' => '07:30']], $watched?->triggers->mapToList(static fn(HaTrigger $trigger): array => $trigger->toArray()));
+        self::assertSame(['room' => 'hall'], $watched->variables);
     }
 
     public function testEachCallGetsItsOwnStewartContext(): void
