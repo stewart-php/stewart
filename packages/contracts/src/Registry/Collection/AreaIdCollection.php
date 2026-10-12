@@ -6,5 +6,8 @@ namespace Stewart\Contracts\Registry\Collection;
 
 use Stewart\Contracts\Registry\AreaId;
 
-/** @extends RegistryIdCollection<AreaId> */
+/**
+ * @internal
+ * @extends RegistryIdCollection<AreaId>
+ */
 final readonly class AreaIdCollection extends RegistryIdCollection {}

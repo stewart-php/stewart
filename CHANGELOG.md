@@ -20,6 +20,13 @@ minor release may break; its "Upgrading" section says what to change.
 - `HaContext::waitForState($entity, 'on', timeout:)` and `Entity::waitForState()` return the entity's state once it
   is in the given state, at once if it already is, or null once the timeout passes. Generated entity handles get it
   with their typed state
+- `HaContext::wasCausedByStewart($subject)` tells whether a state change, state or event came from Stewart's own
+  calls
+- `FakeWebsocketConnection::answerEverySend()` in `stewart-php/testing` answers every command of a type
+- `ManualScheduler` in `stewart-php/testing` runs every `Scheduler` method on virtual time, with sun events from
+  `FixedSunCalendar`, whose event times a test sets
+- `AppHarness` in `stewart-php/testing` builds an app with its options and recording fakes; tests push states,
+  events and commands, call `advanceTime()` for timers, schedules and waits, and inspect what the app did
 
 ### Fixed
 
@@ -42,14 +49,6 @@ minor release may break; its "Upgrading" section says what to change.
 - `/readyz` and `stewart status --probe=readiness` report "no worker is running" while no worker has its apps
   running, such as during startup or while every worker restarts, not only once a worker is quarantined
 
-### Added
-
-- `FakeWebsocketConnection::answerEverySend()` in `stewart-php/testing` answers every command of a type
-- `ManualScheduler` in `stewart-php/testing` runs every `Scheduler` method on virtual time, with sun events from
-  `FixedSunCalendar`, whose event times a test sets
-- `AppHarness` in `stewart-php/testing` builds an app with its options and recording fakes; tests push states,
-  events and commands, call `advanceTime()` for timers, schedules and waits, and inspect what the app did
-
 ### Changed
 
 - Generated code format 6; regenerate after upgrading
@@ -68,6 +67,20 @@ minor release may break; its "Upgrading" section says what to change.
   `HistoryError::Overloaded` when it is full; exposure requests count toward it but are never refused
 - IPC protocol 27: one `request_failed` message replaces the five per-request error messages; the broker and its
   workers must run the same version
+- `whenChangedTo()` takes the previous state as `from:` (one state or a list) or `fromAnyState: true`, and returns
+  the same stream type as the other operators; passing both fails with `StateError::TransitionRuleConflict`
+- `stewart-php/contracts` holds the app-facing API only. Stream operators, schedule implementations, the payload and
+  trigger wire helpers, `IndexedRegistry`, `CurrentStateReader` and `JsonShapeException` moved to
+  `stewart-php/support` as internal classes, and contracts no longer requires `dragonmantank/cron-expression`
+- `RecordingHaContext::listWatchedTriggers()` returns a `WatchedTriggerCollection`; each `WatchedTrigger` holds the
+  triggers and variables the app watched
+
+### Removed
+
+- `StateTransitionStream`, `->from()`, `->fromAnyState()` and `StateError::TransitionAlreadyExtended`
+- `StewartIdentity` as a service apps can inject, and `AppHarness::$identity`
+- `Scheduler::runAtSunrise()` and `Scheduler::runAtSunset()`
+- `InMemoryRegistry::getIndexedRegistry()` from the public testing API
 
 ### Upgrading
 
@@ -77,16 +90,24 @@ minor release may break; its "Upgrading" section says what to change.
    `ScheduleException::cronInvalid(…)`, calls `createForReason()` with the reason case and its context as named
    arguments instead. `CommandException::rejected()` and the factories shared across packages stay.
 3. Replace calls to removed collection factories such as `AppIdCollection::fromIds($ids)` with `fromList($ids)`.
-   Factories that do more, such as `SelectorCollection::fromSpecs()` and `DayOfWeekCollection::fromDistinctDays()`,
-   stay.
+   Factories that do more, such as `SelectorCollection::fromSpecs()`, stay.
 4. `ServiceCallException::fromWire()`, `EventFireException::fromWire()`, `HistoryException::fromWire()`,
    `RegistryEditException::fromWire()` and `ExposureException::fromWire()` are gone; call
    `XException::restoreFromWire($reason, $message, $context)` instead.
 5. Classes that implement `Stewart\Contracts\Time\Timers` add `waitFor()`.
 6. Classes that implement `Stewart\Contracts\EventStream` directly add `waitForNext()`; streams built on
-   `ComposedStream` already have it.
-7. Classes that implement `Stewart\Contracts\HaContext` add `waitForState()`.
-8. Run `make generate`.
+   `Stewart\Support\Stream\ComposedStream` already have it.
+7. Classes that implement `Stewart\Contracts\HaContext` add `waitForState()` and `wasCausedByStewart()`.
+8. Replace `->whenChangedTo('on')->from('off', 'idle')` with `->whenChangedTo('on', from: ['off', 'idle'])`, and
+   `->fromAnyState()` with `fromAnyState: true`. Types written as `StateTransitionStream` become `StateChangeStream`.
+9. Replace an injected `StewartIdentity` with `$ha->wasCausedByStewart($change)`. Harness tests drop
+   `$harness->identity`.
+10. Replace `runAtSunrise($handler, $offset)` with `runAtSunEvent(SunEvent::Sunrise, $handler, $offset)`, and
+    `runAtSunset()` likewise with `SunEvent::Sunset`.
+11. Code that used a moved contracts class, such as `Stewart\Contracts\Stream\StateChanges` or
+    `Stewart\Contracts\Schedule\CronSchedule`, imports it from `Stewart\Support\…`. These classes are internal and
+    may change in any release; prefer the app-facing interfaces.
+12. Run `make generate`.
 
 ## [0.10.0] - 2026-10-12
 

@@ -7,7 +7,10 @@ namespace Stewart\Contracts\App\Collection;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Collection\ListCollection;
 
-/** @extends ListCollection<AppId> */
+/**
+ * @internal
+ * @extends ListCollection<AppId>
+ */
 final readonly class AppIdCollection extends ListCollection
 {
     public function containsId(AppId $appId): bool
