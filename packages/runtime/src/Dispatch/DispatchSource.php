@@ -7,12 +7,12 @@ namespace Stewart\Runtime\Dispatch;
 use Closure;
 use Stewart\Contracts\Registry\EntityFilter;
 use Stewart\Contracts\Selector\Selector;
-use Stewart\Contracts\Stream\StreamSource;
-use Stewart\Contracts\Stream\SubscriptionScope;
 use Stewart\Contracts\Subscription;
 use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionKind;
+use Stewart\Support\Stream\StreamSource;
+use Stewart\Support\Stream\SubscriptionScope;
 
 /**
  * @template T

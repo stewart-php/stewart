@@ -13,8 +13,6 @@ use Stewart\Contracts\Registry\EntityFilter;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
-use Stewart\Contracts\Stream\OperatorStream;
-use Stewart\Contracts\Stream\StateChanges;
 use Stewart\Contracts\Time\Timers;
 use Stewart\Contracts\Topic\TopicEvent;
 use Stewart\Contracts\Trigger\TriggerEvent;
@@ -26,6 +24,8 @@ use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\CachedStateReader;
 use Stewart\Runtime\State\StateCache;
+use Stewart\Support\Stream\OperatorStream;
+use Stewart\Support\Stream\StateChanges;
 use Stewart\Support\Time\Deadlines;
 
 final readonly class DispatchStreams

@@ -10,7 +10,7 @@ use Stewart\Contracts\Mqtt\Mqtt;
 use Stewart\Contracts\Mqtt\MqttMessage;
 use Stewart\Contracts\Mqtt\MqttQos;
 use Stewart\Contracts\Selector\Selector;
-use Stewart\Contracts\Stream\OperatorStream;
+use Stewart\Support\Stream\OperatorStream;
 use Stewart\Testing\Stream\PushSource;
 use Stewart\Testing\Time\ManualTimers;
 

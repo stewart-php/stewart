@@ -32,7 +32,6 @@ use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\State\StateChangeOrigin;
-use Stewart\Contracts\Stream\SubscriptionScope;
 use Stewart\Contracts\Subscription;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
@@ -55,6 +54,7 @@ use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\Scope\ScopeLifecycle;
 use Stewart\Runtime\Tests\Fixtures\Worker\RecordingDispatchListener;
+use Stewart\Support\Stream\SubscriptionScope;
 use Stewart\Testing\Async\Latch;
 use Stewart\Testing\Time\EventLoopTicks;
 

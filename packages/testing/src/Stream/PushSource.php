@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Stewart\Testing\Stream;
 
 use Closure;
-use Stewart\Contracts\Stream\StreamSource;
-use Stewart\Contracts\Stream\SubscriptionScope;
 use Stewart\Contracts\Subscription;
+use Stewart\Support\Stream\StreamSource;
+use Stewart\Support\Stream\SubscriptionScope;
 use Stewart\Testing\Async\HandlerFibers;
 
 /**
