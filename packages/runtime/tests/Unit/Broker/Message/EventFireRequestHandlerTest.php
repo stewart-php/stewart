@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Runtime\Tests\Unit\Broker;
+namespace Stewart\Runtime\Tests\Unit\Broker\Message;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -16,10 +16,10 @@ use Stewart\Runtime\Broker\AppMetrics;
 use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\DaemonStartTime;
-use Stewart\Runtime\Broker\EventFireProxy;
 use Stewart\Runtime\Broker\HaCallSlots;
+use Stewart\Runtime\Broker\Message\EventFireRequestHandler;
+use Stewart\Runtime\Broker\Message\ServiceCallRequestHandler;
 use Stewart\Runtime\Broker\OutboxLimits;
-use Stewart\Runtime\Broker\ServiceCallProxy;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Config\ServiceCallPolicy;
@@ -45,9 +45,9 @@ use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
 use Stewart\Testing\Time\VirtualClock;
 
-#[CoversClass(EventFireProxy::class)]
+#[CoversClass(EventFireRequestHandler::class)]
 #[CoversClass(ServiceCallOutcome::class)]
-final class EventFireProxyTest extends TestCase
+final class EventFireRequestHandlerTest extends TestCase
 {
     private FakeHaSession $session;
 
@@ -81,10 +81,10 @@ final class EventFireProxyTest extends TestCase
 
     public function testFiredEventAnswersWithHaContext(): void
     {
-        $proxy = $this->createProxy(new ServiceCallPolicy(perWorker: 1, total: 0));
+        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0));
         $worker = $this->createHandle();
 
-        $proxy->forward($worker, self::createRequest('a'));
+        $handler->handle($worker, self::createRequest('a'));
         $this->finishCalls();
 
         $results = self::listSentOfType($worker, EventFireResult::class);
@@ -97,12 +97,12 @@ final class EventFireProxyTest extends TestCase
     public function testServiceCallsAndFiresShareOneBudget(): void
     {
         $policy = new ServiceCallPolicy(perWorker: 1, total: 0);
-        $proxy = $this->createProxy($policy);
-        $serviceCalls = new ServiceCallProxy($this->session, $this->homeAssistant->client, $this->slots, $policy, new NullLogger());
+        $handler = $this->createHandler($policy);
+        $serviceCalls = new ServiceCallRequestHandler($this->session, $this->homeAssistant->client, $this->slots, $policy, new NullLogger());
         $worker = $this->createHandle();
 
-        $serviceCalls->forward($worker, new ServiceCallRequest(new CorrelationId('call'), ResourceScope::forApp(new AppId('demo')), 'light', 'turn_on', [], null, false));
-        $proxy->forward($worker, self::createRequest('fire'));
+        $serviceCalls->handle($worker, new ServiceCallRequest(new CorrelationId('call'), ResourceScope::forApp(new AppId('demo')), 'light', 'turn_on', [], null, false));
+        $handler->handle($worker, self::createRequest('fire'));
         EventLoopTicks::settleUntil(static fn(): bool => self::listSentOfType($worker, RequestFailed::class) !== []);
 
         $refusals = self::listSentOfType($worker, RequestFailed::class);
@@ -114,11 +114,11 @@ final class EventFireProxyTest extends TestCase
 
     public function testDisconnectedFireFailsAsUnreachable(): void
     {
-        $proxy = $this->createProxy(new ServiceCallPolicy(perWorker: 1, total: 0));
+        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0));
         $worker = $this->createHandle();
         $this->session->connected = false;
 
-        $proxy->forward($worker, self::createRequest('a'));
+        $handler->handle($worker, self::createRequest('a'));
         EventLoopTicks::settleUntil(static fn(): bool => self::listSentOfType($worker, RequestFailed::class) !== []);
 
         self::assertSame(EventFireError::Unreachable->value, self::listSentOfType($worker, RequestFailed::class)[0]->details->reason);
@@ -126,11 +126,11 @@ final class EventFireProxyTest extends TestCase
 
     public function testFiresAreCountedAsCallsPerApp(): void
     {
-        $proxy = $this->createProxy(new ServiceCallPolicy(perWorker: 1, total: 0));
+        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0));
         $worker = $this->createHandle();
 
-        $proxy->forward($worker, self::createRequest('a'));
-        $proxy->forward($worker, self::createRequest('b'));
+        $handler->handle($worker, self::createRequest('a'));
+        $handler->handle($worker, self::createRequest('b'));
         $this->finishCalls();
 
         $calls = new AppStatusBuilder($this->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock())), FakeHomeAssistant::createUnreachable()->exposures)->buildAppStatuses()[0]->serviceCalls;
@@ -143,10 +143,10 @@ final class EventFireProxyTest extends TestCase
     public function testDryRunAnswersWithoutReachingHomeAssistant(): void
     {
         $logger = new RecordingLogger();
-        $proxy = $this->createProxy(new ServiceCallPolicy(perWorker: 1, total: 0, dryRun: true), $logger);
+        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0, dryRun: true), $logger);
         $worker = $this->createHandle();
 
-        $proxy->forward($worker, self::createRequest('dry'));
+        $handler->handle($worker, self::createRequest('dry'));
         EventLoopTicks::settleUntil(static fn(): bool => self::listSentOfType($worker, EventFireResult::class) !== []);
 
         self::assertSame('dry-run:dry', self::listSentOfType($worker, EventFireResult::class)[0]->context->id);
@@ -154,11 +154,11 @@ final class EventFireProxyTest extends TestCase
         self::assertSame(['Event not fired: service_calls.dry_run is on'], $logger->listMessagesAt(LogLevel::INFO));
     }
 
-    private function createProxy(ServiceCallPolicy $policy, ?RecordingLogger $logger = null): EventFireProxy
+    private function createHandler(ServiceCallPolicy $policy, ?RecordingLogger $logger = null): EventFireRequestHandler
     {
         $this->slots = new HaCallSlots($policy, $this->metrics, $this->timers->clock, new NullLogger());
 
-        return new EventFireProxy($this->session, $this->homeAssistant->client, $this->slots, $policy, $logger ?? new NullLogger());
+        return new EventFireRequestHandler($this->session, $this->homeAssistant->client, $this->slots, $policy, $logger ?? new NullLogger());
     }
 
     private function finishCalls(): void

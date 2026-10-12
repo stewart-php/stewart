@@ -4,15 +4,28 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Broker\Message;
 
-use Stewart\Runtime\Broker\EventFireProxy;
+use Psr\Log\LoggerInterface;
+use Stewart\Client\HaClient;
+use Stewart\Contracts\Event\EventPayload;
+use Stewart\Contracts\Exception\EventFireException;
+use Stewart\Runtime\Broker\HaCallSlots;
+use Stewart\Runtime\Broker\HaSession;
 use Stewart\Runtime\Broker\WorkerHandle;
+use Stewart\Runtime\Config\ServiceCallPolicy;
 use Stewart\Runtime\Ipc\Message\EventFireRequest;
+use Stewart\Runtime\Ipc\Message\EventFireResult;
 use Stewart\Runtime\Ipc\Message\WorkerMessage;
 
 /** @implements WorkerMessageHandler<EventFireRequest> */
 final readonly class EventFireRequestHandler implements WorkerMessageHandler
 {
-    public function __construct(private EventFireProxy $eventFires) {}
+    public function __construct(
+        private HaSession $session,
+        private HaClient $client,
+        private HaCallSlots $slots,
+        private ServiceCallPolicy $policy,
+        private LoggerInterface $logger,
+    ) {}
 
     public function handledMessageClass(): string
     {
@@ -22,6 +35,25 @@ final readonly class EventFireRequestHandler implements WorkerMessageHandler
     /** @param EventFireRequest $message */
     public function handle(WorkerHandle $handle, WorkerMessage $message): void
     {
-        $this->eventFires->forward($handle, $message);
+        $this->slots->runBounded($handle, $message, fn(): EventFireResult => $this->fireOnHomeAssistant($message));
+    }
+
+    /** @throws EventFireException */
+    private function fireOnHomeAssistant(EventFireRequest $request): EventFireResult
+    {
+        if ($this->policy->dryRun) {
+            $this->logger->info('Event not fired: service_calls.dry_run is on', [
+                'event_type' => $request->eventType,
+                'data' => $request->data,
+            ]);
+
+            return new EventFireResult($request->correlationId, $this->policy->createDryRunContext($request->correlationId));
+        }
+
+        if (!$this->session->isConnected()) {
+            throw $request->createUnreachableFailure('Home Assistant is disconnected');
+        }
+
+        return new EventFireResult($request->correlationId, $this->client->fireEvent(new EventPayload($request->eventType, $request->data)));
     }
 }

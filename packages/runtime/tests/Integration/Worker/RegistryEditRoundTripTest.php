@@ -15,7 +15,7 @@ use Stewart\Contracts\Registry\RegisteredEntity;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
-use Stewart\Runtime\Broker\RegistryEditProxy;
+use Stewart\Runtime\Broker\Message\RegistryEntityUpdateRequestHandler;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Ipc\Wire\IpcCodec;
 use Stewart\Runtime\Model\WorkerId;
@@ -30,7 +30,7 @@ use Stewart\Testing\Logging\RecordingLogger;
 
 use function Amp\async;
 
-#[CoversClass(RegistryEditProxy::class)]
+#[CoversClass(RegistryEntityUpdateRequestHandler::class)]
 #[CoversClass(WorkerRegistryEditor::class)]
 final class RegistryEditRoundTripTest extends TestCase
 {

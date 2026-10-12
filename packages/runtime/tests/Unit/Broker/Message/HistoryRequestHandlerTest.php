@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Runtime\Tests\Unit\Broker;
+namespace Stewart\Runtime\Tests\Unit\Broker\Message;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -20,7 +20,7 @@ use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppMetrics;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\HaCallSlots;
-use Stewart\Runtime\Broker\HistoryProxy;
+use Stewart\Runtime\Broker\Message\HistoryRequestHandler;
 use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
@@ -42,8 +42,8 @@ use Stewart\Testing\Async\Latch;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
 
-#[CoversClass(HistoryProxy::class)]
-final class HistoryProxyTest extends TestCase
+#[CoversClass(HistoryRequestHandler::class)]
+final class HistoryRequestHandlerTest extends TestCase
 {
     private FakeHaSession $session;
 
@@ -125,7 +125,7 @@ final class HistoryProxyTest extends TestCase
 
     private function forwardRequest(): void
     {
-        new HistoryProxy($this->session, $this->homeAssistant->client, $this->slots)->forward($this->worker, self::createRequest());
+        new HistoryRequestHandler($this->session, $this->homeAssistant->client, $this->slots)->handle($this->worker, self::createRequest());
         EventLoopTicks::settle();
     }
 

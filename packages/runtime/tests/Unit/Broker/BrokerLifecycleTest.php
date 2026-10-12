@@ -36,16 +36,16 @@ use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\ConnectionTracker;
 use Stewart\Runtime\Broker\ControlPlane;
 use Stewart\Runtime\Broker\DaemonStartTime;
-use Stewart\Runtime\Broker\EventFireProxy;
 use Stewart\Runtime\Broker\EventRouter;
 use Stewart\Runtime\Broker\Http\Collection\HttpListenerCollection;
 use Stewart\Runtime\Broker\LoopErrorLogger;
 use Stewart\Runtime\Broker\ManifestCheck;
 use Stewart\Runtime\Broker\Message\AppFailedHandler;
+use Stewart\Runtime\Broker\Message\EventFireRequestHandler;
 use Stewart\Runtime\Broker\Message\PongHandler;
+use Stewart\Runtime\Broker\Message\ServiceCallRequestHandler;
 use Stewart\Runtime\Broker\Message\WorkerMessageDispatcher;
 use Stewart\Runtime\Broker\OutboxLimits;
-use Stewart\Runtime\Broker\ServiceCallProxy;
 use Stewart\Runtime\Broker\ServiceCallStatsRecorder;
 use Stewart\Runtime\Broker\SubscriptionRegistry;
 use Stewart\Runtime\Broker\WorkerSlot;
@@ -120,8 +120,8 @@ use function Amp\async;
 #[CoversClass(AppFailedHandler::class)]
 #[CoversClass(PongHandler::class)]
 #[CoversClass(EventRouter::class)]
-#[CoversClass(ServiceCallProxy::class)]
-#[CoversClass(EventFireProxy::class)]
+#[CoversClass(ServiceCallRequestHandler::class)]
+#[CoversClass(EventFireRequestHandler::class)]
 #[CoversClass(ManifestCheck::class)]
 #[CoversClass(AppMetrics::class)]
 #[CoversClass(AppStatusBuilder::class)]

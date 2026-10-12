@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Runtime\Tests\Unit\Broker;
+namespace Stewart\Runtime\Tests\Unit\Broker\Message;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -19,8 +19,8 @@ use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\HaCallSlots;
+use Stewart\Runtime\Broker\Message\ServiceCallRequestHandler;
 use Stewart\Runtime\Broker\OutboxLimits;
-use Stewart\Runtime\Broker\ServiceCallProxy;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Config\ServiceCallPolicy;
@@ -44,9 +44,9 @@ use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
 use Stewart\Testing\Time\VirtualClock;
 
-#[CoversClass(ServiceCallProxy::class)]
+#[CoversClass(ServiceCallRequestHandler::class)]
 #[CoversClass(ServiceCallPolicy::class)]
-final class ServiceCallProxyTest extends TestCase
+final class ServiceCallRequestHandlerTest extends TestCase
 {
     private FakeHaSession $session;
 
@@ -80,11 +80,11 @@ final class ServiceCallProxyTest extends TestCase
 
     public function testCallsBeyondTheWorkerLimitAreRefusedAtOnce(): void
     {
-        $proxy = $this->createProxy(new ServiceCallPolicy(perWorker: 2, total: 0), new NullLogger());
+        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 2, total: 0), new NullLogger());
         $worker = $this->createHandle(0);
 
         foreach (range(1, 5) as $call) {
-            $proxy->forward($worker, self::createRequest((string) $call));
+            $handler->handle($worker, self::createRequest((string) $call));
         }
 
         self::assertSame(2, $this->slots->inFlight);
@@ -104,11 +104,11 @@ final class ServiceCallProxyTest extends TestCase
 
     public function testCountsCallsPerAppByOutcome(): void
     {
-        $proxy = $this->createProxy(new ServiceCallPolicy(perWorker: 1, total: 0), new NullLogger());
+        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0), new NullLogger());
         $worker = $this->createHandle(0);
 
-        $proxy->forward($worker, self::createRequest('a'));
-        $proxy->forward($worker, self::createRequest('b'));
+        $handler->handle($worker, self::createRequest('a'));
+        $handler->handle($worker, self::createRequest('b'));
         EventLoopTicks::settle();
         $this->timers->delay(Duration::milliseconds(30));
         $this->finishCalls();
@@ -128,13 +128,13 @@ final class ServiceCallProxyTest extends TestCase
 
     public function testSlotsAreFreedOnceCallsFinish(): void
     {
-        $proxy = $this->createProxy(new ServiceCallPolicy(perWorker: 1, total: 1), new NullLogger());
+        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 1), new NullLogger());
         $worker = $this->createHandle(0);
 
-        $proxy->forward($worker, self::createRequest('first'));
+        $handler->handle($worker, self::createRequest('first'));
         $this->finishCalls();
 
-        $proxy->forward($worker, self::createRequest('second'));
+        $handler->handle($worker, self::createRequest('second'));
         $this->finishCalls();
 
         self::assertSame(0, $this->slots->refusedCalls);
@@ -143,15 +143,15 @@ final class ServiceCallProxyTest extends TestCase
 
     public function testStaleReleaseKeepsReplacementCount(): void
     {
-        $proxy = $this->createProxy(new ServiceCallPolicy(perWorker: 2, total: 0), new NullLogger());
+        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 2, total: 0), new NullLogger());
         $dead = $this->createHandle(0);
         $replacement = $this->createHandle(0);
 
-        $proxy->forward($dead, self::createRequest('stale'));
+        $handler->handle($dead, self::createRequest('stale'));
         EventLoopTicks::settle();
         $stale = $this->calls;
         $this->calls = $this->homeAssistant->holdReplies();
-        $proxy->forward($replacement, self::createRequest('fresh'));
+        $handler->handle($replacement, self::createRequest('fresh'));
         EventLoopTicks::settle();
 
         $stale->open();
@@ -169,10 +169,10 @@ final class ServiceCallProxyTest extends TestCase
     public function testDryRunAnswersWithoutReachingHomeAssistant(): void
     {
         $logger = new RecordingLogger();
-        $proxy = $this->createProxy(new ServiceCallPolicy(perWorker: 1, total: 0, dryRun: true), $logger);
+        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0, dryRun: true), $logger);
         $worker = $this->createHandle(0);
 
-        $proxy->forward($worker, self::createRequest('dry'));
+        $handler->handle($worker, self::createRequest('dry'));
         EventLoopTicks::settleUntil(static fn(): bool => self::listSentResultsFor($worker) !== []);
 
         self::assertSame('turn_on', self::listSentResultsFor($worker)[0]->result->service);
@@ -182,11 +182,11 @@ final class ServiceCallProxyTest extends TestCase
         self::assertSame(['Service call not sent: service_calls.dry_run is on'], $logger->listMessagesAt(LogLevel::INFO));
     }
 
-    private function createProxy(ServiceCallPolicy $policy, LoggerInterface $logger): ServiceCallProxy
+    private function createHandler(ServiceCallPolicy $policy, LoggerInterface $logger): ServiceCallRequestHandler
     {
         $this->slots = new HaCallSlots($policy, $this->metrics, $this->timers->clock, new NullLogger());
 
-        return new ServiceCallProxy($this->session, $this->homeAssistant->client, $this->slots, $policy, $logger);
+        return new ServiceCallRequestHandler($this->session, $this->homeAssistant->client, $this->slots, $policy, $logger);
     }
 
     private function finishCalls(): void
