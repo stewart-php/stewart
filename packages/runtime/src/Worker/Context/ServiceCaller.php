@@ -18,7 +18,6 @@ use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Worker\ConnectionStatus;
 use Stewart\Runtime\Worker\PendingRequests;
-use Stewart\Runtime\Worker\Subject\ServiceCallSubject;
 use Stewart\Support\Time\Deadlines;
 use Throwable;
 
@@ -57,7 +56,10 @@ final readonly class ServiceCaller
             throw ServiceCallException::unreachable($domain, $service, 'Home Assistant is disconnected');
         }
 
-        $call = $this->pending->open(new ServiceCallSubject($domain, $service));
+        $call = $this->pending->open(
+            ServiceResponse::class,
+            static fn(string $detail): ServiceCallException => ServiceCallException::unreachable($domain, $service, $detail),
+        );
 
         try {
             $this->sendRequest(new ServiceCallRequest(

@@ -7,9 +7,14 @@ namespace Stewart\Runtime\Ipc\Message;
 use Stewart\Runtime\Model\CorrelationId;
 
 #[IpcMessage(tag: 'exposure_acknowledged')]
-final readonly class ExposureAcknowledged implements BrokerMessage
+final readonly class ExposureAcknowledged implements CorrelatedReply
 {
     public function __construct(public CorrelationId $correlationId) {}
+
+    public function getAnswer(): self
+    {
+        return $this;
+    }
 
     public function getOutboxDelivery(): OutboxDelivery
     {

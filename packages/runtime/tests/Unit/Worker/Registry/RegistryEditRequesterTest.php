@@ -28,7 +28,6 @@ use Stewart\Runtime\Worker\ConnectionStatus;
 use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\PendingRequests;
 use Stewart\Runtime\Worker\Registry\RegistryEditRequester;
-use Stewart\Runtime\Worker\Subject\RegistryEditSubject;
 use Stewart\Runtime\Worker\WorkerRegistryEditor;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Time\EventLoopTicks;
@@ -38,7 +37,6 @@ use Throwable;
 use function Amp\async;
 
 #[CoversClass(RegistryEditRequester::class)]
-#[CoversClass(RegistryEditSubject::class)]
 #[CoversClass(WorkerRegistryEditor::class)]
 final class RegistryEditRequesterTest extends TestCase
 {

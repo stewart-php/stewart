@@ -35,7 +35,7 @@ final readonly class IpcMessageCatalog
         foreach (Finder::create()->files()->in(self::MESSAGE_DIRECTORY)->depth(0)->name('*.php')->sortByName() as $file) {
             $class = self::MESSAGE_NAMESPACE . $file->getBasename('.php');
 
-            if (is_subclass_of($class, BrokerMessage::class) || is_subclass_of($class, WorkerMessage::class)) {
+            if (!interface_exists($class) && (is_subclass_of($class, BrokerMessage::class) || is_subclass_of($class, WorkerMessage::class))) {
                 $messageClasses[] = $class;
             }
         }

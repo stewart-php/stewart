@@ -11,7 +11,11 @@ use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\HistoryError;
+use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\ServiceCallError;
+use Stewart\Contracts\Exception\ServiceCallException;
+use Stewart\Contracts\History\Collection\HistoricalStateCollection;
+use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Container\AppContainerBuilder;
 use Stewart\Runtime\Container\AppOptionResolver;
@@ -30,8 +34,6 @@ use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\HandlerFailureSampler;
 use Stewart\Runtime\Worker\PendingRequests;
 use Stewart\Runtime\Worker\StderrFallback;
-use Stewart\Runtime\Worker\Subject\HistoryQuerySubject;
-use Stewart\Runtime\Worker\Subject\ServiceCallSubject;
 use Stewart\Runtime\Worker\WorkerShutdown;
 use Stewart\Support\Text\ClosestNameFinder;
 use Stewart\Testing\Exception\AssertsReason;
@@ -173,7 +175,7 @@ final class WorkerShutdownTest extends TestCase
 
     public function testBrokerLossFailsPendingHistoryQueries(): void
     {
-        $query = $this->pending->open(new HistoryQuerySubject(new EntityId('light.hall')));
+        $query = $this->pending->open(HistoricalStateCollection::class, static fn(string $detail): HistoryException => HistoryException::unreachable(new EntityId('light.hall'), $detail));
         $waiter = async(static fn() => $query->getFuture()->await());
         EventLoopTicks::settle();
 
@@ -247,7 +249,7 @@ final class WorkerShutdownTest extends TestCase
     /** @return Future<mixed> */
     private function awaitPendingCall(): Future
     {
-        $call = $this->pending->open(new ServiceCallSubject('light', 'turn_on'));
+        $call = $this->pending->open(ServiceResponse::class, static fn(string $detail): ServiceCallException => ServiceCallException::unreachable('light', 'turn_on', $detail));
         $waiter = async(static fn() => $call->getFuture()->await());
         EventLoopTicks::settle();
 

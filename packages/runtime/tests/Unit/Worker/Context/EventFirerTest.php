@@ -27,7 +27,6 @@ use Stewart\Runtime\Worker\ConnectionStatus;
 use Stewart\Runtime\Worker\Context\EventFirer;
 use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\PendingRequests;
-use Stewart\Runtime\Worker\Subject\EventFireSubject;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
@@ -36,7 +35,6 @@ use Throwable;
 use function Amp\async;
 
 #[CoversClass(EventFirer::class)]
-#[CoversClass(EventFireSubject::class)]
 final class EventFirerTest extends TestCase
 {
     use AssertsReason;

@@ -32,8 +32,6 @@ use Stewart\Runtime\Tests\Fixtures\Ipc\NullTransport;
 use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\Exposure\ExposureRequester;
 use Stewart\Runtime\Worker\PendingRequests;
-use Stewart\Runtime\Worker\Subject\ExposeEntitySubject;
-use Stewart\Runtime\Worker\Subject\ExposureChangeSubject;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
@@ -42,8 +40,6 @@ use Throwable;
 use function Amp\async;
 
 #[CoversClass(ExposureRequester::class)]
-#[CoversClass(ExposeEntitySubject::class)]
-#[CoversClass(ExposureChangeSubject::class)]
 final class ExposureRequesterTest extends TestCase
 {
     use AssertsReason;
