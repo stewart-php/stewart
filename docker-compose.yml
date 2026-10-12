@@ -14,6 +14,10 @@ services:
       GITHUB_ACTIONS:
       # Inside the bind mount, so the non-root container user can write the cache.
       COMPOSER_HOME: /app/var/composer
+    # From /etc/hosts, so amphp skips the uncached AAAA lookup that stalls new connections on CI runners.
+    extra_hosts:
+      - "valkey:172.30.42.10"
+      - "mosquitto:172.30.42.11"
     depends_on:
       valkey:
         condition: service_healthy
@@ -30,6 +34,9 @@ services:
       interval: 2s
       timeout: 2s
       retries: 15
+    networks:
+      default:
+        ipv4_address: 172.30.42.10
     init: true
 
   # Anonymous access on 1883; only the mqtt package's service tests use it.
@@ -41,6 +48,9 @@ services:
       interval: 2s
       timeout: 3s
       retries: 15
+    networks:
+      default:
+        ipv4_address: 172.30.42.11
     init: true
 
   ha:
@@ -67,3 +77,9 @@ services:
     ports:
       - "127.0.0.1:4321:4321"
     init: true
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.30.42.0/24
