@@ -6,6 +6,8 @@ namespace Stewart\Testing\Async;
 
 use Amp\Future;
 use Closure;
+use Stewart\Contracts\Exception\WaitError;
+use Stewart\Contracts\Exception\WaitException;
 use Stewart\Testing\Time\EventLoopTicks;
 
 use function Amp\async;
@@ -44,18 +46,20 @@ final class HandlerFibers
 
     public function rethrowFailures(): void
     {
-        $suspended = $this->suspended;
-        $this->suspended = [];
-
-        foreach ($suspended as $run) {
-            if (!$run->isComplete()) {
-                $this->suspended[] = $run;
-            }
+        foreach ($this->takeCompletedRuns() as $run) {
+            $run->await();
         }
+    }
 
-        foreach ($suspended as $run) {
-            if ($run->isComplete()) {
+    public function rethrowFailuresExceptAbandonedWaits(): void
+    {
+        foreach ($this->takeCompletedRuns() as $run) {
+            try {
                 $run->await();
+            } catch (WaitException $e) {
+                if ($e->reason !== WaitError::Abandoned) {
+                    throw $e;
+                }
             }
         }
     }
@@ -74,5 +78,14 @@ final class HandlerFibers
         foreach ($held as $handler) {
             $this->runSettled($handler);
         }
+    }
+
+    /** @return list<Future<mixed>> */
+    private function takeCompletedRuns(): array
+    {
+        $completed = array_values(array_filter($this->suspended, static fn(Future $run): bool => $run->isComplete()));
+        $this->suspended = array_values(array_filter($this->suspended, static fn(Future $run): bool => !$run->isComplete()));
+
+        return $completed;
     }
 }

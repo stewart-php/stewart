@@ -47,10 +47,13 @@ minor release may break; its "Upgrading" section says what to change.
 - `FakeWebsocketConnection::answerEverySend()` in `stewart-php/testing` answers every command of a type
 - `ManualScheduler` in `stewart-php/testing` runs every `Scheduler` method on virtual time, with sun events from
   `FixedSunCalendar`, whose event times a test sets
+- `AppHarness` in `stewart-php/testing` builds an app with its options and recording fakes; tests push states,
+  events and commands, call `advanceTime()` for timers, schedules and waits, and inspect what the app did
 
 ### Changed
 
 - Generated code format 6; regenerate after upgrading
+- `stewart-php/testing` is public, for testing apps, and its API is covered by the backward-compatibility check
 - The `stewart-php/testing` fakes run each handler in its own fiber, so a handler that waits suspends only itself;
   `ManualTimers::delay()` lets resumed handlers run before the next timer is due, and the recording exposures share
   their context's `ManualTimers`
