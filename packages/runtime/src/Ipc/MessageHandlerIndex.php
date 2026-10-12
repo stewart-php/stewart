@@ -48,6 +48,18 @@ final readonly class MessageHandlerIndex
     /** @return THandler|null */
     public function findHandlerFor(object $message): ?MessageHandler
     {
-        return $this->handlersByMessageClass[$message::class] ?? null;
+        return $this->handlersByMessageClass[$message::class] ?? $this->findHandlerByInterfaceOf($message);
+    }
+
+    /** @return THandler|null */
+    private function findHandlerByInterfaceOf(object $message): ?MessageHandler
+    {
+        foreach (class_implements($message) as $interface) {
+            if (isset($this->handlersByMessageClass[$interface])) {
+                return $this->handlersByMessageClass[$interface];
+            }
+        }
+
+        return null;
     }
 }

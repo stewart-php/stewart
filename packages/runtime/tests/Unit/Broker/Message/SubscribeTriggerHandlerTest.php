@@ -25,7 +25,7 @@ use Stewart\Runtime\Model\SubscriptionId;
 use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
-use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
+use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerProcess;
 use Stewart\Testing\Time\EventLoopTicks;
 
@@ -35,8 +35,8 @@ final class SubscribeTriggerHandlerTest extends TestCase
     public function testTriggerIsRegisteredUnderSharingKeyAndAcked(): void
     {
         $process = new FakeWorkerProcess();
-        $session = new FakeHaSession();
-        $registry = new SubscriptionRegistry([new TriggerSubscribers($session)]);
+        $homeAssistant = FakeHomeAssistant::createConnected();
+        $registry = new SubscriptionRegistry([new TriggerSubscribers($homeAssistant->triggers)]);
         $spec = TriggerSpec::fromSpec(HaTrigger::onSunset());
         $handle = new WorkerHandle(
             new WorkerId(0),
@@ -54,6 +54,7 @@ final class SubscribeTriggerHandlerTest extends TestCase
 
         self::assertTrue($process->channel->listSentOfType(SubscriptionAck::class)[0]->accepted);
         self::assertCount(1, $registry->findRoutes(SubscriptionKind::Trigger, $spec->getSharingKey())->listSubscriptionIdsForWorker(new WorkerId(0)));
-        self::assertCount(1, $session->subscribedTriggers);
+        EventLoopTicks::settle();
+        self::assertCount(1, $homeAssistant->listSubscribedTriggers());
     }
 }

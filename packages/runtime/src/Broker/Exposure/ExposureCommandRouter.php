@@ -6,7 +6,6 @@ namespace Stewart\Runtime\Broker\Exposure;
 
 use Stewart\Runtime\Broker\AppMetrics;
 use Stewart\Runtime\Broker\AppPauseRegistry;
-use Stewart\Runtime\Broker\HaSession;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlotRegistry;
 use Stewart\Runtime\Ipc\Message\ExposedCommandAnswered;
@@ -18,7 +17,7 @@ use Stewart\Runtime\Model\WorkerId;
 final readonly class ExposureCommandRouter
 {
     public function __construct(
-        private HaSession $session,
+        private ExposureLink $exposures,
         private WorkerSlotRegistry $slots,
         private AppPauseRegistry $pauses,
         private PendingExposureCommands $pending,
@@ -55,26 +54,26 @@ final readonly class ExposureCommandRouter
 
         if ($answer->accepted) {
             $this->metrics->recordExposedCommand($command->appId, ExposedCommandOutcome::Accepted);
-            $this->session->acceptExposedEntityCommand($command);
+            $this->exposures->acceptCommand($command);
 
             return;
         }
 
         $this->metrics->recordExposedCommand($command->appId, ExposedCommandOutcome::Rejected);
-        $this->session->rejectExposedEntityCommand($command, $answer->rejection ?? \sprintf('App %s rejected the command.', $command->appId));
+        $this->exposures->rejectCommand($command, $answer->rejection ?? \sprintf('App %s rejected the command.', $command->appId));
     }
 
     public function failCommandsOf(WorkerId $workerId): void
     {
         foreach ($this->pending->takeCommandsOf($workerId) as $command) {
             $this->metrics->recordExposedCommand($command->appId, ExposedCommandOutcome::Lost);
-            $this->session->rejectExposedEntityCommand($command, \sprintf('App %s stopped while handling the command.', $command->appId));
+            $this->exposures->rejectCommand($command, \sprintf('App %s stopped while handling the command.', $command->appId));
         }
     }
 
     private function refuseCommand(ExposedEntityCommand $command, string $reason): void
     {
         $this->metrics->recordExposedCommand($command->appId, ExposedCommandOutcome::Refused);
-        $this->session->rejectExposedEntityCommand($command, $reason);
+        $this->exposures->rejectCommand($command, $reason);
     }
 }

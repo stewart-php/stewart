@@ -11,6 +11,7 @@ use Stewart\Runtime\Ipc\Message\ExposeEntityResult;
 use Stewart\Runtime\Ipc\Message\ExposureAcknowledged;
 use Stewart\Runtime\Ipc\Message\ReconfigureExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\RemoveExposedEntityRequest;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\UpdateExposedEntityRequest;
 use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Worker\PendingRequests;
@@ -37,7 +38,7 @@ final class ExposureBrokerStub implements Transport
         }
 
         if ($this->failure !== null) {
-            $this->pending->reject($message->correlationId, $this->failure);
+            $this->pending->rejectFromWire(RequestFailed::fromException($message->correlationId, $this->failure));
 
             return;
         }

@@ -62,24 +62,24 @@ final class TriggerRoundTripTest extends TestCase
         $running = async($broker->lifecycle->run(...));
         EventLoopTicks::settleUntil(static fn(): bool => \in_array('Worker ready', $logger->listMessagesAt('info'), true));
 
-        self::assertCount(2, $session->subscribedTriggers, 'Two apps watching the same two specs make two Home Assistant subscriptions.');
+        self::assertCount(2, $broker->homeAssistant->listSubscribedTriggers(), 'Two apps watching the same two specs make two Home Assistant subscriptions.');
 
         $session->rejectTrigger($rejected, 'Invalid trigger');
         EventLoopTicks::settleUntil(static fn(): bool => \count($logger->listMessagesAt('error')) === 2);
 
-        $calls = $session->waitForNextCall();
+        $calls = $broker->homeAssistant->waitForNextCall();
         $session->fireTrigger($sunset, new TriggerEvent(['platform' => 'sun', 'idx' => '0']));
         $calls->await(new TimeoutCancellation(self::WAIT_SECONDS));
-        EventLoopTicks::settleUntil(static fn(): bool => $session->calls === 2);
+        EventLoopTicks::settleUntil(static fn(): bool => \count($broker->homeAssistant->listReceivedCalls()) === 2);
 
-        self::assertSame(2, $session->calls);
+        self::assertCount(2, $broker->homeAssistant->listReceivedCalls());
         self::assertSame(['Broker rejected a subscription', 'Broker rejected a subscription'], $logger->listMessagesAt('error'));
 
         $broker->run->stop('test done');
         $running->await(new TimeoutCancellation(self::WAIT_SECONDS));
 
         $released = array_values(array_filter(
-            $session->unsubscribedTriggers,
+            $broker->homeAssistant->listUnsubscribedTriggers(),
             static fn(TriggerSpec $spec): bool => $spec->getSharingKey() === $sunset->getSharingKey(),
         ));
         self::assertCount(1, $released);

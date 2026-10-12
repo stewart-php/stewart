@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Runtime\Tests\Unit\Broker;
+namespace Stewart\Runtime\Tests\Unit\Broker\Message;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -16,26 +16,26 @@ use Stewart\Runtime\Broker\AppMetrics;
 use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\DaemonStartTime;
-use Stewart\Runtime\Broker\EventFireProxy;
 use Stewart\Runtime\Broker\HaCallSlots;
+use Stewart\Runtime\Broker\Message\EventFireRequestHandler;
+use Stewart\Runtime\Broker\Message\ServiceCallRequestHandler;
 use Stewart\Runtime\Broker\OutboxLimits;
-use Stewart\Runtime\Broker\ServiceCallProxy;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Config\ServiceCallPolicy;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
 use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
-use Stewart\Runtime\Ipc\Message\EventFireFailed;
 use Stewart\Runtime\Ipc\Message\EventFireRequest;
 use Stewart\Runtime\Ipc\Message\EventFireResult;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
-use Stewart\Runtime\Tests\Fixtures\Broker\ExposureLinkFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
+use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerProcess;
 use Stewart\Runtime\Tests\Fixtures\Broker\ReceivedEventFire;
 use Stewart\Runtime\Tests\Fixtures\Ipc\FakeWorkerTransport;
@@ -45,11 +45,13 @@ use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
 use Stewart\Testing\Time\VirtualClock;
 
-#[CoversClass(EventFireProxy::class)]
+#[CoversClass(EventFireRequestHandler::class)]
 #[CoversClass(ServiceCallOutcome::class)]
-final class EventFireProxyTest extends TestCase
+final class EventFireRequestHandlerTest extends TestCase
 {
     private FakeHaSession $session;
+
+    private FakeHomeAssistant $homeAssistant;
 
     private AppMetrics $metrics;
 
@@ -63,7 +65,8 @@ final class EventFireProxyTest extends TestCase
     {
         $this->timers = new ManualTimers();
         $this->session = new FakeHaSession();
-        $this->calls = $this->session->holdCalls();
+        $this->homeAssistant = FakeHomeAssistant::createConnected();
+        $this->calls = $this->homeAssistant->holdReplies();
         $this->metrics = new AppMetrics(
             WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)]))]),
             $this->timers->clock,
@@ -78,59 +81,59 @@ final class EventFireProxyTest extends TestCase
 
     public function testFiredEventAnswersWithHaContext(): void
     {
-        $proxy = $this->createProxy(new ServiceCallPolicy(perWorker: 1, total: 0));
+        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0));
         $worker = $this->createHandle();
 
-        $proxy->forward($worker, self::createRequest('a'));
+        $handler->handle($worker, self::createRequest('a'));
         $this->finishCalls();
 
         $results = self::listSentOfType($worker, EventFireResult::class);
         self::assertCount(1, $results);
-        self::assertSame(FakeHaSession::FIRE_CONTEXT_PREFIX . '1', $results[0]->context->id);
-        self::assertEquals([new ReceivedEventFire('doorbell_pressed', ['button' => 'front'])], $this->session->receivedEventFires);
+        self::assertSame(FakeHomeAssistant::FIRE_CONTEXT_PREFIX . '1', $results[0]->context->id);
+        self::assertEquals([new ReceivedEventFire('doorbell_pressed', ['button' => 'front'])], $this->homeAssistant->listReceivedEventFires());
         self::assertSame(0, $this->slots->inFlight);
     }
 
     public function testServiceCallsAndFiresShareOneBudget(): void
     {
         $policy = new ServiceCallPolicy(perWorker: 1, total: 0);
-        $proxy = $this->createProxy($policy);
-        $serviceCalls = new ServiceCallProxy($this->session, $this->slots, $this->metrics, $policy, $this->timers->clock, new NullLogger());
+        $handler = $this->createHandler($policy);
+        $serviceCalls = new ServiceCallRequestHandler($this->session, $this->homeAssistant->client, $this->slots, $policy, new NullLogger());
         $worker = $this->createHandle();
 
-        $serviceCalls->forward($worker, new ServiceCallRequest(new CorrelationId('call'), ResourceScope::forApp(new AppId('demo')), 'light', 'turn_on', [], null, false));
-        $proxy->forward($worker, self::createRequest('fire'));
-        EventLoopTicks::settleUntil(static fn(): bool => self::listSentOfType($worker, EventFireFailed::class) !== []);
+        $serviceCalls->handle($worker, new ServiceCallRequest(new CorrelationId('call'), ResourceScope::forApp(new AppId('demo')), 'light', 'turn_on', [], null, false));
+        $handler->handle($worker, self::createRequest('fire'));
+        EventLoopTicks::settleUntil(static fn(): bool => self::listSentOfType($worker, RequestFailed::class) !== []);
 
-        $refusals = self::listSentOfType($worker, EventFireFailed::class);
+        $refusals = self::listSentOfType($worker, RequestFailed::class);
         self::assertCount(1, $refusals);
-        self::assertSame(EventFireError::Overloaded, $refusals[0]->getReason());
+        self::assertSame(EventFireError::Overloaded->value, $refusals[0]->details->reason);
         self::assertSame(1, $this->slots->refusedCalls);
-        self::assertSame([], $this->session->receivedEventFires);
+        self::assertSame([], $this->homeAssistant->listReceivedEventFires());
     }
 
     public function testDisconnectedFireFailsAsUnreachable(): void
     {
-        $proxy = $this->createProxy(new ServiceCallPolicy(perWorker: 1, total: 0));
+        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0));
         $worker = $this->createHandle();
         $this->session->connected = false;
 
-        $proxy->forward($worker, self::createRequest('a'));
-        EventLoopTicks::settleUntil(static fn(): bool => self::listSentOfType($worker, EventFireFailed::class) !== []);
+        $handler->handle($worker, self::createRequest('a'));
+        EventLoopTicks::settleUntil(static fn(): bool => self::listSentOfType($worker, RequestFailed::class) !== []);
 
-        self::assertSame(EventFireError::Unreachable, self::listSentOfType($worker, EventFireFailed::class)[0]->getReason());
+        self::assertSame(EventFireError::Unreachable->value, self::listSentOfType($worker, RequestFailed::class)[0]->details->reason);
     }
 
     public function testFiresAreCountedAsCallsPerApp(): void
     {
-        $proxy = $this->createProxy(new ServiceCallPolicy(perWorker: 1, total: 0));
+        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0));
         $worker = $this->createHandle();
 
-        $proxy->forward($worker, self::createRequest('a'));
-        $proxy->forward($worker, self::createRequest('b'));
+        $handler->handle($worker, self::createRequest('a'));
+        $handler->handle($worker, self::createRequest('b'));
         $this->finishCalls();
 
-        $calls = new AppStatusBuilder($this->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock())), ExposureLinkFixture::createWithoutExposures())->buildAppStatuses()[0]->serviceCalls;
+        $calls = new AppStatusBuilder($this->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock())), FakeHomeAssistant::createUnreachable()->exposures)->buildAppStatuses()[0]->serviceCalls;
         self::assertSame(
             [ServiceCallOutcome::Refused, ServiceCallOutcome::Succeeded],
             array_map(static fn(ServiceCallStats $stats): ServiceCallOutcome => $stats->outcome, $calls),
@@ -140,29 +143,29 @@ final class EventFireProxyTest extends TestCase
     public function testDryRunAnswersWithoutReachingHomeAssistant(): void
     {
         $logger = new RecordingLogger();
-        $proxy = $this->createProxy(new ServiceCallPolicy(perWorker: 1, total: 0, dryRun: true), $logger);
+        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0, dryRun: true), $logger);
         $worker = $this->createHandle();
 
-        $proxy->forward($worker, self::createRequest('dry'));
+        $handler->handle($worker, self::createRequest('dry'));
         EventLoopTicks::settleUntil(static fn(): bool => self::listSentOfType($worker, EventFireResult::class) !== []);
 
         self::assertSame('dry-run:dry', self::listSentOfType($worker, EventFireResult::class)[0]->context->id);
-        self::assertSame([], $this->session->receivedEventFires);
+        self::assertSame([], $this->homeAssistant->listReceivedEventFires());
         self::assertSame(['Event not fired: service_calls.dry_run is on'], $logger->listMessagesAt(LogLevel::INFO));
     }
 
-    private function createProxy(ServiceCallPolicy $policy, ?RecordingLogger $logger = null): EventFireProxy
+    private function createHandler(ServiceCallPolicy $policy, ?RecordingLogger $logger = null): EventFireRequestHandler
     {
-        $this->slots = new HaCallSlots($policy, new NullLogger());
+        $this->slots = new HaCallSlots($policy, $this->metrics, $this->timers->clock, new NullLogger());
 
-        return new EventFireProxy($this->session, $this->slots, $this->metrics, $policy, $this->timers->clock, $logger ?? new NullLogger());
+        return new EventFireRequestHandler($this->session, $this->homeAssistant->client, $this->slots, $policy, $logger ?? new NullLogger());
     }
 
     private function finishCalls(): void
     {
         $this->calls->open();
         EventLoopTicks::settle();
-        $this->calls = $this->session->holdCalls();
+        $this->calls = $this->homeAssistant->holdReplies();
     }
 
     private function createHandle(): WorkerHandle

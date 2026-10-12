@@ -14,5 +14,6 @@ final readonly class BootedBroker
         public BrokerLifecycle $lifecycle,
         public BrokerRun $run,
         public DaemonStartTime $startTime,
+        public FakeHomeAssistant $homeAssistant,
     ) {}
 }

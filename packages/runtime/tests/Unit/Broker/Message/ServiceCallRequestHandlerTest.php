@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Runtime\Tests\Unit\Broker;
+namespace Stewart\Runtime\Tests\Unit\Broker\Message;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -19,14 +19,14 @@ use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\HaCallSlots;
+use Stewart\Runtime\Broker\Message\ServiceCallRequestHandler;
 use Stewart\Runtime\Broker\OutboxLimits;
-use Stewart\Runtime\Broker\ServiceCallProxy;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Config\ServiceCallPolicy;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
 use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
-use Stewart\Runtime\Ipc\Message\ServiceCallFailed;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Model\CorrelationId;
@@ -34,8 +34,8 @@ use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
-use Stewart\Runtime\Tests\Fixtures\Broker\ExposureLinkFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
+use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerProcess;
 use Stewart\Runtime\Tests\Fixtures\Ipc\FakeWorkerTransport;
 use Stewart\Testing\Async\Latch;
@@ -44,11 +44,13 @@ use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
 use Stewart\Testing\Time\VirtualClock;
 
-#[CoversClass(ServiceCallProxy::class)]
+#[CoversClass(ServiceCallRequestHandler::class)]
 #[CoversClass(ServiceCallPolicy::class)]
-final class ServiceCallProxyTest extends TestCase
+final class ServiceCallRequestHandlerTest extends TestCase
 {
     private FakeHaSession $session;
+
+    private FakeHomeAssistant $homeAssistant;
 
     private AppMetrics $metrics;
 
@@ -62,7 +64,8 @@ final class ServiceCallProxyTest extends TestCase
     {
         $this->timers = new ManualTimers();
         $this->session = new FakeHaSession();
-        $this->calls = $this->session->holdCalls();
+        $this->homeAssistant = FakeHomeAssistant::createConnected();
+        $this->calls = $this->homeAssistant->holdReplies();
         $this->metrics = new AppMetrics(
             WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)]))]),
             $this->timers->clock,
@@ -77,11 +80,11 @@ final class ServiceCallProxyTest extends TestCase
 
     public function testCallsBeyondTheWorkerLimitAreRefusedAtOnce(): void
     {
-        $proxy = $this->createProxy(new ServiceCallPolicy(perWorker: 2, total: 0), new NullLogger());
+        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 2, total: 0), new NullLogger());
         $worker = $this->createHandle(0);
 
         foreach (range(1, 5) as $call) {
-            $proxy->forward($worker, self::createRequest((string) $call));
+            $handler->handle($worker, self::createRequest((string) $call));
         }
 
         self::assertSame(2, $this->slots->inFlight);
@@ -90,27 +93,27 @@ final class ServiceCallProxyTest extends TestCase
         EventLoopTicks::settleUntil(static fn(): bool => \count(self::listSentErrors($worker)) === 3);
         $refusals = self::listSentErrors($worker);
         self::assertCount(3, $refusals);
-        self::assertSame(ServiceCallError::Overloaded, $refusals[0]->getReason());
+        self::assertSame(ServiceCallError::Overloaded->value, $refusals[0]->details->reason);
 
         $this->finishCalls();
 
         self::assertSame(0, $this->slots->inFlight);
         self::assertCount(2, self::listSentResultsFor($worker));
-        self::assertSame(2, $this->session->calls, 'A refused call never reaches Home Assistant.');
+        self::assertCount(2, $this->homeAssistant->listReceivedCalls(), 'A refused call never reaches Home Assistant.');
     }
 
     public function testCountsCallsPerAppByOutcome(): void
     {
-        $proxy = $this->createProxy(new ServiceCallPolicy(perWorker: 1, total: 0), new NullLogger());
+        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0), new NullLogger());
         $worker = $this->createHandle(0);
 
-        $proxy->forward($worker, self::createRequest('a'));
-        $proxy->forward($worker, self::createRequest('b'));
+        $handler->handle($worker, self::createRequest('a'));
+        $handler->handle($worker, self::createRequest('b'));
         EventLoopTicks::settle();
         $this->timers->delay(Duration::milliseconds(30));
         $this->finishCalls();
 
-        $calls = new AppStatusBuilder($this->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock())), ExposureLinkFixture::createWithoutExposures())->buildAppStatuses()[0]->serviceCalls;
+        $calls = new AppStatusBuilder($this->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock())), FakeHomeAssistant::createUnreachable()->exposures)->buildAppStatuses()[0]->serviceCalls;
         self::assertSame(
             [ServiceCallOutcome::Refused, ServiceCallOutcome::Succeeded],
             array_map(static fn(ServiceCallStats $stats): ServiceCallOutcome => $stats->outcome, $calls),
@@ -125,13 +128,13 @@ final class ServiceCallProxyTest extends TestCase
 
     public function testSlotsAreFreedOnceCallsFinish(): void
     {
-        $proxy = $this->createProxy(new ServiceCallPolicy(perWorker: 1, total: 1), new NullLogger());
+        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 1), new NullLogger());
         $worker = $this->createHandle(0);
 
-        $proxy->forward($worker, self::createRequest('first'));
+        $handler->handle($worker, self::createRequest('first'));
         $this->finishCalls();
 
-        $proxy->forward($worker, self::createRequest('second'));
+        $handler->handle($worker, self::createRequest('second'));
         $this->finishCalls();
 
         self::assertSame(0, $this->slots->refusedCalls);
@@ -140,15 +143,15 @@ final class ServiceCallProxyTest extends TestCase
 
     public function testStaleReleaseKeepsReplacementCount(): void
     {
-        $proxy = $this->createProxy(new ServiceCallPolicy(perWorker: 2, total: 0), new NullLogger());
+        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 2, total: 0), new NullLogger());
         $dead = $this->createHandle(0);
         $replacement = $this->createHandle(0);
 
-        $proxy->forward($dead, self::createRequest('stale'));
+        $handler->handle($dead, self::createRequest('stale'));
         EventLoopTicks::settle();
         $stale = $this->calls;
-        $this->calls = $this->session->holdCalls();
-        $proxy->forward($replacement, self::createRequest('fresh'));
+        $this->calls = $this->homeAssistant->holdReplies();
+        $handler->handle($replacement, self::createRequest('fresh'));
         EventLoopTicks::settle();
 
         $stale->open();
@@ -166,31 +169,31 @@ final class ServiceCallProxyTest extends TestCase
     public function testDryRunAnswersWithoutReachingHomeAssistant(): void
     {
         $logger = new RecordingLogger();
-        $proxy = $this->createProxy(new ServiceCallPolicy(perWorker: 1, total: 0, dryRun: true), $logger);
+        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0, dryRun: true), $logger);
         $worker = $this->createHandle(0);
 
-        $proxy->forward($worker, self::createRequest('dry'));
+        $handler->handle($worker, self::createRequest('dry'));
         EventLoopTicks::settleUntil(static fn(): bool => self::listSentResultsFor($worker) !== []);
 
         self::assertSame('turn_on', self::listSentResultsFor($worker)[0]->result->service);
         self::assertStringStartsWith('dry-run:', (string) self::listSentResultsFor($worker)[0]->result->context?->id);
-        self::assertSame(0, $this->session->calls);
+        self::assertCount(0, $this->homeAssistant->listReceivedCalls());
         self::assertSame(0, $this->slots->inFlight);
         self::assertSame(['Service call not sent: service_calls.dry_run is on'], $logger->listMessagesAt(LogLevel::INFO));
     }
 
-    private function createProxy(ServiceCallPolicy $policy, LoggerInterface $logger): ServiceCallProxy
+    private function createHandler(ServiceCallPolicy $policy, LoggerInterface $logger): ServiceCallRequestHandler
     {
-        $this->slots = new HaCallSlots($policy, new NullLogger());
+        $this->slots = new HaCallSlots($policy, $this->metrics, $this->timers->clock, new NullLogger());
 
-        return new ServiceCallProxy($this->session, $this->slots, $this->metrics, $policy, $this->timers->clock, $logger);
+        return new ServiceCallRequestHandler($this->session, $this->homeAssistant->client, $this->slots, $policy, $logger);
     }
 
     private function finishCalls(): void
     {
         $this->calls->open();
         EventLoopTicks::settle();
-        $this->calls = $this->session->holdCalls();
+        $this->calls = $this->homeAssistant->holdReplies();
     }
 
     private function createHandle(int $workerId): WorkerHandle
@@ -217,10 +220,10 @@ final class ServiceCallProxyTest extends TestCase
         );
     }
 
-    /** @return list<ServiceCallFailed> */
+    /** @return list<RequestFailed> */
     private static function listSentErrors(WorkerHandle $handle): array
     {
-        return self::listSentOfType($handle, ServiceCallFailed::class);
+        return self::listSentOfType($handle, RequestFailed::class);
     }
 
     /** @return list<ServiceCallResult> */

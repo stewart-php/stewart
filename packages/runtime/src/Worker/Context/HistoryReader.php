@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Worker\Context;
 use Amp\CancelledException;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\HistoryException;
+use Stewart\Contracts\History\Collection\HistoricalStateCollection;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Time\Clock;
@@ -18,7 +19,6 @@ use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Worker\ConnectionStatus;
 use Stewart\Runtime\Worker\PendingRequests;
-use Stewart\Runtime\Worker\Subject\HistoryQuerySubject;
 use Stewart\Support\Time\Deadlines;
 use Throwable;
 
@@ -42,7 +42,10 @@ final readonly class HistoryReader
             throw HistoryException::unreachable($entityId, 'Home Assistant is disconnected');
         }
 
-        $pending = $this->pending->open(new HistoryQuerySubject($entityId));
+        $pending = $this->pending->open(
+            HistoricalStateCollection::class,
+            static fn(string $detail): HistoryException => HistoryException::unreachable($entityId, $detail),
+        );
 
         try {
             $this->sendRequest(new HistoryRequest($pending->correlationId, $scope, $entityId, $window, $query->detail));

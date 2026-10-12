@@ -17,20 +17,21 @@ use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionId;
 use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Runtime\Model\WorkerId;
-use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
+use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
 use Stewart\Runtime\Tests\Fixtures\Broker\TriggerSubscriptionFixture;
+use Stewart\Testing\Time\EventLoopTicks;
 
 #[CoversClass(TriggerSubscribers::class)]
 final class TriggerSubscribersTest extends TestCase
 {
-    private FakeHaSession $session;
+    private FakeHomeAssistant $homeAssistant;
 
     private SubscriptionRegistry $registry;
 
     protected function setUp(): void
     {
-        $this->session = new FakeHaSession();
-        $this->registry = new SubscriptionRegistry([new TriggerSubscribers($this->session)]);
+        $this->homeAssistant = FakeHomeAssistant::createConnected();
+        $this->registry = new SubscriptionRegistry([new TriggerSubscribers($this->homeAssistant->triggers)]);
     }
 
     public function testSharedSpecIsSubscribedOnce(): void
@@ -39,9 +40,9 @@ final class TriggerSubscribersTest extends TestCase
         $this->registry->add(TriggerSubscriptionFixture::createSubscription('w1:0', 1, HaTrigger::onSunset()));
         $this->registry->add(TriggerSubscriptionFixture::createSubscription('w1:1', 1, HaTrigger::onSunrise()));
 
-        self::assertCount(2, $this->session->subscribedTriggers);
-        self::assertTrue($this->session->subscribedTriggers[0]->hasSameTriggersAs(TriggerSpec::fromSpec(HaTrigger::onSunset())));
-        self::assertTrue($this->session->subscribedTriggers[1]->hasSameTriggersAs(TriggerSpec::fromSpec(HaTrigger::onSunrise())));
+        self::assertCount(2, $this->listSubscribedTriggers());
+        self::assertTrue($this->listSubscribedTriggers()[0]->hasSameTriggersAs(TriggerSpec::fromSpec(HaTrigger::onSunset())));
+        self::assertTrue($this->listSubscribedTriggers()[1]->hasSameTriggersAs(TriggerSpec::fromSpec(HaTrigger::onSunrise())));
     }
 
     public function testSpecIsDroppedWithItsLastSubscriber(): void
@@ -50,10 +51,10 @@ final class TriggerSubscribersTest extends TestCase
         $this->registry->add(TriggerSubscriptionFixture::createSubscription('w1:0', 1, HaTrigger::onSunset()));
 
         $this->registry->remove(new SubscriptionId('w0:0'));
-        self::assertSame([], $this->session->unsubscribedTriggers);
+        self::assertSame([], $this->listUnsubscribedTriggers());
 
         $this->registry->remove(new SubscriptionId('w1:0'));
-        self::assertCount(1, $this->session->unsubscribedTriggers);
+        self::assertCount(1, $this->listUnsubscribedTriggers());
     }
 
     public function testWorkerExitDropsItsSpecs(): void
@@ -63,7 +64,7 @@ final class TriggerSubscribersTest extends TestCase
 
         $this->registry->removeWorkerSubscriptions(new WorkerId(0));
 
-        self::assertCount(2, $this->session->unsubscribedTriggers);
+        self::assertCount(2, $this->listUnsubscribedTriggers());
     }
 
     public function testSubscriptionWithoutSpecIsIgnored(): void
@@ -77,7 +78,23 @@ final class TriggerSubscribersTest extends TestCase
         ));
         $this->registry->remove(new SubscriptionId('w0:0'));
 
-        self::assertSame([], $this->session->subscribedTriggers);
-        self::assertSame([], $this->session->unsubscribedTriggers);
+        self::assertSame([], $this->listSubscribedTriggers());
+        self::assertSame([], $this->listUnsubscribedTriggers());
+    }
+
+    /** @return list<TriggerSpec> */
+    private function listSubscribedTriggers(): array
+    {
+        EventLoopTicks::settle();
+
+        return $this->homeAssistant->listSubscribedTriggers();
+    }
+
+    /** @return list<TriggerSpec> */
+    private function listUnsubscribedTriggers(): array
+    {
+        EventLoopTicks::settle();
+
+        return $this->homeAssistant->listUnsubscribedTriggers();
     }
 }

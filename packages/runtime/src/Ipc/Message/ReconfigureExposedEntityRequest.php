@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Ipc\Message;
 
+use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
+use Throwable;
 
 #[IpcMessage(tag: 'reconfigure_exposed_entity_request')]
-final readonly class ReconfigureExposedEntityRequest implements WorkerMessage
+final readonly class ReconfigureExposedEntityRequest implements WorkerMessage, HaCallRequest
 {
     public function __construct(
         public CorrelationId $correlationId,
@@ -18,4 +20,9 @@ final readonly class ReconfigureExposedEntityRequest implements WorkerMessage
         public ExposedEntityKey $key,
         public ExposedEntityConfig $config,
     ) {}
+
+    public function createUnreachableFailure(string $detail, ?Throwable $previous = null): ExposureException
+    {
+        return ExposureException::unreachable($this->key, $detail, $previous);
+    }
 }

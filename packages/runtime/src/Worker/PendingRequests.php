@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Worker;
 
+use Closure;
+use Stewart\Contracts\Exception\ExceptionReason;
+use Stewart\Contracts\Exception\StewartException;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Model\CorrelationId;
-use Throwable;
 
 final class PendingRequests
 {
@@ -16,12 +19,14 @@ final class PendingRequests
 
     /**
      * @template TResult of object
-     * @param PendingRequestSubject<TResult> $subject
+     *
+     * @param class-string<TResult> $resultClass
+     * @param Closure(string): StewartException<ExceptionReason> $unreachable
      * @return PendingRequest<TResult>
      */
-    public function open(PendingRequestSubject $subject): PendingRequest
+    public function open(string $resultClass, Closure $unreachable): PendingRequest
     {
-        $request = new PendingRequest($this->correlationIds->issueNext(), $subject);
+        $request = new PendingRequest($this->correlationIds->issueNext(), $resultClass, $unreachable);
         $this->pending[$request->correlationId->value] = $request;
 
         return $request;
@@ -32,9 +37,9 @@ final class PendingRequests
         $this->take($correlationId)?->complete($result);
     }
 
-    public function reject(CorrelationId $correlationId, Throwable $failure): void
+    public function rejectFromWire(RequestFailed $failure): void
     {
-        $this->take($correlationId)?->fail($failure);
+        $this->take($failure->correlationId)?->failFromWire($failure);
     }
 
     public function forget(CorrelationId $correlationId): void
@@ -48,7 +53,7 @@ final class PendingRequests
         $this->pending = [];
 
         foreach ($pending as $request) {
-            $request->fail($request->subject->createUnreachableFailure($detail));
+            $request->failAsUnreachable($detail);
         }
 
         return \count($pending);

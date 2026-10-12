@@ -32,7 +32,7 @@ final class HistoryExceptionTest extends TestCase
     {
         $original = HistoryException::timedOut(EntityId::fromStringOrId('light.hall'), 'no answer');
 
-        $rebuilt = HistoryException::fromWire($original->reason, $original->getMessage(), $original->context);
+        $rebuilt = HistoryException::restoreFromWire($original->reason, $original->getMessage(), $original->context);
 
         self::assertSame(HistoryError::TimedOut, $rebuilt->reason);
         self::assertSame($original->getMessage(), $rebuilt->getMessage());

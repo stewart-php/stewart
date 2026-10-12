@@ -4,31 +4,12 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Tests\Fixtures\Broker;
 
-use Amp\DeferredFuture;
-use Amp\Future;
 use Closure;
 use DateTimeZone;
-use Stewart\Client\Component\ExposedEntityDefinition;
-use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
-use Stewart\Contracts\Event\EventPayload;
-use Stewart\Contracts\Exception\ExposureException;
-use Stewart\Contracts\Exception\RegistryEditException;
-use Stewart\Contracts\Exposure\ExposedEntityKey;
-use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
-use Stewart\Contracts\Exposure\ExposedStateChange;
-use Stewart\Contracts\History\Collection\HistoricalStateCollection;
-use Stewart\Contracts\History\EntityStateHistory;
-use Stewart\Contracts\History\HistoryDetail;
-use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Registry\IndexedRegistry;
-use Stewart\Contracts\Registry\RegisteredEntity;
-use Stewart\Contracts\Registry\Update\EntityRegistryUpdate;
-use Stewart\Contracts\Service\ServiceResponse;
-use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
-use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\Sun\GeoLocation;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Contracts\Trigger\TriggerSpec;
@@ -39,17 +20,12 @@ use Stewart\Runtime\Broker\RegistryCacheSnapshot;
 use Stewart\Runtime\Broker\StateCacheSnapshot;
 use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
 use Stewart\Runtime\Ipc\Wire\RegistryFragment;
-use Stewart\Runtime\Model\WorkerId;
 use Stewart\Testing\Async\Latch;
 use Throwable;
 
 final class FakeHaSession implements HaSession
 {
     public const string HA_USER_ID = 'stewart-user';
-
-    public const string CALL_CONTEXT_PREFIX = 'call-';
-
-    public const string FIRE_CONTEXT_PREFIX = 'fire-';
 
     public ?HaSessionListener $listener = null;
 
@@ -72,67 +48,12 @@ final class FakeHaSession implements HaSession
 
     public ?Latch $registryRefreshGate = null;
 
-    public int $calls = 0;
-
-    /** @var list<ReceivedServiceCall> */
-    public array $receivedCalls = [];
-
-    /** @var list<ReceivedEventFire> */
-    public array $receivedEventFires = [];
-
     public bool $connected = true;
-
-    /** @var array<string, RegisteredEntity> */
-    public array $registryEntries = [];
-
-    /** @var list<EntityRegistryUpdate> */
-    public array $sentRegistryUpdates = [];
 
     /** @var list<string> */
     public array $entityIds = ['light.hall'];
 
-    public ?Throwable $historyFailure = null;
-
-    /** @var list<EntityState> */
-    public array $historicalStates = [];
-
-    /** @var list<TriggerSpec> */
-    public array $subscribedTriggers = [];
-
-    /** @var list<TriggerSpec> */
-    public array $unsubscribedTriggers = [];
-
-    /** @var array<string, ExposedStateChange> */
-    public array $exposedEntities = [];
-
-    public ?ExposedEntitySnapshot $exposedSnapshot = null;
-
-    /** @var array<string, ExposedEntityDefinition> */
-    public array $reconfiguredDefinitions = [];
-
-    public ?ExposureException $exposureFailure = null;
-
-    /** @var list<AnsweredExposedCommand> */
-    public array $commandAnswers = [];
-
-    /** @var DeferredFuture<ExposedStateChange>|null */
-    private ?DeferredFuture $nextExposedUpdate = null;
-
-    /** @var DeferredFuture<AnsweredExposedCommand>|null */
-    private ?DeferredFuture $nextCommandAnswer = null;
-
-    /** @var DeferredFuture<RegisteredEntity>|null */
-    private ?DeferredFuture $nextRegistryUpdate = null;
-
     private bool $open = false;
-
-    /** @var DeferredFuture<TriggerSpec>|null */
-    private ?DeferredFuture $nextTriggerSubscribe = null;
-
-    private ?Latch $callLatch = null;
-
-    /** @var DeferredFuture<null>|null */
-    private ?DeferredFuture $nextCall = null;
 
     public function __construct()
     {
@@ -235,103 +156,6 @@ final class FakeHaSession implements HaSession
         return $this->entityIds;
     }
 
-    /** @return Future<null> */
-    public function waitForNextCall(): Future
-    {
-        return ($this->nextCall ??= new DeferredFuture())->getFuture();
-    }
-
-    public function holdCalls(): Latch
-    {
-        return $this->callLatch = new Latch();
-    }
-
-    public function callService(
-        string $domain,
-        string $service,
-        array $data = [],
-        ?ServiceTarget $target = null,
-        bool $returnResponse = false,
-    ): ServiceResponse {
-        ++$this->calls;
-        $this->receivedCalls[] = new ReceivedServiceCall($domain, $service, $data);
-
-        $called = $this->nextCall;
-        $this->nextCall = null;
-        $called?->complete();
-
-        $latch = $this->callLatch;
-        $latch?->waitUntilOpen();
-
-        return new ServiceResponse($domain, $service, context: new EventContext(self::CALL_CONTEXT_PREFIX . $this->calls, userId: self::HA_USER_ID));
-    }
-
-    public function fireEvent(EventPayload $payload): EventContext
-    {
-        $this->receivedEventFires[] = new ReceivedEventFire($payload->eventType, $payload->data);
-        $this->callLatch?->waitUntilOpen();
-
-        return new EventContext(self::FIRE_CONTEXT_PREFIX . \count($this->receivedEventFires), userId: self::HA_USER_ID);
-    }
-
-    public function seedRegistryEntry(RegisteredEntity $entity): void
-    {
-        $this->registryEntries[$entity->entityId->value] = $entity;
-    }
-
-    public function getEntityRegistryEntry(EntityId $entityId): RegisteredEntity
-    {
-        return $this->registryEntries[$entityId->value] ?? throw RegistryEditException::notFound($entityId);
-    }
-
-    public function updateEntityRegistryEntry(EntityId $entityId, EntityRegistryUpdate $update): RegisteredEntity
-    {
-        $this->sentRegistryUpdates[] = $update;
-        $this->callLatch?->waitUntilOpen();
-        $updated = $this->registryEntries[$entityId->value] = $update->applyTo($this->getEntityRegistryEntry($entityId));
-
-        $next = $this->nextRegistryUpdate;
-        $this->nextRegistryUpdate = null;
-        $next?->complete($updated);
-
-        return $updated;
-    }
-
-    /** @return Future<RegisteredEntity> */
-    public function waitForNextRegistryUpdate(): Future
-    {
-        return ($this->nextRegistryUpdate ??= new DeferredFuture())->getFuture();
-    }
-
-    public function fetchHistory(EntityId $entityId, HistoryWindow $window, HistoryDetail $detail): EntityStateHistory
-    {
-        if ($this->historyFailure !== null) {
-            throw $this->historyFailure;
-        }
-
-        return new EntityStateHistory($entityId, $window, HistoricalStateCollection::fromList($this->historicalStates));
-    }
-
-    public function subscribeTrigger(TriggerSpec $spec): void
-    {
-        $this->subscribedTriggers[] = $spec;
-
-        $subscribed = $this->nextTriggerSubscribe;
-        $this->nextTriggerSubscribe = null;
-        $subscribed?->complete($spec);
-    }
-
-    public function unsubscribeTrigger(TriggerSpec $spec): void
-    {
-        $this->unsubscribedTriggers[] = $spec;
-    }
-
-    /** @return Future<TriggerSpec> */
-    public function waitForNextTriggerSubscribe(): Future
-    {
-        return ($this->nextTriggerSubscribe ??= new DeferredFuture())->getFuture();
-    }
-
     public function fireTrigger(TriggerSpec $spec, TriggerEvent $event): void
     {
         $this->listener?->triggerFired($spec, $event);
@@ -342,92 +166,8 @@ final class FakeHaSession implements HaSession
         $this->listener?->triggerRejected($spec, $reason);
     }
 
-    public function exposeEntity(
-        WorkerId $owner,
-        AppId $appId,
-        ExposedEntityKey $key,
-        ExposedEntityDefinition $definition,
-        ExposedStateChange $change,
-    ): ?ExposedEntitySnapshot {
-        if ($this->exposureFailure !== null) {
-            throw $this->exposureFailure;
-        }
-
-        $this->exposedEntities[$appId . '/' . $key] = $change;
-
-        return $this->exposedSnapshot;
-    }
-
-    public function reconfigureExposedEntity(AppId $appId, ExposedEntityKey $key, ExposedEntityDefinition $definition): ?ExposedEntitySnapshot
-    {
-        if ($this->exposureFailure !== null) {
-            throw $this->exposureFailure;
-        }
-
-        $this->reconfiguredDefinitions[$appId . '/' . $key] = $definition;
-
-        return $this->exposedSnapshot;
-    }
-
-    public function updateExposedEntity(AppId $appId, ExposedEntityKey $key, ExposedStateChange $change): void
-    {
-        $address = $appId . '/' . $key;
-        $this->exposedEntities[$address] = ($this->exposedEntities[$address] ?? new ExposedStateChange())->withLaterChange($change);
-
-        $updated = $this->nextExposedUpdate;
-        $this->nextExposedUpdate = null;
-        $updated?->complete($this->exposedEntities[$address]);
-    }
-
-    /** @return Future<ExposedStateChange> */
-    public function waitForNextExposedUpdate(): Future
-    {
-        return ($this->nextExposedUpdate ??= new DeferredFuture())->getFuture();
-    }
-
-    public function removeExposedEntity(AppId $appId, ExposedEntityKey $key): void
-    {
-        unset($this->exposedEntities[$appId . '/' . $key]);
-    }
-
-    public function orphanExposuresOfApp(AppId $appId): void
-    {
-        foreach ($this->exposedEntities as $address => $change) {
-            if (str_starts_with($address, $appId . '/')) {
-                $this->exposedEntities[$address] = $change->withLaterChange(new ExposedStateChange(available: false));
-            }
-        }
-    }
-
-    public function orphanExposuresOfWorker(WorkerId $workerId): void {}
-
     public function pushExposedEntityCommand(ExposedEntityCommand $command): void
     {
         $this->listener?->exposedEntityCommanded($command);
-    }
-
-    public function acceptExposedEntityCommand(ExposedEntityCommand $command): void
-    {
-        $this->recordCommandAnswer(new AnsweredExposedCommand($command, null));
-    }
-
-    public function rejectExposedEntityCommand(ExposedEntityCommand $command, string $reason): void
-    {
-        $this->recordCommandAnswer(new AnsweredExposedCommand($command, $reason));
-    }
-
-    /** @return Future<AnsweredExposedCommand> */
-    public function waitForNextCommandAnswer(): Future
-    {
-        return ($this->nextCommandAnswer ??= new DeferredFuture())->getFuture();
-    }
-
-    private function recordCommandAnswer(AnsweredExposedCommand $answer): void
-    {
-        $this->commandAnswers[] = $answer;
-
-        $answered = $this->nextCommandAnswer;
-        $this->nextCommandAnswer = null;
-        $answered?->complete($answer);
     }
 }

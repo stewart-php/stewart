@@ -17,7 +17,6 @@ use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Worker\ConnectionStatus;
 use Stewart\Runtime\Worker\PendingRequests;
-use Stewart\Runtime\Worker\Subject\RegistryEditSubject;
 use Stewart\Support\Time\Deadlines;
 use Throwable;
 
@@ -38,7 +37,10 @@ final readonly class RegistryEditRequester
             throw RegistryEditException::unreachable($entityId, 'Home Assistant is disconnected');
         }
 
-        $edit = $this->pending->open(new RegistryEditSubject($entityId));
+        $edit = $this->pending->open(
+            RegisteredEntity::class,
+            static fn(string $detail): RegistryEditException => RegistryEditException::unreachable($entityId, $detail),
+        );
 
         try {
             $this->sendRequest(new RegistryEntityUpdateRequest($edit->correlationId, $scope, $entityId, $update));

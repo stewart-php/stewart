@@ -33,7 +33,7 @@ use Stewart\Runtime\Ipc\Message\MqttPublish;
 use Stewart\Runtime\Ipc\Message\Ping;
 use Stewart\Runtime\Ipc\Message\Pong;
 use Stewart\Runtime\Ipc\Message\Publish;
-use Stewart\Runtime\Ipc\Message\ServiceCallFailed;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Ipc\Message\Shutdown;
@@ -458,7 +458,7 @@ final class WorkerProtocolTest extends TestCase
         $this->sendChanges(self::createChange(SerialHandler::ENTITY, '1', '2'));
         $request = $this->receiveUntil(ServiceCallRequest::class);
 
-        $this->send(ServiceCallFailed::fromException($request->correlationId, ServiceCallException::rejected('script', 'record', 'Service not found', 'not_found')));
+        $this->send(RequestFailed::fromException($request->correlationId, ServiceCallException::rejected('script', 'record', 'Service not found', 'not_found')));
         $failure = $this->receiveUntil(AppFailed::class);
 
         self::assertSame(AppFailurePhase::Handler, $failure->phase);

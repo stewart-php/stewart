@@ -68,6 +68,18 @@ abstract class StewartException extends RuntimeException
         );
     }
 
+    /**
+     * @template TRestoredReason of ExceptionReason
+     *
+     * @param TRestoredReason $reason
+     * @param ExceptionContext|null $context
+     * @return static<TRestoredReason>
+     */
+    final public static function restoreFromWire(ExceptionReason $reason, string $message, ?array $context): static
+    {
+        return new static($message, $reason, $context);
+    }
+
     protected function findContextString(string $key): ?string
     {
         $value = $this->context[$key] ?? null;

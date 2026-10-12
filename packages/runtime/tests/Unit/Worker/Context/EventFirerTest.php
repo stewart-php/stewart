@@ -16,8 +16,8 @@ use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
-use Stewart\Runtime\Ipc\Message\EventFireFailed;
 use Stewart\Runtime\Ipc\Message\EventFireRequest;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
@@ -27,7 +27,6 @@ use Stewart\Runtime\Worker\ConnectionStatus;
 use Stewart\Runtime\Worker\Context\EventFirer;
 use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\PendingRequests;
-use Stewart\Runtime\Worker\Subject\EventFireSubject;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
@@ -36,7 +35,6 @@ use Throwable;
 use function Amp\async;
 
 #[CoversClass(EventFirer::class)]
-#[CoversClass(EventFireSubject::class)]
 final class EventFirerTest extends TestCase
 {
     use AssertsReason;
@@ -85,8 +83,7 @@ final class EventFirerTest extends TestCase
         $request = $transport->sent[0] ?? null;
         self::assertInstanceOf(EventFireRequest::class, $request);
 
-        $failed = EventFireFailed::fromException($request->correlationId, EventFireException::rejected('doorbell_pressed', 'Unauthorized', 'unauthorized'));
-        $this->pending->reject($request->correlationId, $failed->toException());
+        $this->pending->rejectFromWire(RequestFailed::fromException($request->correlationId, EventFireException::rejected('doorbell_pressed', 'Unauthorized', 'unauthorized')));
 
         $this->assertThrowsReason(EventFireError::Rejected, static fn() => $fire->await());
     }

@@ -22,6 +22,7 @@ use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\ExposeEntityRequest;
 use Stewart\Runtime\Ipc\Message\ExposeEntityResult;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\UpdateExposedEntityRequest;
 use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Model\ResourceScope;
@@ -31,8 +32,6 @@ use Stewart\Runtime\Tests\Fixtures\Ipc\NullTransport;
 use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\Exposure\ExposureRequester;
 use Stewart\Runtime\Worker\PendingRequests;
-use Stewart\Runtime\Worker\Subject\ExposeEntitySubject;
-use Stewart\Runtime\Worker\Subject\ExposureChangeSubject;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
@@ -41,8 +40,6 @@ use Throwable;
 use function Amp\async;
 
 #[CoversClass(ExposureRequester::class)]
-#[CoversClass(ExposeEntitySubject::class)]
-#[CoversClass(ExposureChangeSubject::class)]
 final class ExposureRequesterTest extends TestCase
 {
     use AssertsReason;
@@ -83,7 +80,7 @@ final class ExposureRequesterTest extends TestCase
 
         $request = $transport->sent[0] ?? null;
         self::assertInstanceOf(UpdateExposedEntityRequest::class, $request);
-        $this->pending->reject($request->correlationId, ExposureException::stateInvalid('Not a number.'));
+        $this->pending->rejectFromWire(RequestFailed::fromException($request->correlationId, ExposureException::stateInvalid('Not a number.')));
 
         $this->assertThrowsReason(ExposureError::StateInvalid, static fn() => $update->await());
     }

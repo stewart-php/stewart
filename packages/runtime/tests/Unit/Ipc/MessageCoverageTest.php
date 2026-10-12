@@ -20,10 +20,12 @@ final class MessageCoverageTest extends TestCase
 
     public function testEveryMessageHasExactlyOneHandler(): void
     {
-        $handledCounts = array_count_values($this->listHandledMessageClasses());
+        $handled = $this->listHandledMessageClasses();
 
         foreach (IpcMessageCatalog::scanMessageDirectory()->listMessageClasses() as $messageClass) {
-            self::assertSame(1, $handledCounts[$messageClass] ?? 0, $messageClass);
+            $handlers = array_filter($handled, static fn(string $handledClass): bool => is_a($messageClass, $handledClass, true));
+
+            self::assertCount(1, $handlers, $messageClass);
         }
     }
 
@@ -31,8 +33,10 @@ final class MessageCoverageTest extends TestCase
     {
         $catalogued = IpcMessageCatalog::scanMessageDirectory()->listMessageClasses();
 
-        foreach ($this->listHandledMessageClasses() as $messageClass) {
-            self::assertContains($messageClass, $catalogued);
+        foreach ($this->listHandledMessageClasses() as $handledClass) {
+            $messages = array_filter($catalogued, static fn(string $messageClass): bool => is_a($messageClass, $handledClass, true));
+
+            self::assertNotEmpty($messages, $handledClass);
         }
     }
 

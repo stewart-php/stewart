@@ -7,25 +7,10 @@ namespace Stewart\Runtime\Broker;
 use Amp\DeferredCancellation;
 use DateTimeZone;
 use Psr\Log\LoggerInterface;
-use Stewart\Client\Component\ExposedEntityDefinition;
 use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
 use Stewart\Client\HaSiteSettings;
-use Stewart\Contracts\App\AppId;
-use Stewart\Contracts\Entity\EntityId;
-use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\Event\HaEvent;
-use Stewart\Contracts\Exposure\ExposedEntityKey;
-use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
-use Stewart\Contracts\Exposure\ExposedStateChange;
-use Stewart\Contracts\History\EntityStateHistory;
-use Stewart\Contracts\History\HistoryDetail;
-use Stewart\Contracts\History\HistoryWindow;
-use Stewart\Contracts\Registry\RegisteredEntity;
-use Stewart\Contracts\Registry\Update\EntityRegistryUpdate;
-use Stewart\Contracts\Service\ServiceResponse;
-use Stewart\Contracts\Service\ServiceTarget;
-use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Sun\GeoLocation;
 use Stewart\Contracts\Time\Clock;
@@ -33,12 +18,10 @@ use Stewart\Contracts\Time\MonotonicTime;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Broker\Component\ComponentSession;
-use Stewart\Runtime\Broker\Exposure\ExposedEntityCommand;
 use Stewart\Runtime\Broker\Exposure\ExposureLink;
 use Stewart\Runtime\Broker\Trigger\HaTriggerLink;
 use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
 use Stewart\Runtime\Ipc\Wire\RegistryFragment;
-use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\StateCache;
 use Throwable;
@@ -192,91 +175,6 @@ final class WebsocketHaSession implements HaSession
     public function listEntityIds(): array
     {
         return $this->states->listEntityIds()->toStrings();
-    }
-
-    public function callService(
-        string $domain,
-        string $service,
-        array $data = [],
-        ?ServiceTarget $target = null,
-        bool $returnResponse = false,
-    ): ServiceResponse {
-        return $this->client->callService($domain, $service, $data, $target, $returnResponse);
-    }
-
-    public function fireEvent(EventPayload $payload): EventContext
-    {
-        return $this->client->fireEvent($payload);
-    }
-
-    public function getEntityRegistryEntry(EntityId $entityId): RegisteredEntity
-    {
-        return $this->client->getEntityRegistryEntry($entityId)->toRegisteredEntity();
-    }
-
-    public function updateEntityRegistryEntry(EntityId $entityId, EntityRegistryUpdate $update): RegisteredEntity
-    {
-        return $this->client->updateEntityRegistryEntry($entityId, $update)->toRegisteredEntity();
-    }
-
-    public function fetchHistory(EntityId $entityId, HistoryWindow $window, HistoryDetail $detail): EntityStateHistory
-    {
-        return $this->client->fetchHistory($entityId, $window, $detail);
-    }
-
-    public function subscribeTrigger(TriggerSpec $spec): void
-    {
-        $this->triggers->subscribeTrigger($spec);
-    }
-
-    public function unsubscribeTrigger(TriggerSpec $spec): void
-    {
-        $this->triggers->unsubscribeTrigger($spec);
-    }
-
-    public function exposeEntity(
-        WorkerId $owner,
-        AppId $appId,
-        ExposedEntityKey $key,
-        ExposedEntityDefinition $definition,
-        ExposedStateChange $change,
-    ): ?ExposedEntitySnapshot {
-        return $this->exposures->exposeEntity($owner, $appId, $key, $definition, $change);
-    }
-
-    public function reconfigureExposedEntity(AppId $appId, ExposedEntityKey $key, ExposedEntityDefinition $definition): ?ExposedEntitySnapshot
-    {
-        return $this->exposures->reconfigureEntity($appId, $key, $definition);
-    }
-
-    public function updateExposedEntity(AppId $appId, ExposedEntityKey $key, ExposedStateChange $change): void
-    {
-        $this->exposures->updateEntity($appId, $key, $change);
-    }
-
-    public function removeExposedEntity(AppId $appId, ExposedEntityKey $key): void
-    {
-        $this->exposures->removeEntity($appId, $key);
-    }
-
-    public function orphanExposuresOfApp(AppId $appId): void
-    {
-        $this->exposures->orphanExposuresOfApp($appId);
-    }
-
-    public function orphanExposuresOfWorker(WorkerId $workerId): void
-    {
-        $this->exposures->orphanExposuresOfWorker($workerId);
-    }
-
-    public function acceptExposedEntityCommand(ExposedEntityCommand $command): void
-    {
-        $this->exposures->acceptCommand($command);
-    }
-
-    public function rejectExposedEntityCommand(ExposedEntityCommand $command, string $reason): void
-    {
-        $this->exposures->rejectCommand($command, $reason);
     }
 
     private function connectSubscribeAndSeed(): void
