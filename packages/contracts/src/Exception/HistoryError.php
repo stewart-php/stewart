@@ -11,6 +11,7 @@ enum HistoryError: string implements ExceptionReason
     case Rejected = 'rejected';
     case Unreachable = 'unreachable';
     case TimedOut = 'timed_out';
+    case Overloaded = 'overloaded';
 
     public function messageTemplate(): string
     {
@@ -20,6 +21,7 @@ enum HistoryError: string implements ExceptionReason
             self::Rejected => 'History of {entityId} was rejected by Home Assistant: {detail}',
             self::Unreachable => 'History of {entityId} could not reach Home Assistant: {detail}',
             self::TimedOut => 'History of {entityId} timed out: {detail}',
+            self::Overloaded => 'History of {entityId} was refused: {detail}',
         };
     }
 }

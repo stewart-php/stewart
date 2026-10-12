@@ -8,6 +8,8 @@ minor release may break; its "Upgrading" section says what to change.
 
 ### Fixed
 
+- History queries and exposure requests count as in-flight calls to Home Assistant, and an exposure request that
+  fails unexpectedly is answered at once instead of timing out in the worker
 - Reloading the `stewart` integration, or enabling or disabling one of its entities, no longer leaves exposed entities
   unavailable until Home Assistant reconnects: the daemon opens a new session and sends its entities again
 - A command to an exposed entity that its app had queued is refused at once with the reason, instead of timing out
@@ -29,6 +31,8 @@ minor release may break; its "Upgrading" section says what to change.
   one-line factories in `stewart-php/contracts` are gone
 - List collections are built with `XCollection::fromList(...)`; the named factories that only forwarded to it, such
   as `EntityIdCollection::fromIds()` and `HaTriggerCollection::fromTriggers()`, are gone
+- History queries share the `service_calls.max_in_flight[_per_worker]` budget and fail with the new
+  `HistoryError::Overloaded` when it is full; exposure requests count toward it but are never refused
 - IPC protocol 27: one `request_failed` message replaces the five per-request error messages; the broker and its
   workers must run the same version
 

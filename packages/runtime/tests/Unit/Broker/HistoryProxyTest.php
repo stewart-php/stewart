@@ -14,17 +14,24 @@ use Stewart\Contracts\Exception\HistoryError;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
+use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
+use Stewart\Runtime\Broker\AppMetrics;
+use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
+use Stewart\Runtime\Broker\HaCallSlots;
 use Stewart\Runtime\Broker\HistoryProxy;
 use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
+use Stewart\Runtime\Config\ServiceCallPolicy;
 use Stewart\Runtime\Ipc\Message\HistoryRequest;
 use Stewart\Runtime\Ipc\Message\HistoryResult;
 use Stewart\Runtime\Ipc\Message\RequestFailed;
+use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
+use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
@@ -32,7 +39,9 @@ use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerProcess;
 use Stewart\Runtime\Tests\Fixtures\Ipc\FakeWorkerTransport;
+use Stewart\Testing\Async\Latch;
 use Stewart\Testing\Time\EventLoopTicks;
+use Stewart\Testing\Time\ManualTimers;
 
 #[CoversClass(HistoryProxy::class)]
 final class HistoryProxyTest extends TestCase
@@ -41,13 +50,23 @@ final class HistoryProxyTest extends TestCase
 
     private WorkerHandle $worker;
 
+    private HaCallSlots $slots;
+
     protected function setUp(): void
     {
         $this->session = new FakeHaSession();
+        $slot = new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)]));
+        $timers = new ManualTimers();
+        $this->slots = new HaCallSlots(
+            new ServiceCallPolicy(perWorker: 1, total: 0),
+            new AppMetrics(WorkerSlotCollection::fromList([$slot]), $timers->clock),
+            $timers->clock,
+            new NullLogger(),
+        );
         $this->worker = new WorkerHandle(
             id: new WorkerId(0),
             process: new FakeWorkerProcess(),
-            slot: new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)])),
+            slot: $slot,
             logger: new NullLogger(),
             outboxLimits: new OutboxLimits(100, 256),
         );
@@ -93,9 +112,27 @@ final class HistoryProxyTest extends TestCase
         self::assertSame(HistoryError::Unreachable->value, $this->listSentOfType(RequestFailed::class)[0]->details->reason);
     }
 
+    public function testFullCallBudgetRefusesHistory(): void
+    {
+        $serviceCall = new ServiceCallRequest(new CorrelationId('w0:1'), ResourceScope::forApp(new AppId('demo')), 'light', 'turn_on', [], null, false);
+        $held = new Latch();
+        $this->slots->runBounded($this->worker, $serviceCall, static function () use ($held, $serviceCall): ServiceCallResult {
+            $held->waitUntilOpen();
+
+            return new ServiceCallResult($serviceCall->correlationId, new ServiceResponse('light', 'turn_on'));
+        });
+
+        $this->forwardRequest();
+
+        self::assertSame(HistoryError::Overloaded->value, $this->listSentOfType(RequestFailed::class)[0]->details->reason);
+        self::assertSame(1, $this->slots->refusedCalls);
+        $held->open();
+        EventLoopTicks::settle();
+    }
+
     private function forwardRequest(): void
     {
-        new HistoryProxy($this->session, new NullLogger())->forward($this->worker, self::createRequest());
+        new HistoryProxy($this->session, $this->slots)->forward($this->worker, self::createRequest());
         EventLoopTicks::settle();
     }
 

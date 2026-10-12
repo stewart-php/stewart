@@ -5,20 +5,12 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker;
 
 use Psr\Log\LoggerInterface;
-use Stewart\Contracts\Exception\RegistryEditError;
 use Stewart\Contracts\Exception\RegistryEditException;
 use Stewart\Contracts\Registry\RegisteredEntity;
-use Stewart\Contracts\Time\Clock;
-use Stewart\Contracts\Time\MonotonicTime;
 use Stewart\Runtime\Broker\Exposure\ExposureLink;
 use Stewart\Runtime\Config\ServiceCallPolicy;
 use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateRequest;
 use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateResult;
-use Stewart\Runtime\Ipc\Message\RequestFailed;
-use Stewart\Runtime\Model\ServiceCallOutcome;
-use Throwable;
-
-use function Amp\async;
 
 final readonly class RegistryEditProxy
 {
@@ -26,60 +18,25 @@ final readonly class RegistryEditProxy
         private HaSession $session,
         private ExposureLink $exposures,
         private HaCallSlots $slots,
-        private AppMetrics $metrics,
         private ServiceCallPolicy $policy,
-        private Clock $clock,
         private LoggerInterface $logger,
     ) {}
 
     public function forward(WorkerHandle $handle, RegistryEntityUpdateRequest $request): void
     {
-        $refusal = $this->slots->findRefusalReason($handle);
-
-        if ($refusal !== null) {
-            $this->refuse($handle, $request, $refusal);
-
-            return;
-        }
-
-        $this->slots->acquire($handle);
-        $startedAt = $this->clock->getMonotonicTime();
-
-        async(function () use ($handle, $request, $startedAt): void {
-            try {
-                try {
-                    $outcome = $this->updateOnHomeAssistant($request);
-                } finally {
-                    $this->slots->release($handle);
-                }
-
-                $handle->send($outcome instanceof RegistryEditException ? RequestFailed::fromException($request->correlationId, $outcome) : $outcome);
-                $this->recordFinishedUpdate($handle, $request, $outcome, $startedAt);
-            } catch (Throwable $e) {
-                $this->logger->error('Registry update reply failed', [
-                    'exception' => $e,
-                    'worker' => $handle->id->value,
-                    'correlation_id' => $request->correlationId->value,
-                ]);
-            }
-        })->ignore();
+        $this->slots->runBounded($handle, $request, fn(): RegistryEntityUpdateResult => $this->updateOnHomeAssistant($request));
     }
 
-    private function updateOnHomeAssistant(RegistryEntityUpdateRequest $request): RegistryEntityUpdateResult|RegistryEditException
+    /** @throws RegistryEditException */
+    private function updateOnHomeAssistant(RegistryEntityUpdateRequest $request): RegistryEntityUpdateResult
     {
-        try {
-            if (!$this->session->isConnected()) {
-                throw RegistryEditException::unreachable($request->entityId, 'Home Assistant is disconnected');
-            }
-
-            $this->warnIfExposed($request);
-
-            return new RegistryEntityUpdateResult($request->correlationId, $this->policy->dryRun ? $this->previewUpdate($request) : $this->sendUpdate($request));
-        } catch (RegistryEditException $e) {
-            return $e;
-        } catch (Throwable $e) {
-            return RegistryEditException::unreachable($request->entityId, $e->getMessage(), $e);
+        if (!$this->session->isConnected()) {
+            throw $request->createUnreachableFailure('Home Assistant is disconnected');
         }
+
+        $this->warnIfExposed($request);
+
+        return new RegistryEntityUpdateResult($request->correlationId, $this->policy->dryRun ? $this->previewUpdate($request) : $this->sendUpdate($request));
     }
 
     private function warnIfExposed(RegistryEntityUpdateRequest $request): void
@@ -113,29 +70,5 @@ final readonly class RegistryEditProxy
         $this->logger->info('Registry entry not updated: service_calls.dry_run is on', ['entity' => $request->entityId->value]);
 
         return $request->update->applyTo($this->session->getEntityRegistryEntry($request->entityId));
-    }
-
-    private function recordFinishedUpdate(
-        WorkerHandle $handle,
-        RegistryEntityUpdateRequest $request,
-        RegistryEntityUpdateResult|RegistryEditException $outcome,
-        MonotonicTime $startedAt,
-    ): void {
-        $this->metrics->recordFinishedCall(
-            $handle->id,
-            $request->scope,
-            $outcome instanceof RegistryEditException ? ServiceCallOutcome::failedWith($outcome->reason) : ServiceCallOutcome::Succeeded,
-            $this->clock->getMonotonicTime()->elapsedSince($startedAt),
-        );
-    }
-
-    private function refuse(WorkerHandle $handle, RegistryEntityUpdateRequest $request, string $reason): void
-    {
-        $this->slots->recordRefusal($handle, $request->scope);
-        $this->metrics->recordRefusedCall($handle->id, $request->scope);
-        $handle->send(RequestFailed::fromException(
-            $request->correlationId,
-            RegistryEditException::createForReason(RegistryEditError::Overloaded, entityId: $request->entityId->value, detail: $reason),
-        ));
     }
 }

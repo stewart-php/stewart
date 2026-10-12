@@ -95,7 +95,7 @@ final class EventFireProxyTest extends TestCase
     {
         $policy = new ServiceCallPolicy(perWorker: 1, total: 0);
         $proxy = $this->createProxy($policy);
-        $serviceCalls = new ServiceCallProxy($this->session, $this->slots, $this->metrics, $policy, $this->timers->clock, new NullLogger());
+        $serviceCalls = new ServiceCallProxy($this->session, $this->slots, $policy, new NullLogger());
         $worker = $this->createHandle();
 
         $serviceCalls->forward($worker, new ServiceCallRequest(new CorrelationId('call'), ResourceScope::forApp(new AppId('demo')), 'light', 'turn_on', [], null, false));
@@ -153,9 +153,9 @@ final class EventFireProxyTest extends TestCase
 
     private function createProxy(ServiceCallPolicy $policy, ?RecordingLogger $logger = null): EventFireProxy
     {
-        $this->slots = new HaCallSlots($policy, new NullLogger());
+        $this->slots = new HaCallSlots($policy, $this->metrics, $this->timers->clock, new NullLogger());
 
-        return new EventFireProxy($this->session, $this->slots, $this->metrics, $policy, $this->timers->clock, $logger ?? new NullLogger());
+        return new EventFireProxy($this->session, $this->slots, $policy, $logger ?? new NullLogger());
     }
 
     private function finishCalls(): void

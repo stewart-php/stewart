@@ -181,9 +181,9 @@ final class ServiceCallProxyTest extends TestCase
 
     private function createProxy(ServiceCallPolicy $policy, LoggerInterface $logger): ServiceCallProxy
     {
-        $this->slots = new HaCallSlots($policy, new NullLogger());
+        $this->slots = new HaCallSlots($policy, $this->metrics, $this->timers->clock, new NullLogger());
 
-        return new ServiceCallProxy($this->session, $this->slots, $this->metrics, $policy, $this->timers->clock, $logger);
+        return new ServiceCallProxy($this->session, $this->slots, $policy, $logger);
     }
 
     private function finishCalls(): void

@@ -12,7 +12,6 @@ use Stewart\Client\Component\ExposedEntityDefinition;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventPayload;
-use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exception\RegistryEditException;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
@@ -110,7 +109,7 @@ final class FakeHaSession implements HaSession
     /** @var array<string, ExposedEntityDefinition> */
     public array $reconfiguredDefinitions = [];
 
-    public ?ExposureException $exposureFailure = null;
+    public ?Throwable $exposureFailure = null;
 
     /** @var list<AnsweredExposedCommand> */
     public array $commandAnswers = [];

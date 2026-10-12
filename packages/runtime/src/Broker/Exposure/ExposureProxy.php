@@ -4,38 +4,31 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Broker\Exposure;
 
-use Closure;
-use Psr\Log\LoggerInterface;
 use Stewart\Client\Component\ExposedEntityDefinition;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
+use Stewart\Runtime\Broker\HaCallSlots;
 use Stewart\Runtime\Broker\HaSession;
 use Stewart\Runtime\Broker\WorkerHandle;
-use Stewart\Runtime\Ipc\Message\BrokerMessage;
 use Stewart\Runtime\Ipc\Message\ExposeEntityRequest;
 use Stewart\Runtime\Ipc\Message\ExposeEntityResult;
 use Stewart\Runtime\Ipc\Message\ExposureAcknowledged;
 use Stewart\Runtime\Ipc\Message\ReconfigureExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\RemoveExposedEntityRequest;
-use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\UpdateExposedEntityRequest;
-use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
-use Throwable;
-
-use function Amp\async;
 
 final readonly class ExposureProxy
 {
     public function __construct(
         private HaSession $session,
-        private LoggerInterface $logger,
+        private HaCallSlots $slots,
     ) {}
 
     public function forwardExpose(WorkerHandle $handle, ExposeEntityRequest $request): void
     {
-        $this->answerInBackground($handle, $request->correlationId, function () use ($handle, $request): BrokerMessage {
+        $this->slots->runCounted($handle, $request, function () use ($handle, $request): ExposeEntityResult {
             $appId = $this->requireAppId($request->scope, $request->key);
             $definition = ExposedEntityDefinition::fromConfig($request->config, $request->device);
             $snapshot = $this->session->exposeEntity($handle->id, $appId, $request->key, $definition, $request->change);
@@ -46,7 +39,7 @@ final readonly class ExposureProxy
 
     public function forwardReconfigure(WorkerHandle $handle, ReconfigureExposedEntityRequest $request): void
     {
-        $this->answerInBackground($handle, $request->correlationId, function () use ($request): BrokerMessage {
+        $this->slots->runCounted($handle, $request, function () use ($request): ExposeEntityResult {
             $appId = $this->requireAppId($request->scope, $request->key);
             $snapshot = $this->session->reconfigureExposedEntity($appId, $request->key, ExposedEntityDefinition::fromConfig($request->config, null));
 
@@ -56,7 +49,7 @@ final readonly class ExposureProxy
 
     public function forwardUpdate(WorkerHandle $handle, UpdateExposedEntityRequest $request): void
     {
-        $this->answerInBackground($handle, $request->correlationId, function () use ($request): BrokerMessage {
+        $this->slots->runCounted($handle, $request, function () use ($request): ExposureAcknowledged {
             $this->session->updateExposedEntity($this->requireAppId($request->scope, $request->key), $request->key, $request->change);
 
             return new ExposureAcknowledged($request->correlationId);
@@ -65,33 +58,11 @@ final readonly class ExposureProxy
 
     public function forwardRemove(WorkerHandle $handle, RemoveExposedEntityRequest $request): void
     {
-        $this->answerInBackground($handle, $request->correlationId, function () use ($request): BrokerMessage {
+        $this->slots->runCounted($handle, $request, function () use ($request): ExposureAcknowledged {
             $this->session->removeExposedEntity($this->requireAppId($request->scope, $request->key), $request->key);
 
             return new ExposureAcknowledged($request->correlationId);
         });
-    }
-
-    /** @param Closure(): BrokerMessage $answer */
-    private function answerInBackground(WorkerHandle $handle, CorrelationId $correlationId, Closure $answer): void
-    {
-        async(function () use ($handle, $correlationId, $answer): void {
-            try {
-                $handle->send($this->runAnswer($correlationId, $answer));
-            } catch (Throwable $e) {
-                $this->logger->error('Exposure reply failed', ['exception' => $e, 'worker' => $handle->id->value, 'correlation_id' => $correlationId->value]);
-            }
-        })->ignore();
-    }
-
-    /** @param Closure(): BrokerMessage $answer */
-    private function runAnswer(CorrelationId $correlationId, Closure $answer): BrokerMessage
-    {
-        try {
-            return $answer();
-        } catch (ExposureException $e) {
-            return RequestFailed::fromException($correlationId, $e);
-        }
     }
 
     /** @throws ExposureException */

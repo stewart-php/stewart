@@ -144,12 +144,17 @@ final class RegistryEditProxyTest extends TestCase
     {
         $worker = $this->createHandle();
         $proxy = $this->createProxy(new ServiceCallPolicy(perWorker: 1, total: 0));
-        $this->slots->acquire($worker);
+        $this->session->seedRegistryEntry(new RegisteredEntity(new EntityId('light.hall')));
+        $held = $this->session->holdCalls();
+        $proxy->forward($worker, self::createRequest(new EntityRegistryUpdate()->withName('Hall')));
+        EventLoopTicks::settle();
 
         $proxy->forward($worker, self::createRequest(new EntityRegistryUpdate()->withName('Hallway')));
 
         self::assertSame(RegistryEditError::Overloaded->value, $this->awaitFailure($worker)->details->reason);
-        self::assertSame([], $this->session->sentRegistryUpdates);
+        self::assertCount(1, $this->session->sentRegistryUpdates);
+        $held->open();
+        EventLoopTicks::settle();
     }
 
     public function testDryRunPreviewsWithoutUpdating(): void
@@ -166,9 +171,9 @@ final class RegistryEditProxyTest extends TestCase
 
     private function createProxy(ServiceCallPolicy $policy, ?RecordingLogger $logger = null, ?ExposureLink $exposures = null): RegistryEditProxy
     {
-        $this->slots = new HaCallSlots($policy, new NullLogger());
+        $this->slots = new HaCallSlots($policy, $this->metrics, $this->timers->clock, new NullLogger());
 
-        return new RegistryEditProxy($this->session, $exposures ?? ExposureLinkFixture::createWithoutExposures(), $this->slots, $this->metrics, $policy, $this->timers->clock, $logger ?? new NullLogger());
+        return new RegistryEditProxy($this->session, $exposures ?? ExposureLinkFixture::createWithoutExposures(), $this->slots, $policy, $logger ?? new NullLogger());
     }
 
     private function awaitResult(WorkerHandle $worker): RegistryEntityUpdateResult
