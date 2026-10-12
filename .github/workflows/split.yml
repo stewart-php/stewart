@@ -47,6 +47,7 @@ jobs:
           private-key: ${{ secrets.SPLIT_APP_PRIVATE_KEY }}
           owner: stewart-php
           permission-contents: write
+          permission-workflows: write
           repositories: ${{ matrix.repository }}
       - name: Mirror into stewart-php/${{ matrix.repository }}
         run: |
