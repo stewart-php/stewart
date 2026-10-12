@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Config;
 
+use Stewart\Runtime\Exception\ConfigurationError;
 use Stewart\Runtime\Exception\ConfigurationException;
 
 final readonly class SecretFileReader
@@ -16,7 +17,7 @@ final readonly class SecretFileReader
         $contents = is_file($path) && is_readable($path) ? file_get_contents($path) : false;
 
         if ($contents === false) {
-            throw ConfigurationException::environmentSecretFileUnreadable($variable, $path);
+            throw ConfigurationException::createForReason(ConfigurationError::EnvironmentSecretFileUnreadable, variable: $variable, path: $path);
         }
 
         return preg_replace(self::TRAILING_LINE_BREAK, '', $contents, 1) ?? $contents;

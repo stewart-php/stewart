@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker\Mqtt;
 
 use Stewart\Runtime\Config\StewartConfig;
+use Stewart\Runtime\Exception\ConfigurationError;
 use Stewart\Runtime\Exception\ConfigurationException;
 
 final readonly class MqttLinkResolver
@@ -23,7 +24,7 @@ final readonly class MqttLinkResolver
         }
 
         if ($this->mqttLinkFactory === null) {
-            throw ConfigurationException::mqttPackageMissing();
+            throw ConfigurationException::createForReason(ConfigurationError::MqttPackageMissing);
         }
 
         return $this->mqttLinkFactory->createMqttLink($this->config->mqtt);

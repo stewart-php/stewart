@@ -16,6 +16,7 @@ use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerMessageReader;
 use Stewart\Runtime\Broker\WorkerSlot;
+use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\Shutdown;
 use Stewart\Runtime\Ipc\Message\Unsubscribe;
@@ -98,7 +99,7 @@ final class WorkerMessageReaderTest extends TestCase
     public function testUndecodableFrameIsDroppedAndReadingContinues(): void
     {
         EventLoopTicks::settle();
-        $this->process->channel->fail(TransportException::undecodableFrame('mystery', 'no codec'));
+        $this->process->channel->fail(TransportException::createForReason(TransportError::UndecodableFrame, messageType: 'mystery', reason: 'no codec'));
         EventLoopTicks::settle();
         $this->process->channel->deliver(new Unsubscribe(new SubscriptionId('w0:0')));
         EventLoopTicks::settleUntil(fn(): bool => \count($this->received) === 1);
@@ -138,7 +139,7 @@ final class WorkerMessageReaderTest extends TestCase
 
     public function testFailingChannelIsLoggedWithItsException(): void
     {
-        $failure = TransportException::closed();
+        $failure = TransportException::createForReason(TransportError::Closed);
 
         EventLoopTicks::settle();
         $this->process->channel->fail($failure);
@@ -151,7 +152,7 @@ final class WorkerMessageReaderTest extends TestCase
     public function testPeerDisconnectCountsAsClosedChannel(): void
     {
         EventLoopTicks::settle();
-        $this->process->channel->fail(TransportException::peerDisconnected(new RuntimeException('channel closed')));
+        $this->process->channel->fail(TransportException::createForReason(TransportError::PeerDisconnected, new RuntimeException('channel closed')));
         EventLoopTicks::settleUntil(fn(): bool => $this->gone !== []);
 
         self::assertSame(['closed the channel'], $this->gone);
@@ -161,10 +162,10 @@ final class WorkerMessageReaderTest extends TestCase
     public function testFailingChannelStopsTheReaderWithItsReason(): void
     {
         EventLoopTicks::settle();
-        $this->process->channel->fail(TransportException::closed());
+        $this->process->channel->fail(TransportException::createForReason(TransportError::Closed));
         EventLoopTicks::settleUntil(fn(): bool => $this->gone !== []);
 
-        self::assertSame([TransportException::closed()->getMessage()], $this->gone);
+        self::assertSame([TransportException::createForReason(TransportError::Closed)->getMessage()], $this->gone);
     }
 
     private function receive(WorkerMessage $message): void

@@ -11,6 +11,7 @@ use Amp\Future;
 use Amp\Process\Process;
 use Amp\TimeoutCancellation;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Runtime\Exception\DeployError;
 use Stewart\Runtime\Exception\DeployException;
 
 use function Amp\async;
@@ -37,7 +38,7 @@ final readonly class AmpExternalCommandRunner implements ExternalCommandRunner
                 throw $e;
             }
 
-            throw DeployException::commandTimedOut(implode(' ', $command), $timeout, $e);
+            throw DeployException::createForReason(DeployError::CommandTimedOut, $e, command: implode(' ', $command), timeout: (string) $timeout);
         }
 
         return new ExternalCommandResult($exitCode, $output->await(), $errorOutput->await());

@@ -13,6 +13,7 @@ use Stewart\Contracts\Exception\StewartException;
 use Stewart\Runtime\Container\AppContainerBuilder;
 use Stewart\Runtime\Container\AppRuntimeServices;
 use Stewart\Runtime\Container\TypedContainer;
+use Stewart\Runtime\Exception\AppError;
 use Stewart\Runtime\Exception\AppException;
 use Stewart\Runtime\Ipc\Message\Bootstrap;
 use Stewart\Runtime\Ipc\WorkerApp;
@@ -202,7 +203,7 @@ final class AppLifecycle
         } catch (Throwable $e) {
             if ($e instanceof CancelledException && $timeout !== null && $deadline?->isRequested() === true) {
                 $attempt->ignore();
-                $e = AppException::initializeTimedOut($slot->id(), $timeout, $e);
+                $e = AppException::createForReason(AppError::InitializeTimedOut, $e, appId: $slot->id()->value, timeout: (string) $timeout);
             }
 
             $this->failApp($slot, AppFailurePhase::Initialize, $e);

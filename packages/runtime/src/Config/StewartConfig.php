@@ -10,6 +10,7 @@ use Stewart\Client\Connection\HomeAssistantUrl;
 use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Config\Collection\AppOverrideCollection;
+use Stewart\Runtime\Exception\ConfigurationError;
 use Stewart\Runtime\Exception\ConfigurationException;
 use Stewart\Runtime\Logging\LogFormat;
 use Stewart\Runtime\Model\LogLevel;
@@ -72,7 +73,7 @@ final readonly class StewartConfig
     /** @throws ConfigurationException */
     public function requireHomeAssistant(): ConnectionConfig
     {
-        return $this->homeAssistant ?? throw ConfigurationException::homeAssistantMissing();
+        return $this->homeAssistant ?? throw ConfigurationException::createForReason(ConfigurationError::HomeAssistantMissing);
     }
 
     /** @throws ConfigurationException */

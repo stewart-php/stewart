@@ -14,6 +14,7 @@ use Stewart\Contracts\Exception\EventFireError;
 use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\EventFireFailed;
 use Stewart\Runtime\Ipc\Message\EventFireRequest;
@@ -108,8 +109,15 @@ final class EventFirerTest extends TestCase
     /** @return iterable<string, array{Throwable, EventFireError}> */
     public static function provideSendFailures(): iterable
     {
-        yield 'a request that cannot be encoded' => [TransportException::unencodable(EventFireRequest::class, new RuntimeException('NAN')), EventFireError::Rejected];
-        yield 'a channel that is gone' => [TransportException::sendFailed(new RuntimeException('broken pipe')), EventFireError::Unreachable];
+        yield 'a request that cannot be encoded' => [TransportException::createForReason(
+            TransportError::Unencodable,
+            new RuntimeException('NAN'),
+            messageClass: EventFireRequest::class,
+        ), EventFireError::Rejected];
+        yield 'a channel that is gone' => [TransportException::createForReason(
+            TransportError::SendFailed,
+            new RuntimeException('broken pipe'),
+        ), EventFireError::Unreachable];
     }
 
     public function testSilentBrokerTimesOut(): void

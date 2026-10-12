@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Broker\Deploy;
 
+use Stewart\Runtime\Exception\DeployError;
 use Stewart\Runtime\Exception\DeployException;
 use Stringable;
 
@@ -17,7 +18,7 @@ final readonly class CommitId implements Stringable
     public function __construct(string $value)
     {
         if (preg_match(self::HASH_PATTERN, $value) !== 1) {
-            throw DeployException::commitIdInvalid($value);
+            throw DeployException::createForReason(DeployError::CommitIdInvalid, value: $value);
         }
 
         $this->value = $value;

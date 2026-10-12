@@ -8,6 +8,7 @@ use Closure;
 use SensitiveParameter;
 use Stewart\Contracts\Exception\StewartException;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Runtime\Exception\ConfigurationError;
 use Stewart\Runtime\Exception\ConfigurationException;
 
 final readonly class ConfigSection
@@ -28,7 +29,7 @@ final readonly class ConfigSection
     /** @throws ConfigurationException */
     public function readSection(string $key): self
     {
-        return $this->findSection($key) ?? throw ConfigurationException::keyInvalid($this->buildKeyPath($key), 'a section');
+        return $this->findSection($key) ?? throw $this->createKeyInvalidFailure($key, 'a section');
     }
 
     public function findSection(string $key): ?self
@@ -61,7 +62,7 @@ final readonly class ConfigSection
     {
         $value = $this->values[$key] ?? null;
 
-        return \is_int($value) ? $value : throw ConfigurationException::keyInvalid($this->buildKeyPath($key), 'a whole number');
+        return \is_int($value) ? $value : throw $this->createKeyInvalidFailure($key, 'a whole number');
     }
 
     /** @throws ConfigurationException */
@@ -69,13 +70,13 @@ final readonly class ConfigSection
     {
         $value = $this->values[$key] ?? null;
 
-        return \is_bool($value) ? $value : throw ConfigurationException::keyInvalid($this->buildKeyPath($key), 'true or false');
+        return \is_bool($value) ? $value : throw $this->createKeyInvalidFailure($key, 'true or false');
     }
 
     /** @throws ConfigurationException */
     public function readString(string $key): string
     {
-        return $this->findString($key) ?? throw ConfigurationException::keyInvalid($this->buildKeyPath($key), 'a string');
+        return $this->findString($key) ?? throw $this->createKeyInvalidFailure($key, 'a string');
     }
 
     public function findString(string $key): ?string
@@ -110,7 +111,7 @@ final readonly class ConfigSection
         $strings = [];
 
         foreach ($this->readMap($key) as $name => $value) {
-            $strings[$name] = \is_string($value) ? $value : throw ConfigurationException::keyInvalid($this->buildKeyPath($key . '.' . $name), 'a string');
+            $strings[$name] = \is_string($value) ? $value : throw $this->createKeyInvalidFailure($key . '.' . $name, 'a string');
         }
 
         return $strings;
@@ -125,7 +126,7 @@ final readonly class ConfigSection
         $value = $this->values[$key] ?? [];
 
         if (!\is_array($value)) {
-            throw ConfigurationException::keyInvalid($this->buildKeyPath($key), 'a map');
+            throw $this->createKeyInvalidFailure($key, 'a map');
         }
 
         $map = [];
@@ -143,11 +144,21 @@ final readonly class ConfigSection
         $duration = $this->readParsedValue($key, Duration::parse(...));
 
         if ($atLeast?->isLongerThan($duration) === true) {
-            throw ConfigurationException::durationTooShort($this->buildKeyPath($key), (string) $duration, (string) $atLeast);
+            throw ConfigurationException::createForReason(
+                ConfigurationError::DurationTooShort,
+                path: $this->buildKeyPath($key),
+                value: (string) $duration,
+                minimum: (string) $atLeast,
+            );
         }
 
         if ($atMost !== null && $duration->isLongerThan($atMost)) {
-            throw ConfigurationException::durationTooLong($this->buildKeyPath($key), (string) $duration, (string) $atMost);
+            throw ConfigurationException::createForReason(
+                ConfigurationError::DurationTooLong,
+                path: $this->buildKeyPath($key),
+                value: (string) $duration,
+                maximum: (string) $atMost,
+            );
         }
 
         return $duration;
@@ -160,7 +171,12 @@ final readonly class ConfigSection
         $duration = $optional->findDuration();
 
         if ($duration !== null && $atLeast?->isLongerThan($duration) === true) {
-            throw ConfigurationException::durationTooShort($this->buildKeyPath($key), (string) $duration, (string) $atLeast);
+            throw ConfigurationException::createForReason(
+                ConfigurationError::DurationTooShort,
+                path: $this->buildKeyPath($key),
+                value: (string) $duration,
+                minimum: (string) $atLeast,
+            );
         }
 
         return $optional;
@@ -174,11 +190,12 @@ final readonly class ConfigSection
         $maxDelay = $this->readDuration($keyPrefix . 'max_delay', $oneMillisecond);
 
         if ($initialDelay->isLongerThan($maxDelay)) {
-            throw ConfigurationException::maxDelayBelowInitialDelay(
-                $this->buildKeyPath($keyPrefix . 'max_delay'),
-                (string) $maxDelay,
-                $this->buildKeyPath($keyPrefix . 'initial_delay'),
-                (string) $initialDelay,
+            throw ConfigurationException::createForReason(
+                ConfigurationError::MaxDelayBelowInitialDelay,
+                path: $this->buildKeyPath($keyPrefix . 'max_delay'),
+                value: (string) $maxDelay,
+                initialDelayPath: $this->buildKeyPath($keyPrefix . 'initial_delay'),
+                initialDelay: (string) $initialDelay,
             );
         }
 
@@ -198,8 +215,13 @@ final readonly class ConfigSection
         try {
             return $parse($raw);
         } catch (StewartException $e) {
-            throw ConfigurationException::keyParseFailed($this->buildKeyPath($key), $e);
+            throw ConfigurationException::createForReason(ConfigurationError::KeyParseFailed, $e, path: $this->buildKeyPath($key));
         }
+    }
+
+    private function createKeyInvalidFailure(string $key, string $expected): ConfigurationException
+    {
+        return ConfigurationException::createForReason(ConfigurationError::KeyInvalid, path: $this->buildKeyPath($key), expected: $expected);
     }
 
     private function buildKeyPath(string $key): string

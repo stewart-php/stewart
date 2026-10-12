@@ -26,6 +26,7 @@ use Stewart\Runtime\Control\Protocol\Frame\ServerFrame;
 use Stewart\Runtime\Control\Protocol\Frame\Welcome;
 use Stewart\Runtime\Control\Request\ControlRequestDispatcher;
 use Stewart\Runtime\Exception\ConfigurationException;
+use Stewart\Runtime\Exception\ControlError;
 use Stewart\Runtime\Exception\ControlException;
 use Stewart\Support\Time\Deadlines;
 use Throwable;
@@ -208,7 +209,7 @@ final class ControlServer implements ControlPlane
             return new RequestFailed((string) $e->reason->value, $e->getMessage());
         } catch (Throwable $e) {
             $this->logger->warning('Could not answer a control request', ['peer' => $session->describePeer(), 'exception' => $e]);
-            $unanswerable = ControlException::requestUnanswerable($e);
+            $unanswerable = ControlException::createForReason(ControlError::RequestUnanswerable, $e);
 
             return new RequestFailed($unanswerable->reason->value, $unanswerable->getMessage());
         }

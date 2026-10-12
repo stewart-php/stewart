@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Ipc\Wire;
 use JsonException;
 use Stewart\Contracts\Exception\StewartException;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
+use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\Bootstrap;
 use Stewart\Runtime\Json\ClassShapeReader;
@@ -67,14 +68,17 @@ final readonly class IpcCodec
     /** @throws TransportException */
     public function encodeMessage(object $message): string
     {
-        $tag = $this->messageCatalog->findTagForClass($message::class) ?? throw TransportException::messageTypeMissing($message::class);
+        $tag = $this->messageCatalog->findTagForClass($message::class) ?? throw TransportException::createForReason(
+            TransportError::MessageTypeMissing,
+            messageClass: $message::class,
+        );
 
         try {
             return '{"t":"' . $tag . '","m":' . $this->ipcWireMapper->encodeObject($message) . '}';
         } catch (TransportException $e) {
             throw $e;
         } catch (JsonException|StewartException $e) {
-            throw TransportException::unencodable($message::class, $e);
+            throw TransportException::createForReason(TransportError::Unencodable, $e, messageClass: $message::class);
         }
     }
 
@@ -84,7 +88,7 @@ final readonly class IpcCodec
         try {
             $data = JsonDecoder::decodeJson($frame);
         } catch (JsonException $e) {
-            throw TransportException::undecodableFrame(self::UNKNOWN_TYPE, $e->getMessage(), $e);
+            throw TransportException::createForReason(TransportError::UndecodableFrame, $e, messageType: self::UNKNOWN_TYPE, reason: $e->getMessage());
         }
 
         $tag = \is_array($data) && \is_string($data['t'] ?? null) ? $data['t'] : self::UNKNOWN_TYPE;
@@ -92,17 +96,25 @@ final readonly class IpcCodec
         $class = $this->messageCatalog->findClassForTag($tag);
 
         if ($class === null || !\is_array($body)) {
-            throw TransportException::undecodableFrame($tag, $class === null ? 'unknown message type' : 'the frame has no message body');
+            throw TransportException::createForReason(
+                TransportError::UndecodableFrame,
+                messageType: $tag,
+                reason: $class === null ? 'unknown message type' : 'the frame has no message body',
+            );
         }
 
         if ($class === Bootstrap::class && ($body['protocol'] ?? null) !== self::PROTOCOL_VERSION) {
-            throw TransportException::protocolMismatch(self::PROTOCOL_VERSION, \is_int($body['protocol'] ?? null) ? $body['protocol'] : 0);
+            throw TransportException::createForReason(
+                TransportError::ProtocolMismatch,
+                expected: self::PROTOCOL_VERSION,
+                actual: \is_int($body['protocol'] ?? null) ? $body['protocol'] : 0,
+            );
         }
 
         try {
             return $this->ipcWireMapper->decodeObject($class, $body);
         } catch (Throwable $e) {
-            throw TransportException::undecodableFrame($tag, $e->getMessage(), $e);
+            throw TransportException::createForReason(TransportError::UndecodableFrame, $e, messageType: $tag, reason: $e->getMessage());
         }
     }
 }

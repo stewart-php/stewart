@@ -8,6 +8,7 @@ use Closure;
 use Stewart\Contracts\Exception\StewartException;
 use Stewart\Runtime\Config\ControlAddress;
 use Stewart\Runtime\Config\ControlConfig;
+use Stewart\Runtime\Exception\ControlError;
 use Stewart\Runtime\Exception\ControlException;
 
 final readonly class ControlTargetResolver
@@ -25,12 +26,12 @@ final readonly class ControlTargetResolver
         $control = $this->loadControlConfig($settings);
 
         $resolvedAddress = $address === null
-            ? ($control->listen ?? throw ControlException::controlDisabled())
+            ? ($control->listen ?? throw ControlException::createForReason(ControlError::ControlDisabled))
             : ControlAddress::parse($address);
 
         $resolvedToken = $token
             ?? $control->token
-            ?? throw ControlException::tokenMissing();
+            ?? throw ControlException::createForReason(ControlError::TokenMissing);
 
         return new ControlTarget($resolvedAddress->toConnectableAddress(), $resolvedToken);
     }
@@ -44,7 +45,7 @@ final readonly class ControlTargetResolver
         try {
             return $settings();
         } catch (StewartException $e) {
-            throw ControlException::configUnavailable($e);
+            throw ControlException::createForReason(ControlError::ConfigUnavailable, $e);
         }
     }
 }

@@ -22,6 +22,7 @@ use Stewart\Runtime\Broker\WorkerSlotState;
 use Stewart\Runtime\Config\SupervisionConfig;
 use Stewart\Runtime\Exception\BrokerError;
 use Stewart\Runtime\Exception\BrokerException;
+use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\Ping;
 use Stewart\Runtime\Ipc\Message\Shutdown;
@@ -351,7 +352,7 @@ final class WorkerPoolTest extends TestCase
         $pool = $this->createPool();
         $pool->startWorker(self::createSlot(0), $this->listener);
         $process = $this->spawner->getLatestProcess(0);
-        $process->channel->refuseSendsOf(Ping::class, TransportException::sendFailed(new RuntimeException('broken pipe')));
+        $process->channel->refuseSendsOf(Ping::class, TransportException::createForReason(TransportError::SendFailed, new RuntimeException('broken pipe')));
 
         $stopping = async(static fn() => $pool->shutdown('test', Duration::seconds(2.0)));
         EventLoopTicks::settleUntil(static fn(): bool => $exiting->countWaiters() === 1);

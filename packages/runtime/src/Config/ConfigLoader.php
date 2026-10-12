@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Config;
 
 use Stewart\Contracts\Exception\IdentifierException;
+use Stewart\Runtime\Exception\ConfigurationError;
 use Stewart\Runtime\Exception\ConfigurationException;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\Definition\Processor;
@@ -39,7 +40,7 @@ final readonly class ConfigLoader
         try {
             return new Processor()->process($tree, $configs);
         } catch (InvalidConfigurationException $e) {
-            throw ConfigurationException::schemaViolation($e);
+            throw ConfigurationException::createForReason(ConfigurationError::SchemaViolation, $e);
         }
     }
 

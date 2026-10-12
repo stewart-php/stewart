@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Ipc;
 
+use Stewart\Runtime\Exception\ContainerError;
 use Stewart\Runtime\Exception\ContainerException;
 
 /** @template THandler of MessageHandler */
@@ -30,7 +31,12 @@ final readonly class MessageHandlerIndex
             $registered = $handlersByMessageClass[$messageClass] ?? null;
 
             if ($registered !== null) {
-                throw ContainerException::messageHandlerDuplicated($messageClass, $registered::class, $handler::class);
+                throw ContainerException::createForReason(
+                    ContainerError::MessageHandlerDuplicated,
+                    messageClass: $messageClass,
+                    firstHandler: $registered::class,
+                    secondHandler: $handler::class,
+                );
             }
 
             $handlersByMessageClass[$messageClass] = $handler;

@@ -23,6 +23,7 @@ use Stewart\Contracts\Time\Timers;
 use Stewart\Runtime\App\GeneratedRoots;
 use Stewart\Runtime\Container\Collection\AppBuildFailureCollection;
 use Stewart\Runtime\Container\Collection\AppRegistrationCollection;
+use Stewart\Runtime\Exception\ContainerError;
 use Stewart\Runtime\Exception\ContainerException;
 use Stewart\Runtime\Ipc\Collection\WorkerAppCollection;
 use Stewart\Runtime\Model\WorkerId;
@@ -206,20 +207,24 @@ final readonly class AppContainerBuilder
     /** @return StewartException<ExceptionReason> */
     private function explainAppFailure(AppId $appId, Throwable $error): StewartException
     {
-        return $error instanceof StewartException ? $error : ContainerException::appBuildFailed($appId, $error);
+        return $error instanceof StewartException ? $error : ContainerException::createForReason(ContainerError::AppBuildFailed, $error, appId: $appId->value);
     }
 
     /** @return StewartException<ExceptionReason> */
     private function explainWorkerFailure(WorkerId $workerId, Throwable $error): StewartException
     {
-        return $error instanceof StewartException ? $error : ContainerException::buildFailed($workerId, $error);
+        return $error instanceof StewartException ? $error : ContainerException::createForReason(
+            ContainerError::BuildFailed,
+            $error,
+            workerId: $workerId->value,
+        );
     }
 
     /** @throws ContainerException */
     private function loadUserServices(ContainerBuilder $container, string $servicesFile): void
     {
         if (!is_file($servicesFile)) {
-            throw ContainerException::servicesFileMissing($servicesFile);
+            throw ContainerException::createForReason(ContainerError::ServicesFileMissing, path: $servicesFile);
         }
 
         new PhpFileLoader($container, new FileLocator(\dirname($servicesFile)))->load(basename($servicesFile));
@@ -275,7 +280,7 @@ final readonly class AppContainerBuilder
             $class = $definition->getClass() ?? $id;
 
             if (is_a($class, App::class, true)) {
-                throw ContainerException::appInServicesFile($id, $class);
+                throw ContainerException::createForReason(ContainerError::AppInServicesFile, serviceId: $id, class: $class);
             }
         }
     }

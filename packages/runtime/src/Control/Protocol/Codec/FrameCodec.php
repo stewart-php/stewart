@@ -20,6 +20,7 @@ use Stewart\Runtime\Control\Protocol\Frame\ServerFrame;
 use Stewart\Runtime\Control\Protocol\Frame\SnapshotFrame;
 use Stewart\Runtime\Control\Protocol\Frame\SnapshotRequest;
 use Stewart\Runtime\Control\Protocol\Frame\Welcome;
+use Stewart\Runtime\Exception\ControlError;
 use Stewart\Runtime\Exception\ControlException;
 use Stewart\Runtime\Json\ClassShapeReader;
 use Stewart\Runtime\Json\Collection\ValueConverterCollection;
@@ -65,13 +66,13 @@ final readonly class FrameCodec
         $type = array_search($frame::class, self::CLIENT_FRAMES + self::SERVER_FRAMES, true);
 
         if ($type === false) {
-            throw ControlException::frameClassUnknown($frame::class);
+            throw ControlException::createForReason(ControlError::FrameClassUnknown, frameClass: $frame::class);
         }
 
         try {
             return JsonEncoder::encodeToJson(['type' => $type, ...(array) $this->controlWireMapper->normalizeObject($frame)], self::DEPTH) . "\n";
         } catch (JsonException|StewartException $e) {
-            throw ControlException::frameUnencodable($frame::class, $e);
+            throw ControlException::createForReason(ControlError::FrameUnencodable, $e, frameClass: $frame::class);
         }
     }
 
@@ -102,11 +103,11 @@ final readonly class FrameCodec
         try {
             $data = JsonDecoder::decodeJson($line, self::DEPTH);
         } catch (JsonException $e) {
-            throw ControlException::frameNotJson($e);
+            throw ControlException::createForReason(ControlError::FrameNotJson, $e);
         }
 
         if (!\is_array($data)) {
-            throw ControlException::frameNotAnObject(get_debug_type($data));
+            throw ControlException::createForReason(ControlError::FrameNotAnObject, actualType: get_debug_type($data));
         }
 
         $type = JsonShape::requireString($data, 'type');
@@ -117,7 +118,7 @@ final readonly class FrameCodec
         } catch (StewartException $e) {
             throw $e;
         } catch (Throwable $e) {
-            throw ControlException::frameUndecodable($type, $e);
+            throw ControlException::createForReason(ControlError::FrameUndecodable, $e, frameType: $type);
         }
     }
 }

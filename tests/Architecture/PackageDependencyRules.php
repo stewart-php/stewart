@@ -441,6 +441,7 @@ final class PackageDependencyRules
                 Selector::inNamespace('Stewart\Runtime\Control\Protocol'),
                 Selector::inNamespace('Stewart\Runtime\Lifecycle'),
                 Selector::classname(ControlException::class),
+                Selector::classname(ControlError::class),
                 Selector::classname(ControlConfig::class),
                 Selector::classname(ControlAddress::class),
                 Selector::classname(ProjectRoot::class),

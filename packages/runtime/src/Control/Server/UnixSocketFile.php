@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Control\Server;
 
 use Psr\Log\LoggerInterface;
+use Stewart\Runtime\Exception\ControlError;
 use Stewart\Runtime\Exception\ControlException;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
@@ -32,11 +33,11 @@ final readonly class UnixSocketFile
         }
 
         if (filetype($path) !== 'socket') {
-            throw ControlException::socketPathNotASocket($path);
+            throw ControlException::createForReason(ControlError::SocketPathNotASocket, path: $path);
         }
 
         if ($this->hasListener($path)) {
-            throw ControlException::socketInUse('unix://' . $path);
+            throw ControlException::createForReason(ControlError::SocketInUse, address: 'unix://' . $path);
         }
 
         $this->removeStaleSocket($path);
@@ -83,7 +84,7 @@ final readonly class UnixSocketFile
         try {
             $this->filesystem->mkdir($directory, self::SOCKET_DIRECTORY_MODE);
         } catch (IOException $e) {
-            throw ControlException::socketDirectoryNotCreatable($directory, $e);
+            throw ControlException::createForReason(ControlError::SocketDirectoryNotCreatable, $e, directory: $directory);
         }
     }
 
@@ -107,7 +108,7 @@ final readonly class UnixSocketFile
         try {
             $this->filesystem->remove($path);
         } catch (IOException $e) {
-            throw ControlException::socketUnremovable($path, $e);
+            throw ControlException::createForReason(ControlError::SocketUnremovable, $e, path: $path);
         }
     }
 }

@@ -12,6 +12,7 @@ use Stewart\Contracts\Exception\MqttError;
 use Stewart\Contracts\Exception\SelectorError;
 use Stewart\Contracts\Mqtt\MqttQos;
 use Stewart\Runtime\Dispatch\LocalDispatcher;
+use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\MqttPublish;
 use Stewart\Runtime\Ipc\Message\Subscribe;
@@ -54,7 +55,7 @@ final class WorkerMqttTest extends TestCase
 
     public function testBrokenChannelFailsThePublish(): void
     {
-        $mqtt = self::createMqtt(new FailingTransport(TransportException::sendFailed(new RuntimeException('broken pipe'))));
+        $mqtt = self::createMqtt(new FailingTransport(TransportException::createForReason(TransportError::SendFailed, new RuntimeException('broken pipe'))));
 
         self::assertThrowsReason(MqttError::PublishFailed, static fn() => $mqtt->publish('home/light', 'on'));
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Config;
 
 use Stewart\Runtime\Config\Environment\LeafParserChain;
+use Stewart\Runtime\Exception\ConfigurationError;
 use Stewart\Runtime\Exception\ConfigurationException;
 use Symfony\Component\Config\Definition\ArrayNode;
 use Symfony\Component\Config\Definition\NodeInterface;
@@ -95,7 +96,7 @@ final readonly class EnvironmentPlaceholders
                     return $default;
                 }
 
-                return $variable ?? throw ConfigurationException::placeholderUnset($setting, $name);
+                return $variable ?? throw ConfigurationException::createForReason(ConfigurationError::PlaceholderUnset, setting: $setting, variable: $name);
             },
             $value,
         ) ?? $value;

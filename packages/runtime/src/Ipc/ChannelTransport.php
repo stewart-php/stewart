@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Ipc;
 
 use Amp\Sync\Channel;
 use Amp\Sync\ChannelException;
+use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Wire\IpcCodec;
 use Throwable;
@@ -23,7 +24,7 @@ final class ChannelTransport implements Transport
     public function send(object $message): void
     {
         if ($this->closed) {
-            throw TransportException::closed();
+            throw TransportException::createForReason(TransportError::Closed);
         }
 
         $frame = $this->codecs->encodeMessage($message);
@@ -31,7 +32,7 @@ final class ChannelTransport implements Transport
         try {
             $this->channel->send($frame);
         } catch (ChannelException $e) {
-            throw TransportException::sendFailed($e);
+            throw TransportException::createForReason(TransportError::SendFailed, $e);
         }
     }
 
@@ -44,9 +45,9 @@ final class ChannelTransport implements Transport
         try {
             $frame = $this->channel->receive();
         } catch (ChannelException $e) {
-            throw TransportException::peerDisconnected($e);
+            throw TransportException::createForReason(TransportError::PeerDisconnected, $e);
         } catch (Throwable $e) {
-            throw TransportException::receiveFailed($e);
+            throw TransportException::createForReason(TransportError::ReceiveFailed, $e);
         }
 
         if ($frame === null) {
@@ -54,7 +55,7 @@ final class ChannelTransport implements Transport
         }
 
         if (!\is_string($frame)) {
-            throw TransportException::unexpectedMessage(get_debug_type($frame));
+            throw TransportException::createForReason(TransportError::UnexpectedMessage, actualType: get_debug_type($frame));
         }
 
         return $this->codecs->decodeMessage($frame);

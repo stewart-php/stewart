@@ -13,6 +13,7 @@ use Stewart\Contracts\Store\GlobalStore;
 use Stewart\Contracts\Store\PeerStore;
 use Stewart\Contracts\Store\ReadableStore;
 use Stewart\Contracts\Store\Store;
+use Stewart\Runtime\Exception\ContainerError;
 use Stewart\Runtime\Exception\ContainerException;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -76,7 +77,7 @@ final readonly class StoreAttributesPass implements CompilerPassInterface
         }
 
         if ($writable) {
-            throw ContainerException::peerStoreWritable($class, $parameter->getName());
+            throw ContainerException::createForReason(ContainerError::PeerStoreWritable, class: $class, parameter: $parameter->getName());
         }
 
         $peerAppId = $this->resolvePeerAppId($class, $parameter, $peer);
@@ -97,7 +98,7 @@ final readonly class StoreAttributesPass implements CompilerPassInterface
         try {
             return new AppId($peer->appId);
         } catch (IdentifierException $e) {
-            throw ContainerException::peerStoreAppIdInvalid($class, $parameter->getName(), $e);
+            throw ContainerException::createForReason(ContainerError::PeerStoreAppIdInvalid, $e, class: $class, parameter: $parameter->getName());
         }
     }
 

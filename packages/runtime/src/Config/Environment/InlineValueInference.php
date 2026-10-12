@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Config\Environment;
 
+use Stewart\Runtime\Exception\ConfigurationError;
 use Stewart\Runtime\Exception\ConfigurationException;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
@@ -23,7 +24,7 @@ final readonly class InlineValueInference
         try {
             return Yaml::parse(trim($raw));
         } catch (ParseException $e) {
-            throw ConfigurationException::environmentValueUnparsable($name, $e);
+            throw ConfigurationException::createForReason(ConfigurationError::EnvironmentValueUnparsable, $e, variable: $name);
         }
     }
 

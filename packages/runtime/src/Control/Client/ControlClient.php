@@ -28,6 +28,7 @@ use Stewart\Runtime\Control\Protocol\Frame\SnapshotFrame;
 use Stewart\Runtime\Control\Protocol\Frame\SnapshotRequest;
 use Stewart\Runtime\Control\Protocol\Frame\Welcome;
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
+use Stewart\Runtime\Exception\ControlError;
 use Stewart\Runtime\Exception\ControlException;
 use Stewart\Support\Time\Deadlines;
 use Throwable;
@@ -81,7 +82,7 @@ final readonly class ControlClient
         try {
             return $this->exchangeFrames($target, $request, $responseClass, $deadline);
         } catch (CancelledException $e) {
-            throw ControlException::requestTimedOut($timeout, $e);
+            throw ControlException::createForReason(ControlError::RequestTimedOut, $e, timeout: (string) $timeout);
         }
     }
 
@@ -103,16 +104,20 @@ final readonly class ControlClient
             $response = $this->readFrame($reader, $deadline);
 
             if ($response instanceof RequestFailed) {
-                throw ControlException::requestFailed($response->reason, $response->message);
+                throw ControlException::createForReason(ControlError::RequestFailed, reason: $response->reason, message: $response->message);
             }
 
             if (!$response instanceof $responseClass) {
-                throw ControlException::unexpectedFrame($response::class, $responseClass);
+                throw ControlException::createForReason(ControlError::UnexpectedFrame, frameClass: $response::class, expectedFrameClass: $responseClass);
             }
 
             $bye = $this->readFrame($reader, $deadline);
 
-            return $bye instanceof Bye ? $response : throw ControlException::unexpectedFrame($bye::class, Bye::class);
+            return $bye instanceof Bye ? $response : throw ControlException::createForReason(
+                ControlError::UnexpectedFrame,
+                frameClass: $bye::class,
+                expectedFrameClass: Bye::class,
+            );
         } finally {
             $socket->close();
         }
@@ -124,7 +129,7 @@ final readonly class ControlClient
         try {
             return $this->codec->decodeServerFrame($reader->readUntil("\n", $deadline, self::LINE_LIMIT));
         } catch (BufferException) {
-            throw ControlException::brokerHungUp();
+            throw ControlException::createForReason(ControlError::BrokerHungUp);
         }
     }
 
@@ -132,15 +137,15 @@ final readonly class ControlClient
     private function expectWelcome(object $frame): void
     {
         if ($frame instanceof Rejected) {
-            throw ControlException::connectionRejected($frame->reason);
+            throw ControlException::createForReason(ControlError::ConnectionRejected, reason: $frame->reason);
         }
 
         if (!$frame instanceof Welcome) {
-            throw ControlException::unexpectedGreeting($frame::class);
+            throw ControlException::createForReason(ControlError::UnexpectedGreeting, frameClass: $frame::class);
         }
 
         if ($frame->protocol !== ControlProtocol::VERSION) {
-            throw ControlException::protocolMismatch($frame->protocol, ControlProtocol::VERSION);
+            throw ControlException::createForReason(ControlError::ProtocolMismatch, brokerProtocol: $frame->protocol, clientProtocol: ControlProtocol::VERSION);
         }
     }
 }

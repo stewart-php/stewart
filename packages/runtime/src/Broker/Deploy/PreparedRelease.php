@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Broker\Deploy;
 
+use Stewart\Runtime\Exception\DeployError;
 use Stewart\Runtime\Exception\DeployException;
 
 final readonly class PreparedRelease
@@ -21,7 +22,7 @@ final readonly class PreparedRelease
         $state = ReleaseState::tryFrom($parts[1] ?? '');
 
         if (\count($parts) !== 2 || $state === null) {
-            throw DeployException::prepareOutputUnexpected($line);
+            throw DeployException::createForReason(DeployError::PrepareOutputUnexpected, output: $line);
         }
 
         return new self(new CommitId($parts[0]), $state);

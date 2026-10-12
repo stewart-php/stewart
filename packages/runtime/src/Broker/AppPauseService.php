@@ -12,6 +12,7 @@ use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\App\AppPauseOutcome;
 use Stewart\Runtime\App\AppPauseOverride;
 use Stewart\Runtime\App\AppPauseResetOutcome;
+use Stewart\Runtime\Exception\AppError;
 use Stewart\Runtime\Exception\AppException;
 use Stewart\Runtime\Ipc\Message\PausedAppsChanged;
 use Stewart\Runtime\Ipc\Wire\AppIdsFragment;
@@ -135,7 +136,10 @@ final readonly class AppPauseService
 
     private function createNotLoadedException(AppId $appId): AppException
     {
-        return $this->apps->knownIds->containsId($appId) ? AppException::disabled($appId) : AppException::unknown($appId);
+        return $this->apps->knownIds->containsId($appId) ? AppException::createForReason(
+            AppError::Disabled,
+            appId: $appId->value,
+        ) : AppException::unknown($appId);
     }
 
     private function broadcastPausedApps(): void
