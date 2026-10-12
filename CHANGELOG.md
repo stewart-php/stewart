@@ -51,6 +51,8 @@ minor release may break; its "Upgrading" section says what to change.
 - A handler that keeps failing from timers or one-shot schedules is reported in full only on its first and every
   hundredth failure, like a failing subscription; repeated failures are now grouped by the app line that failed,
   and the worker no longer keeps a counter per timer
+- Publishing to an MQTT topic that is not valid UTF-8 fails with `mqtt_topic_invalid` instead of making the server
+  drop the connection, which for QoS 1 repeated on every reconnect
 
 ### Changed
 

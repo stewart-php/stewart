@@ -25,7 +25,7 @@ final readonly class MqttMessage
      */
     public static function createForPublish(string $topic, string|array $payload, MqttQos $qos, bool $retain): self
     {
-        if ($topic === '' || \strlen($topic) > self::MAX_TOPIC_BYTES || strpbrk($topic, "+#\0") !== false) {
+        if ($topic === '' || \strlen($topic) > self::MAX_TOPIC_BYTES || strpbrk($topic, "+#\0") !== false || preg_match('//u', $topic) !== 1) {
             throw MqttException::createForReason(MqttError::TopicInvalid, topic: $topic);
         }
 
