@@ -6,30 +6,28 @@ namespace Stewart\Client\Tests\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use RuntimeException;
 use Stewart\Client\Exception\HaClientError;
-use Stewart\Client\Exception\HaClientException;
 
 #[CoversClass(HaClientError::class)]
 final class HaClientErrorTest extends TestCase
 {
     public function testOnlyARefusedCredentialIsFatal(): void
     {
-        self::assertTrue(HaClientException::tokenRejected('Invalid access token')->reason->isFatal());
-        self::assertTrue(HaClientException::unexpectedGreeting('nothing')->reason->isFatal());
-        self::assertTrue(HaClientException::administratorRequired(HaClientException::commandUnauthorized('subscribe_events', 'Unauthorized', 'unauthorized'))->reason->isFatal());
+        self::assertTrue(HaClientError::TokenRejected->isFatal());
+        self::assertTrue(HaClientError::UnexpectedGreeting->isFatal());
+        self::assertTrue(HaClientError::AdministratorRequired->isFatal());
 
-        self::assertFalse(HaClientException::connectionDropped('Home Assistant closed the connection.')->reason->isFatal());
-        self::assertFalse(HaClientException::connectFailed('ws://ha:8123', new RuntimeException('refused'))->reason->isFatal());
+        self::assertFalse(HaClientError::ConnectionDropped->isFatal());
+        self::assertFalse(HaClientError::ConnectFailed->isFatal());
     }
 
     public function testOnlyAnsweredRefusalsCountAsCommandRefusal(): void
     {
-        self::assertTrue(HaClientException::commandRejected('subscribe_trigger', 'Invalid', 'invalid_format')->reason->isCommandRefusal());
-        self::assertTrue(HaClientException::commandUnauthorized('subscribe_trigger', 'Unauthorized', 'unauthorized')->reason->isCommandRefusal());
-        self::assertTrue(HaClientException::administratorRequired(HaClientException::commandUnauthorized('subscribe_trigger', 'Unauthorized', 'unauthorized'))->reason->isCommandRefusal());
+        self::assertTrue(HaClientError::CommandRejected->isCommandRefusal());
+        self::assertTrue(HaClientError::CommandUnauthorized->isCommandRefusal());
+        self::assertTrue(HaClientError::AdministratorRequired->isCommandRefusal());
 
-        self::assertFalse(HaClientException::connectionDropped('closed')->reason->isCommandRefusal());
-        self::assertFalse(HaClientException::notConnected()->reason->isCommandRefusal());
+        self::assertFalse(HaClientError::ConnectionDropped->isCommandRefusal());
+        self::assertFalse(HaClientError::NotConnected->isCommandRefusal());
     }
 }

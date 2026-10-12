@@ -13,6 +13,7 @@ use Amp\Socket\Socket;
 use Closure;
 use Stewart\Contracts\Mqtt\MqttMessage;
 use Stewart\Contracts\Time\Timers;
+use Stewart\Mqtt\Exception\MqttClientError;
 use Stewart\Mqtt\Exception\MqttClientException;
 use Stewart\Mqtt\Packet\ConnAckPacket;
 use Stewart\Mqtt\Packet\ConnectPacket;
@@ -69,7 +70,7 @@ final readonly class MqttConnector
         }
 
         if ($answer->returnCode !== ConnectReturnCode::Accepted) {
-            throw MqttClientException::connectionRefused($answer->returnCode->describeRefusal());
+            throw MqttClientException::createForReason(MqttClientError::ConnectionRefused, refusal: $answer->returnCode->describeRefusal());
         }
     }
 

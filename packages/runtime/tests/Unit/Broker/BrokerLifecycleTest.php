@@ -447,7 +447,7 @@ final class BrokerLifecycleTest extends TestCase
 
     public function testFatalConnectionFailureEndsTheRunWithThatError(): void
     {
-        $this->session->openFailure = HaClientException::tokenRejected('token rejected');
+        $this->session->openFailure = HaClientException::createForReason(HaClientError::TokenRejected, reason: 'token rejected');
 
         $this->assertThrowsReason(HaClientError::TokenRejected, fn() => $this->broker->lifecycle->run());
     }
@@ -474,7 +474,7 @@ final class BrokerLifecycleTest extends TestCase
         $running = async($this->broker->lifecycle->run(...));
         EventLoopTicks::settle();
 
-        $this->session->listener?->connectionFailed(HaClientException::tokenRejected('token rejected'));
+        $this->session->listener?->connectionFailed(HaClientException::createForReason(HaClientError::TokenRejected, reason: 'token rejected'));
         $spawns->open();
 
         $this->assertThrowsReason(HaClientError::TokenRejected, fn() => $running->await());

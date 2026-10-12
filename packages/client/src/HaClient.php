@@ -477,7 +477,7 @@ final class HaClient
             return $this->connection->subscribeEvents($command, $handler);
         } catch (HaClientException $e) {
             throw $e->reason === HaClientError::CommandUnauthorized
-                ? HaClientException::administratorRequired($e)
+                ? HaClientException::createForReason(HaClientError::AdministratorRequired, $e)
                 : $e;
         }
     }

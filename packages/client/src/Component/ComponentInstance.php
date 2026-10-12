@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Client\Component;
 
+use Stewart\Client\Exception\HaClientError;
 use Stewart\Client\Exception\HaClientException;
 use Stringable;
 
@@ -17,7 +18,7 @@ final readonly class ComponentInstance implements Stringable
     public static function parse(string $value): self
     {
         if (preg_match(self::PATTERN, $value) !== 1) {
-            throw HaClientException::componentInstanceInvalid($value);
+            throw HaClientException::createForReason(HaClientError::ComponentInstanceInvalid, instance: $value);
         }
 
         return new self($value);

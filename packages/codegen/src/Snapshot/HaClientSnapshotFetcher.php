@@ -9,6 +9,7 @@ use Stewart\Client\Connection\ConnectionConfig;
 use Stewart\Client\HaClientFactory;
 use Stewart\Client\HaConfig;
 use Stewart\Client\HaCoreState;
+use Stewart\Codegen\Exception\CodegenError;
 use Stewart\Codegen\Exception\CodegenException;
 
 final readonly class HaClientSnapshotFetcher implements SnapshotFetcher
@@ -43,7 +44,7 @@ final readonly class HaClientSnapshotFetcher implements SnapshotFetcher
         $state = $config->coreState;
 
         if ($state !== null && $state !== HaCoreState::Running) {
-            throw CodegenException::homeAssistantNotRunning($state);
+            throw CodegenException::createForReason(CodegenError::HomeAssistantNotRunning, state: $state->value);
         }
     }
 }

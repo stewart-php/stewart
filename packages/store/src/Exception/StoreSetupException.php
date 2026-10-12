@@ -31,9 +31,4 @@ final class StoreSetupException extends StewartException
             $suggestion === null ? null : \sprintf('Did you mean "%s"?', $suggestion),
         );
     }
-
-    public static function prefixInvalid(string $prefix): self
-    {
-        return self::createForReason(StoreSetupError::PrefixInvalid, prefix: $prefix);
-    }
 }

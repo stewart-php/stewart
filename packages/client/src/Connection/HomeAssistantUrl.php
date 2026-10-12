@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Client\Connection;
 
 use SensitiveParameter;
+use Stewart\Client\Exception\HaClientError;
 use Stewart\Client\Exception\HaClientException;
 use Stewart\Support\Url\UrlRedactor;
 use Stringable;
@@ -30,7 +31,10 @@ final readonly class HomeAssistantUrl implements Stringable
     /** @throws HaClientException */
     public static function parse(#[SensitiveParameter] string $address): self
     {
-        return self::tryParse($address) ?? throw HaClientException::urlInvalid(UrlRedactor::redactCredentials(self::prefixScheme(trim($address))));
+        return self::tryParse($address) ?? throw HaClientException::createForReason(
+            HaClientError::UrlInvalid,
+            url: UrlRedactor::redactCredentials(self::prefixScheme(trim($address))),
+        );
     }
 
     public static function tryParse(#[SensitiveParameter] string $address): ?self
