@@ -11,7 +11,6 @@ use Stewart\Contracts\Mqtt\MqttMessage;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Topic\TopicEvent;
 use Stewart\Contracts\Trigger\TriggerEvent;
-use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Broker\Mqtt\MqttMessageRouter;
 use Stewart\Runtime\Ipc\Message\BrokerMessage;
 use Stewart\Runtime\Ipc\Message\EventFired;
@@ -22,6 +21,7 @@ use Stewart\Runtime\Ipc\Message\TriggerFired;
 use Stewart\Runtime\Ipc\Wire\EncodedStateChange;
 use Stewart\Runtime\Model\Collection\SubscriptionIdCollection;
 use Stewart\Runtime\Model\SubscriptionKind;
+use Stewart\Support\Wire\TriggerSpec;
 
 final readonly class EventRouter implements MqttMessageRouter
 {

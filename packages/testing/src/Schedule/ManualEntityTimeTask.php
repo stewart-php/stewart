@@ -7,17 +7,17 @@ namespace Stewart\Testing\Schedule;
 use Closure;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\HaContext;
-use Stewart\Contracts\Schedule\CalendarSchedule;
-use Stewart\Contracts\Schedule\EntityTime;
-use Stewart\Contracts\Schedule\OneShotSchedule;
 use Stewart\Contracts\Schedule\ScheduledRun;
 use Stewart\Contracts\Schedule\ScheduledTask;
-use Stewart\Contracts\Schedule\WallClockSchedule;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Subscription;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Instant;
+use Stewart\Support\Schedule\CalendarSchedule;
+use Stewart\Support\Schedule\EntityTime;
+use Stewart\Support\Schedule\OneShotSchedule;
+use Stewart\Support\Schedule\WallClockSchedule;
 
 final class ManualEntityTimeTask implements ScheduledTask
 {

@@ -10,13 +10,13 @@ use RuntimeException;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
 use Stewart\Contracts\Stream\Edge;
-use Stewart\Contracts\Stream\PendingEmission;
-use Stewart\Contracts\Stream\PendingEmissions;
-use Stewart\Contracts\Stream\ThrottleWindow;
 use Stewart\Contracts\Subscription;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Dispatch\SubscriptionQueue;
 use Stewart\Runtime\Tests\Fixtures\Dispatch\QueuedStreamFixture;
+use Stewart\Support\Stream\PendingEmission;
+use Stewart\Support\Stream\PendingEmissions;
+use Stewart\Support\Stream\ThrottleWindow;
 use Stewart\Testing\Async\Latch;
 
 #[CoversClass(SubscriptionQueue::class)]

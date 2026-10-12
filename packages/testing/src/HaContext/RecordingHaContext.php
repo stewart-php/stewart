@@ -11,8 +11,6 @@ use Stewart\Contracts\Connection\ConnectionLost;
 use Stewart\Contracts\Entity\Entity;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventOrigin;
-use Stewart\Contracts\Event\EventPayload;
-use Stewart\Contracts\Event\EventTypeSelector;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\EventStream;
 use Stewart\Contracts\Exception\EventFireException;
@@ -26,7 +24,6 @@ use Stewart\Contracts\Registry\EntityFilter;
 use Stewart\Contracts\Registry\Registry;
 use Stewart\Contracts\Selector\Collection\SelectorCollection;
 use Stewart\Contracts\Selector\Selector;
-use Stewart\Contracts\Service\ServiceFields;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTargetSource;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
@@ -34,21 +31,25 @@ use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
-use Stewart\Contracts\Stream\OperatorStream;
-use Stewart\Contracts\Stream\StateChanges;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Topic\Collection\TopicEventCollection;
 use Stewart\Contracts\Topic\TopicEvent;
-use Stewart\Contracts\Topic\TopicPayload;
 use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
-use Stewart\Contracts\Trigger\Collection\TriggerSpecCollection;
 use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Contracts\Trigger\TriggerEvent;
-use Stewart\Contracts\Trigger\TriggerSpec;
+use Stewart\Support\State\StewartIdentity;
+use Stewart\Support\Stream\OperatorStream;
+use Stewart\Support\Stream\StateChanges;
+use Stewart\Support\Wire\EventPayload;
+use Stewart\Support\Wire\EventTypeSelector;
+use Stewart\Support\Wire\ServiceFields;
+use Stewart\Support\Wire\TopicPayload;
+use Stewart\Support\Wire\TriggerSpec;
 use Stewart\Testing\HaContext\Collection\RecordedEventFireCollection;
 use Stewart\Testing\HaContext\Collection\RecordedHistoryQueryCollection;
 use Stewart\Testing\HaContext\Collection\RecordedServiceCallCollection;
+use Stewart\Testing\HaContext\Collection\WatchedTriggerCollection;
 use Stewart\Testing\Registry\InMemoryRegistry;
 use Stewart\Testing\Stream\PushSource;
 use Stewart\Testing\Time\ManualTimers;
@@ -98,7 +99,9 @@ final class RecordingHaContext implements HaContext
     /** @var PushSource<PushedTrigger> */
     private readonly PushSource $triggers;
 
-    private TriggerSpecCollection $watchedTriggers;
+    private WatchedTriggerCollection $watchedTriggers;
+
+    private readonly StewartIdentity $identity;
 
     public private(set) bool $connected = true;
 
@@ -121,7 +124,8 @@ final class RecordingHaContext implements HaContext
         $this->topics = new PushSource($timers->handlerFibers);
         $this->connectionEvents = new PushSource($timers->handlerFibers);
         $this->triggers = new PushSource($timers->handlerFibers);
-        $this->watchedTriggers = TriggerSpecCollection::empty();
+        $this->watchedTriggers = WatchedTriggerCollection::empty();
+        $this->identity = new StewartIdentity(self::STEWART_USER_ID);
     }
 
     /** @param array<string, mixed> $attributes */
@@ -217,7 +221,7 @@ final class RecordingHaContext implements HaContext
         $this->triggers->push(new PushedTrigger(TriggerSpec::fromSpec($trigger), $event));
     }
 
-    public function listWatchedTriggers(): TriggerSpecCollection
+    public function listWatchedTriggers(): WatchedTriggerCollection
     {
         return $this->watchedTriggers;
     }
@@ -312,7 +316,7 @@ final class RecordingHaContext implements HaContext
     public function watchTrigger(HaTrigger|HaTriggerCollection|array $trigger, array $variables = []): EventStream
     {
         $spec = TriggerSpec::fromSpec($trigger, $variables);
-        $this->watchedTriggers = $this->watchedTriggers->withTriggerSpec($spec);
+        $this->watchedTriggers = $this->watchedTriggers->withWatchedTrigger(new WatchedTrigger($spec->triggers, $spec->variables));
 
         return new OperatorStream($this->triggers, $this->timers)
             ->filter(static fn(PushedTrigger $pushed): bool => $pushed->spec->hasSameTriggersAs($spec))
@@ -347,6 +351,11 @@ final class RecordingHaContext implements HaContext
         $this->events->push(new HaEvent($fire->eventType, $fire->data, EventOrigin::Remote, $this->clock->getNow(), $fire->context));
 
         return $fire->context;
+    }
+
+    public function wasCausedByStewart(StateChange|EntityState|HaEvent $subject): bool
+    {
+        return $this->identity->wasCausedByStewart($subject);
     }
 
     public function publish(string $topic, bool|int|float|string|array|null $payload = null): void

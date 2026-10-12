@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Json;
 
-use Stewart\Contracts\Exception\JsonShapeException;
 use Stewart\Contracts\Time\Instant;
+use Stewart\Support\Exception\JsonShapeException;
 
 final readonly class EpochInstantConverter implements ValueConverter
 {

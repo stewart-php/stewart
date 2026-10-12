@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Ipc\Wire;
 
 use LogicException;
-use Stewart\Contracts\Exception\JsonShapeException;
 use Stewart\Contracts\Exposure\CalendarStateFormat;
 use Stewart\Contracts\Exposure\Command\ButtonPress;
 use Stewart\Contracts\Exposure\Command\DateCommand;
@@ -20,6 +19,7 @@ use Stewart\Contracts\Exposure\Command\TimeCommand;
 use Stewart\Contracts\Exposure\ExposedPlatform;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Runtime\Json\ValueConverter;
+use Stewart\Support\Exception\JsonShapeException;
 
 final readonly class ExposedCommandConverter implements ValueConverter
 {

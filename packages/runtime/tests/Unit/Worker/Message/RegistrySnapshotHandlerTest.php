@@ -14,11 +14,11 @@ use Stewart\Contracts\Registry\Collection\DeviceCollection;
 use Stewart\Contracts\Registry\Collection\FloorCollection;
 use Stewart\Contracts\Registry\Collection\LabelCollection;
 use Stewart\Contracts\Registry\Collection\RegisteredEntityCollection;
-use Stewart\Contracts\Registry\IndexedRegistry;
 use Stewart\Runtime\Ipc\Message\RegistrySnapshot;
 use Stewart\Runtime\Ipc\Wire\RegistryFragment;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\Worker\Message\RegistrySnapshotHandler;
+use Stewart\Support\State\IndexedRegistry;
 
 #[CoversClass(RegistrySnapshotHandler::class)]
 final class RegistrySnapshotHandlerTest extends TestCase

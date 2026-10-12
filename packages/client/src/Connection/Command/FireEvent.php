@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Client\Connection\Command;
 
-use Stewart\Contracts\Event\EventPayload;
+use Stewart\Support\Wire\EventPayload;
 
 final readonly class FireEvent implements HaCommand
 {

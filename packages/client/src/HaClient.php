@@ -56,7 +56,6 @@ use Stewart\Client\Registry\RegistryDecoder;
 use Stewart\Client\State\EntityStateDecoder;
 use Stewart\Contracts\Entity\Collection\EntityIdCollection;
 use Stewart\Contracts\Entity\EntityId;
-use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\Exception\HistoryError;
@@ -74,7 +73,6 @@ use Stewart\Contracts\Registry\Collection\AreaCollection;
 use Stewart\Contracts\Registry\Collection\DeviceCollection;
 use Stewart\Contracts\Registry\Collection\FloorCollection;
 use Stewart\Contracts\Registry\Collection\LabelCollection;
-use Stewart\Contracts\Registry\IndexedRegistry;
 use Stewart\Contracts\Registry\Update\EntityRegistryUpdate;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
@@ -84,7 +82,9 @@ use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Support\Json\JsonShape;
+use Stewart\Support\State\IndexedRegistry;
 use Stewart\Support\Time\Deadlines;
+use Stewart\Support\Wire\EventPayload;
 
 final class HaClient
 {

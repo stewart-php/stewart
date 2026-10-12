@@ -10,10 +10,10 @@ use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\IdentifierError;
 use Stewart\Contracts\Registry\AreaId;
 use Stewart\Contracts\Registry\EntityFilter;
-use Stewart\Contracts\Registry\IndexedRegistry;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\Tests\Fixtures\Registry\RegistryFixture;
 use Stewart\Testing\Exception\AssertsReason;
+use Stewart\Testing\Registry\InMemoryRegistry;
 
 #[CoversClass(EntityFilter::class)]
 final class EntityFilterTest extends TestCase
@@ -64,7 +64,7 @@ final class EntityFilterTest extends TestCase
 
     public function testDomainAndSelectorNeedNoRegistry(): void
     {
-        $registry = IndexedRegistry::empty();
+        $registry = new InMemoryRegistry();
 
         self::assertTrue(EntityFilter::inDomain('light', 'switch')->matchesEntity(new EntityId('switch.pump'), $registry));
         self::assertTrue(EntityFilter::matching('light.porch_*')->withSelector(Selector::exact('light.hall'))->matchesEntity(new EntityId('light.hall'), $registry));

@@ -9,7 +9,6 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Trigger\HaTrigger;
-use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\Message\SubscribeTriggerHandler;
@@ -27,6 +26,7 @@ use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerProcess;
+use Stewart\Support\Wire\TriggerSpec;
 use Stewart\Testing\Time\EventLoopTicks;
 
 #[CoversClass(SubscribeTriggerHandler::class)]

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Ipc\Wire;
 
-use Stewart\Contracts\Exception\JsonShapeException;
 use Stewart\Contracts\Exception\StewartException;
 use Stewart\Runtime\Json\ValueConverter;
 use Stewart\Runtime\Model\ExceptionDetails;
+use Stewart\Support\Exception\JsonShapeException;
 use Stewart\Support\Json\JsonShape;
 
 /** @phpstan-import-type ExceptionContext from StewartException */

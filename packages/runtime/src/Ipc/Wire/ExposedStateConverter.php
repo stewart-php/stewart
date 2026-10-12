@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Ipc\Wire;
 
-use Stewart\Contracts\Exception\JsonShapeException;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Runtime\Json\ValueConverter;
+use Stewart\Support\Exception\JsonShapeException;
 
 // Wrapped in an object so an unknown state stays apart from a missing one.
 final readonly class ExposedStateConverter implements ValueConverter

@@ -7,10 +7,10 @@ namespace Stewart\Runtime\Tests\Unit\Ipc\Wire;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Stewart\Contracts\Exception\JsonShapeError;
 use Stewart\Contracts\Trigger\HaTrigger;
-use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Ipc\Wire\TriggerSpecConverter;
+use Stewart\Support\Exception\JsonShapeError;
+use Stewart\Support\Wire\TriggerSpec;
 use Stewart\Testing\Exception\AssertsReason;
 
 #[CoversClass(TriggerSpecConverter::class)]

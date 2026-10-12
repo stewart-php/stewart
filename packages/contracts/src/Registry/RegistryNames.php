@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Contracts\Registry;
 
+/** @internal */
 final readonly class RegistryNames
 {
     public static function containsName(string $candidate, string ...$names): bool

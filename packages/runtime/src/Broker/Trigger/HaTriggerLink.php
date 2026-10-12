@@ -9,7 +9,7 @@ use Psr\Log\LoggerInterface;
 use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
 use Stewart\Contracts\Trigger\TriggerEvent;
-use Stewart\Contracts\Trigger\TriggerSpec;
+use Stewart\Support\Wire\TriggerSpec;
 use Throwable;
 
 use function Amp\async;

@@ -1,11 +1,10 @@
 {
     "name": "stewart-php/contracts",
-    "description": "Stewart core abstractions. Pure PHP and one cron parser",
+    "description": "Stewart core abstractions. Pure PHP",
     "type": "library",
     "license": "MIT",
     "require": {
         "php": ">=8.5",
-        "dragonmantank/cron-expression": "^3.4",
         "ext-filter": "*"
     },
     "require-dev": {

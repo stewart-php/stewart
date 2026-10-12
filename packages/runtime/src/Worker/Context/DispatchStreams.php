@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Worker\Context;
 
 use Stewart\Contracts\Connection\ConnectionEvent;
-use Stewart\Contracts\Event\EventTypeSelector;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\EventStream;
 use Stewart\Contracts\Mqtt\MqttMessage;
@@ -13,12 +12,9 @@ use Stewart\Contracts\Registry\EntityFilter;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
-use Stewart\Contracts\Stream\OperatorStream;
-use Stewart\Contracts\Stream\StateChanges;
 use Stewart\Contracts\Time\Timers;
 use Stewart\Contracts\Topic\TopicEvent;
 use Stewart\Contracts\Trigger\TriggerEvent;
-use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Dispatch\DispatchSource;
 use Stewart\Runtime\Dispatch\LocalDispatcher;
 use Stewart\Runtime\Model\ResourceScope;
@@ -26,7 +22,11 @@ use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\CachedStateReader;
 use Stewart\Runtime\State\StateCache;
+use Stewart\Support\Stream\OperatorStream;
+use Stewart\Support\Stream\StateChanges;
 use Stewart\Support\Time\Deadlines;
+use Stewart\Support\Wire\EventTypeSelector;
+use Stewart\Support\Wire\TriggerSpec;
 
 final readonly class DispatchStreams
 {

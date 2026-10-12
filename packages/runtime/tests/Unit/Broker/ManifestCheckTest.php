@@ -6,10 +6,10 @@ namespace Stewart\Runtime\Tests\Unit\Broker;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Stewart\Contracts\Generated\GeneratedFormat;
 use Stewart\Runtime\Broker\ManifestCheck;
 use Stewart\Runtime\Tests\Fixtures\Broker\UnversionedManifest;
 use Stewart\Runtime\Tests\Fixtures\Generated\Code\Manifest;
+use Stewart\Support\Wire\GeneratedFormat;
 
 #[CoversClass(ManifestCheck::class)]
 final class ManifestCheckTest extends TestCase

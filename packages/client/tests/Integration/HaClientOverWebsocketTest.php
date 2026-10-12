@@ -15,7 +15,6 @@ use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
 use Stewart\Client\Tests\Fixtures\FakeHaServer;
 use Stewart\Contracts\Entity\EntityId;
-use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\Exception\ServiceCallError;
 use Stewart\Contracts\History\HistoryDetail;
@@ -28,6 +27,7 @@ use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Support\Json\JsonEncoder;
 use Stewart\Support\Time\RevoltTimers;
+use Stewart\Support\Wire\EventPayload;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Time\EventLoopTicks;
 

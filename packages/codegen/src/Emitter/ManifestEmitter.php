@@ -6,8 +6,8 @@ namespace Stewart\Codegen\Emitter;
 
 use Stewart\Codegen\Model\GenerationModel;
 use Stewart\Codegen\Output\GeneratedFile;
-use Stewart\Contracts\Generated\GeneratedFormat;
 use Stewart\Contracts\Generated\Manifest;
+use Stewart\Support\Wire\GeneratedFormat;
 
 final readonly class ManifestEmitter implements ModelFileEmitter
 {

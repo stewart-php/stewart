@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Json;
 
-use Stewart\Contracts\Exception\JsonShapeException;
 use Stewart\Contracts\Exception\TimeException;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Support\Exception\JsonShapeException;
 
 final readonly class DurationConverter implements ValueConverter
 {

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Ipc\Wire;
 
-use Stewart\Contracts\Exception\JsonShapeException;
 use Stewart\Contracts\Mqtt\MqttMessage;
 use Stewart\Contracts\Mqtt\MqttQos;
 use Stewart\Runtime\Json\ValueConverter;
+use Stewart\Support\Exception\JsonShapeException;
 use Stewart\Support\Json\JsonShape;
 
 // Payloads are bytes and IPC frames are JSON, so the payload travels base64-encoded.

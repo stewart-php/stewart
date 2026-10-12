@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker;
 
 use Stewart\Contracts\Selector\Selector;
-use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionId;
 use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Runtime\Model\WorkerId;
+use Stewart\Support\Wire\TriggerSpec;
 
 final readonly class BrokerSubscription
 {

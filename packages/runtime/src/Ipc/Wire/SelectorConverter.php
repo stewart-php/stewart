@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Ipc\Wire;
 
-use Stewart\Contracts\Exception\JsonShapeException;
 use Stewart\Contracts\Exception\SelectorException;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\Selector\SelectorKind;
 use Stewart\Runtime\Json\ValueConverter;
+use Stewart\Support\Exception\JsonShapeException;
 use Stewart\Support\Json\JsonShape;
 
 final readonly class SelectorConverter implements ValueConverter

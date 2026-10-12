@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker;
 
 use Psr\Log\LoggerInterface;
-use Stewart\Contracts\Generated\GeneratedFormat;
+use Stewart\Support\Wire\GeneratedFormat;
 
 final readonly class GeneratedCodeDrift
 {

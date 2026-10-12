@@ -14,9 +14,9 @@ use Stewart\Contracts\Registry\Collection\DeviceCollection;
 use Stewart\Contracts\Registry\Collection\FloorCollection;
 use Stewart\Contracts\Registry\Collection\LabelCollection;
 use Stewart\Contracts\Registry\Collection\RegisteredEntityCollection;
-use Stewart\Contracts\Registry\IndexedRegistry;
 use Stewart\Contracts\Registry\RegisteredEntity;
 use Stewart\Runtime\Registry\RegistryCache;
+use Stewart\Support\State\IndexedRegistry;
 
 #[CoversClass(RegistryCache::class)]
 final class RegistryCacheTest extends TestCase

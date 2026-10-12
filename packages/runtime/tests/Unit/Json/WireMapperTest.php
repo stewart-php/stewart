@@ -8,8 +8,6 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Stewart\Contracts\Exception\JsonShapeError;
-use Stewart\Contracts\Exception\JsonShapeException;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\Json\ClassShapeReader;
@@ -32,6 +30,8 @@ use Stewart\Runtime\Tests\Fixtures\Wire\Priority;
 use Stewart\Runtime\Tests\Fixtures\Wire\Ranked;
 use Stewart\Runtime\Tests\Fixtures\Wire\SelfReferencing;
 use Stewart\Runtime\Tests\Fixtures\Wire\WithFragment;
+use Stewart\Support\Exception\JsonShapeError;
+use Stewart\Support\Exception\JsonShapeException;
 use Stewart\Testing\Exception\AssertsReason;
 
 #[CoversClass(WireMapper::class)]

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Tests\Fixtures\Container;
 
 use Psr\Log\NullLogger;
-use Stewart\Contracts\Identity\StewartIdentity;
 use Stewart\Contracts\Sun\GeoLocation;
 use Stewart\Contracts\Sun\SunCalendar;
 use Stewart\Contracts\Time\Duration;
@@ -38,6 +37,7 @@ use Stewart\Store\DisabledStores;
 use Stewart\Store\Stores;
 use Stewart\Sun\LocatedSunCalendar;
 use Stewart\Sun\NoaaSolarCalculator;
+use Stewart\Support\State\StewartIdentity;
 
 final class AppRuntimeServicesFixture
 {
@@ -55,7 +55,6 @@ final class AppRuntimeServicesFixture
         ?GeneratedRoots $generated = null,
         ?WorkerLogger $logger = null,
         bool $mqttEnabled = false,
-        StewartIdentity $identity = new StewartIdentity(self::STEWART_USER_ID),
         ?SunCalendar $sunCalendar = null,
     ): AppRuntimeServices {
         $timers = $resources->timers;
@@ -74,6 +73,7 @@ final class AppRuntimeServicesFixture
                 stateCache: $stateCache,
                 dispatcher: $resources->dispatcher,
                 callTimeout: Duration::seconds(30),
+                identity: new StewartIdentity(self::STEWART_USER_ID),
             ),
             stores: $stores,
             mqtt: new WorkerMqtt(
@@ -93,7 +93,6 @@ final class AppRuntimeServicesFixture
                 new RegistryEditRequester($transport, new PendingRequests(new CorrelationIdSequence(new WorkerId(0))), new ConnectionStatus(), $timers, Duration::seconds(30)),
                 ResourceScope::shared(),
             ),
-            identity: $identity,
             sunCalendar: $sunCalendar,
             generated: $generated,
         );

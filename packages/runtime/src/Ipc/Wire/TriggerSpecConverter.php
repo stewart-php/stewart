@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Ipc\Wire;
 
-use Stewart\Contracts\Exception\JsonShapeException;
 use Stewart\Contracts\Exception\TriggerException;
-use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Json\ValueConverter;
+use Stewart\Support\Exception\JsonShapeException;
+use Stewart\Support\Wire\TriggerSpec;
 
 final readonly class TriggerSpecConverter implements ValueConverter
 {

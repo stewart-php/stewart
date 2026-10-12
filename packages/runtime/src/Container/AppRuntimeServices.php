@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Container;
 
-use Stewart\Contracts\Identity\StewartIdentity;
 use Stewart\Contracts\Sun\SunCalendar;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Timers;
@@ -30,7 +29,6 @@ final readonly class AppRuntimeServices
         public WorkerMqtt $mqtt,
         public WorkerEntityExposure $exposure,
         public WorkerRegistryEditor $registryEditor,
-        public StewartIdentity $identity,
         public SunCalendar $sunCalendar,
         public ?GeneratedRoots $generated = null,
     ) {}

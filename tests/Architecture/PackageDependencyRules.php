@@ -23,17 +23,14 @@ use Stewart\Store\StoreHealth;
 
 final class PackageDependencyRules
 {
-    public function testContractsReachesOnlyItselfAndCron(): Rule
+    public function testContractsReachesOnlyItself(): Rule
     {
         return PHPat::rule()
             ->classes(Selector::inNamespace('Stewart\Contracts'))
             ->excluding(TestCodeSelector::selectTestCode())
             ->canOnly()
             ->dependOn()
-            ->classes(
-                Selector::inNamespace('Stewart\Contracts'),
-                Selector::inNamespace('Cron'),
-            )
+            ->classes(Selector::inNamespace('Stewart\Contracts'))
             ->because('apps and generated entity classes must not drag in a transport or a process model');
     }
 
@@ -116,6 +113,7 @@ final class PackageDependencyRules
                 Selector::inNamespace('Stewart\Contracts'),
                 Selector::inNamespace('Amp'),
                 Selector::inNamespace('Revolt'),
+                Selector::inNamespace('Cron'),
             )
             ->because('every framework package shares the helpers, so they cannot know any of them');
     }

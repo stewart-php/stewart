@@ -9,9 +9,9 @@ use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Trigger\TriggerEvent;
-use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Broker\Exposure\ExposedEntityCommand;
 use Stewart\Runtime\Broker\Exposure\ExposedEntitySync;
+use Stewart\Support\Wire\TriggerSpec;
 use Throwable;
 
 interface HaSessionListener

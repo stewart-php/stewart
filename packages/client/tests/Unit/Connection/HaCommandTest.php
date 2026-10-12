@@ -22,7 +22,6 @@ use Stewart\Client\Connection\Command\SubscribeTrigger;
 use Stewart\Client\Connection\Command\UnsubscribeEvents;
 use Stewart\Client\Connection\Command\UpdateEntityRegistryEntry;
 use Stewart\Contracts\Entity\EntityId;
-use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Registry\EntityAlias;
@@ -32,6 +31,7 @@ use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
 use Stewart\Contracts\Trigger\HaTrigger;
+use Stewart\Support\Wire\EventPayload;
 
 #[CoversClass(CallService::class)]
 #[CoversClass(SubscribeEvents::class)]

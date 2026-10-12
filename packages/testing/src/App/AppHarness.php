@@ -14,7 +14,6 @@ use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Automation;
 use Stewart\Contracts\Exposure\EntityExposure;
 use Stewart\Contracts\HaContext;
-use Stewart\Contracts\Identity\StewartIdentity;
 use Stewart\Contracts\Mqtt\Mqtt;
 use Stewart\Contracts\Registry\RegistryEditor;
 use Stewart\Contracts\Schedule\Scheduler;
@@ -70,8 +69,6 @@ final class AppHarness
 
     public readonly RecordingRegistryEditor $registryEditor;
 
-    public readonly StewartIdentity $identity;
-
     /** @var array<string, object> */
     private array $providedServices = [];
 
@@ -92,7 +89,6 @@ final class AppHarness
         $this->mqtt = new RecordingMqtt($this->timers);
         $this->logger = new RecordingLogger();
         $this->registryEditor = new RecordingRegistryEditor($this->ha->registry);
-        $this->identity = new StewartIdentity(RecordingHaContext::STEWART_USER_ID);
     }
 
     /**
@@ -171,7 +167,6 @@ final class AppHarness
             Mqtt::class => $this->mqtt,
             LoggerInterface::class => $this->logger,
             RegistryEditor::class => $this->registryEditor,
-            StewartIdentity::class => $this->identity,
             SunCalendar::class => $this->sunCalendar,
         ];
     }

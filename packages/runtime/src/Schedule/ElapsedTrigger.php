@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Schedule;
 
-use Stewart\Contracts\Schedule\ElapsedSchedule;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Time\MonotonicTime;
+use Stewart\Support\Schedule\ElapsedSchedule;
 
 final class ElapsedTrigger implements Trigger
 {

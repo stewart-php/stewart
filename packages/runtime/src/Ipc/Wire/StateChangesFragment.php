@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Ipc\Wire;
 
-use Stewart\Contracts\State\Collection\StateChangeCollection;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Runtime\Ipc\Wire\Collection\EncodedStateChangeCollection;
 use Stewart\Runtime\Json\JsonFragment;
 use Stewart\Runtime\Json\WireMapper;
+use Stewart\Support\State\Collection\StateChangeCollection;
 
 final readonly class StateChangesFragment implements JsonFragment
 {

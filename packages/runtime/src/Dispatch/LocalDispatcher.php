@@ -14,17 +14,17 @@ use Stewart\Contracts\Mqtt\MqttMessage;
 use Stewart\Contracts\Registry\EntityFilter;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\StateChange;
-use Stewart\Contracts\Stream\SubscriptionScope;
 use Stewart\Contracts\Subscription;
 use Stewart\Contracts\Topic\TopicEvent;
 use Stewart\Contracts\Trigger\TriggerEvent;
-use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Model\Collection\SubscriptionIdCollection;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionId;
 use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\Scope\ScopeLifecycle;
+use Stewart\Support\Stream\SubscriptionScope;
+use Stewart\Support\Wire\TriggerSpec;
 use Throwable;
 
 final class LocalDispatcher

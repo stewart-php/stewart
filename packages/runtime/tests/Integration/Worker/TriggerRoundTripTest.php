@@ -12,7 +12,6 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Contracts\Trigger\TriggerEvent;
-use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
@@ -27,6 +26,7 @@ use Stewart\Runtime\Tests\Fixtures\Broker\WorkerPoolFixture;
 use Stewart\Runtime\Tests\Fixtures\Protocol\SunsetWatcher;
 use Stewart\Runtime\Tests\Fixtures\Worker\InMemoryWorkerSpawner;
 use Stewart\Runtime\Worker\Context\DispatchStreams;
+use Stewart\Support\Wire\TriggerSpec;
 use Stewart\Testing\Logging\RecordingLogger;
 use Stewart\Testing\Time\EventLoopTicks;
 

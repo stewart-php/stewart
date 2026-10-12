@@ -6,5 +6,8 @@ namespace Stewart\Contracts\Registry\Collection;
 
 use Stewart\Contracts\Registry\DeviceId;
 
-/** @extends RegistryIdCollection<DeviceId> */
+/**
+ * @internal
+ * @extends RegistryIdCollection<DeviceId>
+ */
 final readonly class DeviceIdCollection extends RegistryIdCollection {}

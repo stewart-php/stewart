@@ -21,6 +21,7 @@ use Stewart\Runtime\Worker\Context\TopicPublisher;
 use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\PendingRequests;
 use Stewart\Runtime\Worker\WorkerHaContext;
+use Stewart\Support\State\StewartIdentity;
 use Stewart\Testing\Time\ManualTimers;
 
 final class WorkerHaContextFixture
@@ -38,6 +39,7 @@ final class WorkerHaContextFixture
         AppActivityCounters $activityCounters = new AppActivityCounters(),
         ConnectionStatus $connection = new ConnectionStatus(),
         RegistryCache $registry = new RegistryCache(),
+        StewartIdentity $identity = new StewartIdentity(null),
     ): WorkerHaContext {
         return new WorkerHaContext(
             $stateCache,
@@ -48,6 +50,7 @@ final class WorkerHaContextFixture
             new EventFirer($transport, $pending, $connection, $timers, $callTimeout ?? Duration::seconds(1)),
             new DispatchStreams($dispatcher ?? RecordingDispatchListener::createDispatcher('w0', 10, $registry), $timers, $stateCache, $registry),
             new TopicPublisher($transport, $timers->clock, $activityCounters),
+            $identity,
             $scope,
         );
     }

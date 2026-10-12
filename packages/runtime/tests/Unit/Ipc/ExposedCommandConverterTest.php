@@ -8,7 +8,6 @@ use DateTimeImmutable;
 use DateTimeZone;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Stewart\Contracts\Exception\JsonShapeError;
 use Stewart\Contracts\Exposure\Command\ButtonPress;
 use Stewart\Contracts\Exposure\Command\DateCommand;
 use Stewart\Contracts\Exposure\Command\DateTimeCommand;
@@ -21,6 +20,7 @@ use Stewart\Contracts\Exposure\Command\TimeCommand;
 use Stewart\Contracts\Schedule\TimeOfDay;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Runtime\Ipc\Wire\ExposedCommandConverter;
+use Stewart\Support\Exception\JsonShapeError;
 use Stewart\Testing\Exception\AssertsReason;
 
 #[CoversClass(ExposedCommandConverter::class)]

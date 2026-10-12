@@ -74,7 +74,7 @@ final class WorkerSchedulerSunTest extends TestCase
 
     public function testSunriseRunsAndRearmsForNextDay(): void
     {
-        $task = $this->scheduler->runAtSunrise($this->record(...));
+        $task = $this->scheduler->runAtSunEvent(SunEvent::Sunrise, $this->record(...));
         $this->goLive();
 
         self::assertSame(self::SUNRISE, self::formatToSecond($task->getNextRunAt()));
@@ -88,7 +88,7 @@ final class WorkerSchedulerSunTest extends TestCase
 
     public function testOffsetBeforeSunsetRunsEarlier(): void
     {
-        $task = $this->scheduler->runAtSunset($this->record(...), SunOffset::before(Duration::minutes(30)));
+        $task = $this->scheduler->runAtSunEvent(SunEvent::Sunset, $this->record(...), SunOffset::before(Duration::minutes(30)));
         $this->goLive();
 
         self::assertSame('2026-10-05T15:45:22Z', self::formatToSecond($task->getNextRunAt()));
@@ -96,7 +96,7 @@ final class WorkerSchedulerSunTest extends TestCase
 
     public function testOffsetAfterSunsetRunsLater(): void
     {
-        $task = $this->scheduler->runAtSunset($this->record(...), SunOffset::after(Duration::minutes(15)));
+        $task = $this->scheduler->runAtSunEvent(SunEvent::Sunset, $this->record(...), SunOffset::after(Duration::minutes(15)));
         $this->goLive();
 
         self::assertSame('2026-10-05T16:30:22Z', self::formatToSecond($task->getNextRunAt()));
@@ -112,7 +112,7 @@ final class WorkerSchedulerSunTest extends TestCase
 
     public function testSkippedSunsetsRunOnceAndCountMissed(): void
     {
-        $this->scheduler->runAtSunset($this->record(...));
+        $this->scheduler->runAtSunEvent(SunEvent::Sunset, $this->record(...));
         $this->goLive();
 
         $this->timers->clock->skip(Duration::hours(60));
@@ -124,7 +124,7 @@ final class WorkerSchedulerSunTest extends TestCase
 
     public function testAppSchedulerKeepsTheCalendar(): void
     {
-        $task = $this->scheduler->forApp(new AppId('other'), new RecordingLogger())->runAtSunset($this->record(...));
+        $task = $this->scheduler->forApp(new AppId('other'), new RecordingLogger())->runAtSunEvent(SunEvent::Sunset, $this->record(...));
         $this->scopes->activateScope(ResourceScope::forApp(new AppId('other')));
         $this->registry->startEntriesOf(ResourceScope::forApp(new AppId('other')));
 
@@ -135,7 +135,7 @@ final class WorkerSchedulerSunTest extends TestCase
     {
         $scheduler = WorkerSchedulerFixture::createWorkerScheduler($this->registry, new UnlocatedSunCalendar(), new RecordingLogger(), self::createScope());
 
-        $this->assertThrowsReason(ScheduleError::SunLocationUnknown, fn(): ScheduledTask => $scheduler->runAtSunrise($this->record(...)));
+        $this->assertThrowsReason(ScheduleError::SunLocationUnknown, fn(): ScheduledTask => $scheduler->runAtSunEvent(SunEvent::Sunrise, $this->record(...)));
         self::assertSame(0, $this->registry->countFor(self::createScope()));
     }
 

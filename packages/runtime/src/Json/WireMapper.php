@@ -7,8 +7,8 @@ namespace Stewart\Runtime\Json;
 use BackedEnum;
 use JsonException;
 use stdClass;
-use Stewart\Contracts\Exception\JsonShapeException;
 use Stewart\Contracts\Exception\StewartException;
+use Stewart\Support\Exception\JsonShapeException;
 use Stewart\Support\Json\JsonEncoder;
 use Stewart\Support\Json\JsonShape;
 

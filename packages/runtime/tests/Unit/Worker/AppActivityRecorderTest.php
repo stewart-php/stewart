@@ -10,7 +10,6 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\WaitError;
 use Stewart\Contracts\Exception\WaitException;
 use Stewart\Contracts\Selector\Selector;
-use Stewart\Contracts\Stream\SubscriptionScope;
 use Stewart\Runtime\Dispatch\RegisteredSubscription;
 use Stewart\Runtime\Ipc\Message\AppFailed;
 use Stewart\Runtime\Model\ResourceScope;
@@ -26,6 +25,7 @@ use Stewart\Runtime\Worker\AppFailureReporter;
 use Stewart\Runtime\Worker\HandlerFailureSampler;
 use Stewart\Runtime\Worker\StderrFallback;
 use Stewart\Runtime\Worker\WorkerLogger;
+use Stewart\Support\Stream\SubscriptionScope;
 
 #[CoversClass(AppActivityRecorder::class)]
 final class AppActivityRecorderTest extends TestCase
