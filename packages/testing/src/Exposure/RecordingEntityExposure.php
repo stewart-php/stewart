@@ -33,6 +33,7 @@ use Stewart\Contracts\Exposure\SwitchConfig;
 use Stewart\Contracts\Exposure\TextConfig;
 use Stewart\Contracts\Exposure\TimeConfig;
 use Stewart\Testing\Exposure\Collection\RecordedExposureCollection;
+use Stewart\Testing\Time\ManualTimers;
 
 final class RecordingEntityExposure implements EntityExposure
 {
@@ -46,8 +47,10 @@ final class RecordingEntityExposure implements EntityExposure
 
     private ?ExposureException $refusal = null;
 
-    public function __construct(public readonly AppId $appId = new AppId('test-app'))
-    {
+    public function __construct(
+        public readonly AppId $appId = new AppId('test-app'),
+        private readonly ManualTimers $timers = new ManualTimers(),
+    ) {
         $this->exposures = RecordedExposureCollection::empty();
     }
 
@@ -55,6 +58,13 @@ final class RecordingEntityExposure implements EntityExposure
     public function seedSnapshot(ExposedEntityKey|string $key, ExposedEntitySnapshot $snapshot): void
     {
         $this->seededByKey[ExposedEntityKey::fromKeyOrString($key)->value] = $snapshot;
+    }
+
+    public function cancelSubscriptions(): void
+    {
+        foreach ($this->handlesByKey as $handle) {
+            $handle->cancelCommandSubscriptions();
+        }
     }
 
     public function refuseExposures(ExposureException $refusal): void
@@ -66,7 +76,7 @@ final class RecordingEntityExposure implements EntityExposure
     {
         $key = $this->claimKey($key, $config, $device);
 
-        return $this->handlesByKey[$key->value] = new RecordingExposedSensor($key, $config, $this->seededByKey[$key->value] ?? null);
+        return $this->handlesByKey[$key->value] = new RecordingExposedSensor($key, $config, $this->seededByKey[$key->value] ?? null, $this->timers);
     }
 
     public function exposeBinarySensor(
@@ -76,63 +86,63 @@ final class RecordingEntityExposure implements EntityExposure
     ): ExposedBinarySensor {
         $key = $this->claimKey($key, $config, $device);
 
-        return $this->handlesByKey[$key->value] = new RecordingExposedBinarySensor($key, $config, $this->seededByKey[$key->value] ?? null);
+        return $this->handlesByKey[$key->value] = new RecordingExposedBinarySensor($key, $config, $this->seededByKey[$key->value] ?? null, $this->timers);
     }
 
     public function exposeSwitch(ExposedEntityKey|string $key, SwitchConfig $config = new SwitchConfig(), ?DeviceInfo $device = null): ExposedSwitch
     {
         $key = $this->claimKey($key, $config, $device);
 
-        return $this->handlesByKey[$key->value] = new RecordingExposedSwitch($key, $config, $this->seededByKey[$key->value] ?? null);
+        return $this->handlesByKey[$key->value] = new RecordingExposedSwitch($key, $config, $this->seededByKey[$key->value] ?? null, $this->timers);
     }
 
     public function exposeButton(ExposedEntityKey|string $key, ButtonConfig $config = new ButtonConfig(), ?DeviceInfo $device = null): ExposedButton
     {
         $key = $this->claimKey($key, $config, $device);
 
-        return $this->handlesByKey[$key->value] = new RecordingExposedButton($key, $config, $this->seededByKey[$key->value] ?? null);
+        return $this->handlesByKey[$key->value] = new RecordingExposedButton($key, $config, $this->seededByKey[$key->value] ?? null, $this->timers);
     }
 
     public function exposeNumber(ExposedEntityKey|string $key, NumberConfig $config, ?DeviceInfo $device = null): ExposedNumber
     {
         $key = $this->claimKey($key, $config, $device);
 
-        return $this->handlesByKey[$key->value] = new RecordingExposedNumber($key, $config, $this->seededByKey[$key->value] ?? null);
+        return $this->handlesByKey[$key->value] = new RecordingExposedNumber($key, $config, $this->seededByKey[$key->value] ?? null, $this->timers);
     }
 
     public function exposeSelect(ExposedEntityKey|string $key, SelectConfig $config, ?DeviceInfo $device = null): ExposedSelect
     {
         $key = $this->claimKey($key, $config, $device);
 
-        return $this->handlesByKey[$key->value] = new RecordingExposedSelect($key, $config, $this->seededByKey[$key->value] ?? null);
+        return $this->handlesByKey[$key->value] = new RecordingExposedSelect($key, $config, $this->seededByKey[$key->value] ?? null, $this->timers);
     }
 
     public function exposeText(ExposedEntityKey|string $key, TextConfig $config = new TextConfig(), ?DeviceInfo $device = null): ExposedText
     {
         $key = $this->claimKey($key, $config, $device);
 
-        return $this->handlesByKey[$key->value] = new RecordingExposedText($key, $config, $this->seededByKey[$key->value] ?? null);
+        return $this->handlesByKey[$key->value] = new RecordingExposedText($key, $config, $this->seededByKey[$key->value] ?? null, $this->timers);
     }
 
     public function exposeTime(ExposedEntityKey|string $key, TimeConfig $config = new TimeConfig(), ?DeviceInfo $device = null): ExposedTime
     {
         $key = $this->claimKey($key, $config, $device);
 
-        return $this->handlesByKey[$key->value] = new RecordingExposedTime($key, $config, $this->seededByKey[$key->value] ?? null);
+        return $this->handlesByKey[$key->value] = new RecordingExposedTime($key, $config, $this->seededByKey[$key->value] ?? null, $this->timers);
     }
 
     public function exposeDate(ExposedEntityKey|string $key, DateConfig $config = new DateConfig(), ?DeviceInfo $device = null): ExposedDate
     {
         $key = $this->claimKey($key, $config, $device);
 
-        return $this->handlesByKey[$key->value] = new RecordingExposedDate($key, $config, $this->seededByKey[$key->value] ?? null);
+        return $this->handlesByKey[$key->value] = new RecordingExposedDate($key, $config, $this->seededByKey[$key->value] ?? null, $this->timers);
     }
 
     public function exposeDateTime(ExposedEntityKey|string $key, DateTimeConfig $config = new DateTimeConfig(), ?DeviceInfo $device = null): ExposedDateTime
     {
         $key = $this->claimKey($key, $config, $device);
 
-        return $this->handlesByKey[$key->value] = new RecordingExposedDateTime($key, $config, $this->seededByKey[$key->value] ?? null);
+        return $this->handlesByKey[$key->value] = new RecordingExposedDateTime($key, $config, $this->seededByKey[$key->value] ?? null, $this->timers);
     }
 
     public function requireSensor(ExposedEntityKey|string $key): RecordingExposedSensor

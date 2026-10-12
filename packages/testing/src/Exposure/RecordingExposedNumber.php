@@ -13,6 +13,7 @@ use Stewart\Contracts\Exposure\ExposedNumber;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\NumberConfig;
+use Stewart\Testing\Time\ManualTimers;
 
 final class RecordingExposedNumber extends RecordingExposedEntity implements ExposedNumber
 {
@@ -20,8 +21,9 @@ final class RecordingExposedNumber extends RecordingExposedEntity implements Exp
         ExposedEntityKey $key,
         public private(set) NumberConfig $config,
         ?ExposedEntitySnapshot $seeded,
+        ManualTimers $timers,
     ) {
-        parent::__construct($key, $seeded);
+        parent::__construct($key, $seeded, $timers);
     }
 
     public function getConfig(): NumberConfig

@@ -205,6 +205,20 @@ final class ManualTimersTest extends TestCase
         self::assertSame(0, $this->timers->countPendingTimers());
     }
 
+    public function testTimerStartedByAResumedFiberFiresInTheSameAdvance(): void
+    {
+        async(function (): void {
+            $this->timers->waitFor(static fn(PendingWait $wait): Closure => static fn() => null, Duration::seconds(10));
+            $this->timers->startTimer(Duration::seconds(5), $this->record('after the wait'));
+        });
+        EventLoopTicks::settle();
+
+        $this->timers->delay(Duration::seconds(20));
+
+        self::assertSame(['after the wait'], $this->fired);
+        self::assertSame(20_000_000, $this->timers->clock->getMonotonicTime()->toMicroseconds());
+    }
+
     /** @return Closure(): void */
     private function record(string $label): Closure
     {

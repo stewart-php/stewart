@@ -13,6 +13,7 @@ use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\ExposedSwitch;
 use Stewart\Contracts\Exposure\SwitchConfig;
+use Stewart\Testing\Time\ManualTimers;
 
 final class RecordingExposedSwitch extends RecordingExposedEntity implements ExposedSwitch
 {
@@ -20,8 +21,9 @@ final class RecordingExposedSwitch extends RecordingExposedEntity implements Exp
         ExposedEntityKey $key,
         public private(set) SwitchConfig $config,
         ?ExposedEntitySnapshot $seeded,
+        ManualTimers $timers,
     ) {
-        parent::__construct($key, $seeded);
+        parent::__construct($key, $seeded, $timers);
     }
 
     public function getConfig(): SwitchConfig

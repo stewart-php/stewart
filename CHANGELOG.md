@@ -45,10 +45,15 @@ minor release may break; its "Upgrading" section says what to change.
 ### Added
 
 - `FakeWebsocketConnection::answerEverySend()` in `stewart-php/testing` answers every command of a type
+- `ManualScheduler` in `stewart-php/testing` runs every `Scheduler` method on virtual time, with sun events from
+  `FixedSunCalendar`, whose event times a test sets
 
 ### Changed
 
 - Generated code format 6; regenerate after upgrading
+- The `stewart-php/testing` fakes run each handler in its own fiber, so a handler that waits suspends only itself;
+  `ManualTimers::delay()` lets resumed handlers run before the next timer is due, and the recording exposures share
+  their context's `ManualTimers`
 - `stewart.yaml` may name an app with `_` in place of `-` (`hall_light:` for `hall-light`); this no longer fails with
   "the automation ID is …"
 - Stewart exceptions are raised with `XException::createForReason(XError::Case, $previous, key: $value)`; most

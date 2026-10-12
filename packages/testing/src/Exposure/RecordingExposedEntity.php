@@ -38,10 +38,13 @@ abstract class RecordingExposedEntity implements ExposedEntity
     /** @var PushSource<ExposedCommand> */
     private readonly PushSource $commands;
 
-    public function __construct(private readonly ExposedEntityKey $key, ?ExposedEntitySnapshot $seeded)
-    {
+    public function __construct(
+        private readonly ExposedEntityKey $key,
+        ?ExposedEntitySnapshot $seeded,
+        private readonly ManualTimers $timers,
+    ) {
         $this->changes = ExposedStateChangeCollection::empty();
-        $this->commands = new PushSource();
+        $this->commands = new PushSource($timers->handlerFibers);
 
         if ($seeded !== null) {
             $this->entityId = $seeded->entityId;
@@ -86,6 +89,11 @@ abstract class RecordingExposedEntity implements ExposedEntity
         $this->recordChange(new ExposedStateChange(available: false));
     }
 
+    public function cancelCommandSubscriptions(): void
+    {
+        $this->commands->cancelAttachments();
+    }
+
     public function remove(): void
     {
         $this->assertNotRemoved();
@@ -105,7 +113,7 @@ abstract class RecordingExposedEntity implements ExposedEntity
     /** @return EventStream<ExposedCommand> */
     protected function watchPushedCommands(): EventStream
     {
-        return new OperatorStream($this->commands, new ManualTimers());
+        return new OperatorStream($this->commands, $this->timers);
     }
 
     /** @throws CommandException */

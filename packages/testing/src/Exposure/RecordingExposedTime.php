@@ -15,6 +15,7 @@ use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\ExposedTime;
 use Stewart\Contracts\Exposure\TimeConfig;
 use Stewart\Contracts\Schedule\TimeOfDay;
+use Stewart\Testing\Time\ManualTimers;
 
 final class RecordingExposedTime extends RecordingExposedEntity implements ExposedTime
 {
@@ -22,8 +23,9 @@ final class RecordingExposedTime extends RecordingExposedEntity implements Expos
         ExposedEntityKey $key,
         public private(set) TimeConfig $config,
         ?ExposedEntitySnapshot $seeded,
+        ManualTimers $timers,
     ) {
-        parent::__construct($key, $seeded);
+        parent::__construct($key, $seeded, $timers);
     }
 
     public function getConfig(): TimeConfig

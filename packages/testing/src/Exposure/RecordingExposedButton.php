@@ -11,6 +11,7 @@ use Stewart\Contracts\Exposure\Command\ButtonPress;
 use Stewart\Contracts\Exposure\ExposedButton;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
+use Stewart\Testing\Time\ManualTimers;
 
 final class RecordingExposedButton extends RecordingExposedEntity implements ExposedButton
 {
@@ -18,8 +19,9 @@ final class RecordingExposedButton extends RecordingExposedEntity implements Exp
         ExposedEntityKey $key,
         public private(set) ButtonConfig $config,
         ?ExposedEntitySnapshot $seeded,
+        ManualTimers $timers,
     ) {
-        parent::__construct($key, $seeded);
+        parent::__construct($key, $seeded, $timers);
     }
 
     public function getConfig(): ButtonConfig

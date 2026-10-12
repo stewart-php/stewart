@@ -13,6 +13,7 @@ use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\ExposedText;
 use Stewart\Contracts\Exposure\TextConfig;
+use Stewart\Testing\Time\ManualTimers;
 
 final class RecordingExposedText extends RecordingExposedEntity implements ExposedText
 {
@@ -20,8 +21,9 @@ final class RecordingExposedText extends RecordingExposedEntity implements Expos
         ExposedEntityKey $key,
         public private(set) TextConfig $config,
         ?ExposedEntitySnapshot $seeded,
+        ManualTimers $timers,
     ) {
-        parent::__construct($key, $seeded);
+        parent::__construct($key, $seeded, $timers);
     }
 
     public function getConfig(): TextConfig
