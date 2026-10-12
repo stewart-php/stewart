@@ -46,6 +46,17 @@ final class AppFailureReporterTest extends TestCase
         self::assertSame(120, $this->counters->findOrCreateActivityForScope(self::createScope())->failures);
     }
 
+    public function testOneShotTimersFailingAtOneSiteShareASeries(): void
+    {
+        for ($task = 0; $task < 3; ++$task) {
+            $this->failures->report(self::createScope(), AppFailurePhase::Handler, new RuntimeException('boom'), \sprintf('schedule w0:%d (once in 5m)', $task));
+        }
+
+        $sent = array_values(array_filter($this->transport->sent, static fn(object $message): bool => $message instanceof AppFailed));
+
+        self::assertSame([1], array_map(static fn(AppFailed $failure): int => $failure->occurrence, $sent));
+    }
+
     public function testLifecycleFailureIsSentAndCounted(): void
     {
         $this->failures->report(self::createScope(), AppFailurePhase::Initialize, new RuntimeException('boom'));

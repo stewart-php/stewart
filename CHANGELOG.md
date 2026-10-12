@@ -48,6 +48,9 @@ minor release may break; its "Upgrading" section says what to change.
   broken bootstrap until the crash budget runs out; a worker that fails while others start still retries
 - `/readyz` and `stewart status --probe=readiness` report "no worker is running" while no worker has its apps
   running, such as during startup or while every worker restarts, not only once a worker is quarantined
+- A handler that keeps failing from timers or one-shot schedules is reported in full only on its first and every
+  hundredth failure, like a failing subscription; repeated failures are now grouped by the app line that failed,
+  and the worker no longer keeps a counter per timer
 
 ### Changed
 

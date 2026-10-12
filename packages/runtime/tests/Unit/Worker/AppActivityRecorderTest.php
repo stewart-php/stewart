@@ -62,8 +62,8 @@ final class AppActivityRecorderTest extends TestCase
 
     public function testWaitAbandonedWhileTheAppRunsIsReported(): void
     {
-        $this->recorder->handlerFailed(self::createSubscription(), self::createAbandonedWait());
-        $this->recorder->scheduledRunFailed(self::createScheduleOrigin(), self::createAbandonedWait());
+        $this->recorder->handlerFailed(self::createSubscription(), WaitException::createForReason(WaitError::Abandoned));
+        $this->recorder->scheduledRunFailed(self::createScheduleOrigin(), WaitException::createForReason(WaitError::Abandoned));
 
         self::assertCount(2, $this->listSentFailures());
     }
