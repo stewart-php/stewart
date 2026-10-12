@@ -34,15 +34,36 @@ final class ReadinessCheckTest extends TestCase
 
     public function testQuarantinedWorkerIsNotReady(): void
     {
-        $verdict = new ReadinessCheck()->assessSnapshot(new StubSnapshotSource(workerPhase: WorkerPhase::Quarantined)->takeSnapshot());
+        $verdict = new ReadinessCheck()->assessSnapshot(new StubSnapshotSource(workerPhases: [WorkerPhase::Live, WorkerPhase::Quarantined])->takeSnapshot());
 
-        self::assertSame('not ready: worker 0 is quarantined', $verdict->describeVerdict());
+        self::assertSame('not ready: worker 1 is quarantined', $verdict->describeVerdict());
     }
 
-    public function testRestartingWorkerStaysReady(): void
+    public function testRestartingWorkerStaysReadyWhileAnotherRuns(): void
     {
-        $verdict = new ReadinessCheck()->assessSnapshot(new StubSnapshotSource(workerPhase: WorkerPhase::RestartScheduled)->takeSnapshot());
+        $verdict = new ReadinessCheck()->assessSnapshot(new StubSnapshotSource(workerPhases: [WorkerPhase::Live, WorkerPhase::RestartScheduled])->takeSnapshot());
 
         self::assertTrue($verdict->isReady());
+    }
+
+    public function testNoRunningWorkerIsNotReady(): void
+    {
+        $verdict = new ReadinessCheck()->assessSnapshot(new StubSnapshotSource(workerPhases: [WorkerPhase::RestartScheduled, WorkerPhase::Spawning])->takeSnapshot());
+
+        self::assertSame(['no worker is running'], $verdict->unreadyReasons);
+    }
+
+    public function testWorkerStillStartingItsAppsIsNotReady(): void
+    {
+        $verdict = new ReadinessCheck()->assessSnapshot(new StubSnapshotSource(workersReady: false)->takeSnapshot());
+
+        self::assertSame(['no worker is running'], $verdict->unreadyReasons);
+    }
+
+    public function testLastWorkerQuarantinedGivesBothReasons(): void
+    {
+        $verdict = new ReadinessCheck()->assessSnapshot(new StubSnapshotSource(workerPhases: [WorkerPhase::Quarantined])->takeSnapshot());
+
+        self::assertSame(['no worker is running', 'worker 0 is quarantined'], $verdict->unreadyReasons);
     }
 }

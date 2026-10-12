@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Health;
 
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
+use Stewart\Runtime\Control\Protocol\Status\WorkerStatus;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
 
@@ -16,6 +17,10 @@ final readonly class ReadinessCheck
 
         if ($snapshot->connection->phase !== ConnectionPhase::Connected) {
             $unreadyReasons[] = 'Home Assistant is ' . $snapshot->connection->phase->value;
+        }
+
+        if ($snapshot->workers !== [] && !array_any($snapshot->workers, static fn(WorkerStatus $worker): bool => $worker->phase === WorkerPhase::Live && $worker->ready)) {
+            $unreadyReasons[] = 'no worker is running';
         }
 
         foreach ($snapshot->workers as $worker) {

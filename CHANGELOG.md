@@ -22,6 +22,8 @@ minor release may break; its "Upgrading" section says what to change.
   is scanned before it is tagged and signed
 - Stewart stops with "None of N workers could be started." when no worker comes up at startup, instead of retrying a
   broken bootstrap until the crash budget runs out; a worker that fails while others start still retries
+- `/readyz` and `stewart status --probe=readiness` report "no worker is running" while no worker has its apps
+  running, such as during startup or while every worker restarts, not only once a worker is quarantined
 
 ### Changed
 
