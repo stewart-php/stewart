@@ -6,10 +6,11 @@ namespace Stewart\Contracts\Stream;
 
 use Closure;
 use Stewart\Contracts\EventStream;
+use Stewart\Contracts\Exception\StateError;
+use Stewart\Contracts\Exception\StateException;
 use Stewart\Contracts\State\CurrentStateReader;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
-use Stewart\Contracts\StateTransitionStream;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Timers;
 
@@ -37,11 +38,9 @@ abstract readonly class ComposedStateChangeStream extends ComposedStream impleme
         return $this->extendWith(new StartWithCurrentStateOperator($this->source, $this->currentStates));
     }
 
-    public function whenChangedTo(string $state, ?Duration $for = null): StateTransitionStream
+    public function whenChangedTo(string $state, ?Duration $for = null, string|array|null $from = null, bool $fromAnyState = false): static
     {
-        $transition = new WhenChangedToOperator($this->timers, $this->source, $state, $for, PreviousStateRule::excludingUnavailable());
-
-        return new StateTransitions($transition, $this->timers, $this->currentStates, $transition);
+        return $this->extendWith(new WhenChangedToOperator($this->timers, $this->source, $state, $for, self::choosePreviousStateRule($from, $fromAnyState)));
     }
 
     public function whenStableFor(Duration $window): static
@@ -68,5 +67,22 @@ abstract readonly class ComposedStateChangeStream extends ComposedStream impleme
     protected function createPartitionKeyReader(): Closure
     {
         return static fn(StateChange $change): string => $change->entityId->value;
+    }
+
+    /**
+     * @param string|non-empty-list<string>|null $from
+     * @throws StateException
+     */
+    private static function choosePreviousStateRule(string|array|null $from, bool $fromAnyState): PreviousStateRule
+    {
+        if ($from !== null && $fromAnyState) {
+            throw StateException::createForReason(StateError::TransitionRuleConflict);
+        }
+
+        return match (true) {
+            $from !== null => PreviousStateRule::allowingOnly(...(array) $from),
+            $fromAnyState => PreviousStateRule::allowingAny(),
+            default => PreviousStateRule::excludingUnavailable(),
+        };
     }
 }

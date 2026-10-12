@@ -13,7 +13,6 @@ use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
 use Stewart\Contracts\Stream\StateChanges;
-use Stewart\Contracts\Stream\StateTransitions;
 use Stewart\Contracts\Stream\WhenChangedToOperator;
 use Stewart\Contracts\Tests\Fixtures\State\FixedStateReader;
 use Stewart\Contracts\Time\Duration;
@@ -21,10 +20,10 @@ use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Stream\PushSource;
 use Stewart\Testing\Time\ManualTimers;
 
-#[CoversClass(StateTransitions::class)]
+#[CoversClass(StateChanges::class)]
 #[CoversClass(WhenChangedToOperator::class)]
 #[CoversClass(StateException::class)]
-final class StateTransitionsTest extends TestCase
+final class WhenChangedToTest extends TestCase
 {
     use AssertsReason;
 
@@ -50,7 +49,7 @@ final class StateTransitionsTest extends TestCase
 
     public function testFromPassesOnlyListedPreviousState(): void
     {
-        $this->listen($this->stream->whenChangedTo('on')->from('off'));
+        $this->listen($this->stream->whenChangedTo('on', from: 'off'));
 
         $this->push('idle', 'on');
         $this->push('on', 'off');
@@ -61,7 +60,7 @@ final class StateTransitionsTest extends TestCase
 
     public function testFromAcceptsSeveralPreviousStates(): void
     {
-        $this->listen($this->stream->whenChangedTo('on')->from('off', 'idle'));
+        $this->listen($this->stream->whenChangedTo('on', from: ['off', 'idle']));
 
         $this->push('idle', 'on');
         $this->push('on', 'standby');
@@ -72,19 +71,9 @@ final class StateTransitionsTest extends TestCase
         self::assertSame(['idle>on', 'off>on'], $this->received);
     }
 
-    public function testFromAcceptsSpreadList(): void
-    {
-        $previousStates = ['off', 'idle'];
-        $this->listen($this->stream->whenChangedTo('on')->from(...$previousStates));
-
-        $this->push('idle', 'on');
-
-        self::assertSame(['idle>on'], $this->received);
-    }
-
     public function testFromAnyStatePassesUnavailablePrevious(): void
     {
-        $this->listen($this->stream->whenChangedTo('on')->fromAnyState());
+        $this->listen($this->stream->whenChangedTo('on', fromAnyState: true));
 
         $this->push(EntityState::UNAVAILABLE, 'on');
         $this->push('on', EntityState::UNKNOWN);
@@ -96,27 +85,28 @@ final class StateTransitionsTest extends TestCase
 
     public function testExplicitFromUnavailableOverridesDefault(): void
     {
-        $this->listen($this->stream->whenChangedTo('on')->from(EntityState::UNAVAILABLE));
+        $this->listen($this->stream->whenChangedTo('on', from: EntityState::UNAVAILABLE));
 
         $this->push(EntityState::UNAVAILABLE, 'on');
 
         self::assertSame(['unavailable>on'], $this->received);
     }
 
-    public function testLastFromReplacesEarlierOne(): void
+    public function testDefaultSkipsUnavailablePrevious(): void
     {
-        $this->listen($this->stream->whenChangedTo('on')->from('off')->from('idle'));
+        $this->listen($this->stream->whenChangedTo('on'));
 
+        $this->push(EntityState::UNAVAILABLE, 'on');
+        $this->push(null, 'on');
+        $this->push('on', 'off');
         $this->push('off', 'on');
-        $this->push('on', 'idle');
-        $this->push('idle', 'on');
 
-        self::assertSame(['idle>on'], $this->received);
+        self::assertSame(['off>on'], $this->received);
     }
 
     public function testFromWithWindowFiresAfterHold(): void
     {
-        $this->listen($this->stream->whenChangedTo('on', for: Duration::seconds(3))->from('off'));
+        $this->listen($this->stream->whenChangedTo('on', for: Duration::seconds(3), from: 'off'));
 
         $this->push('off', 'on');
         $this->timers->delay(Duration::seconds(3));
@@ -126,7 +116,7 @@ final class StateTransitionsTest extends TestCase
 
     public function testRejectedPreviousDoesNotArmWindow(): void
     {
-        $this->listen($this->stream->whenChangedTo('on', for: Duration::seconds(3))->from('off'));
+        $this->listen($this->stream->whenChangedTo('on', for: Duration::seconds(3), from: 'off'));
 
         $this->push('idle', 'on');
 
@@ -135,7 +125,7 @@ final class StateTransitionsTest extends TestCase
 
     public function testFromKeepsWindowDisarmOnDeparture(): void
     {
-        $this->listen($this->stream->whenChangedTo('on', for: Duration::seconds(3))->from('off'));
+        $this->listen($this->stream->whenChangedTo('on', for: Duration::seconds(3), from: 'off'));
 
         $this->push('off', 'on');
         $this->timers->delay(Duration::seconds(1));
@@ -145,9 +135,9 @@ final class StateTransitionsTest extends TestCase
         self::assertSame([], $this->received);
     }
 
-    public function testOperatorsAfterFromKeepTransitionStream(): void
+    public function testOperatorsChainAfterFrom(): void
     {
-        $chained = $this->stream->whenChangedTo('on')->from('off')->take(1);
+        $chained = $this->stream->whenChangedTo('on', from: 'off')->take(1);
 
         $this->listen($chained);
 
@@ -158,23 +148,14 @@ final class StateTransitionsTest extends TestCase
         self::assertSame(['off>on'], $this->received);
     }
 
-    public function testFromAfterOtherOperatorThrows(): void
+    public function testFromWithFromAnyStateThrows(): void
     {
-        $extended = $this->stream->whenChangedTo('on')->take(1);
-
-        $this->assertThrowsReason(StateError::TransitionAlreadyExtended, static fn() => $extended->from('off'));
-    }
-
-    public function testFromAnyStateAfterOtherOperatorThrows(): void
-    {
-        $extended = $this->stream->whenChangedTo('on')->distinctUntilChanged();
-
-        $this->assertThrowsReason(StateError::TransitionAlreadyExtended, static fn() => $extended->fromAnyState());
+        $this->assertThrowsReason(StateError::TransitionRuleConflict, fn() => $this->stream->whenChangedTo('on', from: 'off', fromAnyState: true));
     }
 
     public function testChainedWhenChangedToStartsFreshTransition(): void
     {
-        $this->listen($this->stream->whenChangedTo('on')->take(2)->whenChangedTo('on')->from('off'));
+        $this->listen($this->stream->whenChangedTo('on')->take(2)->whenChangedTo('on', from: 'off'));
 
         $this->push('idle', 'on');
         $this->push('off', 'on');

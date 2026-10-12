@@ -16,8 +16,11 @@ interface StateChangeStream extends EventStream
 
     public function startWithCurrentState(): static;
 
-    /** @throws TimeException */
-    public function whenChangedTo(string $state, ?Duration $for = null): StateTransitionStream;
+    /**
+     * @param string|non-empty-list<string>|null $from
+     * @throws StateException|TimeException
+     */
+    public function whenChangedTo(string $state, ?Duration $for = null, string|array|null $from = null, bool $fromAnyState = false): static;
 
     /** @throws TimeException */
     public function whenStableFor(Duration $window): static;
