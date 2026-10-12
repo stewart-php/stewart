@@ -47,16 +47,4 @@ interface Scheduler
      * @throws ScheduleException
      */
     public function runAtSunEvent(SunEvent $event, Closure $handler, ?SunOffset $offset = null): ScheduledTask;
-
-    /**
-     * @param Closure(ScheduledRun): void $handler
-     * @throws ScheduleException
-     */
-    public function runAtSunrise(Closure $handler, ?SunOffset $offset = null): ScheduledTask;
-
-    /**
-     * @param Closure(ScheduledRun): void $handler
-     * @throws ScheduleException
-     */
-    public function runAtSunset(Closure $handler, ?SunOffset $offset = null): ScheduledTask;
 }

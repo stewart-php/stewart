@@ -81,16 +81,6 @@ final readonly class WorkerScheduler implements Scheduler
         return $this->armSchedule(SunEventSchedule::forEvent($this->sunCalendar, $event, $offset), $handler);
     }
 
-    public function runAtSunrise(Closure $handler, ?SunOffset $offset = null): ScheduledTask
-    {
-        return $this->runAtSunEvent(SunEvent::Sunrise, $handler, $offset);
-    }
-
-    public function runAtSunset(Closure $handler, ?SunOffset $offset = null): ScheduledTask
-    {
-        return $this->runAtSunEvent(SunEvent::Sunset, $handler, $offset);
-    }
-
     private function armSchedule(WallClockSchedule|ElapsedSchedule $schedule, Closure $handler): ScheduledTask
     {
         return $this->registry->arm($this->resourceScope, $schedule, $this->logger, $handler);

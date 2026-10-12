@@ -81,16 +81,6 @@ final class ManualScheduler implements Scheduler
         return $this->armWallClockSchedule(SunEventSchedule::forEvent($this->sunCalendar, $event, $offset), $handler);
     }
 
-    public function runAtSunrise(Closure $handler, ?SunOffset $offset = null): ScheduledTask
-    {
-        return $this->runAtSunEvent(SunEvent::Sunrise, $handler, $offset);
-    }
-
-    public function runAtSunset(Closure $handler, ?SunOffset $offset = null): ScheduledTask
-    {
-        return $this->runAtSunEvent(SunEvent::Sunset, $handler, $offset);
-    }
-
     public function cancelAll(): void
     {
         foreach ($this->tasks as $task) {
