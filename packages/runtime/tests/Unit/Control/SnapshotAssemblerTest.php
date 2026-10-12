@@ -32,17 +32,15 @@ use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
 use Stewart\Runtime\Control\SnapshotAssembler;
 use Stewart\Runtime\Ipc\Message\AppActivityReport;
 use Stewart\Runtime\Ipc\Message\Pong;
-use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Lifecycle\AppState;
 use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
-use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionId;
 use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Runtime\Model\WorkerId;
-use Stewart\Runtime\Tests\Fixtures\Broker\ExposureLinkFixture;
+use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
 use Stewart\Runtime\Tests\Fixtures\Control\BrokerStateFixture;
 use Stewart\Testing\Time\VirtualClock;
 
@@ -80,7 +78,7 @@ final class SnapshotAssemblerTest extends TestCase
         $this->broker->registry->add(new BrokerSubscription(new SubscriptionId('w1:0'), new WorkerId(1), ResourceScope::forApp(new AppId('echo')), SubscriptionKind::Topic, Selector::fromSpec('demo.*')));
 
         $handle = $this->broker->getLiveHandleOf(0);
-        $this->broker->serviceCalls->forward($handle, new ServiceCallRequest(new CorrelationId('0:1'), ResourceScope::forApp(new AppId('demo')), 'light', 'turn_on', [], null, false));
+        $this->broker->startHeldServiceCall(0);
         $this->broker->metrics->recordActivityReports($handle, new Pong(1, Duration::microseconds(300), 5_000_000, [new AppActivityReport(ResourceScope::forApp(new AppId('demo')), AppState::Running, 1, 0, 3, 0, 0, 0, 0, 0)]));
         $this->broker->crashWorker(1);
 
@@ -131,7 +129,7 @@ final class SnapshotAssemblerTest extends TestCase
             workerStatuses: new WorkerStatusBuilder($broker->pools->slots, $broker->pools->watchdog, $broker->pools->restartPolicy, $broker->callSlots),
             registrationInfos: new RegistrationInfoBuilder($broker->registry),
             storeHealth: new StoreHealthBuilder($broker->pools->slots, storeConfigured: false),
-            appStatuses: new AppStatusBuilder($broker->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock())), ExposureLinkFixture::createWithoutExposures()),
+            appStatuses: new AppStatusBuilder($broker->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock())), FakeHomeAssistant::createUnreachable()->exposures),
             deployStatus: new DeployStatusBuilder(new DeployState()),
             componentStatus: new ComponentStatusBuilder(new ComponentTracker($broker->timers->clock), new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10))),
             connection: $connection,

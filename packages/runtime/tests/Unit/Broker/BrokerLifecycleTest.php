@@ -36,16 +36,16 @@ use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\ConnectionTracker;
 use Stewart\Runtime\Broker\ControlPlane;
 use Stewart\Runtime\Broker\DaemonStartTime;
-use Stewart\Runtime\Broker\EventFireProxy;
 use Stewart\Runtime\Broker\EventRouter;
 use Stewart\Runtime\Broker\Http\Collection\HttpListenerCollection;
 use Stewart\Runtime\Broker\LoopErrorLogger;
 use Stewart\Runtime\Broker\ManifestCheck;
 use Stewart\Runtime\Broker\Message\AppFailedHandler;
+use Stewart\Runtime\Broker\Message\EventFireRequestHandler;
 use Stewart\Runtime\Broker\Message\PongHandler;
+use Stewart\Runtime\Broker\Message\ServiceCallRequestHandler;
 use Stewart\Runtime\Broker\Message\WorkerMessageDispatcher;
 use Stewart\Runtime\Broker\OutboxLimits;
-use Stewart\Runtime\Broker\ServiceCallProxy;
 use Stewart\Runtime\Broker\ServiceCallStatsRecorder;
 use Stewart\Runtime\Broker\SubscriptionRegistry;
 use Stewart\Runtime\Broker\WorkerSlot;
@@ -64,7 +64,7 @@ use Stewart\Runtime\Ipc\Message\EventFireResult;
 use Stewart\Runtime\Ipc\Message\HaConnectionLost;
 use Stewart\Runtime\Ipc\Message\Pong;
 use Stewart\Runtime\Ipc\Message\RegistrySnapshot;
-use Stewart\Runtime\Ipc\Message\ServiceCallFailed;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Ipc\Message\StateChangeBatch;
@@ -88,8 +88,8 @@ use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\BootedBroker;
 use Stewart\Runtime\Tests\Fixtures\Broker\BrokerKernelFixture;
-use Stewart\Runtime\Tests\Fixtures\Broker\ExposureLinkFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
+use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerSpawner;
 use Stewart\Runtime\Tests\Fixtures\Broker\Http\RecordingHttpListener;
 use Stewart\Runtime\Tests\Fixtures\Broker\ReceivedEventFire;
@@ -121,8 +121,8 @@ use function Amp\async;
 #[CoversClass(AppFailedHandler::class)]
 #[CoversClass(PongHandler::class)]
 #[CoversClass(EventRouter::class)]
-#[CoversClass(ServiceCallProxy::class)]
-#[CoversClass(EventFireProxy::class)]
+#[CoversClass(ServiceCallRequestHandler::class)]
+#[CoversClass(EventFireRequestHandler::class)]
 #[CoversClass(ManifestCheck::class)]
 #[CoversClass(AppMetrics::class)]
 #[CoversClass(AppStatusBuilder::class)]
@@ -335,8 +335,8 @@ final class BrokerLifecycleTest extends TestCase
 
         self::assertCount(1, $results);
         self::assertSame('1:0', $results[0]->correlationId->value);
-        self::assertSame(FakeHaSession::FIRE_CONTEXT_PREFIX . '1', $results[0]->context->id);
-        self::assertEquals([new ReceivedEventFire('doorbell_pressed', ['button' => 'front'])], $this->session->receivedEventFires);
+        self::assertSame(FakeHomeAssistant::FIRE_CONTEXT_PREFIX . '1', $results[0]->context->id);
+        self::assertEquals([new ReceivedEventFire('doorbell_pressed', ['button' => 'front'])], $this->broker->homeAssistant->listReceivedEventFires());
         self::assertSame([], $this->listSentToWorker(0, EventFireResult::class));
     }
 
@@ -437,13 +437,13 @@ final class BrokerLifecycleTest extends TestCase
         $this->session->connected = false;
 
         $this->spawner->getLatestProcess(1)->channel->deliver(new ServiceCallRequest(new CorrelationId('1:0'), self::createScope('echo'), 'light', 'turn_on', [], null, false));
-        EventLoopTicks::settleUntil(fn(): bool => \count($this->listSentToWorker(1, ServiceCallFailed::class)) === 1);
+        EventLoopTicks::settleUntil(fn(): bool => \count($this->listSentToWorker(1, RequestFailed::class)) === 1);
 
-        $errors = $this->listSentToWorker(1, ServiceCallFailed::class);
+        $errors = $this->listSentToWorker(1, RequestFailed::class);
 
         self::assertCount(1, $errors);
-        self::assertSame(ServiceCallError::Unreachable, $errors[0]->getReason());
-        self::assertSame(0, $this->session->calls);
+        self::assertSame(ServiceCallError::Unreachable->value, $errors[0]->details->reason);
+        self::assertSame([], $this->broker->homeAssistant->listReceivedCalls());
     }
 
     public function testFatalConnectionFailureEndsTheRunWithThatError(): void
@@ -748,7 +748,7 @@ final class BrokerLifecycleTest extends TestCase
 
     private function readAppStatusAt(int $index): AppStatus
     {
-        return new AppStatusBuilder($this->metrics, $this->pausedApps, ExposureLinkFixture::createWithoutExposures())->buildAppStatuses()[$index];
+        return new AppStatusBuilder($this->metrics, $this->pausedApps, $this->broker->homeAssistant->exposures)->buildAppStatuses()[$index];
     }
 
     private function startBroker(): void

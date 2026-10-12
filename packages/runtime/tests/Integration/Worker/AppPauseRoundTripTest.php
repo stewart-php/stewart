@@ -91,12 +91,12 @@ final class AppPauseRoundTripTest extends TestCase
         $this->changeSerial($session, '1', '2');
 
         self::assertTrue($client->resumeApp($control, $appId, Duration::seconds(self::WAIT_SECONDS))->changed);
-        $called = $session->waitForNextCall();
+        $called = $broker->homeAssistant->waitForNextCall();
         $this->changeSerial($session, '2', '3');
         $called->await(new TimeoutCancellation(self::WAIT_SECONDS));
 
-        self::assertCount(1, $session->receivedCalls);
-        self::assertSame(['value' => '3'], $session->receivedCalls[0]->data);
+        self::assertCount(1, $broker->homeAssistant->listReceivedCalls());
+        self::assertSame(['value' => '3'], $broker->homeAssistant->listReceivedCalls()[0]->data);
 
         $broker->run->stop('test done');
         $running->await(new TimeoutCancellation(self::WAIT_SECONDS));
@@ -128,12 +128,12 @@ final class AppPauseRoundTripTest extends TestCase
         $ready->await(new TimeoutCancellation(self::WAIT_SECONDS));
 
         foreach (['2', '3'] as $value) {
-            $called = $session->waitForNextCall();
+            $called = $broker->homeAssistant->waitForNextCall();
             $this->changeSerial($session, '1', $value);
             $called->await(new TimeoutCancellation(self::WAIT_SECONDS));
         }
 
-        self::assertSame([['value' => '2'], ['value' => '3']], array_map(static fn(ReceivedServiceCall $call): array => $call->data, $session->receivedCalls));
+        self::assertSame([['value' => '2'], ['value' => '3']], array_map(static fn(ReceivedServiceCall $call): array => $call->data, $broker->homeAssistant->listReceivedCalls()));
 
         $broker->run->stop('test done');
         $run->await(new TimeoutCancellation(self::WAIT_SECONDS));
@@ -159,11 +159,11 @@ final class AppPauseRoundTripTest extends TestCase
         $this->changeSerial($session, '1', '2');
 
         self::assertTrue($client->resumeApp($control, $appId, $timeout)->changed);
-        $called = $session->waitForNextCall();
+        $called = $second->homeAssistant->waitForNextCall();
         $this->changeSerial($session, '2', '3');
         $called->await(new TimeoutCancellation(self::WAIT_SECONDS));
 
-        self::assertSame([['value' => '3']], array_map(static fn(ReceivedServiceCall $call): array => $call->data, $session->receivedCalls));
+        self::assertSame([['value' => '3']], array_map(static fn(ReceivedServiceCall $call): array => $call->data, $second->homeAssistant->listReceivedCalls()));
         $this->stopBroker($second);
     }
 

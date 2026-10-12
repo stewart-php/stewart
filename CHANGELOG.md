@@ -15,6 +15,8 @@ minor release may break; its "Upgrading" section says what to change.
 
 ### Fixed
 
+- History queries and exposure requests count as in-flight calls to Home Assistant, and an exposure request that
+  fails unexpectedly is answered at once instead of timing out in the worker
 - Reloading the `stewart` integration, or enabling or disabling one of its entities, no longer leaves exposed entities
   unavailable until Home Assistant reconnects: the daemon opens a new session and sends its entities again
 - A command to an exposed entity that its app had queued is refused at once with the reason, instead of timing out
@@ -32,6 +34,10 @@ minor release may break; its "Upgrading" section says what to change.
 - `/readyz` and `stewart status --probe=readiness` report "no worker is running" while no worker has its apps
   running, such as during startup or while every worker restarts, not only once a worker is quarantined
 
+### Added
+
+- `FakeWebsocketConnection::answerEverySend()` in `stewart-php/testing` answers every command of a type
+
 ### Changed
 
 - `stewart.yaml` may name an app with `_` in place of `-` (`hall_light:` for `hall-light`); this no longer fails with
@@ -41,6 +47,10 @@ minor release may break; its "Upgrading" section says what to change.
 - List collections are built with `XCollection::fromList(...)`; the named factories that only forwarded to it, such
   as `EntityIdCollection::fromIds()` and `HaTriggerCollection::fromTriggers()`, are gone
 - The control protocol is version 29: a `restart_worker` request and the `stopping` worker phase
+- History queries share the `service_calls.max_in_flight[_per_worker]` budget and fail with the new
+  `HistoryError::Overloaded` when it is full; exposure requests count toward it but are never refused
+- IPC protocol 27: one `request_failed` message replaces the five per-request error messages; the broker and its
+  workers must run the same version
 
 ### Upgrading
 
@@ -52,6 +62,9 @@ minor release may break; its "Upgrading" section says what to change.
 3. Replace calls to removed collection factories such as `AppIdCollection::fromIds($ids)` with `fromList($ids)`.
    Factories that do more, such as `SelectorCollection::fromSpecs()` and `DayOfWeekCollection::fromDistinctDays()`,
    stay.
+3. `ServiceCallException::fromWire()`, `EventFireException::fromWire()`, `HistoryException::fromWire()`,
+   `RegistryEditException::fromWire()` and `ExposureException::fromWire()` are gone; call
+   `XException::restoreFromWire($reason, $message, $context)` instead.
 
 ## [0.10.0] - 2026-10-12
 

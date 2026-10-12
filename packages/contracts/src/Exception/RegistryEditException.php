@@ -7,11 +7,7 @@ namespace Stewart\Contracts\Exception;
 use Stewart\Contracts\Entity\EntityId;
 use Throwable;
 
-/**
- * @phpstan-import-type ExceptionContext from StewartException
- *
- * @extends StewartException<RegistryEditError>
- */
+/** @extends StewartException<RegistryEditError> */
 final class RegistryEditException extends StewartException
 {
     public static function notFound(EntityId $entityId): self
@@ -42,11 +38,5 @@ final class RegistryEditException extends StewartException
     public static function timedOut(EntityId $entityId, string $detail, ?Throwable $previous = null): self
     {
         return self::createForReason(RegistryEditError::TimedOut, $previous, entityId: $entityId->value, detail: $detail);
-    }
-
-    /** @param ExceptionContext|null $context */
-    public static function fromWire(RegistryEditError $reason, string $message, ?array $context): self
-    {
-        return new self($message, $reason, $context);
     }
 }

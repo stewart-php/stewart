@@ -39,6 +39,9 @@ final class FakeWebsocketConnection implements IteratorAggregate, WebsocketConne
     /** @var array<string, list<array<string, mixed>>> */
     private array $onSend = [];
 
+    /** @var array<string, Closure(array<string, mixed>): ?array<string, mixed>> */
+    private array $answerers = [];
+
     private bool $closed = false;
 
     private ?WebsocketCloseInfo $closeInfo = null;
@@ -66,6 +69,13 @@ final class FakeWebsocketConnection implements IteratorAggregate, WebsocketConne
     public function replyWhenSent(string $type, array $frame): void
     {
         $this->onSend[$type][] = $frame;
+    }
+
+    // The answer may be null to reply later through queueFrame().
+    /** @param Closure(array<string, mixed>): ?array<string, mixed> $answer */
+    public function answerEverySend(string $type, Closure $answer): void
+    {
+        $this->answerers[$type] = $answer;
     }
 
     public function holdSendsUntil(Latch $release): void
@@ -114,11 +124,18 @@ final class FakeWebsocketConnection implements IteratorAggregate, WebsocketConne
         $type = \is_string($command['type'] ?? null) ? $command['type'] : '';
         $id = $command['id'] ?? null;
 
-        foreach ($this->onSend[$type] ?? [] as $frame) {
-            $this->queueFrame(\is_int($id) ? ['id' => $id, ...$frame] : $frame);
+        $frames = $this->onSend[$type] ?? [];
+        unset($this->onSend[$type]);
+
+        $answer = $frames === [] && isset($this->answerers[$type]) ? ($this->answerers[$type])($command) : null;
+
+        if ($answer !== null) {
+            $frames = [$answer];
         }
 
-        unset($this->onSend[$type]);
+        foreach ($frames as $frame) {
+            $this->queueFrame(\is_int($id) ? ['id' => $id, ...$frame] : $frame);
+        }
     }
 
     public function close(int $code = WebsocketCloseCode::NORMAL_CLOSE, string $reason = ''): void

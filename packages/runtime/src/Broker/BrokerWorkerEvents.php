@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker;
 
 use Stewart\Runtime\Broker\Exposure\ExposureCommandRouter;
+use Stewart\Runtime\Broker\Exposure\ExposureLink;
 use Stewart\Runtime\Broker\Exposure\ExposureReconciler;
 use Stewart\Runtime\Broker\Message\WorkerMessageDispatcher;
 use Stewart\Runtime\Ipc\Message\StateSnapshot;
@@ -14,6 +15,7 @@ final readonly class BrokerWorkerEvents implements WorkerPoolListener
 {
     public function __construct(
         private HaSession $session,
+        private ExposureLink $exposures,
         private BootstrapMessageFactory $bootstrapMessageFactory,
         private ConnectionTracker $connection,
         private WorkerMessageDispatcher $messages,
@@ -43,7 +45,7 @@ final readonly class BrokerWorkerEvents implements WorkerPoolListener
     public function workerGone(WorkerHandle $handle, string $reason): void
     {
         $this->registry->removeWorkerSubscriptions($handle->id);
-        $this->session->orphanExposuresOfWorker($handle->id);
+        $this->exposures->orphanExposuresOfWorker($handle->id);
         $this->commandRouter->failCommandsOf($handle->id);
     }
 

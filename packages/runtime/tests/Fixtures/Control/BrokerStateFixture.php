@@ -7,18 +7,22 @@ namespace Stewart\Runtime\Tests\Fixtures\Control;
 use LogicException;
 use Psr\Log\NullLogger;
 use Stewart\Contracts\App\AppId;
+use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppMetrics;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\HaCallSlots;
-use Stewart\Runtime\Broker\ServiceCallProxy;
 use Stewart\Runtime\Broker\SubscriptionRegistry;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerPool;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Ipc\Message\Pong;
+use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
+use Stewart\Runtime\Ipc\Message\ServiceCallResult;
+use Stewart\Runtime\Model\CorrelationId;
+use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
@@ -47,8 +51,6 @@ final readonly class BrokerStateFixture
 
     public HaCallSlots $callSlots;
 
-    public ServiceCallProxy $serviceCalls;
-
     public WorkerPoolFixture $pools;
 
     private RecordingPoolListener $listener;
@@ -57,12 +59,10 @@ final readonly class BrokerStateFixture
     {
         $this->timers = new ManualTimers();
         $this->session = FakeHaSession::createOpened();
-        $this->heldServiceCalls = $this->session->holdCalls();
+        $this->heldServiceCalls = new Latch();
         $this->registry = new SubscriptionRegistry();
         $this->metrics = new AppMetrics(WorkerSlotCollection::fromList([self::createSlot(0), self::createSlot(1)]), $this->timers->clock);
-        $policy = ConfigFixture::createServiceCallPolicy();
-        $this->callSlots = new HaCallSlots($policy, new NullLogger());
-        $this->serviceCalls = new ServiceCallProxy($this->session, $this->callSlots, $this->metrics, $policy, $this->timers->clock, new NullLogger());
+        $this->callSlots = new HaCallSlots(ConfigFixture::createServiceCallPolicy(), $this->metrics, $this->timers->clock, new NullLogger());
         $this->listener = new RecordingPoolListener();
         $this->pools = WorkerPoolFixture::createWorkerPool(
             spawner: $spawner,
@@ -105,6 +105,18 @@ final readonly class BrokerStateFixture
     public function reportStoreHealth(int $workerId, StoreHealth $store): void
     {
         $this->pools->watchdog->recordPong($this->getLiveHandleOf($workerId), new Pong(nonce: 0, loopLag: Duration::zero(), memoryBytes: 0, store: $store));
+    }
+
+    public function startHeldServiceCall(int $workerId): void
+    {
+        $request = new ServiceCallRequest(new CorrelationId($workerId . ':1'), ResourceScope::forApp(new AppId($workerId === 0 ? 'demo' : 'echo')), 'light', 'turn_on', [], null, false);
+        $held = $this->heldServiceCalls;
+
+        $this->callSlots->runBounded($this->getLiveHandleOf($workerId), $request, static function () use ($held, $request): ServiceCallResult {
+            $held->waitUntilOpen();
+
+            return new ServiceCallResult($request->correlationId, new ServiceResponse('light', 'turn_on'));
+        });
     }
 
     public function stopEverything(): void

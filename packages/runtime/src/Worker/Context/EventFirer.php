@@ -16,7 +16,6 @@ use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Worker\ConnectionStatus;
 use Stewart\Runtime\Worker\PendingRequests;
-use Stewart\Runtime\Worker\Subject\EventFireSubject;
 use Stewart\Support\Time\Deadlines;
 use Throwable;
 
@@ -37,7 +36,11 @@ final readonly class EventFirer
             throw EventFireException::unreachable($payload->eventType, 'Home Assistant is disconnected');
         }
 
-        $fire = $this->pending->open(new EventFireSubject($payload->eventType));
+        $eventType = $payload->eventType;
+        $fire = $this->pending->open(
+            EventContext::class,
+            static fn(string $detail): EventFireException => EventFireException::unreachable($eventType, $detail),
+        );
 
         try {
             $this->sendRequest(new EventFireRequest($fire->correlationId, $scope, $payload->eventType, $payload->data));

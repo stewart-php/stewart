@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Model;
 
+use Stewart\Contracts\Exception\ExceptionReason;
 use Stewart\Contracts\Exception\StewartException;
 use Throwable;
 
@@ -19,11 +20,15 @@ final readonly class ExceptionDetails
         public ?array $context,
     ) {}
 
+    /** @param StewartException<ExceptionReason> $error */
+    public static function fromException(StewartException $error): self
+    {
+        return new self($error::class, (string) $error->reason->value, $error->context);
+    }
+
     public static function fromThrowable(Throwable $error): ?self
     {
-        return $error instanceof StewartException
-            ? new self($error::class, (string) $error->reason->value, $error->context)
-            : null;
+        return $error instanceof StewartException ? self::fromException($error) : null;
     }
 
     /** @return array{class: string, reason: string, context: ExceptionContext|null} */

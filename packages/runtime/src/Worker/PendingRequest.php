@@ -6,6 +6,10 @@ namespace Stewart\Runtime\Worker;
 
 use Amp\DeferredFuture;
 use Amp\Future;
+use Closure;
+use Stewart\Contracts\Exception\ExceptionReason;
+use Stewart\Contracts\Exception\StewartException;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Model\CorrelationId;
 use Throwable;
 
@@ -15,10 +19,14 @@ final readonly class PendingRequest
     /** @var DeferredFuture<TResult> */
     private DeferredFuture $deferred;
 
-    /** @param PendingRequestSubject<TResult> $subject */
+    /**
+     * @param class-string<TResult> $resultClass
+     * @param Closure(string): StewartException<ExceptionReason> $unreachable
+     */
     public function __construct(
         public CorrelationId $correlationId,
-        public PendingRequestSubject $subject,
+        private string $resultClass,
+        private Closure $unreachable,
     ) {
         /** @var DeferredFuture<TResult> $deferred */
         $deferred = new DeferredFuture();
@@ -33,15 +41,26 @@ final readonly class PendingRequest
 
     public function complete(object $result): void
     {
-        $resultClass = $this->subject->getResultClass();
-
-        if (!$result instanceof $resultClass) {
-            $this->fail($this->subject->createUnreachableFailure(\sprintf('the broker answered with %s', get_debug_type($result))));
+        if (!$result instanceof $this->resultClass) {
+            $this->failAsUnreachable(\sprintf('the broker answered with %s', get_debug_type($result)));
 
             return;
         }
 
         $this->deferred->complete($result);
+    }
+
+    public function failFromWire(RequestFailed $failure): void
+    {
+        $fallback = ($this->unreachable)($failure->message);
+        $reason = $fallback->reason::tryFrom($failure->details->reason) ?? $fallback->reason;
+
+        $this->fail($fallback::restoreFromWire($reason, $failure->message, $failure->details->context));
+    }
+
+    public function failAsUnreachable(string $detail): void
+    {
+        $this->fail(($this->unreachable)($detail));
     }
 
     public function fail(Throwable $error): void

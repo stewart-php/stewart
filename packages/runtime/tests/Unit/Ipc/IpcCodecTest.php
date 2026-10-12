@@ -11,7 +11,6 @@ use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\JsonShapeException;
-use Stewart\Contracts\Exception\ServiceCallError;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
@@ -21,7 +20,7 @@ use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\Publish;
-use Stewart\Runtime\Ipc\Message\ServiceCallFailed;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\Shutdown;
 use Stewart\Runtime\Ipc\Message\StateChangeBatch;
 use Stewart\Runtime\Ipc\Message\StateSnapshot;
@@ -37,7 +36,6 @@ use Stewart\Runtime\Json\ClassShapeReader;
 use Stewart\Runtime\Json\Collection\ValueConverterCollection;
 use Stewart\Runtime\Json\WireMapper;
 use Stewart\Runtime\Model\CorrelationId;
-use Stewart\Runtime\Model\ExceptionDetails;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionId;
 use Stewart\Runtime\Tests\Fixtures\Ipc\IpcMessageSamples;
@@ -46,7 +44,7 @@ use Stewart\Testing\Exception\AssertsReason;
 
 #[CoversNamespace('Stewart\Runtime\Ipc\Wire')]
 #[CoversClass(TransportException::class)]
-#[CoversClass(ServiceCallFailed::class)]
+#[CoversClass(RequestFailed::class)]
 final class IpcCodecTest extends TestCase
 {
     use AssertsReason;
@@ -147,26 +145,12 @@ final class IpcCodecTest extends TestCase
         self::assertStringNotContainsString('hunter2', print_r($store, true));
     }
 
-    public function testServiceCallFailureSurvivesTheWire(): void
+    public function testRequestFailureSurvivesTheWire(): void
     {
         $failure = ServiceCallException::rejected('light', 'turn_on', 'Entity not found', 'not_found');
+        $sent = RequestFailed::fromException(new CorrelationId('0:1'), $failure);
 
-        $message = $this->codecs->decodeMessage($this->codecs->encodeMessage(ServiceCallFailed::fromException(new CorrelationId('0:1'), $failure)));
-        self::assertInstanceOf(ServiceCallFailed::class, $message);
-        $rebuilt = $message->toException();
-
-        self::assertSame(ServiceCallError::Rejected, $rebuilt->reason);
-        self::assertSame($failure->getMessage(), $rebuilt->getMessage());
-        self::assertSame($failure->context, $rebuilt->context);
-        self::assertSame(ServiceCallError::Rejected, $message->getReason());
-    }
-
-    public function testUnknownCallReasonDegradesToUnreachable(): void
-    {
-        $message = new ServiceCallFailed(new CorrelationId('0:1'), 'something odd', new ExceptionDetails(ServiceCallException::class, 'melted', null));
-
-        self::assertSame(ServiceCallError::Unreachable, $message->getReason());
-        self::assertSame(ServiceCallError::Unreachable, $message->toException()->reason);
+        self::assertEquals($sent, $this->codecs->decodeMessage($this->codecs->encodeMessage($sent)));
     }
 
     public function testStateChangeIsEncodedOnceForEveryBatch(): void

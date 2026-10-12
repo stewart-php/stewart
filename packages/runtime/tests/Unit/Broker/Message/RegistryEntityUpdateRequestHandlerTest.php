@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Runtime\Tests\Unit\Broker;
+namespace Stewart\Runtime\Tests\Unit\Broker\Message;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -20,34 +20,35 @@ use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppMetrics;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
-use Stewart\Runtime\Broker\Exposure\ExposureLink;
 use Stewart\Runtime\Broker\HaCallSlots;
+use Stewart\Runtime\Broker\Message\RegistryEntityUpdateRequestHandler;
 use Stewart\Runtime\Broker\OutboxLimits;
-use Stewart\Runtime\Broker\RegistryEditProxy;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Config\ServiceCallPolicy;
-use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateFailed;
 use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateRequest;
 use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateResult;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
-use Stewart\Runtime\Tests\Fixtures\Broker\ExposureLinkFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
+use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerProcess;
 use Stewart\Runtime\Tests\Fixtures\Ipc\FakeWorkerTransport;
 use Stewart\Testing\Logging\RecordingLogger;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
 
-#[CoversClass(RegistryEditProxy::class)]
+#[CoversClass(RegistryEntityUpdateRequestHandler::class)]
 #[CoversClass(ServiceCallOutcome::class)]
-final class RegistryEditProxyTest extends TestCase
+final class RegistryEntityUpdateRequestHandlerTest extends TestCase
 {
     private FakeHaSession $session;
+
+    private FakeHomeAssistant $homeAssistant;
 
     private AppMetrics $metrics;
 
@@ -59,7 +60,8 @@ final class RegistryEditProxyTest extends TestCase
     {
         $this->timers = new ManualTimers();
         $this->session = new FakeHaSession();
-        $this->session->seedRegistryEntry(new RegisteredEntity(
+        $this->homeAssistant = FakeHomeAssistant::createConnected();
+        $this->homeAssistant->seedRegistryEntry(new RegisteredEntity(
             new EntityId('light.hall'),
             labelIds: [new LabelId('night'), new LabelId('hue')],
             name: 'Hall',
@@ -75,7 +77,7 @@ final class RegistryEditProxyTest extends TestCase
     {
         $worker = $this->createHandle();
 
-        $this->createProxy(new ServiceCallPolicy(perWorker: 0, total: 0))->forward($worker, self::createRequest(new EntityRegistryUpdate()->withName('Hallway')));
+        $this->createHandler(new ServiceCallPolicy(perWorker: 0, total: 0))->handle($worker, self::createRequest(new EntityRegistryUpdate()->withName('Hallway')));
 
         self::assertSame('Hallway', $this->awaitResult($worker)->entity->name);
         self::assertSame(0, $this->slots->inFlight);
@@ -86,21 +88,21 @@ final class RegistryEditProxyTest extends TestCase
         $worker = $this->createHandle();
         $update = new EntityRegistryUpdate()->withAddedLabels('battery')->withRemovedLabels('hue')->withAddedAliases(EntityAlias::entityName());
 
-        $this->createProxy(new ServiceCallPolicy(perWorker: 0, total: 0))->forward($worker, self::createRequest($update));
+        $this->createHandler(new ServiceCallPolicy(perWorker: 0, total: 0))->handle($worker, self::createRequest($update));
 
         $entity = $this->awaitResult($worker)->entity;
         self::assertSame(['night', 'battery'], $entity->listLabelIds()->toStrings());
         self::assertEquals([EntityAlias::named('Hall lamp'), EntityAlias::entityName()], $entity->aliases);
-        self::assertFalse($this->session->sentRegistryUpdates[0]->needsCurrentEntry());
+        self::assertSame(['night', 'battery'], $this->homeAssistant->listSentRegistryUpdates()[0]['labels'] ?? null, 'The added and removed labels are resolved before sending.');
     }
 
     public function testEditOfExposedEntityWarnsAboutHandle(): void
     {
         $logger = new RecordingLogger();
         $worker = $this->createHandle();
-        $exposures = ExposureLinkFixture::createWithExposedSensor(new AppId('climate'), new ExposedEntityKey('average'), new EntityId('light.hall'));
+        $this->homeAssistant->exposeSensor(new AppId('climate'), new ExposedEntityKey('average'), new EntityId('light.hall'));
 
-        $this->createProxy(new ServiceCallPolicy(perWorker: 0, total: 0), $logger, $exposures)->forward($worker, self::createRequest(new EntityRegistryUpdate()->withName('Hallway')));
+        $this->createHandler(new ServiceCallPolicy(perWorker: 0, total: 0), $logger)->handle($worker, self::createRequest(new EntityRegistryUpdate()->withName('Hallway')));
 
         self::assertSame('Hallway', $this->awaitResult($worker)->entity->name);
         self::assertSame(
@@ -113,9 +115,9 @@ final class RegistryEditProxyTest extends TestCase
     {
         $logger = new RecordingLogger();
         $worker = $this->createHandle();
-        $exposures = ExposureLinkFixture::createWithExposedSensor(new AppId('climate'), new ExposedEntityKey('average'), new EntityId('sensor.average'));
+        $this->homeAssistant->exposeSensor(new AppId('climate'), new ExposedEntityKey('average'), new EntityId('sensor.average'));
 
-        $this->createProxy(new ServiceCallPolicy(perWorker: 0, total: 0), $logger, $exposures)->forward($worker, self::createRequest(new EntityRegistryUpdate()->withName('Hallway')));
+        $this->createHandler(new ServiceCallPolicy(perWorker: 0, total: 0), $logger)->handle($worker, self::createRequest(new EntityRegistryUpdate()->withName('Hallway')));
 
         $this->awaitResult($worker);
         self::assertSame([], $logger->listMessagesAt(LogLevel::WARNING));
@@ -125,9 +127,9 @@ final class RegistryEditProxyTest extends TestCase
     {
         $worker = $this->createHandle();
 
-        $this->createProxy(new ServiceCallPolicy(perWorker: 0, total: 0))->forward($worker, self::createRequest(new EntityRegistryUpdate()->withHidden(true), 'light.gone'));
+        $this->createHandler(new ServiceCallPolicy(perWorker: 0, total: 0))->handle($worker, self::createRequest(new EntityRegistryUpdate()->withHidden(true), 'light.gone'));
 
-        self::assertSame(RegistryEditError::NotFound, $this->awaitFailure($worker)->getReason());
+        self::assertSame(RegistryEditError::NotFound->value, $this->awaitFailure($worker)->details->reason);
     }
 
     public function testDisconnectedUpdateFailsAsUnreachable(): void
@@ -135,21 +137,26 @@ final class RegistryEditProxyTest extends TestCase
         $worker = $this->createHandle();
         $this->session->connected = false;
 
-        $this->createProxy(new ServiceCallPolicy(perWorker: 0, total: 0))->forward($worker, self::createRequest(new EntityRegistryUpdate()->withName('Hallway')));
+        $this->createHandler(new ServiceCallPolicy(perWorker: 0, total: 0))->handle($worker, self::createRequest(new EntityRegistryUpdate()->withName('Hallway')));
 
-        self::assertSame(RegistryEditError::Unreachable, $this->awaitFailure($worker)->getReason());
+        self::assertSame(RegistryEditError::Unreachable->value, $this->awaitFailure($worker)->details->reason);
     }
 
     public function testFullCallBudgetRefusesUpdate(): void
     {
         $worker = $this->createHandle();
-        $proxy = $this->createProxy(new ServiceCallPolicy(perWorker: 1, total: 0));
-        $this->slots->acquire($worker);
+        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0));
+        $this->homeAssistant->seedRegistryEntry(new RegisteredEntity(new EntityId('light.hall')));
+        $held = $this->homeAssistant->holdReplies();
+        $handler->handle($worker, self::createRequest(new EntityRegistryUpdate()->withName('Hall')));
+        EventLoopTicks::settle();
 
-        $proxy->forward($worker, self::createRequest(new EntityRegistryUpdate()->withName('Hallway')));
+        $handler->handle($worker, self::createRequest(new EntityRegistryUpdate()->withName('Hallway')));
 
-        self::assertSame(RegistryEditError::Overloaded, $this->awaitFailure($worker)->getReason());
-        self::assertSame([], $this->session->sentRegistryUpdates);
+        self::assertSame(RegistryEditError::Overloaded->value, $this->awaitFailure($worker)->details->reason);
+        self::assertCount(1, $this->homeAssistant->listSentRegistryUpdates());
+        $held->open();
+        EventLoopTicks::settle();
     }
 
     public function testDryRunPreviewsWithoutUpdating(): void
@@ -157,18 +164,18 @@ final class RegistryEditProxyTest extends TestCase
         $logger = new RecordingLogger();
         $worker = $this->createHandle();
 
-        $this->createProxy(new ServiceCallPolicy(perWorker: 0, total: 0, dryRun: true), $logger)->forward($worker, self::createRequest(new EntityRegistryUpdate()->withHidden(true)));
+        $this->createHandler(new ServiceCallPolicy(perWorker: 0, total: 0, dryRun: true), $logger)->handle($worker, self::createRequest(new EntityRegistryUpdate()->withHidden(true)));
 
         self::assertTrue($this->awaitResult($worker)->entity->isHidden());
-        self::assertSame([], $this->session->sentRegistryUpdates);
+        self::assertSame([], $this->homeAssistant->listSentRegistryUpdates());
         self::assertSame(['Registry entry not updated: service_calls.dry_run is on'], $logger->listMessagesAt(LogLevel::INFO));
     }
 
-    private function createProxy(ServiceCallPolicy $policy, ?RecordingLogger $logger = null, ?ExposureLink $exposures = null): RegistryEditProxy
+    private function createHandler(ServiceCallPolicy $policy, ?RecordingLogger $logger = null): RegistryEntityUpdateRequestHandler
     {
-        $this->slots = new HaCallSlots($policy, new NullLogger());
+        $this->slots = new HaCallSlots($policy, $this->metrics, $this->timers->clock, new NullLogger());
 
-        return new RegistryEditProxy($this->session, $exposures ?? ExposureLinkFixture::createWithoutExposures(), $this->slots, $this->metrics, $policy, $this->timers->clock, $logger ?? new NullLogger());
+        return new RegistryEntityUpdateRequestHandler($this->session, $this->homeAssistant->client, $this->homeAssistant->exposures, $this->slots, $policy, $logger ?? new NullLogger());
     }
 
     private function awaitResult(WorkerHandle $worker): RegistryEntityUpdateResult
@@ -178,11 +185,11 @@ final class RegistryEditProxyTest extends TestCase
         return self::listSentOfType($worker, RegistryEntityUpdateResult::class)[0];
     }
 
-    private function awaitFailure(WorkerHandle $worker): RegistryEntityUpdateFailed
+    private function awaitFailure(WorkerHandle $worker): RequestFailed
     {
-        EventLoopTicks::settleUntil(static fn(): bool => self::listSentOfType($worker, RegistryEntityUpdateFailed::class) !== []);
+        EventLoopTicks::settleUntil(static fn(): bool => self::listSentOfType($worker, RequestFailed::class) !== []);
 
-        return self::listSentOfType($worker, RegistryEntityUpdateFailed::class)[0];
+        return self::listSentOfType($worker, RequestFailed::class)[0];
     }
 
     private function createHandle(): WorkerHandle

@@ -46,7 +46,7 @@ use Stewart\Runtime\Metrics\Source\DaemonMetricSource;
 use Stewart\Runtime\Metrics\Source\WorkerMetricSource;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
-use Stewart\Runtime\Tests\Fixtures\Broker\ExposureLinkFixture;
+use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
 use Stewart\Runtime\Tests\Fixtures\Control\BrokerStateFixture;
 use Stewart\Testing\Time\VirtualClock;
 
@@ -88,7 +88,7 @@ final readonly class AdminApiFixture
             new NullLogger(),
         );
         $metrics = new AppMetrics(WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), $apps)]), $this->clock);
-        $this->api = new AppsAdminApi(new AppStatusBuilder($metrics, $this->registry, ExposureLinkFixture::createWithoutExposures()), $this->pauses, new AppPauseOutcomeMessages());
+        $this->api = new AppsAdminApi(new AppStatusBuilder($metrics, $this->registry, FakeHomeAssistant::createUnreachable()->exposures), $this->pauses, new AppPauseOutcomeMessages());
         $this->codec = new AdminApiCodec(AdminApiCodec::createAdminApiWireMapper());
         $this->broker = new BrokerStateFixture();
         $this->workers = new WorkersAdminApi(WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), $apps)]), $this->broker->pools->pool);
@@ -114,7 +114,7 @@ final readonly class AdminApiFixture
             workerStatuses: new WorkerStatusBuilder($broker->pools->slots, $broker->pools->watchdog, $broker->pools->restartPolicy, $broker->callSlots),
             registrationInfos: new RegistrationInfoBuilder($broker->registry),
             storeHealth: new StoreHealthBuilder($broker->pools->slots, storeConfigured: false),
-            appStatuses: new AppStatusBuilder($metrics, $this->registry, ExposureLinkFixture::createWithoutExposures()),
+            appStatuses: new AppStatusBuilder($metrics, $this->registry, FakeHomeAssistant::createUnreachable()->exposures),
             deployStatus: new DeployStatusBuilder(new DeployState()),
             componentStatus: new ComponentStatusBuilder(new ComponentTracker($this->clock), new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10))),
             connection: new ConnectionTracker($this->clock),

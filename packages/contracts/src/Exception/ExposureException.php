@@ -8,11 +8,7 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Throwable;
 
-/**
- * @phpstan-import-type ExceptionContext from StewartException
- *
- * @extends StewartException<ExposureError>
- */
+/** @extends StewartException<ExposureError> */
 final class ExposureException extends StewartException
 {
     public static function outsideApp(ExposedEntityKey $key): self
@@ -43,11 +39,5 @@ final class ExposureException extends StewartException
     public static function unreachable(ExposedEntityKey $key, string $detail, ?Throwable $previous = null): self
     {
         return self::createForReason(ExposureError::Unreachable, $previous, key: $key->value, detail: $detail);
-    }
-
-    /** @param ExceptionContext|null $context */
-    public static function fromWire(ExposureError $reason, string $message, ?array $context): self
-    {
-        return new self($message, $reason, $context);
     }
 }

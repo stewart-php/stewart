@@ -34,6 +34,7 @@ use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Broker\BootedBroker;
 use Stewart\Runtime\Tests\Fixtures\Broker\BrokerKernelFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
+use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
 use Stewart\Runtime\Tests\Fixtures\Broker\ReceivedEventFire;
 use Stewart\Runtime\Tests\Fixtures\Broker\WorkerPoolFixture;
 use Stewart\Runtime\Tests\Fixtures\Protocol\HistoryReporter;
@@ -65,7 +66,7 @@ final class InMemoryWorkerTest extends TestCase
 
         $ready->await(new TimeoutCancellation(self::WAIT_SECONDS));
 
-        $called = $session->waitForNextCall();
+        $called = $broker->homeAssistant->waitForNextCall();
         $session->listener?->stateChanged(new StateChange(
             new EntityId(SerialHandler::ENTITY),
             new EntityState(new EntityId(SerialHandler::ENTITY), '1'),
@@ -73,7 +74,7 @@ final class InMemoryWorkerTest extends TestCase
         ));
 
         $called->await(new TimeoutCancellation(self::WAIT_SECONDS));
-        self::assertSame(1, $session->calls);
+        self::assertCount(1, $broker->homeAssistant->listReceivedCalls());
 
         $broker->run->stop('test done');
         $running->await(new TimeoutCancellation(self::WAIT_SECONDS));
@@ -102,7 +103,7 @@ final class InMemoryWorkerTest extends TestCase
 
         $ready->await(new TimeoutCancellation(self::WAIT_SECONDS));
 
-        $called = $session->waitForNextCall();
+        $called = $broker->homeAssistant->waitForNextCall();
 
         foreach (['light.porch', 'light.kitchen'] as $entityId) {
             $session->listener?->stateChanged(new StateChange(new EntityId($entityId), null, new EntityState(new EntityId($entityId), 'on')));
@@ -110,8 +111,8 @@ final class InMemoryWorkerTest extends TestCase
 
         $called->await(new TimeoutCancellation(self::WAIT_SECONDS));
 
-        self::assertSame(['entity_id' => 'light.kitchen'], $session->receivedCalls[0]->data);
-        self::assertCount(1, $session->receivedCalls);
+        self::assertSame(['entity_id' => 'light.kitchen'], $broker->homeAssistant->listReceivedCalls()[0]->data);
+        self::assertCount(1, $broker->homeAssistant->listReceivedCalls());
 
         $broker->run->stop('test done');
         $running->await(new TimeoutCancellation(self::WAIT_SECONDS));
@@ -120,14 +121,14 @@ final class InMemoryWorkerTest extends TestCase
     public function testAppReadsHistoryThroughBroker(): void
     {
         $session = new FakeHaSession();
-        $session->historicalStates = [
-            new EntityState(new EntityId(HistoryReporter::ENTITY), 'off'),
-            new EntityState(new EntityId(HistoryReporter::ENTITY), 'on'),
-            new EntityState(new EntityId(HistoryReporter::ENTITY), 'off'),
-        ];
         $logger = new RecordingLogger();
         $pools = WorkerPoolFixture::createWorkerPool(new InMemoryWorkerSpawner(IpcCodec::createForWorkerBootstrap()), logger: $logger, outboxLimits: new OutboxLimits(100, 256));
         $broker = self::createBroker($session, $pools, $logger, new AppId('history-reporter'), HistoryReporter::class);
+        $broker->homeAssistant->seedHistory(
+            new EntityState(new EntityId(HistoryReporter::ENTITY), 'off'),
+            new EntityState(new EntityId(HistoryReporter::ENTITY), 'on'),
+            new EntityState(new EntityId(HistoryReporter::ENTITY), 'off'),
+        );
 
         $ready = $logger->waitForMessage('Worker ready');
 
@@ -166,8 +167,8 @@ final class InMemoryWorkerTest extends TestCase
 
         $fired->await(new TimeoutCancellation(self::WAIT_SECONDS));
         $record = $logger->records->findFirstWhere(static fn(RecordedLog $log): bool => $log->message === 'Initialize fire finished');
-        self::assertSame(FakeHaSession::FIRE_CONTEXT_PREFIX . '1', $record?->context['context'] ?? null);
-        self::assertEquals([new ReceivedEventFire(InitFirer::EVENT_TYPE, ['button' => 'front'])], $session->receivedEventFires);
+        self::assertSame(FakeHomeAssistant::FIRE_CONTEXT_PREFIX . '1', $record?->context['context'] ?? null);
+        self::assertEquals([new ReceivedEventFire(InitFirer::EVENT_TYPE, ['button' => 'front'])], $broker->homeAssistant->listReceivedEventFires());
 
         $broker->run->stop('test done');
         $running->await(new TimeoutCancellation(self::WAIT_SECONDS));

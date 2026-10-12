@@ -6,15 +6,11 @@ namespace Stewart\Runtime\Tests\Unit\Control\Assembler;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Control\Assembler\WorkerStatusBuilder;
 use Stewart\Runtime\Control\Protocol\Status\WorkerStatus;
 use Stewart\Runtime\Ipc\Message\Pong;
-use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
-use Stewart\Runtime\Model\CorrelationId;
-use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerSpawner;
 use Stewart\Runtime\Tests\Fixtures\Control\BrokerStateFixture;
 use Stewart\Testing\Async\Latch;
@@ -88,7 +84,7 @@ final class WorkerStatusBuilderTest extends TestCase
     {
         $this->broker->startWorker(0);
 
-        $this->broker->serviceCalls->forward($this->broker->getLiveHandleOf(0), new ServiceCallRequest(new CorrelationId('0:1'), ResourceScope::forApp(new AppId('demo')), 'light', 'turn_on', [], null, false));
+        $this->broker->startHeldServiceCall(0);
 
         self::assertSame(1, $this->buildStatusOf(0)->inFlightServiceCalls);
 

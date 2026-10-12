@@ -17,8 +17,8 @@ use Stewart\Contracts\Registry\Update\EntityRegistryUpdate;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
-use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateFailed;
 use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateRequest;
+use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
@@ -28,7 +28,6 @@ use Stewart\Runtime\Worker\ConnectionStatus;
 use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\PendingRequests;
 use Stewart\Runtime\Worker\Registry\RegistryEditRequester;
-use Stewart\Runtime\Worker\Subject\RegistryEditSubject;
 use Stewart\Runtime\Worker\WorkerRegistryEditor;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Time\EventLoopTicks;
@@ -38,7 +37,6 @@ use Throwable;
 use function Amp\async;
 
 #[CoversClass(RegistryEditRequester::class)]
-#[CoversClass(RegistryEditSubject::class)]
 #[CoversClass(WorkerRegistryEditor::class)]
 final class RegistryEditRequesterTest extends TestCase
 {
@@ -87,8 +85,7 @@ final class RegistryEditRequesterTest extends TestCase
         $request = $transport->sent[0] ?? null;
         self::assertInstanceOf(RegistryEntityUpdateRequest::class, $request);
 
-        $failed = RegistryEntityUpdateFailed::fromException($request->correlationId, RegistryEditException::notFound($request->entityId));
-        $this->pending->reject($request->correlationId, $failed->toException());
+        $this->pending->rejectFromWire(RequestFailed::fromException($request->correlationId, RegistryEditException::notFound($request->entityId)));
 
         $this->assertThrowsReason(RegistryEditError::NotFound, static fn() => $edit->await());
     }

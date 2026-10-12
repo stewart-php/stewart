@@ -33,7 +33,7 @@ final class EventFireExceptionTest extends TestCase
     {
         $original = EventFireException::createForReason(EventFireError::Overloaded, eventType: 'doorbell_pressed', detail: 'busy');
 
-        $rebuilt = EventFireException::fromWire($original->reason, $original->getMessage(), $original->context);
+        $rebuilt = EventFireException::restoreFromWire($original->reason, $original->getMessage(), $original->context);
 
         self::assertSame(EventFireError::Overloaded, $rebuilt->reason);
         self::assertSame($original->getMessage(), $rebuilt->getMessage());

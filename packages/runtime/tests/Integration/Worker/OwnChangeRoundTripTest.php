@@ -22,6 +22,7 @@ use Stewart\Runtime\Ipc\Wire\IpcCodec;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Broker\BrokerKernelFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
+use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
 use Stewart\Runtime\Tests\Fixtures\Broker\ReceivedServiceCall;
 use Stewart\Runtime\Tests\Fixtures\Broker\WorkerPoolFixture;
 use Stewart\Runtime\Tests\Fixtures\Protocol\OwnChangeReporter;
@@ -56,14 +57,14 @@ final class OwnChangeRoundTripTest extends TestCase
         $running = async($broker->lifecycle->run(...));
         EventLoopTicks::settleUntil(static fn(): bool => \in_array('Worker ready', $logger->listMessagesAt('info'), true));
 
-        self::pushLightChange($session, 'on', new EventContext(FakeHaSession::CALL_CONTEXT_PREFIX . '1', userId: FakeHaSession::HA_USER_ID));
-        EventLoopTicks::settleUntil(static fn(): bool => \count($session->receivedCalls) === 2);
+        self::pushLightChange($session, 'on', new EventContext(FakeHomeAssistant::CALL_CONTEXT_PREFIX . '1', userId: FakeHomeAssistant::HA_USER_ID));
+        EventLoopTicks::settleUntil(static fn(): bool => \count($broker->homeAssistant->listReceivedCalls()) === 2);
         self::pushLightChange($session, 'off', new EventContext('manual', userId: 'resident'));
-        EventLoopTicks::settleUntil(static fn(): bool => \count($session->receivedCalls) === 3);
+        EventLoopTicks::settleUntil(static fn(): bool => \count($broker->homeAssistant->listReceivedCalls()) === 3);
 
         self::assertSame(
             [['by_last_call' => true, 'by_stewart' => true], ['by_last_call' => false, 'by_stewart' => false]],
-            array_map(static fn(ReceivedServiceCall $call): array => $call->data, \array_slice($session->receivedCalls, 1)),
+            array_map(static fn(ReceivedServiceCall $call): array => $call->data, \array_slice($broker->homeAssistant->listReceivedCalls(), 1)),
         );
 
         $broker->run->stop('test done');

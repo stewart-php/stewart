@@ -5,22 +5,22 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Worker\Message;
 
 use Stewart\Runtime\Ipc\Message\BrokerMessage;
-use Stewart\Runtime\Ipc\Message\ServiceCallFailed;
+use Stewart\Runtime\Ipc\Message\CorrelatedReply;
 use Stewart\Runtime\Worker\PendingRequests;
 
-/** @implements BrokerMessageHandler<ServiceCallFailed> */
-final readonly class ServiceCallFailedHandler implements BrokerMessageHandler
+/** @implements BrokerMessageHandler<CorrelatedReply> */
+final readonly class CorrelatedReplyHandler implements BrokerMessageHandler
 {
     public function __construct(private PendingRequests $pending) {}
 
     public function handledMessageClass(): string
     {
-        return ServiceCallFailed::class;
+        return CorrelatedReply::class;
     }
 
-    /** @param ServiceCallFailed $message */
+    /** @param CorrelatedReply $message */
     public function handle(BrokerMessage $message): void
     {
-        $this->pending->reject($message->correlationId, $message->toException());
+        $this->pending->resolve($message->correlationId, $message->getAnswer());
     }
 }

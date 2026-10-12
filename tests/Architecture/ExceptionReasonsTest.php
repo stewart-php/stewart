@@ -28,8 +28,6 @@ use UnitEnum;
 #[CoversNothing]
 final class ExceptionReasonsTest extends TestCase
 {
-    private const array NOT_FACTORIES = ['fromWire'];
-
     public function testEveryExceptionFileIsAnAreaClass(): void
     {
         $files = array_filter(
@@ -158,7 +156,7 @@ final class ExceptionReasonsTest extends TestCase
 
             $returnsSelf = $returns instanceof ReflectionNamedType && $returns->getName() === $exception;
 
-            if ($method->isPublic() && $returnsSelf && !\in_array($method->getName(), self::NOT_FACTORIES, true)) {
+            if ($method->isPublic() && $returnsSelf) {
                 $factories[$method->getName()] = $method;
             }
         }
