@@ -18,6 +18,8 @@ minor release may break; its "Upgrading" section says what to change.
   spellings, fails the app
 - A package repository no longer misses its release tag, or has its `main` rolled back, when `main` and the tag are
   pushed together
+- A release requires a passing CI run on its commit and the skeleton, image and chart checks, and the runtime image
+  is scanned before it is tagged and signed
 
 ### Changed
 

@@ -1,8 +1,9 @@
 name: Distribution
 
 on:
-  pull_request:
-    paths:
+  push:
+    branches: [main]
+    paths: &paths
       - 'skeleton/**'
       - '.docker/**'
       - 'charts/**'
@@ -12,6 +13,12 @@ on:
       - 'packages/*/composer.json'
       - 'Makefile'
       - '.github/workflows/distribution.yml'
+  pull_request:
+    paths: *paths
+  workflow_call:
+    secrets:
+      DOCKERHUB_TOKEN:
+        required: false
   workflow_dispatch:
 
 permissions:

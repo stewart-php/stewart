@@ -1,5 +1,5 @@
-# Builds ghcr.io/stewart-php/runtime and its -dev variant for amd64 and arm64 on native runners, then tags, signs
-# and scans the multi-arch images. Called by the release and the weekly rebuild.
+# Builds ghcr.io/stewart-php/runtime and its -dev variant for amd64 and arm64 on native runners, scans them, then
+# tags and signs the multi-arch images. Called by the release and the weekly rebuild.
 name: Runtime image
 
 on:
@@ -73,6 +73,15 @@ jobs:
           sbom: true
           labels: org.opencontainers.image.version=${{ inputs.version }}
           outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+      - name: Scan
+        if: matrix.target == 'runtime'
+        run: >
+          docker run --rm -e TRIVY_USERNAME -e TRIVY_PASSWORD aquasec/trivy:0.75.0
+          image --exit-code 1 --severity CRITICAL --ignore-unfixed "$IMAGE@$DIGEST"
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ github.token }}
       - name: Record the digest
         run: |
           mkdir -p "$RUNNER_TEMP/digests"
@@ -138,12 +147,3 @@ jobs:
         run: cosign sign --yes "$IMAGE@$DIGEST"
         env:
           DIGEST: ${{ steps.tag.outputs.digest }}
-      - name: Scan
-        if: matrix.target == 'runtime'
-        run: >
-          docker run --rm -e TRIVY_USERNAME -e TRIVY_PASSWORD aquasec/trivy:0.75.0
-          image --exit-code 1 --severity CRITICAL --ignore-unfixed "$IMAGE@$DIGEST"
-        env:
-          DIGEST: ${{ steps.tag.outputs.digest }}
-          TRIVY_USERNAME: ${{ github.actor }}
-          TRIVY_PASSWORD: ${{ github.token }}
