@@ -10,6 +10,8 @@ minor release may break; its "Upgrading" section says what to change.
 
 - Reloading the `stewart` integration, or enabling or disabling one of its entities, no longer leaves exposed entities
   unavailable until Home Assistant reconnects: the daemon opens a new session and sends its entities again
+- A command to an exposed entity that its app had queued is refused at once with the reason, instead of timing out
+  in Home Assistant, when the app pauses, falls behind or stops watching commands before handling it
 
 ## [0.10.0] - 2026-10-12
 

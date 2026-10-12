@@ -33,14 +33,18 @@ final class SubscriptionQueue
         $this->pending = new SplQueue();
     }
 
-    public function push(object $event): void
+    /** @param ?Closure(QueueDiscardReason): void $onDiscarded */
+    public function push(object $event, ?Closure $onDiscarded = null): void
     {
         if ($this->cancelled) {
+            $onDiscarded?->__invoke(QueueDiscardReason::Cancelled);
+
             return;
         }
 
         if ($this->paused) {
             $this->listener->eventSuppressed($this->subscription);
+            $onDiscarded?->__invoke(QueueDiscardReason::Paused);
 
             return;
         }
@@ -55,7 +59,7 @@ final class SubscriptionQueue
 
         $this->enqueue(QueuedWork::forDroppableEvent(static function () use ($handler, $event): void {
             $handler($event);
-        }));
+        }, $onDiscarded));
     }
 
     /** @param Closure(): void $emission */
@@ -98,8 +102,9 @@ final class SubscriptionQueue
         $this->pending = new SplQueue();
         $this->pendingEvents = 0;
 
-        foreach ($discarded as $ignored) {
+        foreach ($discarded as $work) {
             $this->listener->eventSuppressed($this->subscription);
+            $work->discard(QueueDiscardReason::Paused);
         }
     }
 
@@ -115,8 +120,13 @@ final class SubscriptionQueue
         }
 
         $this->cancelled = true;
+        $discarded = $this->pending;
         $this->pending = new SplQueue();
         $this->pendingEvents = 0;
+
+        foreach ($discarded as $work) {
+            $work->discard(QueueDiscardReason::Cancelled);
+        }
 
         try {
             $this->subscription->subscriptionScope->close();
@@ -137,6 +147,7 @@ final class SubscriptionQueue
             ++$this->dropped;
 
             $this->listener->eventDropped($this->subscription, $this->dropped);
+            $work->discard(QueueDiscardReason::Overflow);
 
             return;
         }

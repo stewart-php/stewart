@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Tests\Unit\Dispatch;
 
+use ArrayObject;
 use Closure;
 use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -15,6 +16,8 @@ use Stewart\Contracts\Connection\ConnectionLost;
 use Stewart\Contracts\Connection\ConnectionRestored;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\HaEvent;
+use Stewart\Contracts\Exposure\Command\ButtonPress;
+use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Registry\AreaId;
 use Stewart\Contracts\Registry\Collection\AreaCollection;
 use Stewart\Contracts\Registry\Collection\DeviceCollection;
@@ -26,6 +29,7 @@ use Stewart\Contracts\Registry\IndexedRegistry;
 use Stewart\Contracts\Registry\RegisteredEntity;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\EntityState;
+use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\State\StateChangeOrigin;
 use Stewart\Contracts\Stream\SubscriptionScope;
@@ -39,6 +43,7 @@ use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Dispatch\EntityFilterIndex;
 use Stewart\Runtime\Dispatch\LocalDispatcher;
 use Stewart\Runtime\Dispatch\LocalSubscription;
+use Stewart\Runtime\Dispatch\QueueDiscardReason;
 use Stewart\Runtime\Dispatch\RegisteredSubscription;
 use Stewart\Runtime\Dispatch\SelectorIndex;
 use Stewart\Runtime\Dispatch\SubscriptionListener;
@@ -709,6 +714,74 @@ final class LocalDispatcherTest extends TestCase
         self::assertSame([$subscription->getId()], $this->listener->suppressed);
     }
 
+    public function testCommandToPausedAppIsDiscarded(): void
+    {
+        $dispatcher = $this->createDispatcher();
+        $this->registerCommandWatcher($dispatcher, 'boost');
+        $this->pause($dispatcher, 'app');
+
+        self::assertSame([QueueDiscardReason::Paused], $this->dispatchCommand($dispatcher, 'boost')->getArrayCopy());
+    }
+
+    public function testQueuedCommandIsDiscardedOnPause(): void
+    {
+        $dispatcher = $this->createDispatcher();
+        $this->registerCommandWatcher($dispatcher, 'boost', activate: false);
+        $reasons = $this->dispatchCommand($dispatcher, 'boost');
+
+        $this->pause($dispatcher, 'app');
+
+        self::assertSame([QueueDiscardReason::Paused], $reasons->getArrayCopy());
+    }
+
+    public function testCommandDroppedByFullQueueIsDiscarded(): void
+    {
+        $dispatcher = $this->createDispatcher(queueLimit: 1);
+        $this->registerCommandWatcher($dispatcher, 'boost', activate: false);
+        $reasons = $this->dispatchCommand($dispatcher, 'boost');
+
+        $this->dispatchCommand($dispatcher, 'boost');
+
+        self::assertSame([QueueDiscardReason::Overflow], $reasons->getArrayCopy());
+    }
+
+    public function testQueuedCommandIsDiscardedOnCancel(): void
+    {
+        $dispatcher = $this->createDispatcher();
+        $watcher = $this->registerCommandWatcher($dispatcher, 'boost', activate: false);
+        $reasons = $this->dispatchCommand($dispatcher, 'boost');
+
+        $dispatcher->cancel(new SubscriptionId($watcher->getId()));
+
+        self::assertSame([QueueDiscardReason::Cancelled], $reasons->getArrayCopy());
+    }
+
+    public function testCommandIsDiscardedOnlyWhenEveryQueueDropsIt(): void
+    {
+        $dispatcher = $this->createDispatcher();
+        $first = $this->registerCommandWatcher($dispatcher, 'boost', activate: false);
+        $second = $this->registerCommandWatcher($dispatcher, 'boost', activate: false);
+        $reasons = $this->dispatchCommand($dispatcher, 'boost');
+
+        $dispatcher->cancel(new SubscriptionId($first->getId()));
+        self::assertSame([], $reasons->getArrayCopy());
+
+        $dispatcher->cancel(new SubscriptionId($second->getId()));
+        self::assertSame([QueueDiscardReason::Cancelled], $reasons->getArrayCopy());
+    }
+
+    public function testHandledCommandIsNotDiscarded(): void
+    {
+        $dispatcher = $this->createDispatcher();
+        $this->registerCommandWatcher($dispatcher, 'boost');
+        $reasons = $this->dispatchCommand($dispatcher, 'boost');
+
+        EventLoopTicks::settle();
+        $this->pause($dispatcher, 'app');
+
+        self::assertSame([], $reasons->getArrayCopy());
+    }
+
     private function createDispatcher(int $queueLimit = 100): LocalDispatcher
     {
         return new LocalDispatcher('w0', $queueLimit, $this->listener, $this->listener, $this->scopes, $this->registry);
@@ -782,6 +855,23 @@ final class LocalDispatcherTest extends TestCase
         }
 
         return $subscription;
+    }
+
+    private function registerCommandWatcher(LocalDispatcher $dispatcher, string $key, bool $activate = true): Subscription
+    {
+        return $this->register($dispatcher, 'app', SubscriptionKind::ExposedCommand, Selector::exact($key), static function (): void {}, $activate);
+    }
+
+    /** @return ArrayObject<int, QueueDiscardReason> */
+    private function dispatchCommand(LocalDispatcher $dispatcher, string $key): ArrayObject
+    {
+        /** @var ArrayObject<int, QueueDiscardReason> $reasons */
+        $reasons = new ArrayObject();
+        $dispatcher->dispatchExposedCommand(self::createScope('app'), new ExposedEntityKey($key), new ButtonPress(new EventContext('context-1')), static function (QueueDiscardReason $reason) use ($reasons): void {
+            $reasons->append($reason);
+        });
+
+        return $reasons;
     }
 
     private static function createScope(string $appId): ResourceScope

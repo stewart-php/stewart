@@ -33,6 +33,7 @@ use Stewart\Contracts\Exposure\TextConfig;
 use Stewart\Contracts\Schedule\TimeOfDay;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Runtime\Dispatch\LocalDispatcher;
 use Stewart\Runtime\Ipc\Message\ExposedCommandAnswered;
 use Stewart\Runtime\Ipc\Message\ExposedEntityCommanded;
 use Stewart\Runtime\Ipc\Message\ExposeEntityRequest;
@@ -96,6 +97,8 @@ final class WorkerEntityExposureTest extends TestCase
 
     private ExposedEntityCommandedHandler $commandHandler;
 
+    private LocalDispatcher $dispatcher;
+
     protected function setUp(): void
     {
         $pending = new PendingRequests(new CorrelationIdSequence(new WorkerId(0)));
@@ -105,7 +108,8 @@ final class WorkerEntityExposureTest extends TestCase
         $scopes = new ScopeLifecycle();
         $scopes->activateScope(ResourceScope::forApp(new AppId('climate')));
         $settlements = new ExposedCommandSettlements($this->broker, new NullLogger());
-        $commandStreams = new ExposedCommandStreams(RecordingDispatchListener::createDispatcher('w0', 10, scopes: $scopes), $timers, $settlements);
+        $this->dispatcher = RecordingDispatchListener::createDispatcher('w0', 10, scopes: $scopes);
+        $commandStreams = new ExposedCommandStreams($this->dispatcher, $timers, $settlements);
         $this->commandHandler = new ExposedEntityCommandedHandler($this->handles, $commandStreams, $settlements);
         $this->shared = new WorkerEntityExposure(
             new ExposureRequester($this->broker, $pending, $timers, Duration::seconds(1)),
@@ -432,6 +436,19 @@ final class WorkerEntityExposureTest extends TestCase
         $this->deliverCommand('heater', self::createSwitchCommand(SwitchAction::TurnOn));
 
         self::assertTrue($this->requireOnlyAnswer()->accepted);
+    }
+
+    public function testCommandQueuedBeforePauseIsRefused(): void
+    {
+        $heater = $this->createClimateExposure()->exposeSwitch('heater');
+        $heater->watchCommands()->subscribe(static function (): void {});
+
+        $this->commandHandler->handle(new ExposedEntityCommanded('3f2b9c0e8d7a4f61', ResourceScope::forApp(new AppId('climate')), new ExposedEntityKey('heater'), self::createSwitchCommand(SwitchAction::TurnOn)));
+        $this->dispatcher->pauseQueuesOf(ResourceScope::forApp(new AppId('climate')));
+        EventLoopTicks::settle();
+
+        self::assertSame('App climate was paused before it handled the command.', $this->requireOnlyAnswer()->rejection);
+        self::assertNull($heater->getValue());
     }
 
     public function testCommandForUnknownKeyIsRefused(): void
