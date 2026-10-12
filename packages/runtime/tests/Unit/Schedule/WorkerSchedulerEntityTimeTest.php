@@ -264,6 +264,22 @@ final class WorkerSchedulerEntityTimeTest extends TestCase
         self::assertCount(0, $this->runs);
     }
 
+    public function testEntityTimeArmedAfterTheAppStoppedIsIgnored(): void
+    {
+        $this->changeWakeUp('2026-06-01 07:30:00', self::DATE_AND_TIME);
+        $this->fixture->resources->releaseScope($this->scope);
+
+        $task = $this->scheduleWakeUp();
+        $this->timers->delay(Duration::hours(3));
+
+        self::assertFalse($task->isActive());
+        self::assertSame(0, $this->fixture->entityTimes->countFor($this->scope));
+        self::assertSame(0, $this->fixture->schedules->countFor($this->scope));
+        self::assertSame(0, $this->fixture->dispatcher->countFor($this->scope));
+        self::assertCount(0, $this->runs);
+        self::assertContains('Ignored an entity time armed after its app stopped', $this->logger->listMessagesAt('debug'));
+    }
+
     /** @return list<string> */
     private function listScheduledTimes(): array
     {

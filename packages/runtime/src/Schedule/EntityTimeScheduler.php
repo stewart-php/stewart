@@ -11,6 +11,7 @@ use Stewart\Contracts\Schedule\ScheduledRun;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Runtime\Model\ResourceScope;
+use Stewart\Runtime\Scope\ScopeLifecycle;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Worker\Context\DispatchStreams;
 
@@ -21,6 +22,7 @@ final class EntityTimeScheduler
 
     public function __construct(
         private readonly ScheduleRegistry $registry,
+        private readonly ScopeLifecycle $scopes,
         private readonly StateCache $states,
         private readonly DispatchStreams $streams,
         private readonly Clock $clock,
@@ -40,6 +42,14 @@ final class EntityTimeScheduler
             $this->clock,
             $this->forgetTask(...),
         );
+
+        if ($this->scopes->findOrCreateStateOf($scope)->isClosed()) {
+            $logger->debug('Ignored an entity time armed after its app stopped', ['entity' => $entityId->value]);
+            $task->cancel();
+
+            return $task;
+        }
+
         $this->tasksById[$task->getId()] = $task;
 
         $task->rearmFromCache();

@@ -60,6 +60,8 @@ minor release may break; its "Upgrading" section says what to change.
 - A one-shot timer (`runAfter()`, `runAt()`, `Timers::startTimer()`, a moment from `runAtEntityTime()`) that comes
   due while its app is paused runs once when the app resumes, with its original `scheduledFor`, instead of being
   lost; recurring schedules still skip the runs a pause covers
+- `runAtEntityTime()` called after its app stopped, such as from an `initialize()` that outlived its timeout, is
+  ignored like other late schedules instead of keeping a task in the worker forever
 
 ### Changed
 
