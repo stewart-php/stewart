@@ -6,6 +6,12 @@ minor release may break; its "Upgrading" section says what to change.
 
 ## [Unreleased]
 
+### Added
+
+- `stewart worker:restart <worker>` restarts one worker with a fresh crash budget: a running worker stops gracefully
+  within `shutdown_grace` first, a quarantined or backing-off one starts at once. While it stops, `stewart status`
+  and `stewart_worker_phase` show the new `stopping` phase
+
 ### Fixed
 
 - Reloading the `stewart` integration, or enabling or disabling one of its entities, no longer leaves exposed entities
@@ -33,13 +39,16 @@ minor release may break; its "Upgrading" section says what to change.
   one-line factories in `stewart-php/contracts` are gone
 - List collections are built with `XCollection::fromList(...)`; the named factories that only forwarded to it, such
   as `EntityIdCollection::fromIds()` and `HaTriggerCollection::fromTriggers()`, are gone
+- The control protocol is version 29: a `restart_worker` request and the `stopping` worker phase
 
 ### Upgrading
 
-1. Code that built a contracts exception through a removed factory, such as `StoreException::typeMismatch(…)` or
+1. Run `stewart` commands from the same release as the daemon; a 0.10 CLI and a newer daemon refuse each other
+   (control protocol 29).
+2. Code that built a contracts exception through a removed factory, such as `StoreException::typeMismatch(…)` or
    `ScheduleException::cronInvalid(…)`, calls `createForReason()` with the reason case and its context as named
    arguments instead. `CommandException::rejected()` and the factories shared across packages stay.
-2. Replace calls to removed collection factories such as `AppIdCollection::fromIds($ids)` with `fromList($ids)`.
+3. Replace calls to removed collection factories such as `AppIdCollection::fromIds($ids)` with `fromList($ids)`.
    Factories that do more, such as `SelectorCollection::fromSpecs()` and `DayOfWeekCollection::fromDistinctDays()`,
    stay.
 

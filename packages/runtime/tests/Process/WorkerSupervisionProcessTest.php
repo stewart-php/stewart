@@ -16,6 +16,7 @@ use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\ProcessWorkerSpawner;
+use Stewart\Runtime\Broker\WorkerRestartOutcome;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Ipc\Message\StateSnapshot;
 use Stewart\Runtime\Ipc\Message\WorkerReady;
@@ -27,6 +28,7 @@ use Stewart\Runtime\Tests\Fixtures\Broker\RecordingPoolListener;
 use Stewart\Runtime\Tests\Fixtures\Broker\WorkerPoolFixture;
 use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Stewart\Runtime\Tests\Fixtures\Protocol\LingeringWatcher;
+use Stewart\Runtime\Tests\Fixtures\Protocol\SerialHandler;
 
 use function Amp\delay;
 
@@ -64,6 +66,30 @@ final class WorkerSupervisionProcessTest extends TestCase
 
         self::assertLessThan(self::SHUTDOWN_BUDGET_SECONDS, self::secondsSince($startedAt));
         self::waitUntil(static fn(): bool => !posix_kill($pid, 0));
+    }
+
+    public function testRequestedRestartReplacesTheProcess(): void
+    {
+        $appId = new AppId('serial-handler');
+        $listener = new RecordingPoolListener([
+            TestBootstrap::createForApps([new WorkerApp(id: $appId, class: SerialHandler::class, options: [])]),
+            new StateSnapshot(EntityStatesFragment::fromCollection(EntityStateCollection::keyedByEntityId([])), 1),
+        ]);
+        $pools = WorkerPoolFixture::createWorkerPool(new ProcessWorkerSpawner(new ProcessContextFactory(), IpcCodec::createForWorkerBootstrap()), requestedRestartGrace: Duration::seconds(self::GRACE_SECONDS));
+        $slot = new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(id: $appId, class: SerialHandler::class)]));
+        $countReady = static fn(): int => \count(array_filter($listener->messages, static fn(object $message): bool => $message instanceof WorkerReady));
+
+        self::assertTrue($pools->pool->startWorker($slot, $listener));
+        self::waitUntil(static fn(): bool => $countReady() === 1);
+        $firstPid = $pools->slots->findHandleForWorker($slot->workerId)?->getPid() ?? 0;
+
+        self::assertSame(WorkerRestartOutcome::Begun, $pools->pool->restartWorker($slot));
+        self::waitUntil(static fn(): bool => $countReady() === 2);
+
+        self::assertNotSame($firstPid, $pools->slots->findHandleForWorker($slot->workerId)?->getPid());
+        self::waitUntil(static fn(): bool => !posix_kill($firstPid, 0));
+
+        $pools->pool->shutdown('test', Duration::seconds(self::GRACE_SECONDS));
     }
 
     public function testChildThatDiesBeforeConnectingEndsTheSpawn(): void
