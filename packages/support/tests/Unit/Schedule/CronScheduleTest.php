@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Tests\Unit\Schedule;
+namespace Stewart\Support\Tests\Unit\Schedule;
 
 use DateTimeImmutable;
 use DateTimeZone;
@@ -10,8 +10,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Exception\ScheduleError;
-use Stewart\Contracts\Schedule\CalendarSchedule;
-use Stewart\Contracts\Schedule\CronSchedule;
+use Stewart\Support\Schedule\CalendarSchedule;
+use Stewart\Support\Schedule\CronSchedule;
 use Stewart\Testing\Exception\AssertsReason;
 
 #[CoversClass(CronSchedule::class)]

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Tests\Unit\Schedule;
+namespace Stewart\Support\Tests\Unit\Schedule;
 
 use DateTimeImmutable;
 use DateTimeZone;
@@ -10,13 +10,13 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Exception\ScheduleError;
 use Stewart\Contracts\Exception\ScheduleException;
-use Stewart\Contracts\Schedule\SunEventSchedule;
 use Stewart\Contracts\Sun\GeoLocation;
 use Stewart\Contracts\Sun\SunEvent;
-use Stewart\Contracts\Tests\Fixtures\Sun\StubSunCalendar;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Time\SunOffset;
+use Stewart\Support\Schedule\SunEventSchedule;
+use Stewart\Support\Tests\Fixtures\Sun\StubSunCalendar;
 use Stewart\Testing\Exception\AssertsReason;
 
 #[CoversClass(SunEventSchedule::class)]

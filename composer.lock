@@ -2287,14 +2287,14 @@
             "dist": {
                 "type": "path",
                 "url": "packages/contracts",
-                "reference": "9718455b7d9b124ede80bc53f37c738e1ca9ce89"
+                "reference": "db133f9082109aefa54697b924696bdfc01e5497"
             },
             "require": {
-                "dragonmantank/cron-expression": "^3.4",
                 "ext-filter": "*",
                 "php": ">=8.5"
             },
             "require-dev": {
+                "amphp/amp": "^3.1.1",
                 "phpunit/phpunit": "^13.3",
                 "stewart-php/testing": "self.version"
             },
@@ -2317,7 +2317,7 @@
             "license": [
                 "MIT"
             ],
-            "description": "Stewart core abstractions. Pure PHP and one cron parser",
+            "description": "Stewart core abstractions. Pure PHP",
             "transport-options": {
                 "symlink": true,
                 "relative": true
@@ -2594,17 +2594,19 @@
             "dist": {
                 "type": "path",
                 "url": "packages/support",
-                "reference": "77d9da84d2e42cb977a712c3f31b6ef154dff775"
+                "reference": "d3baa4ad811588070a541ecfb5982b840b33d400"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
+                "dragonmantank/cron-expression": "^3.4",
                 "ext-json": "*",
                 "php": ">=8.5",
                 "revolt/event-loop": "^1.0.9",
                 "stewart-php/contracts": "self.version"
             },
             "require-dev": {
-                "phpunit/phpunit": "^13.3"
+                "phpunit/phpunit": "^13.3",
+                "stewart-php/testing": "self.version"
             },
             "type": "library",
             "extra": {
@@ -7796,7 +7798,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/testing",
-                "reference": "a6e6457e89dcf7ed71e5f399a5935971c41b0fdf"
+                "reference": "5a325cae836e8b3f371c6dba8d2c90d87f3d5655"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -7836,7 +7838,7 @@
             "license": [
                 "MIT"
             ],
-            "description": "Shared test doubles for the Stewart packages. A development dependency, not part of the app-facing API",
+            "description": "Test Stewart apps without Home Assistant: an app harness, recording fakes and virtual time",
             "transport-options": {
                 "symlink": true,
                 "relative": true

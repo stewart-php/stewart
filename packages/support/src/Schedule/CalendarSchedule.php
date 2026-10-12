@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Schedule;
+namespace Stewart\Support\Schedule;
 
 use DateTimeImmutable;
 use DateTimeZone;
 use Stewart\Contracts\Exception\ScheduleException;
-use Stewart\Contracts\Schedule\Collection\DayOfWeekCollection;
+use Stewart\Contracts\Schedule\DayOfWeek;
+use Stewart\Contracts\Schedule\TimeOfDay;
+use Stewart\Support\Schedule\Collection\DayOfWeekCollection;
 
 /** @internal */
 final readonly class CalendarSchedule implements WallClockSchedule

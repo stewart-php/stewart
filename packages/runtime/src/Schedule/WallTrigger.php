@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Schedule;
 
-use Stewart\Contracts\Schedule\WallClockSchedule;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
+use Stewart\Support\Schedule\WallClockSchedule;
 
 final class WallTrigger implements Trigger
 {

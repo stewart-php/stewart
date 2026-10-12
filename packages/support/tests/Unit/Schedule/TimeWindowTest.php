@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Tests\Unit\Schedule;
+namespace Stewart\Support\Tests\Unit\Schedule;
 
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Exception\ScheduleError;
 use Stewart\Contracts\Exception\ScheduleException;
 use Stewart\Contracts\Schedule\TimeOfDay;
-use Stewart\Contracts\Schedule\TimeWindow;
+use Stewart\Support\Schedule\TimeWindow;
 use Stewart\Testing\Exception\AssertsReason;
 
 #[CoversClass(TimeWindow::class)]

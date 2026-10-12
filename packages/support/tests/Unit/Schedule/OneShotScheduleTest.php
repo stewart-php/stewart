@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Tests\Unit\Schedule;
+namespace Stewart\Support\Tests\Unit\Schedule;
 
 use DateTimeImmutable;
 use DateTimeZone;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Stewart\Contracts\Schedule\OneShotSchedule;
+use Stewart\Support\Schedule\OneShotSchedule;
 
 #[CoversClass(OneShotSchedule::class)]
 final class OneShotScheduleTest extends TestCase

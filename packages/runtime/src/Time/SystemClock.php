@@ -7,10 +7,10 @@ namespace Stewart\Runtime\Time;
 use DateTimeImmutable;
 use DateTimeZone;
 use Stewart\Contracts\Schedule\TimeOfDay;
-use Stewart\Contracts\Schedule\TimeWindow;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Time\MonotonicTime;
+use Stewart\Support\Schedule\TimeWindow;
 
 final readonly class SystemClock implements Clock
 {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Tests\Fixtures\Sun;
+namespace Stewart\Support\Tests\Fixtures\Sun;
 
 use DateTimeImmutable;
 use LogicException;

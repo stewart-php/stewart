@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Schedule;
 
-use Stewart\Contracts\Schedule\ElapsedSchedule;
-use Stewart\Contracts\Schedule\WallClockSchedule;
 use Stewart\Contracts\Time\Clock;
+use Stewart\Support\Schedule\ElapsedSchedule;
+use Stewart\Support\Schedule\WallClockSchedule;
 
 final readonly class TriggerFactory
 {

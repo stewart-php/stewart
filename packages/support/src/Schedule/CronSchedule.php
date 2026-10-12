@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Schedule;
+namespace Stewart\Support\Schedule;
 
 use Cron\CronExpression;
 use DateInterval;
@@ -12,6 +12,7 @@ use InvalidArgumentException;
 use RuntimeException;
 use Stewart\Contracts\Exception\ScheduleError;
 use Stewart\Contracts\Exception\ScheduleException;
+use Stewart\Contracts\Schedule\TimeOfDay;
 
 /** @internal */
 final readonly class CronSchedule implements WallClockSchedule

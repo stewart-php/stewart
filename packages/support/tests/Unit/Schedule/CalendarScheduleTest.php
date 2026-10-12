@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Tests\Unit\Schedule;
+namespace Stewart\Support\Tests\Unit\Schedule;
 
 use DateTimeImmutable;
 use DateTimeZone;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Stewart\Contracts\Schedule\CalendarSchedule;
 use Stewart\Contracts\Schedule\DayOfWeek;
 use Stewart\Contracts\Schedule\TimeOfDay;
+use Stewart\Support\Schedule\CalendarSchedule;
 
 #[CoversClass(CalendarSchedule::class)]
 #[CoversClass(TimeOfDay::class)]

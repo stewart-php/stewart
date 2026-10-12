@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Tests\Unit\Schedule;
+namespace Stewart\Support\Tests\Unit\Schedule;
 
 use DateTimeZone;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -11,10 +11,10 @@ use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\ScheduleError;
 use Stewart\Contracts\Exception\ScheduleException;
-use Stewart\Contracts\Schedule\EntityTime;
 use Stewart\Contracts\Schedule\TimeOfDay;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\Time\Instant;
+use Stewart\Support\Schedule\EntityTime;
 use Stewart\Testing\Exception\AssertsReason;
 
 #[CoversClass(EntityTime::class)]

@@ -2,16 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Schedule;
+namespace Stewart\Support\Schedule;
 
 use DateTimeImmutable;
 use DateTimeZone;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\ScheduleError;
 use Stewart\Contracts\Exception\ScheduleException;
+use Stewart\Contracts\Schedule\TimeOfDay;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\Time\Instant;
 
+/** @internal */
 final readonly class EntityTime
 {
     private const string INPUT_DATETIME_DOMAIN = 'input_datetime';

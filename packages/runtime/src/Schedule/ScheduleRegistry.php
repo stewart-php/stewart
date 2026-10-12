@@ -6,12 +6,12 @@ namespace Stewart\Runtime\Schedule;
 
 use Closure;
 use Psr\Log\LoggerInterface;
-use Stewart\Contracts\Schedule\ElapsedSchedule;
 use Stewart\Contracts\Schedule\ScheduledRun;
 use Stewart\Contracts\Schedule\ScheduledTask;
-use Stewart\Contracts\Schedule\WallClockSchedule;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Scope\ScopeLifecycle;
+use Stewart\Support\Schedule\ElapsedSchedule;
+use Stewart\Support\Schedule\WallClockSchedule;
 use Throwable;
 
 final class ScheduleRegistry

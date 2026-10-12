@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Schedule;
+namespace Stewart\Support\Schedule;
 
 use DateTimeInterface;
 use Stewart\Contracts\Exception\ScheduleError;
 use Stewart\Contracts\Exception\ScheduleException;
+use Stewart\Contracts\Schedule\TimeOfDay;
 
+/** @internal */
 final readonly class TimeWindow
 {
     private function __construct(

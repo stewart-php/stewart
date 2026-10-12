@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Tests\Unit\Schedule;
+namespace Stewart\Support\Tests\Unit\Schedule;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Exception\TimeError;
-use Stewart\Contracts\Schedule\DelaySchedule;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\MonotonicTime;
+use Stewart\Support\Schedule\DelaySchedule;
 use Stewart\Testing\Exception\AssertsReason;
 
 #[CoversClass(DelaySchedule::class)]

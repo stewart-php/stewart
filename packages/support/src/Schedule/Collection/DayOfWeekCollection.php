@@ -2,12 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Schedule\Collection;
+namespace Stewart\Support\Schedule\Collection;
 
 use Stewart\Contracts\Collection\ListCollection;
 use Stewart\Contracts\Schedule\DayOfWeek;
 
-/** @extends ListCollection<DayOfWeek> */
+/**
+ * @internal
+ * @extends ListCollection<DayOfWeek>
+ */
 final readonly class DayOfWeekCollection extends ListCollection
 {
     /** @param iterable<DayOfWeek> $days */
