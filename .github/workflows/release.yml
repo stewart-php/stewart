@@ -15,12 +15,25 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: CI passed on the tagged commit
+        run: |
+          passed=$(gh run list --workflow ci.yml --commit "$GITHUB_SHA" --status success --json databaseId --jq length)
+          if [ "$passed" = 0 ]; then
+            echo "::error::CI has not passed on $GITHUB_SHA. Push main, wait for CI, then re-run this release."
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
       - id: version
         name: Read the version from the tag
         run: |
@@ -33,6 +46,7 @@ jobs:
           grep -q "ghcr.io/stewart-php/runtime:$MINOR\$" skeleton/Dockerfile
           grep -q "ghcr.io/stewart-php/runtime:$MINOR\$" skeleton/compose.yaml
           grep -q "ghcr.io/stewart-php/runtime:$MINOR-dev\$" skeleton/compose.dev.yaml
+          grep -q "ghcr.io/stewart-php/runtime:$MINOR\$" skeleton/deploy/compose.git.yaml
         env:
           MINOR: ${{ steps.version.outputs.minor }}
       - name: The Home Assistant integration carries the version
@@ -45,8 +59,14 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
 
-  image:
+  distribution:
     needs: verify
+    uses: ./.github/workflows/distribution.yml
+    secrets:
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+
+  image:
+    needs: [verify, distribution]
     permissions:
       contents: read
       packages: write

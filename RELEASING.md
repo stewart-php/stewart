@@ -43,12 +43,15 @@ minor release, after `make check` is green on that PHP in CI, and say so in the 
    "Upgrading" notes.
 2. For a new minor, point the skeleton at it: `^X.Y` for the `stewart-php/*` requirements in
    `skeleton/composer.json`, and `ghcr.io/stewart-php/runtime:X.Y` (`X.Y-dev` in `compose.dev.yaml`) in
-   `skeleton/Dockerfile`, `skeleton/compose.yaml`, `skeleton/compose.dev.yaml` and `skeleton/deploy/*.yaml`.
+   `skeleton/Dockerfile`, `skeleton/compose.yaml`, `skeleton/compose.dev.yaml` and `skeleton/deploy/compose.git.yaml`.
    `release.yml` refuses a tag that does not match.
 3. Set `version` in `integrations/home-assistant/custom_components/stewart/manifest.json` to `X.Y.Z`; `release.yml`
    refuses a tag that does not match.
-4. Commit, then tag and push: `git tag -s vX.Y.Z -m vX.Y.Z && git push origin main vX.Y.Z`.
-5. Watch `Split` and `Release`. When they are green, `composer create-project stewart-php/skeleton` in a scratch
+4. Commit and `git push origin main`, then wait for `CI` to pass on that commit.
+5. Tag and push the tag: `git tag -s vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z`. `release.yml` refuses a commit
+   without a passing `CI` run; once CI passes, re-run the failed jobs instead of moving the tag. It runs the
+   `Distribution` checks before it builds the image, and the image is scanned before it is tagged and signed.
+6. Watch `Split` and `Release`. When they are green, `composer create-project stewart-php/skeleton` in a scratch
    directory should install `X.Y.Z`, and `stewart-php/hass-stewart` should have an `X.Y.Z` release with `stewart.zip`.
 
 A broken release is fixed by a new patch release, never by moving or deleting a tag.
