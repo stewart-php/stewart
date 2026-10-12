@@ -97,11 +97,20 @@ final class AppCatalogResolverTest extends TestCase
         self::assertStringContainsString('Known automations: demo.', $e->getMessage());
     }
 
-    public function testMisspelledOverrideNamesTheAutomation(): void
+    public function testUnderscoreSpellingTunesHyphenatedApp(): void
     {
-        $e = $this->assertThrowsReason(ConfigurationError::AppNameMismatch, fn() => new AppCatalogResolver()->resolveCatalog(self::createDiscoveryResult('hall-light'), AppOverrideCollection::keyedByAppId([self::createOverride('hall_light')]), workers: 0));
+        $catalog = new AppCatalogResolver()->resolveCatalog(self::createDiscoveryResult('hall-light'), AppOverrideCollection::keyedByAppId([self::createOverride('hall_light', options: ['room' => 'hall'])]), workers: 0);
 
-        self::assertStringContainsString('the automation ID is "hall-light"', $e->getMessage());
+        self::assertSame(['room' => 'hall'], $catalog->enabled->find(new AppId('hall-light'))?->options);
+    }
+
+    public function testExactSpellingWinsOverEnvironmentSpelling(): void
+    {
+        $overrides = AppOverrideCollection::keyedByAppId([self::createOverride('hall_light', options: ['room' => 'porch']), self::createOverride('hall-light', options: ['room' => 'hall'])]);
+
+        $catalog = new AppCatalogResolver()->resolveCatalog(self::createDiscoveryResult('hall-light'), $overrides, workers: 0);
+
+        self::assertSame(['room' => 'hall'], $catalog->enabled->find(new AppId('hall-light'))?->options);
     }
 
     public function testUnmatchedOverrideIsKeptWhenAFileFailed(): void
@@ -112,9 +121,11 @@ final class AppCatalogResolverTest extends TestCase
         self::assertSame(['porch'], $catalog->unmatchedOverrideIds->toStrings());
     }
 
-    public function testCollidingOverrideStillFailsWhenAFileFailed(): void
+    public function testUnderscoreSpellingIsMatchedWhenAFileFailed(): void
     {
-        $this->assertThrowsReason(ConfigurationError::AppNameMismatch, fn() => new AppCatalogResolver()->resolveCatalog(self::createDiscoveryResultWithUnloadableFile('hall-light'), AppOverrideCollection::keyedByAppId([self::createOverride('hall_light')]), workers: 0));
+        $catalog = new AppCatalogResolver()->resolveCatalog(self::createDiscoveryResultWithUnloadableFile('hall-light'), AppOverrideCollection::keyedByAppId([self::createOverride('hall_light')]), workers: 0);
+
+        self::assertSame([], $catalog->unmatchedOverrideIds->toStrings());
     }
 
     public function testPinBeyondAnExplicitPoolIsRejected(): void

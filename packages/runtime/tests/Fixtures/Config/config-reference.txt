@@ -4,9 +4,10 @@
 # uppercased, joined by a double underscore. A single underscore belongs to a key
 # name. App options and lists take inline YAML, such as [hall, kitchen].
 #
-#   log_level               ->  STEWART_LOG_LEVEL
-#   apps.demo.worker        ->  STEWART_APPS__DEMO__WORKER
-#   apps.demo.options.rooms ->  STEWART_APPS__DEMO__OPTIONS__ROOMS
+#   log_level                      ->  STEWART_LOG_LEVEL
+#   apps.demo.worker               ->  STEWART_APPS__DEMO__WORKER
+#   apps.demo.options.rooms        ->  STEWART_APPS__DEMO__OPTIONS__ROOMS
+#   apps.hall.options.motionSensor ->  STEWART_APPS__HALL__OPTIONS__MOTION_SENSOR
 #
 # A value in this file can also read a variable: ${HA_TOKEN}, or ${HA_TOKEN:-fallback}.
 # The environment wins over this file, and --log-level wins over both.

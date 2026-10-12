@@ -40,6 +40,8 @@ use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Apps\Nested\HallLight;
 use Stewart\Runtime\Tests\Fixtures\Container\AppRuntimeServicesFixture;
+use Stewart\Runtime\Tests\Fixtures\Container\CamelCaseOptionsApp;
+use Stewart\Runtime\Tests\Fixtures\Container\LooselyCollidingOptionsApp;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsAttributedStores;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsAutowiredScalar;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsClock;
@@ -323,6 +325,36 @@ final class AppContainerBuilderTest extends TestCase
         self::assertSame(3, $app->retries);
         self::assertSame(0.5, $app->ratio);
         self::assertSame('on', $app->label, 'A string option keeps its spelling.');
+    }
+
+    public function testEnvironmentSpellingReachesCamelCaseOption(): void
+    {
+        $app = $this->buildSingleApp('hall', CamelCaseOptionsApp::class, options: ['motion_sensor' => 'binary_sensor.hall', 'offdelayseconds' => '90']);
+
+        self::assertSame('binary_sensor.hall', $app->motionSensor);
+        self::assertSame(90, $app->offDelaySeconds);
+    }
+
+    public function testExactOptionNameWinsOverLooseMatch(): void
+    {
+        $app = $this->buildSingleApp('hall', LooselyCollidingOptionsApp::class, options: ['motion_sensor' => 'binary_sensor.hall']);
+
+        self::assertSame('binary_sensor.hall', $app->motion_sensor);
+        self::assertSame('', $app->motionSensor);
+    }
+
+    public function testLooseOptionMatchingTwoParametersFails(): void
+    {
+        $build = $this->buildAppContainer([new WorkerApp(id: new AppId('hall'), class: LooselyCollidingOptionsApp::class, options: ['MOTIONSENSOR' => 'binary_sensor.hall'])]);
+
+        self::assertStringContainsString('$motionSensor, $motion_sensor', $this->findFailure($build, 'hall', ContainerError::AppOptionAmbiguous)->getMessage());
+    }
+
+    public function testTwoSpellingsOfOneOptionFail(): void
+    {
+        $build = $this->buildAppContainer([new WorkerApp(id: new AppId('hall'), class: CamelCaseOptionsApp::class, options: ['motionSensor' => 'a', 'motion_sensor' => 'b'])]);
+
+        $this->findFailure($build, 'hall', ContainerError::AppOptionRepeated);
     }
 
     public function testUnreadableOptionFailsOnlyItsOwnApp(): void

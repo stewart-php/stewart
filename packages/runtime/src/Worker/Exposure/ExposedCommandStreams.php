@@ -12,6 +12,7 @@ use Stewart\Contracts\Stream\OperatorStream;
 use Stewart\Contracts\Time\Timers;
 use Stewart\Runtime\Dispatch\DispatchSource;
 use Stewart\Runtime\Dispatch\LocalDispatcher;
+use Stewart\Runtime\Dispatch\QueueDiscardReason;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionKind;
 
@@ -36,8 +37,22 @@ final readonly class ExposedCommandStreams
     {
         $this->settlements->openCommand($commandId, $command, $handle);
 
-        if (!$this->dispatcher->dispatchExposedCommand($scope, $key, $command)) {
+        $settlements = $this->settlements;
+        $refuseDiscarded = static function (QueueDiscardReason $reason) use ($settlements, $command, $scope): void {
+            $settlements->rejectCommand($command, self::describeDiscard($reason, $scope));
+        };
+
+        if (!$this->dispatcher->dispatchExposedCommand($scope, $key, $command, $refuseDiscarded)) {
             $this->settlements->acceptCommand($command);
         }
+    }
+
+    private static function describeDiscard(QueueDiscardReason $reason, ResourceScope $scope): string
+    {
+        return match ($reason) {
+            QueueDiscardReason::Paused => \sprintf('App %s was paused before it handled the command.', $scope),
+            QueueDiscardReason::Overflow => \sprintf('App %s dropped the command because it is falling behind.', $scope),
+            QueueDiscardReason::Cancelled => \sprintf('App %s stopped watching commands for this entity.', $scope),
+        };
     }
 }

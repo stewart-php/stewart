@@ -171,18 +171,27 @@ final class LocalDispatcher
         }
     }
 
-    public function dispatchExposedCommand(ResourceScope $scope, ExposedEntityKey $key, ExposedCommand $command): bool
+    /** @param Closure(QueueDiscardReason): void $onDiscarded */
+    public function dispatchExposedCommand(ResourceScope $scope, ExposedEntityKey $key, ExposedCommand $command, Closure $onDiscarded): bool
     {
-        $delivered = false;
+        $queues = array_filter(
+            $this->listQueuesOf($scope),
+            static fn(SubscriptionQueue $queue): bool => $queue->subscription->kind === SubscriptionKind::ExposedCommand && $queue->subscription->selector->matches($key->value),
+        );
+        $undiscarded = \count($queues);
 
-        foreach ($this->listQueuesOf($scope) as $queue) {
-            if ($queue->subscription->kind === SubscriptionKind::ExposedCommand && $queue->subscription->selector->matches($key->value)) {
-                $queue->push($command);
-                $delivered = true;
+        // Another subscription may still handle the command, so only the last discard reports it.
+        $discardOne = static function (QueueDiscardReason $reason) use (&$undiscarded, $onDiscarded): void {
+            if (--$undiscarded === 0) {
+                $onDiscarded($reason);
             }
+        };
+
+        foreach ($queues as $queue) {
+            $queue->push($command, $discardOne);
         }
 
-        return $delivered;
+        return $queues !== [];
     }
 
     public function cancel(SubscriptionId $subscriptionId): void

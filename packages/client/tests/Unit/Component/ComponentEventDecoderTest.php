@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Stewart\Client\Component\ComponentCommand;
 use Stewart\Client\Component\ComponentCommandAction;
 use Stewart\Client\Component\ComponentEventDecoder;
+use Stewart\Client\Component\SessionEnded;
 use Stewart\Client\Component\SessionReplaced;
 
 #[CoversClass(ComponentEventDecoder::class)]
@@ -18,6 +19,11 @@ final class ComponentEventDecoderTest extends TestCase
     public function testSessionReplacedIsDecoded(): void
     {
         self::assertInstanceOf(SessionReplaced::class, new ComponentEventDecoder()->decodeSessionEvent(['type' => 'session_replaced']));
+    }
+
+    public function testSessionEndedIsDecoded(): void
+    {
+        self::assertInstanceOf(SessionEnded::class, new ComponentEventDecoder()->decodeSessionEvent(['type' => 'session_ended']));
     }
 
     public function testUnknownTypeIsSkipped(): void

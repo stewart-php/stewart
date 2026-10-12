@@ -70,6 +70,23 @@ final class ContainerException extends StewartException
         return self::createForReason(ContainerError::AppOptionMissing, ['appId' => $appId->value, 'option' => $option, 'class' => $class]);
     }
 
+    /** @param list<string> $parameters */
+    public static function appOptionAmbiguous(AppId $appId, string $option, string $class, array $parameters): self
+    {
+        return self::createForReason(
+            ContainerError::AppOptionAmbiguous,
+            ['appId' => $appId->value, 'option' => $option, 'class' => $class, 'parameters' => implode(', ', array_map(static fn(string $name): string => '$' . $name, $parameters))],
+        );
+    }
+
+    public static function appOptionRepeated(AppId $appId, string $parameter, string $class, string $firstOption, string $secondOption): self
+    {
+        return self::createForReason(
+            ContainerError::AppOptionRepeated,
+            ['appId' => $appId->value, 'parameter' => $parameter, 'class' => $class, 'firstOption' => $firstOption, 'secondOption' => $secondOption],
+        );
+    }
+
     public static function appBuildFailed(AppId $appId, Throwable $previous): self
     {
         return self::createForReason(ContainerError::AppBuildFailed, ['appId' => $appId->value], $previous);

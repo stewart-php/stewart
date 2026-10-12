@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Tests\Unit\Console;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Runtime\App\AppCatalogResolver;
+use Stewart\Runtime\Config\EnvironmentVariables;
 use Stewart\Runtime\Console\CheckCommand;
 use Stewart\Runtime\Tests\Fixtures\Apps\TemporaryAppsDirectory;
 use Stewart\Runtime\Tests\Fixtures\Config\ConfigLoaderFixture;
@@ -25,6 +26,19 @@ final class CheckCommandTest extends TestCase
 
         #[Automation(id: 'porch')]
         final class Porch implements App
+        {
+            public function initialize(): void {}
+
+            public function dispose(): void {}
+        }
+        PHP;
+
+    private const string HYPHENATED_APP_SOURCE = <<<'PHP'
+        use Stewart\Contracts\App;
+        use Stewart\Contracts\Automation;
+
+        #[Automation(id: 'porch-light')]
+        final class PorchLight implements App
         {
             public function initialize(): void {}
 
@@ -86,12 +100,23 @@ final class CheckCommandTest extends TestCase
         self::assertSame(Command::FAILURE, $tester->getStatusCode());
     }
 
-    private function runCheck(string $configYaml): CommandTester
+    public function testEnvironmentOverrideReachesHyphenatedApp(): void
+    {
+        $this->apps->writeClass('PorchLight', self::HYPHENATED_APP_SOURCE);
+
+        $tester = $this->runCheck(self::VALID_CONFIG, ['STEWART_APPS__PORCH_LIGHT__ENABLED' => 'false']);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertStringContainsString('1 automations load; 0 enabled', $tester->getDisplay());
+    }
+
+    /** @param array<string, string> $environment */
+    private function runCheck(string $configYaml, array $environment = []): CommandTester
     {
         $path = $this->temp->getFilePath('stewart.yaml');
         file_put_contents($path, $configYaml);
 
-        $tester = new CommandTester(new CheckCommand(ConfigLoaderFixture::createLoader(), $this->apps->createDiscovery(), new AppCatalogResolver()));
+        $tester = new CommandTester(new CheckCommand(ConfigLoaderFixture::createLoader(new EnvironmentVariables($environment)), $this->apps->createDiscovery(), new AppCatalogResolver()));
         $tester->execute(['--config' => $path], ['capture_stderr_separately' => true]);
 
         return $tester;

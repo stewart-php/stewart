@@ -25,24 +25,24 @@ final readonly class AppCatalogResolver
         }
 
         foreach ($overrides as $override) {
-            if ($knownIds->containsId($override->id)) {
+            if ($knownIds->findFirstWhere(static fn(AppId $known): bool => $known->collidesWith($override->id)) !== null) {
                 continue;
             }
 
             // The app an unknown override names may live in a file that failed to load, which is reported instead.
-            if (!$discovered->unloadable->isEmpty() && $this->findCollidingId($override->id, $knownIds) === null) {
+            if (!$discovered->unloadable->isEmpty()) {
                 $unmatchedOverrideIds[] = $override->id;
 
                 continue;
             }
 
-            throw $this->createUnknownOverrideException($override->id, $knownIds);
+            throw ConfigurationException::appUnknown($override->id, $knownIds);
         }
 
         $enabled = [];
 
         foreach ($discovered->apps as $app) {
-            $override = $overrides->find($app->id);
+            $override = $overrides->findMatchingApp($app->id);
 
             if (!$selection->admitsApp($app->id, $override === null || $override->enabled)) {
                 continue;
@@ -64,19 +64,5 @@ final readonly class AppCatalogResolver
         }
 
         return new AppCatalog(AppDefinitionCollection::keyedByAppId($enabled), $knownIds, AppIdCollection::fromIds($unmatchedOverrideIds));
-    }
-
-    private function createUnknownOverrideException(AppId $overrideId, AppIdCollection $knownIds): ConfigurationException
-    {
-        $collision = $this->findCollidingId($overrideId, $knownIds);
-
-        return $collision === null
-            ? ConfigurationException::appUnknown($overrideId, $knownIds)
-            : ConfigurationException::appNameMismatch($overrideId, $collision);
-    }
-
-    private function findCollidingId(AppId $overrideId, AppIdCollection $knownIds): ?AppId
-    {
-        return $knownIds->findFirstWhere(static fn(AppId $known): bool => $known->collidesWith($overrideId));
     }
 }

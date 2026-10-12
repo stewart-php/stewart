@@ -29,6 +29,7 @@ use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Contracts\Trigger\TriggerSpec;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\Component\ComponentLink;
+use Stewart\Runtime\Broker\Component\ComponentSession;
 use Stewart\Runtime\Broker\Component\ComponentTracker;
 use Stewart\Runtime\Broker\Exposure\ExposureLink;
 use Stewart\Runtime\Broker\Exposure\ExposureReconciler;
@@ -362,6 +363,42 @@ final class WebsocketHaSessionTest extends TestCase
         self::assertSame(['stewart/version', 'stewart/session/subscribe', 'stewart/entity/upsert'], $componentCommands);
     }
 
+    public function testEndedComponentSessionIsReopenedAndReplayed(): void
+    {
+        $socket = self::createHaSocket(['hall' => 'off'], withComponent: true);
+        $session = $this->createSession($socket);
+        $session->exposeEntity(
+            new WorkerId(0),
+            new AppId('climate'),
+            new ExposedEntityKey('average_temperature'),
+            ExposedEntityDefinition::fromConfig(new SensorConfig(), null),
+            new ExposedStateChange(),
+        );
+        $session->open($this->listener);
+        $socket->replyWhenSent('stewart/version', ['type' => 'result', 'success' => false, 'error' => ['code' => 'unknown_command', 'message' => 'Unknown command.']]);
+        $socket->replyWhenSent('stewart/session/subscribe', ['type' => 'result', 'success' => true, 'result' => null]);
+        $socket->replyWhenSent('stewart/entity/upsert', ['type' => 'result', 'success' => true, 'result' => [
+            'entity_id' => 'sensor.stewart_climate_average_temperature',
+            'state' => null,
+            'attributes' => [],
+            'available' => true,
+        ]]);
+
+        $sessionId = $socket->listSentOfType('stewart/session/subscribe')[0]['id'] ?? null;
+        $socket->queueFrame(['id' => $sessionId, 'type' => 'event', 'event' => ['type' => 'session_ended']]);
+        EventLoopTicks::settleUntil(static fn(): bool => \count($socket->listSentOfType('stewart/version')) === 3);
+        $socket->queueFrame([
+            'id' => $socket->listSentOfType('stewart/version')[2]['id'] ?? null,
+            'type' => 'result',
+            'success' => true,
+            'result' => ['component_version' => '0.11.0', 'protocol' => 1],
+        ]);
+        EventLoopTicks::settleUntil(static fn(): bool => \count($socket->listSentOfType('stewart/entity/upsert')) === 2);
+
+        self::assertCount(2, $socket->listSentOfType('stewart/session/subscribe'));
+        self::assertSame(ComponentState::Active, $this->componentTracker?->detection->state);
+    }
+
     public function testTriggersAreReissuedAfterReconnect(): void
     {
         $first = self::createHaSocket(['hall' => 'off']);
@@ -466,11 +503,14 @@ final class WebsocketHaSessionTest extends TestCase
 
         $client = new HaClient($connection, new EventDecoder(new EntityStateDecoder()), new EntityStateDecoder(), new RegistryDecoder(), new ComponentEventDecoder(), new NullLogger());
         $expose = new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10));
+        $backoff = new BackoffPolicy(Duration::seconds(1), Duration::seconds(4));
+        $this->componentTracker = new ComponentTracker($this->timers->clock);
+        $exposures = new ExposureLink($client, new NullLogger(), $this->componentTracker, $expose);
 
         return $this->session = new WebsocketHaSession(
             $client,
             new Reconnector(
-                reconnectBackoff: new BackoffPolicy(Duration::seconds(1), Duration::seconds(4)),
+                reconnectBackoff: $backoff,
                 logger: new NullLogger(),
                 deadlines: $this->timers,
             ),
@@ -479,9 +519,16 @@ final class WebsocketHaSessionTest extends TestCase
             new StateCache(),
             new RegistryCache(),
             new HaTriggerLink($client, new NullLogger()),
-            new ComponentLink($client, new NullLogger(), $this->componentTracker = new ComponentTracker($this->timers->clock), $expose, '0.9.0'),
-            $exposures = new ExposureLink($client, new NullLogger(), $this->componentTracker, $expose),
-            new ExposureReconciler(WorkerSlotCollection::fromWorkerSlots([]), $exposures, $client, $this->componentTracker, $expose, $this->timers, new NullLogger()),
+            new ComponentSession(
+                new ComponentLink($client, new NullLogger(), $this->componentTracker, $expose, '0.9.0'),
+                $exposures,
+                new ExposureReconciler(WorkerSlotCollection::fromWorkerSlots([]), $exposures, $client, $this->componentTracker, $expose, $this->timers, new NullLogger()),
+                $this->componentTracker,
+                $backoff,
+                $this->timers,
+                new NullLogger(),
+            ),
+            $exposures,
         );
     }
 

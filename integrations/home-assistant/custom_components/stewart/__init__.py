@@ -20,5 +20,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: StewartConfigEntry) -> b
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: StewartConfigEntry) -> bool:
-    entry.runtime_data.sessions.end_all_sessions()
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unloaded := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
+        entry.runtime_data.sessions.end_all_sessions()
+    return unloaded

@@ -10,6 +10,8 @@ use Stewart\Client\Component\ComponentCommand;
 use Stewart\Client\Component\ComponentProtocol;
 use Stewart\Client\Component\ComponentSessionEvent;
 use Stewart\Client\Component\ComponentSessionRequest;
+use Stewart\Client\Component\ComponentVersion;
+use Stewart\Client\Component\SessionEnded;
 use Stewart\Client\Component\SessionReplaced;
 use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
@@ -24,6 +26,9 @@ final class ComponentLink
     /** @var Closure(ComponentCommand): void */
     private Closure $onCommand;
 
+    /** @var Closure(): void */
+    private Closure $onSessionEnded;
+
     public function __construct(
         private readonly HaClient $client,
         private readonly LoggerInterface $logger,
@@ -32,12 +37,19 @@ final class ComponentLink
         private readonly string $componentSessionStewartVersion,
     ) {
         $this->onCommand = static function (): void {};
+        $this->onSessionEnded = static function (): void {};
     }
 
     /** @param Closure(ComponentCommand): void $handler */
     public function onCommand(Closure $handler): void
     {
         $this->onCommand = $handler;
+    }
+
+    /** @param Closure(): void $handler */
+    public function onSessionEnded(Closure $handler): void
+    {
+        $this->onSessionEnded = $handler;
     }
 
     /** @throws HaClientException */
@@ -50,19 +62,21 @@ final class ComponentLink
             $version = $this->client->findComponentVersion();
 
             if ($version === null) {
-                $this->logger->info('The stewart Home Assistant integration is not installed, so apps cannot expose entities');
-                $this->tracker->recordState(ComponentState::Missing, null);
+                if ($this->recordDetectedState(ComponentState::Missing, null)) {
+                    $this->logger->info('The stewart Home Assistant integration is not installed, so apps cannot expose entities');
+                }
 
                 return;
             }
 
             if (!$version->isCompatible()) {
-                $this->logger->warning('The stewart Home Assistant integration speaks another protocol; update it or Stewart so they match', [
-                    'component_version' => $version->componentVersion,
-                    'component_protocol' => $version->protocol,
-                    'stewart_protocol' => ComponentProtocol::VERSION,
-                ]);
-                $this->tracker->recordState(ComponentState::ProtocolMismatch, $version);
+                if ($this->recordDetectedState(ComponentState::ProtocolMismatch, $version)) {
+                    $this->logger->warning('The stewart Home Assistant integration speaks another protocol; update it or Stewart so they match', [
+                        'component_version' => $version->componentVersion,
+                        'component_protocol' => $version->protocol,
+                        'stewart_protocol' => ComponentProtocol::VERSION,
+                    ]);
+                }
 
                 return;
             }
@@ -76,23 +90,33 @@ final class ComponentLink
                 throw $e;
             }
 
-            $this->logger->warning('Home Assistant refused the stewart integration session', ['exception' => $e]);
-            $this->tracker->recordState(ComponentState::Refused, $version);
+            if ($this->recordDetectedState(ComponentState::Refused, $version)) {
+                $this->logger->warning('Home Assistant refused the stewart integration session', ['exception' => $e]);
+            }
 
             return;
         }
 
+        $this->recordDetectedState(ComponentState::Active, $version);
         $this->logger->info('Opened the stewart Home Assistant integration session', [
             'component_version' => $version->componentVersion,
             'instance' => (string) $this->expose->instance,
         ]);
-        $this->tracker->recordState(ComponentState::Active, $version);
     }
 
     public function markLinkLost(): void
     {
         ++$this->connectionGeneration;
         $this->tracker->recordStateKeepingVersion(ComponentState::Unchecked);
+    }
+
+    // A relink retries while the component is missing; only the first of those attempts logs.
+    private function recordDetectedState(ComponentState $state, ?ComponentVersion $version): bool
+    {
+        $changed = $this->tracker->detection->state !== $state;
+        $this->tracker->recordState($state, $version);
+
+        return $changed;
     }
 
     private function handleSessionEvent(ComponentSessionEvent $event, int $generation): void
@@ -103,6 +127,12 @@ final class ComponentLink
 
         if ($event instanceof ComponentCommand) {
             ($this->onCommand)($event);
+
+            return;
+        }
+
+        if ($event instanceof SessionEnded) {
+            ($this->onSessionEnded)();
 
             return;
         }

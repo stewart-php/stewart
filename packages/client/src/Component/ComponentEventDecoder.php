@@ -12,6 +12,8 @@ final readonly class ComponentEventDecoder
 {
     private const string SESSION_REPLACED = 'session_replaced';
 
+    private const string SESSION_ENDED = 'session_ended';
+
     private const string COMMAND = 'command';
 
     /** @param array<string, mixed> $event */
@@ -19,6 +21,7 @@ final readonly class ComponentEventDecoder
     {
         return match ($event['type'] ?? null) {
             self::SESSION_REPLACED => new SessionReplaced(),
+            self::SESSION_ENDED => new SessionEnded(),
             self::COMMAND => $this->decodeCommand($event),
             default => null,
         };

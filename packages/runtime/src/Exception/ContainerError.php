@@ -17,6 +17,8 @@ enum ContainerError: string implements ExceptionReason
     case AppOptionInvalid = 'app_option_invalid';
     case AppOptionUnknown = 'app_option_unknown';
     case AppOptionMissing = 'app_option_missing';
+    case AppOptionAmbiguous = 'app_option_ambiguous';
+    case AppOptionRepeated = 'app_option_repeated';
     case AppBuildFailed = 'app_build_failed';
     case AppClassMissing = 'app_class_missing';
     case ServicesFileMissing = 'services_file_missing';
@@ -33,6 +35,8 @@ enum ContainerError: string implements ExceptionReason
             self::AppOptionInvalid => 'Option "{option}" of app "{appId}" is "{value}", which is not a valid {expectedType}.',
             self::AppOptionUnknown => 'App "{appId}" sets option "{option}", which matches no parameter of {class}::__construct().',
             self::AppOptionMissing => 'App "{appId}" needs option "{option}"; {class}::__construct() takes ${option} with no default.',
+            self::AppOptionAmbiguous => 'App "{appId}" sets option "{option}", which matches parameters {parameters} of {class}::__construct(); use the exact name.',
+            self::AppOptionRepeated => 'App "{appId}" sets ${parameter} of {class}::__construct() twice, as options "{firstOption}" and "{secondOption}".',
             self::AppBuildFailed => 'App "{appId}" cannot be built: {cause}',
             self::AppClassMissing => 'App "{appId}" names class {class}, which cannot be loaded.',
             self::ServicesFileMissing => 'Services file {path} no longer exists.',

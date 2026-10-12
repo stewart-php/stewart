@@ -68,6 +68,7 @@ final readonly class BrokerKernel
             ->withArgument('daemonVersion', $this->daemonVersion)
             ->withArgument('componentSessionStewartVersion', $this->daemonVersion)
             ->withArgument('reconnectBackoff', $config->reconnectBackoff)
+            ->withArgument('componentRelinkBackoff', $config->reconnectBackoff)
             ->withArgument('userServicesFile', $this->userServicesFile)
             ->withArgument('brokerShutdownGrace', $config->shutdownGrace)
             ->withArgument('poolWorkerCount', $config->workers)

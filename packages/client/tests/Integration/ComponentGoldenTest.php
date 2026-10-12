@@ -23,6 +23,7 @@ use Stewart\Client\Component\ExposedEntityAddress;
 use Stewart\Client\Component\ExposedEntityDefinition;
 use Stewart\Client\Component\ExposedEntityReconcile;
 use Stewart\Client\Component\ReconcileResultReader;
+use Stewart\Client\Component\SessionEnded;
 use Stewart\Client\Component\SessionReplaced;
 use Stewart\Client\Connection\Command\Component\AnswerComponentCommand;
 use Stewart\Client\Connection\Command\Component\GetComponentVersion;
@@ -138,21 +139,18 @@ final class ComponentGoldenTest extends TestCase
         self::assertSame('protocol_mismatch', $exception->findErrorCode());
     }
 
-    public function testSessionReplacedGoldenIsDecoded(): void
+    /** @param class-string<ComponentSessionEvent> $eventClass */
+    #[DataProvider('provideSessionEndGoldens')]
+    public function testSessionEndGoldenIsDecoded(string $name, string $eventClass): void
     {
-        $this->server->replayGolden(ComponentGolden::loadGolden('session-subscribe'));
-        /** @var DeferredFuture<ComponentSessionEvent> $received */
-        $received = new DeferredFuture();
+        self::assertInstanceOf($eventClass, $this->receiveSessionEventGolden($name));
+    }
 
-        $subscriptionId = $this->connectClient()->subscribeComponentSession(
-            self::createSessionRequest(),
-            static function (ComponentSessionEvent $event) use ($received): void {
-                $received->complete($event);
-            },
-        );
-        $this->server->pushEvent($subscriptionId, ComponentGolden::loadGolden('event-session-replaced')->requireEvent());
-
-        self::assertInstanceOf(SessionReplaced::class, $received->getFuture()->await(new TimeoutCancellation(self::WAIT_SECONDS)));
+    /** @return iterable<string, array{string, class-string<ComponentSessionEvent>}> */
+    public static function provideSessionEndGoldens(): iterable
+    {
+        yield 'replaced' => ['event-session-replaced', SessionReplaced::class];
+        yield 'ended' => ['event-session-ended', SessionEnded::class];
     }
 
     public function testSwitchCommandGoldenIsDecoded(): void
@@ -478,6 +476,14 @@ final class ComponentGoldenTest extends TestCase
 
     private function receiveCommandGolden(string $name): ComponentCommand
     {
+        $command = $this->receiveSessionEventGolden($name);
+        self::assertInstanceOf(ComponentCommand::class, $command);
+
+        return $command;
+    }
+
+    private function receiveSessionEventGolden(string $name): ComponentSessionEvent
+    {
         $this->server->replayGolden(ComponentGolden::loadGolden('session-subscribe'));
         /** @var DeferredFuture<ComponentSessionEvent> $received */
         $received = new DeferredFuture();
@@ -489,10 +495,8 @@ final class ComponentGoldenTest extends TestCase
             },
         );
         $this->server->pushEvent($subscriptionId, ComponentGolden::loadGolden($name)->requireEvent());
-        $command = $received->getFuture()->await(new TimeoutCancellation(self::WAIT_SECONDS));
-        self::assertInstanceOf(ComponentCommand::class, $command);
 
-        return $command;
+        return $received->getFuture()->await(new TimeoutCancellation(self::WAIT_SECONDS));
     }
 
     private function captureUpsertFailure(ExposedEntityAddress $address, ExposedEntityConfig $config, ExposedState $state): HaClientException

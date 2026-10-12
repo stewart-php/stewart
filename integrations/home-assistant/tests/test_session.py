@@ -121,12 +121,28 @@ async def test_unsubscribe_frees_instance(
 async def test_unload_ends_sessions(
     hass: HomeAssistant, hass_ws_client: WebSocketGenerator, loaded_entry: MockConfigEntry
 ) -> None:
-    old_client = await hass_ws_client(hass)
-    old_subscription = await subscribe(old_client)
+    client = await hass_ws_client(hass)
+    subscription = await subscribe(client)
 
     await hass.config_entries.async_unload(loaded_entry.entry_id)
 
-    await assert_subscription_ended(old_client, old_subscription["id"])
+    frame = await client.receive_json()
+    assert frame["id"] == subscription["id"]
+    assert frame["event"] == Golden.load("event-session-ended").event
+    await assert_subscription_ended(client, subscription["id"])
+
+
+async def test_reload_lets_stewart_subscribe_again(
+    hass: HomeAssistant, hass_ws_client: WebSocketGenerator, loaded_entry: MockConfigEntry
+) -> None:
+    client = await hass_ws_client(hass)
+    await subscribe(client)
+
+    await hass.config_entries.async_reload(loaded_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert (await client.receive_json())["event"] == Golden.load("event-session-ended").event
+    assert (await subscribe(client))["success"]
 
 
 async def test_session_open_and_close_signal_instance(

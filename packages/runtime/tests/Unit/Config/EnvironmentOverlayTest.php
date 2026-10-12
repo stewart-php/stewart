@@ -134,6 +134,18 @@ final class EnvironmentOverlayTest extends TestCase
             ['apps' => ['demo' => ['options' => ['maxRetries' => 1]]]],
         ];
 
+        yield 'a word-separated option reaches a camelCase file key' => [
+            ['STEWART_APPS__DEMO__OPTIONS__MAX_RETRIES' => '3'],
+            ['apps' => ['demo' => ['options' => ['maxRetries' => 3]]]],
+            ['apps' => ['demo' => ['options' => ['maxRetries' => 1]]]],
+        ];
+
+        yield 'an exactly spelled file key wins over a folded one' => [
+            ['STEWART_APPS__DEMO__OPTIONS__MAX_RETRIES' => '3'],
+            ['apps' => ['demo' => ['options' => ['max_retries' => 3]]]],
+            ['apps' => ['demo' => ['options' => ['maxRetries' => 1, 'max_retries' => 1]]]],
+        ];
+
         yield 'an option takes an inline list whole' => [
             ['STEWART_APPS__DEMO__OPTIONS__ROOMS' => '[hall, kitchen]'],
             ['apps' => ['demo' => ['options' => ['rooms' => ['hall', 'kitchen']]]]],

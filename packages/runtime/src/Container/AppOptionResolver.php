@@ -37,25 +37,59 @@ final readonly class AppOptionResolver
 
         $parameters = $this->listConstructorParameters($app->class);
         $arguments = [];
+        $optionsByParameter = [];
 
-        foreach ($app->options as $name => $value) {
-            $parameter = $parameters[$name] ?? throw ContainerException::appOptionUnknown(
+        foreach ($app->options as $option => $value) {
+            $option = (string) $option;
+            $parameter = $this->findParameterForOption($app, $parameters, $option) ?? throw ContainerException::appOptionUnknown(
                 $app->id,
-                $name,
+                $option,
                 $app->class,
-                $this->closestNameFinder->findClosestName($name, array_keys($parameters)),
+                $this->closestNameFinder->findClosestName($option, array_keys($parameters)),
             );
+            $name = $parameter->getName();
 
+            if (isset($optionsByParameter[$name])) {
+                throw ContainerException::appOptionRepeated($app->id, $name, $app->class, $optionsByParameter[$name], $option);
+            }
+
+            $optionsByParameter[$name] = $option;
             $arguments['$' . $name] = $this->escapeParameterPlaceholders($this->coerceToParameterType($app, $parameter, $value));
         }
 
         foreach ($parameters as $name => $parameter) {
-            if (!\array_key_exists($name, $app->options) && $this->needsExplicitValue($parameter)) {
+            if (!isset($optionsByParameter[$name]) && $this->needsExplicitValue($parameter)) {
                 throw ContainerException::appOptionMissing($app->id, $name, $app->class);
             }
         }
 
         return $arguments;
+    }
+
+    /**
+     * @param array<string, ReflectionParameter> $parameters
+     * @throws ContainerException
+     */
+    private function findParameterForOption(WorkerApp $app, array $parameters, string $option): ?ReflectionParameter
+    {
+        if (isset($parameters[$option])) {
+            return $parameters[$option];
+        }
+
+        $folded = self::foldOptionName($option);
+        $matches = array_values(array_filter($parameters, static fn(ReflectionParameter $parameter): bool => self::foldOptionName($parameter->getName()) === $folded));
+
+        if (\count($matches) > 1) {
+            throw ContainerException::appOptionAmbiguous($app->id, $option, $app->class, array_map(static fn(ReflectionParameter $parameter): string => $parameter->getName(), $matches));
+        }
+
+        return $matches[0] ?? null;
+    }
+
+    // Environment variable names lose case and word breaks, so MOTION_SENSOR has to reach $motionSensor.
+    private static function foldOptionName(string $name): string
+    {
+        return strtolower(str_replace(['_', '-'], '', $name));
     }
 
     /**

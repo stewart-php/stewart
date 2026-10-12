@@ -98,11 +98,6 @@ final class ConfigurationException extends StewartException
         );
     }
 
-    public static function appNameMismatch(AppId $appId, AppId $automationId): self
-    {
-        return self::createForReason(ConfigurationError::AppNameMismatch, ['appId' => $appId->value, 'automationId' => $automationId->value]);
-    }
-
     public static function appUnknown(AppId $appId, AppIdCollection $knownAppIds): self
     {
         return self::createForReasonWithAppendedText(
