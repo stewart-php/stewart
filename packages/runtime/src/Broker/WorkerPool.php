@@ -14,8 +14,11 @@ use Stewart\Contracts\Time\Timers;
 use Stewart\Runtime\Config\SupervisionConfig;
 use Stewart\Runtime\Exception\BrokerError;
 use Stewart\Runtime\Exception\BrokerException;
+use Stewart\Runtime\Exception\WorkerError;
+use Stewart\Runtime\Exception\WorkerException;
 use Stewart\Runtime\Ipc\Message\Shutdown;
 use Stewart\Runtime\Ipc\Message\WorkerMessage;
+use Stewart\Runtime\Lifecycle\WorkerPhase;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Support\Time\Deadlines;
 use Throwable;
@@ -44,6 +47,7 @@ final class WorkerPool
         private readonly OutboxLimits $outboxLimits,
         private readonly Timers&Deadlines $timers,
         private readonly Clock $clock,
+        private readonly Duration $requestedRestartGrace,
     ) {}
 
     public function startWorker(WorkerSlot $slot, WorkerPoolListener $listener): bool
@@ -69,6 +73,29 @@ final class WorkerPool
         $this->attachHandle($state, $slot, $process, $listener);
 
         return true;
+    }
+
+    /** @throws WorkerException */
+    public function restartWorker(WorkerSlot $slot): WorkerRestartOutcome
+    {
+        if (!$this->running) {
+            throw WorkerException::createForReason(WorkerError::ShuttingDown, workerId: $slot->workerId->value);
+        }
+
+        $state = $this->slots->findSlotState($slot->workerId);
+
+        // No state yet means startup has not reached this worker.
+        if ($state === null || $state->isSpawning() || $state->isStopping()) {
+            return WorkerRestartOutcome::AlreadyUnderway;
+        }
+
+        $this->logger->info('Restarting worker on request', ['worker' => $slot->workerId->value, 'apps' => $slot->listAppIds()->toStrings(), 'phase' => $state->phase->value]);
+        $this->restartPolicy->forgetRestarts($slot->workerId);
+        $stopping = $state->phase === WorkerPhase::Live ? $state->beginStopping() : null;
+
+        async(fn() => $this->respawnOnRequest($state, $stopping))->ignore();
+
+        return WorkerRestartOutcome::Begun;
     }
 
     public function markReady(WorkerHandle $handle): void
@@ -231,6 +258,7 @@ final class WorkerPool
         $state->listener->workerGone($handle, $reason);
 
         if ($this->running) {
+            $this->logger->error('Worker died', ['worker' => $handle->id->value, 'pid' => $handle->getPid(), 'apps' => $handle->getAppIds()->toStrings(), 'reason' => $reason]);
             $this->scheduleRestart($state);
         }
     }
@@ -271,12 +299,23 @@ final class WorkerPool
         $this->logger->info('Restarting worker', ['worker' => $slot->workerId->value, 'apps' => $slot->listAppIds()->toStrings(), 'in' => (string) $delay]);
 
         $state->recordScheduledRestart(
-            $this->timers->startTimer($delay, fn() => $this->restartAfterBackoff($state)),
+            $this->timers->startTimer($delay, fn() => $this->respawnWorker($state)),
             $this->clock->getNow()->plus($delay),
         );
     }
 
-    private function restartAfterBackoff(WorkerSlotState $state): void
+    private function respawnOnRequest(WorkerSlotState $state, ?WorkerHandle $stopping): void
+    {
+        if ($stopping !== null) {
+            $stopping->sendShutdown(new Shutdown('restart requested', $this->requestedRestartGrace));
+            $this->awaitWorkerExit($stopping, $this->timers->timeout($this->requestedRestartGrace->plus(Duration::milliseconds(self::JOIN_MARGIN_MILLISECONDS))));
+            $state->listener->workerGone($stopping, 'restart requested');
+        }
+
+        $this->respawnWorker($state);
+    }
+
+    private function respawnWorker(WorkerSlotState $state): void
     {
         try {
             $this->startWorker($state->slot, $state->listener);

@@ -45,6 +45,11 @@ final class WorkerSlotState
         return $this->phase === WorkerPhase::Spawning;
     }
 
+    public function isStopping(): bool
+    {
+        return $this->phase === WorkerPhase::Stopping;
+    }
+
     public function getOutboxStatus(): OutboxStatus
     {
         $total = $this->retiredOutboxes->plus($this->handle?->getOutboxStatus() ?? OutboxStatus::zero());
@@ -83,6 +88,15 @@ final class WorkerSlotState
     {
         $this->moveTo(WorkerPhase::Stopped, from: WorkerPhase::Live);
         $this->cancelReadyDeadline();
+    }
+
+    public function beginStopping(): WorkerHandle
+    {
+        $this->moveTo(WorkerPhase::Stopping);
+        $this->cancelReadyDeadline();
+        ++$this->restarts;
+
+        return $this->handle ?? throw new LogicException(\sprintf('Worker %d is stopping without a process.', $this->slot->workerId->value));
     }
 
     public function recordScheduledRestart(TimerHandle $timer, Instant $dueAt): void

@@ -15,7 +15,8 @@ final class WorkerPhaseTest extends TestCase
     private const array ALLOWED = [
         'stopped' => ['spawning', 'restart_scheduled', 'quarantined'],
         'spawning' => ['live', 'stopped'],
-        'live' => ['stopped'],
+        'stopping' => ['spawning', 'stopped'],
+        'live' => ['stopped', 'stopping'],
         'restart_scheduled' => ['spawning', 'stopped'],
         'quarantined' => ['spawning', 'stopped'],
     ];

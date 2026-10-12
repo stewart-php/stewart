@@ -86,6 +86,11 @@ final readonly class BrokerStateFixture
         $this->getPool()->startWorker(self::createSlot($workerId), $this->listener);
     }
 
+    public function restartWorker(int $workerId): void
+    {
+        $this->getPool()->restartWorker(self::createSlot($workerId));
+    }
+
     public function getLiveHandleOf(int $workerId): WorkerHandle
     {
         return $this->pools->slots->findHandleForWorker(new WorkerId($workerId)) ?? throw new LogicException(\sprintf('Worker %d is not live.', $workerId));

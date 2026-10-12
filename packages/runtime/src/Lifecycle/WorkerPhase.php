@@ -8,6 +8,7 @@ enum WorkerPhase: string
 {
     case Live = 'live';
     case Spawning = 'spawning';
+    case Stopping = 'stopping';
     case RestartScheduled = 'restart_scheduled';
     case Quarantined = 'quarantined';
     case Stopped = 'stopped';
@@ -17,7 +18,8 @@ enum WorkerPhase: string
         return match ($this) {
             self::Stopped => \in_array($next, [self::Spawning, self::RestartScheduled, self::Quarantined], true),
             self::Spawning => $next === self::Live || $next === self::Stopped,
-            self::Live => $next === self::Stopped,
+            self::Live => $next === self::Stopped || $next === self::Stopping,
+            self::Stopping => $next === self::Spawning || $next === self::Stopped,
             self::RestartScheduled, self::Quarantined => $next === self::Spawning || $next === self::Stopped,
         };
     }

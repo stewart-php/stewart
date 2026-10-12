@@ -15,6 +15,7 @@ use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\RestartDecision;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerPool;
+use Stewart\Runtime\Broker\WorkerRestartOutcome;
 use Stewart\Runtime\Broker\WorkerRestartPolicy;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Broker\WorkerSlotRegistry;
@@ -24,6 +25,7 @@ use Stewart\Runtime\Exception\BrokerError;
 use Stewart\Runtime\Exception\BrokerException;
 use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
+use Stewart\Runtime\Exception\WorkerError;
 use Stewart\Runtime\Ipc\Message\Ping;
 use Stewart\Runtime\Ipc\Message\Shutdown;
 use Stewart\Runtime\Ipc\Message\Unsubscribe;
@@ -36,6 +38,7 @@ use Stewart\Runtime\Tests\Fixtures\Broker\RecordingPoolListener;
 use Stewart\Runtime\Tests\Fixtures\Broker\WorkerPoolFixture;
 use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Testing\Async\Latch;
+use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Logging\RecordedLog;
 use Stewart\Testing\Logging\RecordingLogger;
 use Stewart\Testing\Time\EventLoopTicks;
@@ -51,7 +54,11 @@ use function Amp\delay;
 #[CoversClass(RestartDecision::class)]
 final class WorkerPoolTest extends TestCase
 {
+    use AssertsReason;
+
     private const int RESTART_DELAY_SECONDS = 1;
+
+    private const int REQUESTED_RESTART_GRACE_MILLISECONDS = 50;
 
     private FakeWorkerSpawner $spawner;
 
@@ -457,6 +464,136 @@ final class WorkerPoolTest extends TestCase
         self::assertNull($this->findLogged('Worker exited'));
     }
 
+    public function testRequestedRestartStopsTheWorkerGracefullyAndSpawnsAgain(): void
+    {
+        $pool = $this->createPool();
+        $pool->startWorker(self::createSlot(0), $this->listener);
+        $first = $this->spawner->getLatestProcess(0);
+
+        self::assertSame(WorkerRestartOutcome::Begun, $pool->restartWorker(self::createSlot(0)));
+        EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) === WorkerPhase::Live && $this->spawner->countSpawnedProcesses() === 2);
+
+        self::assertInstanceOf(Shutdown::class, $first->channel->sent[\count($first->channel->sent) - 1]);
+        self::assertTrue($first->closed);
+        self::assertSame(['0: restart requested'], $this->listener->gone);
+        self::assertSame(1, $this->slots->findSlotState(new WorkerId(0))?->restarts);
+        self::assertNull($this->findLogged('Worker died'));
+    }
+
+    public function testWorkerThatIgnoresTheStopIsKilledAfterItsGrace(): void
+    {
+        $this->spawner = new FakeWorkerSpawner(joinLatch: new Latch());
+        $pool = $this->createPool();
+        $pool->startWorker(self::createSlot(0), $this->listener);
+
+        $pool->restartWorker(self::createSlot(0));
+        EventLoopTicks::settle();
+
+        self::assertSame(WorkerPhase::Stopping, $this->getPhaseOf(0));
+
+        $this->timers->delay(Duration::milliseconds(self::REQUESTED_RESTART_GRACE_MILLISECONDS + 1_000));
+        EventLoopTicks::settleUntil(fn(): bool => $this->spawner->countSpawnedProcesses() === 2);
+
+        self::assertTrue($this->spawner->spawned[0][0]->closed);
+        self::assertSame(WorkerPhase::Live, $this->getPhaseOf(0));
+    }
+
+    public function testRequestedRestartGivesTheWorkerItsFullBudgetBack(): void
+    {
+        $pool = $this->createPool(self::createSupervisionConfig(restartAttempts: 1));
+        $pool->startWorker(self::createSlot(0), $this->listener);
+        $this->crashAndRestart(0);
+
+        $pool->restartWorker(self::createSlot(0));
+        EventLoopTicks::settleUntil(fn(): bool => $this->spawner->countSpawnedProcesses() === 3 && $this->getPhaseOf(0) === WorkerPhase::Live);
+
+        $this->spawner->getLatestProcess(0)->crash();
+        EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) !== WorkerPhase::Live);
+
+        self::assertSame(WorkerPhase::RestartScheduled, $this->getPhaseOf(0));
+    }
+
+    public function testQuarantinedWorkerComesBackOnRequest(): void
+    {
+        $pool = $this->createPool(self::createSupervisionConfig(restartAttempts: 0));
+        $pool->startWorker(self::createSlot(0), $this->listener);
+        $this->spawner->getLatestProcess(0)->crash();
+        EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) === WorkerPhase::Quarantined);
+
+        self::assertSame(WorkerRestartOutcome::Begun, $pool->restartWorker(self::createSlot(0)));
+        EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) === WorkerPhase::Live);
+
+        self::assertSame(2, $this->spawner->countSpawnedProcesses());
+    }
+
+    public function testScheduledRestartRunsAtOnceOnRequest(): void
+    {
+        $pool = $this->createPool();
+        $pool->startWorker(self::createSlot(0), $this->listener);
+        $this->spawner->getLatestProcess(0)->crash();
+        EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) === WorkerPhase::RestartScheduled);
+
+        $pool->restartWorker(self::createSlot(0));
+        EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) === WorkerPhase::Live);
+
+        self::assertSame(2, $this->spawner->countSpawnedProcesses());
+        self::assertSame(0, $this->timers->countPendingTimers(), 'The backoff timer is cancelled.');
+    }
+
+    public function testRestartAlreadyUnderwayIsNotRepeated(): void
+    {
+        $spawning = new Latch();
+        $this->spawner = new FakeWorkerSpawner(spawnLatch: $spawning);
+        $pool = $this->createPool();
+
+        self::assertSame(WorkerRestartOutcome::AlreadyUnderway, $pool->restartWorker(self::createSlot(0)), 'Startup has not reached the worker yet.');
+
+        async(fn(): bool => $pool->startWorker(self::createSlot(0), $this->listener));
+        EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) === WorkerPhase::Spawning);
+
+        self::assertSame(WorkerRestartOutcome::AlreadyUnderway, $pool->restartWorker(self::createSlot(0)));
+
+        $spawning->open();
+        EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) === WorkerPhase::Live);
+    }
+
+    public function testStoppingWorkerIsNotRestartedTwice(): void
+    {
+        $this->spawner = new FakeWorkerSpawner(joinLatch: new Latch());
+        $pool = $this->createPool();
+        $pool->startWorker(self::createSlot(0), $this->listener);
+
+        $pool->restartWorker(self::createSlot(0));
+
+        self::assertSame(WorkerRestartOutcome::AlreadyUnderway, $pool->restartWorker(self::createSlot(0)));
+    }
+
+    public function testRestartIsRefusedOnceThePoolShutsDown(): void
+    {
+        $pool = $this->createPool();
+        $pool->shutdown('test', Duration::seconds(0.01));
+
+        $this->assertThrowsReason(WorkerError::ShuttingDown, static fn() => $pool->restartWorker(self::createSlot(0)));
+    }
+
+    public function testShutdownDuringARequestedStopSpawnsNothing(): void
+    {
+        $this->spawner = new FakeWorkerSpawner(joinLatch: new Latch());
+        $pool = $this->createPool();
+        $pool->startWorker(self::createSlot(0), $this->listener);
+        $pool->restartWorker(self::createSlot(0));
+        EventLoopTicks::settle();
+
+        $stopping = async(static fn() => $pool->shutdown('test', Duration::seconds(0.01)));
+        EventLoopTicks::settle();
+        $this->timers->delay(Duration::seconds(2));
+        $stopping->await();
+        EventLoopTicks::settle();
+
+        self::assertSame(1, $this->spawner->countSpawnedProcesses());
+        self::assertSame(WorkerPhase::Stopped, $this->getPhaseOf(0));
+    }
+
     private function createPool(?SupervisionConfig $supervision = null): WorkerPool
     {
         $pools = WorkerPoolFixture::createWorkerPool(
@@ -464,6 +601,7 @@ final class WorkerPoolTest extends TestCase
             supervision: $supervision ?? self::createSupervisionConfig(),
             timers: $this->timers,
             logger: $this->logger,
+            requestedRestartGrace: Duration::milliseconds(self::REQUESTED_RESTART_GRACE_MILLISECONDS),
         );
         $this->slots = $pools->slots;
 

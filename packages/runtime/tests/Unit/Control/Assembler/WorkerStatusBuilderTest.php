@@ -152,6 +152,19 @@ final class WorkerStatusBuilderTest extends TestCase
         self::assertSame(WorkerPhase::Live, $this->buildStatusOf(0)->phase);
     }
 
+    public function testWorkerStoppingOnRequestHasNoLiveDetails(): void
+    {
+        $this->broker->startWorker(0);
+
+        $this->broker->restartWorker(0);
+
+        $status = $this->buildStatusOf(0);
+        self::assertSame(WorkerPhase::Stopping, $status->phase);
+        self::assertSame(1, $status->restarts);
+        self::assertNull($status->pid);
+        self::assertFalse($status->ready);
+    }
+
     public function testWorkersAreListedInOrder(): void
     {
         $this->broker->startWorker(1);
