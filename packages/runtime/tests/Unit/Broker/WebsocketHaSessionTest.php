@@ -85,6 +85,10 @@ final class WebsocketHaSessionTest extends TestCase
 
     private ?ComponentTracker $componentTracker = null;
 
+    private HaTriggerLink $triggers;
+
+    private ExposureLink $exposures;
+
     protected function setUp(): void
     {
         $this->timers = new ManualTimers();
@@ -307,7 +311,7 @@ final class WebsocketHaSessionTest extends TestCase
         $socket = self::createHaSocket(['hall' => 'off']);
         $session = $this->open($socket);
 
-        $session->subscribeTrigger(self::createSunsetSpec());
+        $this->triggers->subscribeTrigger(self::createSunsetSpec());
         EventLoopTicks::settleUntil(static fn(): bool => $socket->listSentOfType('subscribe_trigger') !== []);
         $socket->queueFrame(self::createTriggerFrame(self::findTriggerSubscriptionId($socket)));
         EventLoopTicks::settleUntil(fn(): bool => $this->listener->firedTriggers !== []);
@@ -322,7 +326,7 @@ final class WebsocketHaSessionTest extends TestCase
         $socket = self::createHaSocket(['hall' => 'off']);
         $session = $this->createSession($socket);
 
-        $session->subscribeTrigger(self::createSunsetSpec());
+        $this->triggers->subscribeTrigger(self::createSunsetSpec());
         $session->open($this->listener);
 
         self::assertSame(['auth', 'subscribe_events', 'subscribe_trigger', 'stewart/version', 'get_config', 'auth/current_user', 'get_states', ...self::REGISTRY_COMMANDS], array_column($socket->sent, 'type'));
@@ -346,7 +350,7 @@ final class WebsocketHaSessionTest extends TestCase
     {
         $socket = self::createHaSocket(['hall' => 'off'], withComponent: true);
         $session = $this->createSession($socket);
-        $session->exposeEntity(
+        $this->exposures->exposeEntity(
             new WorkerId(0),
             new AppId('climate'),
             new ExposedEntityKey('average_temperature'),
@@ -367,7 +371,7 @@ final class WebsocketHaSessionTest extends TestCase
     {
         $socket = self::createHaSocket(['hall' => 'off'], withComponent: true);
         $session = $this->createSession($socket);
-        $session->exposeEntity(
+        $this->exposures->exposeEntity(
             new WorkerId(0),
             new AppId('climate'),
             new ExposedEntityKey('average_temperature'),
@@ -404,7 +408,7 @@ final class WebsocketHaSessionTest extends TestCase
         $first = self::createHaSocket(['hall' => 'off']);
         $second = self::createHaSocket(['hall' => 'on']);
         $session = $this->createSession($first, $second);
-        $session->subscribeTrigger(self::createSunsetSpec());
+        $this->triggers->subscribeTrigger(self::createSunsetSpec());
         $session->open($this->listener);
 
         $first->close(1001, 'restarting');
@@ -424,7 +428,7 @@ final class WebsocketHaSessionTest extends TestCase
             'error' => ['code' => 'unauthorized', 'message' => 'Unauthorized'],
         ]);
         $session = $this->createSession($socket);
-        $session->subscribeTrigger(self::createSunsetSpec());
+        $this->triggers->subscribeTrigger(self::createSunsetSpec());
 
         $session->open($this->listener);
 
@@ -438,7 +442,7 @@ final class WebsocketHaSessionTest extends TestCase
     {
         $socket = self::createHaSocket(['hall' => 'off'], during: [self::createTriggerFrame(2)]);
         $session = $this->createSession($socket);
-        $session->subscribeTrigger(self::createSunsetSpec());
+        $this->triggers->subscribeTrigger(self::createSunsetSpec());
 
         $session->open($this->listener);
         EventLoopTicks::settle();
@@ -453,8 +457,8 @@ final class WebsocketHaSessionTest extends TestCase
         $socket->replyWhenSent('unsubscribe_events', ['type' => 'result', 'success' => true, 'result' => null]);
         $session = $this->open($socket);
 
-        $session->subscribeTrigger(self::createSunsetSpec());
-        $session->unsubscribeTrigger(self::createSunsetSpec());
+        $this->triggers->subscribeTrigger(self::createSunsetSpec());
+        $this->triggers->unsubscribeTrigger(self::createSunsetSpec());
         EventLoopTicks::settleUntil(static fn(): bool => $socket->listSentOfType('unsubscribe_events') !== []);
 
         self::assertSame(self::findTriggerSubscriptionId($socket), $socket->listSentOfType('unsubscribe_events')[0]['subscription'] ?? null);
@@ -465,12 +469,12 @@ final class WebsocketHaSessionTest extends TestCase
         $first = self::createHaSocket(['hall' => 'off']);
         $second = self::createHaSocket(['hall' => 'on'], authenticated: false);
         $session = $this->createSession($first, $second);
-        $session->subscribeTrigger(self::createSunsetSpec());
+        $this->triggers->subscribeTrigger(self::createSunsetSpec());
         $session->open($this->listener);
 
         $first->close(1001, 'restarting');
         EventLoopTicks::settleUntil(fn(): bool => \count($this->listener->lost) === 1);
-        $session->unsubscribeTrigger(self::createSunsetSpec());
+        $this->triggers->unsubscribeTrigger(self::createSunsetSpec());
         self::authenticate($second);
         EventLoopTicks::settleUntil(static fn(): bool => $session->isConnected());
 
@@ -505,7 +509,7 @@ final class WebsocketHaSessionTest extends TestCase
         $expose = new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10));
         $backoff = new BackoffPolicy(Duration::seconds(1), Duration::seconds(4));
         $this->componentTracker = new ComponentTracker($this->timers->clock);
-        $exposures = new ExposureLink($client, new NullLogger(), $this->componentTracker, $expose);
+        $exposures = $this->exposures = new ExposureLink($client, new NullLogger(), $this->componentTracker, $expose);
 
         return $this->session = new WebsocketHaSession(
             $client,
@@ -518,7 +522,7 @@ final class WebsocketHaSessionTest extends TestCase
             $this->timers->clock,
             new StateCache(),
             new RegistryCache(),
-            new HaTriggerLink($client, new NullLogger()),
+            $this->triggers = new HaTriggerLink($client, new NullLogger()),
             new ComponentSession(
                 new ComponentLink($client, new NullLogger(), $this->componentTracker, $expose, '0.9.0'),
                 $exposures,

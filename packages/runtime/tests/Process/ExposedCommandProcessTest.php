@@ -53,12 +53,13 @@ final class ExposedCommandProcessTest extends TestCase
             $logger,
             ['shutdown_grace' => '1s'],
         );
-        $exposed = $session->waitForNextExposedUpdate();
+        $broker->homeAssistant->activateComponent();
+        $exposed = $broker->homeAssistant->waitForNextExposedUpdate();
         /** @var Future<null> $running */
         $running = async($broker->lifecycle->run(...));
         $exposed->await(new TimeoutCancellation(self::READY_SECONDS));
 
-        $answered = $session->waitForNextCommandAnswer();
+        $answered = $broker->homeAssistant->waitForNextCommandAnswer();
         $session->pushExposedEntityCommand(new ExposedEntityCommand(
             '3f2b9c0e8d7a4f61',
             new WorkerId(0),

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker;
 
 use Psr\Log\LoggerInterface;
+use Stewart\Client\HaClient;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Runtime\Config\ServiceCallPolicy;
@@ -15,6 +16,7 @@ final readonly class ServiceCallProxy
 {
     public function __construct(
         private HaSession $session,
+        private HaClient $client,
         private HaCallSlots $slots,
         private ServiceCallPolicy $policy,
         private LoggerInterface $logger,
@@ -46,7 +48,7 @@ final readonly class ServiceCallProxy
             throw $request->createUnreachableFailure('Home Assistant is disconnected');
         }
 
-        return new ServiceCallResult($request->correlationId, $this->session->callService(
+        return new ServiceCallResult($request->correlationId, $this->client->callService(
             $request->domain,
             $request->service,
             $request->data,

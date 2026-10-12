@@ -43,12 +43,14 @@ final class BrokerKernelFixture
         array $yaml = [],
         SyntheticServices $overrides = new SyntheticServices(),
         ?MqttLink $mqttLink = null,
+        ?FakeHomeAssistant $homeAssistant = null,
     ): BootedBroker {
+        $homeAssistant ??= FakeHomeAssistant::createConnected();
         $config = ConfigFixture::createStewartConfig([...self::QUIET_YAML, ...$yaml]);
         $startTime = new DaemonStartTime($pools->clock);
         $mqttLink ??= new DisabledMqttLink($logger);
         $run = new BrokerRun($pools->pool, $pools->watchdog, $session, $mqttLink, $logger, $config->shutdownGrace, $startTime);
-        $services = new SyntheticServices()
+        $services = $homeAssistant->addSyntheticServicesTo(new SyntheticServices())
             ->withService(HaSession::class, $session)
             ->withService(SystemClock::class, $pools->clock)
             ->withService(ProcessTimeZone::class, new RecordingProcessTimeZone())
@@ -69,7 +71,7 @@ final class BrokerKernelFixture
             $logger,
         );
 
-        return new BootedBroker($lifecycle, $run, $startTime);
+        return new BootedBroker($lifecycle, $run, $startTime, $homeAssistant);
     }
 
     private static function listEnabledApps(WorkerSlotCollection $workerSlots): AppDefinitionCollection

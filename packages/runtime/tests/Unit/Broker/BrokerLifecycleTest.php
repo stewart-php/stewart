@@ -87,8 +87,8 @@ use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\BootedBroker;
 use Stewart\Runtime\Tests\Fixtures\Broker\BrokerKernelFixture;
-use Stewart\Runtime\Tests\Fixtures\Broker\ExposureLinkFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
+use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerSpawner;
 use Stewart\Runtime\Tests\Fixtures\Broker\Http\RecordingHttpListener;
 use Stewart\Runtime\Tests\Fixtures\Broker\ReceivedEventFire;
@@ -334,8 +334,8 @@ final class BrokerLifecycleTest extends TestCase
 
         self::assertCount(1, $results);
         self::assertSame('1:0', $results[0]->correlationId->value);
-        self::assertSame(FakeHaSession::FIRE_CONTEXT_PREFIX . '1', $results[0]->context->id);
-        self::assertEquals([new ReceivedEventFire('doorbell_pressed', ['button' => 'front'])], $this->session->receivedEventFires);
+        self::assertSame(FakeHomeAssistant::FIRE_CONTEXT_PREFIX . '1', $results[0]->context->id);
+        self::assertEquals([new ReceivedEventFire('doorbell_pressed', ['button' => 'front'])], $this->broker->homeAssistant->listReceivedEventFires());
         self::assertSame([], $this->listSentToWorker(0, EventFireResult::class));
     }
 
@@ -442,7 +442,7 @@ final class BrokerLifecycleTest extends TestCase
 
         self::assertCount(1, $errors);
         self::assertSame(ServiceCallError::Unreachable->value, $errors[0]->details->reason);
-        self::assertSame(0, $this->session->calls);
+        self::assertSame([], $this->broker->homeAssistant->listReceivedCalls());
     }
 
     public function testFatalConnectionFailureEndsTheRunWithThatError(): void
@@ -722,7 +722,7 @@ final class BrokerLifecycleTest extends TestCase
 
     private function readAppStatusAt(int $index): AppStatus
     {
-        return new AppStatusBuilder($this->metrics, $this->pausedApps, ExposureLinkFixture::createWithoutExposures())->buildAppStatuses()[$index];
+        return new AppStatusBuilder($this->metrics, $this->pausedApps, $this->broker->homeAssistant->exposures)->buildAppStatuses()[$index];
     }
 
     private function startBroker(): void

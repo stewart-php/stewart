@@ -21,6 +21,7 @@ use Stewart\Runtime\Ipc\Wire\IpcCodec;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Broker\BrokerKernelFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
+use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
 use Stewart\Runtime\Tests\Fixtures\Broker\WorkerPoolFixture;
 use Stewart\Runtime\Tests\Fixtures\Protocol\HallLampRenamer;
 use Stewart\Runtime\Tests\Fixtures\Worker\InMemoryWorkerSpawner;
@@ -38,7 +39,8 @@ final class RegistryEditRoundTripTest extends TestCase
     public function testAppEditReachesTheSession(): void
     {
         $session = new FakeHaSession();
-        $session->seedRegistryEntry(new RegisteredEntity(new EntityId(HallLampRenamer::ENTITY_ID)));
+        $homeAssistant = FakeHomeAssistant::createConnected();
+        $homeAssistant->seedRegistryEntry(new RegisteredEntity(new EntityId(HallLampRenamer::ENTITY_ID)));
         $logger = new RecordingLogger();
         $pools = WorkerPoolFixture::createWorkerPool(new InMemoryWorkerSpawner(IpcCodec::createForWorkerBootstrap()), logger: $logger);
         $broker = BrokerKernelFixture::boot(
@@ -50,8 +52,9 @@ final class RegistryEditRoundTripTest extends TestCase
             AppIdCollection::fromList([new AppId('hall-lamp-renamer')]),
             $logger,
             ['shutdown_grace' => '1s'],
+            homeAssistant: $homeAssistant,
         );
-        $updated = $session->waitForNextRegistryUpdate();
+        $updated = $homeAssistant->waitForNextRegistryUpdate();
 
         /** @var Future<null> $running */
         $running = async($broker->lifecycle->run(...));

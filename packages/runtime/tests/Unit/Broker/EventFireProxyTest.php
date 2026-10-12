@@ -34,8 +34,8 @@ use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
-use Stewart\Runtime\Tests\Fixtures\Broker\ExposureLinkFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
+use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerProcess;
 use Stewart\Runtime\Tests\Fixtures\Broker\ReceivedEventFire;
 use Stewart\Runtime\Tests\Fixtures\Ipc\FakeWorkerTransport;
@@ -51,6 +51,8 @@ final class EventFireProxyTest extends TestCase
 {
     private FakeHaSession $session;
 
+    private FakeHomeAssistant $homeAssistant;
+
     private AppMetrics $metrics;
 
     private ManualTimers $timers;
@@ -63,7 +65,8 @@ final class EventFireProxyTest extends TestCase
     {
         $this->timers = new ManualTimers();
         $this->session = new FakeHaSession();
-        $this->calls = $this->session->holdCalls();
+        $this->homeAssistant = FakeHomeAssistant::createConnected();
+        $this->calls = $this->homeAssistant->holdReplies();
         $this->metrics = new AppMetrics(
             WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)]))]),
             $this->timers->clock,
@@ -86,8 +89,8 @@ final class EventFireProxyTest extends TestCase
 
         $results = self::listSentOfType($worker, EventFireResult::class);
         self::assertCount(1, $results);
-        self::assertSame(FakeHaSession::FIRE_CONTEXT_PREFIX . '1', $results[0]->context->id);
-        self::assertEquals([new ReceivedEventFire('doorbell_pressed', ['button' => 'front'])], $this->session->receivedEventFires);
+        self::assertSame(FakeHomeAssistant::FIRE_CONTEXT_PREFIX . '1', $results[0]->context->id);
+        self::assertEquals([new ReceivedEventFire('doorbell_pressed', ['button' => 'front'])], $this->homeAssistant->listReceivedEventFires());
         self::assertSame(0, $this->slots->inFlight);
     }
 
@@ -95,7 +98,7 @@ final class EventFireProxyTest extends TestCase
     {
         $policy = new ServiceCallPolicy(perWorker: 1, total: 0);
         $proxy = $this->createProxy($policy);
-        $serviceCalls = new ServiceCallProxy($this->session, $this->slots, $policy, new NullLogger());
+        $serviceCalls = new ServiceCallProxy($this->session, $this->homeAssistant->client, $this->slots, $policy, new NullLogger());
         $worker = $this->createHandle();
 
         $serviceCalls->forward($worker, new ServiceCallRequest(new CorrelationId('call'), ResourceScope::forApp(new AppId('demo')), 'light', 'turn_on', [], null, false));
@@ -106,7 +109,7 @@ final class EventFireProxyTest extends TestCase
         self::assertCount(1, $refusals);
         self::assertSame(EventFireError::Overloaded->value, $refusals[0]->details->reason);
         self::assertSame(1, $this->slots->refusedCalls);
-        self::assertSame([], $this->session->receivedEventFires);
+        self::assertSame([], $this->homeAssistant->listReceivedEventFires());
     }
 
     public function testDisconnectedFireFailsAsUnreachable(): void
@@ -130,7 +133,7 @@ final class EventFireProxyTest extends TestCase
         $proxy->forward($worker, self::createRequest('b'));
         $this->finishCalls();
 
-        $calls = new AppStatusBuilder($this->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock())), ExposureLinkFixture::createWithoutExposures())->buildAppStatuses()[0]->serviceCalls;
+        $calls = new AppStatusBuilder($this->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock())), FakeHomeAssistant::createUnreachable()->exposures)->buildAppStatuses()[0]->serviceCalls;
         self::assertSame(
             [ServiceCallOutcome::Refused, ServiceCallOutcome::Succeeded],
             array_map(static fn(ServiceCallStats $stats): ServiceCallOutcome => $stats->outcome, $calls),
@@ -147,7 +150,7 @@ final class EventFireProxyTest extends TestCase
         EventLoopTicks::settleUntil(static fn(): bool => self::listSentOfType($worker, EventFireResult::class) !== []);
 
         self::assertSame('dry-run:dry', self::listSentOfType($worker, EventFireResult::class)[0]->context->id);
-        self::assertSame([], $this->session->receivedEventFires);
+        self::assertSame([], $this->homeAssistant->listReceivedEventFires());
         self::assertSame(['Event not fired: service_calls.dry_run is on'], $logger->listMessagesAt(LogLevel::INFO));
     }
 
@@ -155,14 +158,14 @@ final class EventFireProxyTest extends TestCase
     {
         $this->slots = new HaCallSlots($policy, $this->metrics, $this->timers->clock, new NullLogger());
 
-        return new EventFireProxy($this->session, $this->slots, $policy, $logger ?? new NullLogger());
+        return new EventFireProxy($this->session, $this->homeAssistant->client, $this->slots, $policy, $logger ?? new NullLogger());
     }
 
     private function finishCalls(): void
     {
         $this->calls->open();
         EventLoopTicks::settle();
-        $this->calls = $this->session->holdCalls();
+        $this->calls = $this->homeAssistant->holdReplies();
     }
 
     private function createHandle(): WorkerHandle

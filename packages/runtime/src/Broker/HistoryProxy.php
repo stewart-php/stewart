@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Broker;
 
+use Stewart\Client\HaClient;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Runtime\Ipc\Message\HistoryRequest;
 use Stewart\Runtime\Ipc\Message\HistoryResult;
@@ -13,6 +14,7 @@ final readonly class HistoryProxy
 {
     public function __construct(
         private HaSession $session,
+        private HaClient $client,
         private HaCallSlots $slots,
     ) {}
 
@@ -28,7 +30,7 @@ final readonly class HistoryProxy
             throw $request->createUnreachableFailure('Home Assistant is disconnected');
         }
 
-        $history = $this->session->fetchHistory($request->entityId, $request->window, $request->detail);
+        $history = $this->client->fetchHistory($request->entityId, $request->window, $request->detail);
 
         return new HistoryResult($request->correlationId, HistoricalStatesFragment::fromCollection($history->states));
     }

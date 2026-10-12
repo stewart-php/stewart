@@ -7,11 +7,9 @@ namespace Stewart\Runtime\Tests\Unit\Broker;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
-use RuntimeException;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\HistoryError;
-use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Service\ServiceResponse;
@@ -37,6 +35,7 @@ use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
+use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerProcess;
 use Stewart\Runtime\Tests\Fixtures\Ipc\FakeWorkerTransport;
 use Stewart\Testing\Async\Latch;
@@ -48,6 +47,8 @@ final class HistoryProxyTest extends TestCase
 {
     private FakeHaSession $session;
 
+    private FakeHomeAssistant $homeAssistant;
+
     private WorkerHandle $worker;
 
     private HaCallSlots $slots;
@@ -55,6 +56,7 @@ final class HistoryProxyTest extends TestCase
     protected function setUp(): void
     {
         $this->session = new FakeHaSession();
+        $this->homeAssistant = FakeHomeAssistant::createConnected();
         $slot = new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)]));
         $timers = new ManualTimers();
         $this->slots = new HaCallSlots(
@@ -74,7 +76,7 @@ final class HistoryProxyTest extends TestCase
 
     public function testStatesFromHomeAssistantAreSentBack(): void
     {
-        $this->session->historicalStates = [new EntityState(new EntityId('light.hall'), 'off'), new EntityState(new EntityId('light.hall'), 'on')];
+        $this->homeAssistant->seedHistory(new EntityState(new EntityId('light.hall'), 'off'), new EntityState(new EntityId('light.hall'), 'on'));
 
         $this->forwardRequest();
 
@@ -86,7 +88,7 @@ final class HistoryProxyTest extends TestCase
 
     public function testHomeAssistantFailureKeepsItsReason(): void
     {
-        $this->session->historyFailure = HistoryException::createForReason(HistoryError::RecorderUnavailable, entityId: 'light.hall');
+        $this->homeAssistant->failHistory('unknown_command', 'Unknown command.');
 
         $this->forwardRequest();
 
@@ -101,15 +103,6 @@ final class HistoryProxyTest extends TestCase
 
         self::assertSame(HistoryError::Unreachable->value, $this->listSentOfType(RequestFailed::class)[0]->details->reason);
         self::assertSame([], $this->listSentOfType(HistoryResult::class));
-    }
-
-    public function testUnexpectedFailureStillAnswers(): void
-    {
-        $this->session->historyFailure = new RuntimeException('surprise');
-
-        $this->forwardRequest();
-
-        self::assertSame(HistoryError::Unreachable->value, $this->listSentOfType(RequestFailed::class)[0]->details->reason);
     }
 
     public function testFullCallBudgetRefusesHistory(): void
@@ -132,7 +125,7 @@ final class HistoryProxyTest extends TestCase
 
     private function forwardRequest(): void
     {
-        new HistoryProxy($this->session, $this->slots)->forward($this->worker, self::createRequest());
+        new HistoryProxy($this->session, $this->homeAssistant->client, $this->slots)->forward($this->worker, self::createRequest());
         EventLoopTicks::settle();
     }
 

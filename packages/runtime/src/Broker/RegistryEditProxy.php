@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker;
 
 use Psr\Log\LoggerInterface;
+use Stewart\Client\HaClient;
 use Stewart\Contracts\Exception\RegistryEditException;
 use Stewart\Contracts\Registry\RegisteredEntity;
 use Stewart\Runtime\Broker\Exposure\ExposureLink;
@@ -16,6 +17,7 @@ final readonly class RegistryEditProxy
 {
     public function __construct(
         private HaSession $session,
+        private HaClient $client,
         private ExposureLink $exposures,
         private HaCallSlots $slots,
         private ServiceCallPolicy $policy,
@@ -58,10 +60,10 @@ final readonly class RegistryEditProxy
     private function sendUpdate(RegistryEntityUpdateRequest $request): RegisteredEntity
     {
         $update = $request->update->needsCurrentEntry()
-            ? $request->update->resolveAgainst($this->session->getEntityRegistryEntry($request->entityId))
+            ? $request->update->resolveAgainst($this->client->getEntityRegistryEntry($request->entityId)->toRegisteredEntity())
             : $request->update;
 
-        return $this->session->updateEntityRegistryEntry($request->entityId, $update);
+        return $this->client->updateEntityRegistryEntry($request->entityId, $update)->toRegisteredEntity();
     }
 
     /** @throws RegistryEditException */
@@ -69,6 +71,6 @@ final readonly class RegistryEditProxy
     {
         $this->logger->info('Registry entry not updated: service_calls.dry_run is on', ['entity' => $request->entityId->value]);
 
-        return $request->update->applyTo($this->session->getEntityRegistryEntry($request->entityId));
+        return $request->update->applyTo($this->client->getEntityRegistryEntry($request->entityId)->toRegisteredEntity());
     }
 }

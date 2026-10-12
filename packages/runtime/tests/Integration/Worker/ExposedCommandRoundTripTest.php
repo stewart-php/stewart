@@ -62,7 +62,8 @@ final class ExposedCommandRoundTripTest extends TestCase
             $logger,
             ['shutdown_grace' => '1s'],
         );
-        $exposed = $this->session->waitForNextExposedUpdate();
+        $this->broker->homeAssistant->activateComponent();
+        $exposed = $this->broker->homeAssistant->waitForNextExposedUpdate();
         /** @var Future<null> $running */
         $running = async($this->broker->lifecycle->run(...));
         $this->running = $running;
@@ -87,7 +88,7 @@ final class ExposedCommandRoundTripTest extends TestCase
 
     private function sendCommand(SwitchAction $action): AnsweredExposedCommand
     {
-        $answered = $this->session->waitForNextCommandAnswer();
+        $answered = $this->broker->homeAssistant->waitForNextCommandAnswer();
         $this->session->pushExposedEntityCommand(new ExposedEntityCommand(
             '3f2b9c0e8d7a4f61',
             new WorkerId(0),

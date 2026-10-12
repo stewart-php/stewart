@@ -35,7 +35,7 @@ use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
-use Stewart\Runtime\Tests\Fixtures\Broker\ExposureLinkFixture;
+use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerProcess;
 use Stewart\Runtime\Time\SystemClock;
 use Stewart\Testing\Time\VirtualClock;
@@ -81,14 +81,14 @@ final class AppMetricsTest extends TestCase
     {
         $this->metrics->recordActivityReports(self::createHandle(0), new Pong(1, Duration::zero(), 0, [new AppActivityReport(ResourceScope::shared(), AppState::Running, 1, 0, 2, 0, 0, 0, 0, 0)]));
 
-        $statuses = new AppStatusBuilder($this->metrics, $this->pausedApps, ExposureLinkFixture::createWithoutExposures())->buildHostedAppStatuses();
+        $statuses = new AppStatusBuilder($this->metrics, $this->pausedApps, FakeHomeAssistant::createUnreachable()->exposures)->buildHostedAppStatuses();
 
         self::assertSame(['demo', 'echo'], array_map(static fn(AppStatus $app): string => $app->id, $statuses));
     }
 
     public function testAppStatusIsFoundById(): void
     {
-        $builder = new AppStatusBuilder($this->metrics, $this->pausedApps, ExposureLinkFixture::createWithoutExposures());
+        $builder = new AppStatusBuilder($this->metrics, $this->pausedApps, FakeHomeAssistant::createUnreachable()->exposures);
 
         self::assertSame(1, $builder->findAppStatus(new AppId('echo'))?->workerId);
         self::assertNull($builder->findAppStatus(new AppId('ghost')));
@@ -150,7 +150,7 @@ final class AppMetricsTest extends TestCase
     /** @return list<AppStatus> */
     private function listAppStatuses(): array
     {
-        return new AppStatusBuilder($this->metrics, $this->pausedApps, ExposureLinkFixture::createWithoutExposures())->buildAppStatuses();
+        return new AppStatusBuilder($this->metrics, $this->pausedApps, FakeHomeAssistant::createUnreachable()->exposures)->buildAppStatuses();
     }
 
     private static function createHandle(int $workerId): WorkerHandle

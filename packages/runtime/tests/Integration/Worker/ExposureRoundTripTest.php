@@ -48,12 +48,13 @@ final class ExposureRoundTripTest extends TestCase
             $logger,
             ['shutdown_grace' => '1s'],
         );
-        $updated = $session->waitForNextExposedUpdate();
+        $broker->homeAssistant->activateComponent();
+        $updated = $broker->homeAssistant->waitForNextExposedUpdate();
 
         /** @var Future<null> $running */
         $running = async($broker->lifecycle->run(...));
 
-        self::assertSame(TankLevelExposer::LEVEL, $updated->await(new TimeoutCancellation(self::WAIT_SECONDS))->state?->value);
+        self::assertSame(TankLevelExposer::LEVEL, $updated->await(new TimeoutCancellation(self::WAIT_SECONDS))['state'] ?? null);
 
         $broker->run->stop('test done');
         $running->await(new TimeoutCancellation(self::WAIT_SECONDS));

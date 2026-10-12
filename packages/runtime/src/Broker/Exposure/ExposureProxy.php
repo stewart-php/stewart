@@ -9,7 +9,6 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Runtime\Broker\HaCallSlots;
-use Stewart\Runtime\Broker\HaSession;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Ipc\Message\ExposeEntityRequest;
 use Stewart\Runtime\Ipc\Message\ExposeEntityResult;
@@ -22,7 +21,7 @@ use Stewart\Runtime\Model\ResourceScope;
 final readonly class ExposureProxy
 {
     public function __construct(
-        private HaSession $session,
+        private ExposureLink $exposures,
         private HaCallSlots $slots,
     ) {}
 
@@ -31,7 +30,7 @@ final readonly class ExposureProxy
         $this->slots->runCounted($handle, $request, function () use ($handle, $request): ExposeEntityResult {
             $appId = $this->requireAppId($request->scope, $request->key);
             $definition = ExposedEntityDefinition::fromConfig($request->config, $request->device);
-            $snapshot = $this->session->exposeEntity($handle->id, $appId, $request->key, $definition, $request->change);
+            $snapshot = $this->exposures->exposeEntity($handle->id, $appId, $request->key, $definition, $request->change);
 
             return new ExposeEntityResult($request->correlationId, $snapshot);
         });
@@ -41,7 +40,7 @@ final readonly class ExposureProxy
     {
         $this->slots->runCounted($handle, $request, function () use ($request): ExposeEntityResult {
             $appId = $this->requireAppId($request->scope, $request->key);
-            $snapshot = $this->session->reconfigureExposedEntity($appId, $request->key, ExposedEntityDefinition::fromConfig($request->config, null));
+            $snapshot = $this->exposures->reconfigureEntity($appId, $request->key, ExposedEntityDefinition::fromConfig($request->config, null));
 
             return new ExposeEntityResult($request->correlationId, $snapshot);
         });
@@ -50,7 +49,7 @@ final readonly class ExposureProxy
     public function forwardUpdate(WorkerHandle $handle, UpdateExposedEntityRequest $request): void
     {
         $this->slots->runCounted($handle, $request, function () use ($request): ExposureAcknowledged {
-            $this->session->updateExposedEntity($this->requireAppId($request->scope, $request->key), $request->key, $request->change);
+            $this->exposures->updateEntity($this->requireAppId($request->scope, $request->key), $request->key, $request->change);
 
             return new ExposureAcknowledged($request->correlationId);
         });
@@ -59,7 +58,7 @@ final readonly class ExposureProxy
     public function forwardRemove(WorkerHandle $handle, RemoveExposedEntityRequest $request): void
     {
         $this->slots->runCounted($handle, $request, function () use ($request): ExposureAcknowledged {
-            $this->session->removeExposedEntity($this->requireAppId($request->scope, $request->key), $request->key);
+            $this->exposures->removeEntity($this->requireAppId($request->scope, $request->key), $request->key);
 
             return new ExposureAcknowledged($request->correlationId);
         });

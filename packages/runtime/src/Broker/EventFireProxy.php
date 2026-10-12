@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker;
 
 use Psr\Log\LoggerInterface;
+use Stewart\Client\HaClient;
 use Stewart\Contracts\Event\EventPayload;
 use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Runtime\Config\ServiceCallPolicy;
@@ -15,6 +16,7 @@ final readonly class EventFireProxy
 {
     public function __construct(
         private HaSession $session,
+        private HaClient $client,
         private HaCallSlots $slots,
         private ServiceCallPolicy $policy,
         private LoggerInterface $logger,
@@ -41,6 +43,6 @@ final readonly class EventFireProxy
             throw $request->createUnreachableFailure('Home Assistant is disconnected');
         }
 
-        return new EventFireResult($request->correlationId, $this->session->fireEvent(new EventPayload($request->eventType, $request->data)));
+        return new EventFireResult($request->correlationId, $this->client->fireEvent(new EventPayload($request->eventType, $request->data)));
     }
 }

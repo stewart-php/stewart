@@ -13,19 +13,21 @@ use Stewart\Runtime\Broker\SubscriptionRegistry;
 use Stewart\Runtime\Broker\Trigger\TriggerRejections;
 use Stewart\Runtime\Broker\Trigger\TriggerSubscribers;
 use Stewart\Runtime\Broker\WorkerSlotRegistry;
-use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
+use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
 use Stewart\Runtime\Tests\Fixtures\Broker\TriggerSubscriptionFixture;
+use Stewart\Testing\Time\EventLoopTicks;
 
 #[CoversClass(TriggerRejections::class)]
 final class TriggerRejectionsTest extends TestCase
 {
     public function testRejectionRemovesEverySubscriberOfThatSpecOnly(): void
     {
-        $session = new FakeHaSession();
-        $registry = new SubscriptionRegistry([new TriggerSubscribers($session)]);
+        $homeAssistant = FakeHomeAssistant::createConnected();
+        $registry = new SubscriptionRegistry([new TriggerSubscribers($homeAssistant->triggers)]);
         $registry->add(TriggerSubscriptionFixture::createSubscription('w0:0', 0, HaTrigger::onSunset()));
         $registry->add(TriggerSubscriptionFixture::createSubscription('w1:0', 1, HaTrigger::onSunset()));
         $registry->add(TriggerSubscriptionFixture::createSubscription('w1:1', 1, HaTrigger::onSunrise()));
+        EventLoopTicks::settle();
 
         new TriggerRejections($registry, new WorkerSlotRegistry())->refuseSubscribers(TriggerSpec::fromSpec(HaTrigger::onSunset()), 'Invalid trigger');
 
@@ -33,6 +35,7 @@ final class TriggerRejectionsTest extends TestCase
             static fn(BrokerSubscription $subscription): string => $subscription->subscriptionId->value,
             $registry->listSubscriptions(),
         ));
-        self::assertCount(1, $session->unsubscribedTriggers);
+        EventLoopTicks::settle();
+        self::assertCount(1, $homeAssistant->listUnsubscribedTriggers());
     }
 }

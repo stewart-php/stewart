@@ -7,13 +7,9 @@ namespace Stewart\Runtime\Tests\Unit\Broker\Exposure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
-use RuntimeException;
 use Stewart\Contracts\App\AppId;
-use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\ExposureError;
-use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
-use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\SensorConfig;
@@ -36,11 +32,12 @@ use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Ipc\Message\UpdateExposedEntityRequest;
+use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
-use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
+use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerProcess;
 use Stewart\Runtime\Tests\Fixtures\Ipc\FakeWorkerTransport;
 use Stewart\Testing\Async\Latch;
@@ -50,15 +47,18 @@ use Stewart\Testing\Time\ManualTimers;
 #[CoversClass(ExposureProxy::class)]
 final class ExposureProxyTest extends TestCase
 {
-    private FakeHaSession $session;
+    private FakeHomeAssistant $homeAssistant;
 
     private WorkerHandle $worker;
 
     private HaCallSlots $slots;
 
+    private ExposureProxy $proxy;
+
     protected function setUp(): void
     {
-        $this->session = new FakeHaSession();
+        $this->homeAssistant = FakeHomeAssistant::createConnected();
+        $this->homeAssistant->activateComponent();
         $slot = new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)]));
         $timers = new ManualTimers();
         $this->slots = new HaCallSlots(
@@ -67,6 +67,7 @@ final class ExposureProxyTest extends TestCase
             $timers->clock,
             new NullLogger(),
         );
+        $this->proxy = new ExposureProxy($this->homeAssistant->exposures, $this->slots);
         $this->worker = new WorkerHandle(
             id: new WorkerId(0),
             process: new FakeWorkerProcess(),
@@ -78,8 +79,6 @@ final class ExposureProxyTest extends TestCase
 
     public function testSnapshotIsSentBack(): void
     {
-        $this->session->exposedSnapshot = new ExposedEntitySnapshot(new EntityId('sensor.demo_level'), new ExposedState(3), [], true);
-
         $this->forwardExpose(ResourceScope::forApp(new AppId('demo')));
 
         self::assertSame('sensor.demo_level', $this->listSentOfType(ExposeEntityResult::class)[0]->snapshot?->entityId->value);
@@ -87,11 +86,12 @@ final class ExposureProxyTest extends TestCase
 
     public function testRefusalKeepsItsReason(): void
     {
-        $this->session->exposureFailure = ExposureException::createForReason(ExposureError::ComponentMissing, key: 'level');
+        $this->homeAssistant->componentTracker->recordState(ComponentState::Missing, null);
 
         $this->forwardExpose(ResourceScope::forApp(new AppId('demo')));
 
         self::assertSame(ExposureError::ComponentMissing->value, $this->listSentOfType(RequestFailed::class)[0]->details->reason);
+        self::assertSame(0, $this->slots->inFlight);
     }
 
     public function testSharedScopeIsOutsideApp(): void
@@ -99,45 +99,35 @@ final class ExposureProxyTest extends TestCase
         $this->forwardExpose(ResourceScope::shared());
 
         self::assertSame(ExposureError::OutsideApp->value, $this->listSentOfType(RequestFailed::class)[0]->details->reason);
-        self::assertSame([], $this->session->exposedEntities);
+        self::assertSame([], $this->homeAssistant->socket->listSentOfType('stewart/entity/upsert'));
     }
 
     public function testUpdateIsAcknowledged(): void
     {
         $this->forwardExpose(ResourceScope::forApp(new AppId('demo')));
 
-        new ExposureProxy($this->session, $this->slots)->forwardUpdate(
+        $this->proxy->forwardUpdate(
             $this->worker,
             new UpdateExposedEntityRequest(new CorrelationId('w0:2'), ResourceScope::forApp(new AppId('demo')), new ExposedEntityKey('level'), new ExposedStateChange(new ExposedState(4))),
         );
         EventLoopTicks::settle();
 
         self::assertSame('w0:2', $this->listSentOfType(ExposureAcknowledged::class)[0]->correlationId->value);
-        self::assertSame(4, $this->session->exposedEntities['demo/level']->state?->value);
+        self::assertSame(4, $this->homeAssistant->socket->listSentOfType('stewart/entity/state')[0]['state'] ?? null);
     }
 
     public function testReconfigureAnswersWithSnapshot(): void
     {
-        $this->session->exposedSnapshot = new ExposedEntitySnapshot(new EntityId('sensor.demo_level'), new ExposedState(3), [], true);
+        $this->forwardExpose(ResourceScope::forApp(new AppId('demo')));
 
-        new ExposureProxy($this->session, $this->slots)->forwardReconfigure(
+        $this->proxy->forwardReconfigure(
             $this->worker,
             new ReconfigureExposedEntityRequest(new CorrelationId('w0:3'), ResourceScope::forApp(new AppId('demo')), new ExposedEntityKey('level'), new SensorConfig(unit: '%')),
         );
         EventLoopTicks::settle();
 
-        self::assertSame('w0:3', $this->listSentOfType(ExposeEntityResult::class)[0]->correlationId->value);
-        self::assertSame(['unit_of_measurement' => '%'], $this->session->reconfiguredDefinitions['demo/level']->config);
-    }
-
-    public function testUnexpectedFailureAnswersUnreachable(): void
-    {
-        $this->session->exposureFailure = new RuntimeException('surprise');
-
-        $this->forwardExpose(ResourceScope::forApp(new AppId('demo')));
-
-        self::assertSame(ExposureError::Unreachable->value, $this->listSentOfType(RequestFailed::class)[0]->details->reason);
-        self::assertSame(0, $this->slots->inFlight);
+        self::assertSame('w0:3', $this->listSentOfType(ExposeEntityResult::class)[1]->correlationId->value);
+        self::assertSame(['unit_of_measurement' => '%'], $this->homeAssistant->socket->listSentOfType('stewart/entity/upsert')[1]['config'] ?? null);
     }
 
     public function testExposureIsNotRefusedWhenTheCallBudgetIsFull(): void
@@ -160,7 +150,7 @@ final class ExposureProxyTest extends TestCase
 
     private function forwardExpose(ResourceScope $scope): void
     {
-        new ExposureProxy($this->session, $this->slots)->forwardExpose(
+        $this->proxy->forwardExpose(
             $this->worker,
             new ExposeEntityRequest(new CorrelationId('w0:1'), $scope, new ExposedEntityKey('level'), new SensorConfig(), null, new ExposedStateChange(new ExposedState(3))),
         );

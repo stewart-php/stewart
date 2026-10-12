@@ -23,6 +23,10 @@ minor release may break; its "Upgrading" section says what to change.
 - A release requires a passing CI run on its commit and the skeleton, image and chart checks, and the runtime image
   is scanned before it is tagged and signed
 
+### Added
+
+- `FakeWebsocketConnection::answerEverySend()` in `stewart-php/testing` answers every command of a type
+
 ### Changed
 
 - `stewart.yaml` may name an app with `_` in place of `-` (`hall_light:` for `hall-light`); this no longer fails with
