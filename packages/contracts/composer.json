@@ -9,6 +9,7 @@
         "ext-filter": "*"
     },
     "require-dev": {
+        "amphp/amp": "^3.1.1",
         "phpunit/phpunit": "^13.3",
         "stewart-php/testing": "self.version"
     },
