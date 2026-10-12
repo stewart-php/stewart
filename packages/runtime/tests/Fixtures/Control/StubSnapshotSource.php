@@ -37,10 +37,12 @@ final class StubSnapshotSource
 {
     public int $taken = 0;
 
+    /** @param list<WorkerPhase> $workerPhases */
     public function __construct(
         private readonly string $daemonVersion = 'stub',
         private readonly ConnectionPhase $connectionPhase = ConnectionPhase::Connected,
-        private readonly WorkerPhase $workerPhase = WorkerPhase::Live,
+        private readonly array $workerPhases = [WorkerPhase::Live],
+        private readonly bool $workersReady = true,
     ) {}
 
     public function takeSnapshot(): RuntimeSnapshot
@@ -54,19 +56,7 @@ final class StubSnapshotSource
             daemon: new DaemonInfo(1, $startedAt, 52_428_800, $this->daemonVersion, 'UTC', 120, '2026.9.1'),
             connection: new ConnectionState($this->connectionPhase, $startedAt, 1, Duration::seconds(4)),
             broker: new BrokerStats(1, 1, 0, 2, new RoutingStats(3, 1, 5, 40, 5)),
-            workers: [new WorkerStatus(
-                workerId: 0,
-                phase: $this->workerPhase,
-                appIds: ['porch'],
-                pid: 42,
-                ready: true,
-                loopLag: Duration::milliseconds(3),
-                memoryBytes: 20_971_520,
-                lastPongAt: Instant::fromIso('2026-09-26T10:59:55Z'),
-                outbox: new OutboxStatus(0, 0, 7, 90, 12),
-                restarts: 3,
-                quarantines: 1,
-            )],
+            workers: array_map($this->createWorkerStatus(...), array_keys($this->workerPhases), $this->workerPhases),
             apps: [new AppStatus(
                 id: 'porch',
                 class: 'App\\Porch',
@@ -94,6 +84,23 @@ final class StubSnapshotSource
                 lastFailure: new DeployFailure('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', 'apps/Porch.php failed to load: syntax error', Instant::fromIso('2026-09-26T10:50:00Z')),
             ),
             component: new ComponentStatus(ComponentState::Active, $startedAt, 'default', '0.9.0', 1),
+        );
+    }
+
+    private function createWorkerStatus(int $workerId, WorkerPhase $phase): WorkerStatus
+    {
+        return new WorkerStatus(
+            workerId: $workerId,
+            phase: $phase,
+            appIds: $workerId === 0 ? ['porch'] : [],
+            pid: 42 + $workerId,
+            ready: $phase === WorkerPhase::Live && $this->workersReady,
+            loopLag: Duration::milliseconds(3),
+            memoryBytes: 20_971_520,
+            lastPongAt: Instant::fromIso('2026-09-26T10:59:55Z'),
+            outbox: new OutboxStatus(0, 0, 7, 90, 12),
+            restarts: 3,
+            quarantines: 1,
         );
     }
 }

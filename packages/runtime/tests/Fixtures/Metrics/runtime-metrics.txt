@@ -52,6 +52,7 @@ stewart_routing_cache_misses_total 5
 # TYPE stewart_worker_phase gauge
 stewart_worker_phase{worker="0",phase="live"} 1
 stewart_worker_phase{worker="0",phase="spawning"} 0
+stewart_worker_phase{worker="0",phase="stopping"} 0
 stewart_worker_phase{worker="0",phase="restart_scheduled"} 0
 stewart_worker_phase{worker="0",phase="quarantined"} 0
 stewart_worker_phase{worker="0",phase="stopped"} 0

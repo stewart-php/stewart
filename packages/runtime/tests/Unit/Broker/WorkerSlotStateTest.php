@@ -61,6 +61,8 @@ final class WorkerSlotStateTest extends TestCase
         yield 'spawn from stopped' => [WorkerPhase::Stopped, 'beginSpawn', WorkerPhase::Spawning];
         yield 'spawn when a restart falls due' => [WorkerPhase::RestartScheduled, 'beginSpawn', WorkerPhase::Spawning];
         yield 'spawn out of quarantine' => [WorkerPhase::Quarantined, 'beginSpawn', WorkerPhase::Spawning];
+        yield 'spawn after a requested stop' => [WorkerPhase::Stopping, 'beginSpawn', WorkerPhase::Spawning];
+        yield 'stop on request' => [WorkerPhase::Live, 'beginStopping', WorkerPhase::Stopping];
         yield 'spawn fails' => [WorkerPhase::Spawning, 'markSpawnFailed', WorkerPhase::Stopped];
         yield 'recordSpawnedHandle' => [WorkerPhase::Spawning, 'recordSpawnedHandle', WorkerPhase::Live];
         yield 'markGone' => [WorkerPhase::Live, 'markGone', WorkerPhase::Stopped];
@@ -91,7 +93,8 @@ final class WorkerSlotStateTest extends TestCase
     public static function provideRefusedTransitions(): iterable
     {
         $allowedFrom = [
-            'beginSpawn' => [WorkerPhase::Stopped, WorkerPhase::RestartScheduled, WorkerPhase::Quarantined],
+            'beginSpawn' => [WorkerPhase::Stopped, WorkerPhase::RestartScheduled, WorkerPhase::Quarantined, WorkerPhase::Stopping],
+            'beginStopping' => [WorkerPhase::Live],
             'markSpawnFailed' => [WorkerPhase::Spawning],
             'recordSpawnedHandle' => [WorkerPhase::Spawning],
             'markGone' => [WorkerPhase::Live],
@@ -152,6 +155,20 @@ final class WorkerSlotStateTest extends TestCase
         }
     }
 
+    public function testStoppingOnRequestHandsBackTheProcessAndCountsARestart(): void
+    {
+        $state = self::createState();
+        $state->beginSpawn();
+        $deadline = $this->createTimer();
+        $handle = self::createHandle();
+        $state->recordSpawnedHandle($handle, $deadline);
+
+        self::assertSame($handle, $state->beginStopping());
+        self::assertTrue($state->isStopping());
+        self::assertFalse($deadline->isPending());
+        self::assertSame(1, $state->restarts);
+    }
+
     public function testRestartKeepsItsDueTimeUntilItIsStopped(): void
     {
         $state = self::createState();
@@ -206,6 +223,7 @@ final class WorkerSlotStateTest extends TestCase
             'recordSpawnedHandle' => $state->recordSpawnedHandle(self::createHandle(), null),
             'cancelReadyDeadline' => $state->cancelReadyDeadline(),
             'markGone' => $state->markGone(),
+            'beginStopping' => $state->beginStopping(),
             'recordScheduledRestart' => $state->recordScheduledRestart($this->createTimer(), self::getDueAt()),
             'markQuarantined' => $state->markQuarantined(),
             'stop' => $state->stop(),
@@ -225,6 +243,7 @@ final class WorkerSlotStateTest extends TestCase
             WorkerPhase::Stopped => [],
             WorkerPhase::Spawning => ['beginSpawn'],
             WorkerPhase::Live => ['beginSpawn', 'recordSpawnedHandle'],
+            WorkerPhase::Stopping => ['beginSpawn', 'recordSpawnedHandle', 'beginStopping'],
             WorkerPhase::RestartScheduled => ['recordScheduledRestart'],
             WorkerPhase::Quarantined => ['markQuarantined'],
         };

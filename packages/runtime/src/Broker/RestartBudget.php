@@ -39,6 +39,11 @@ final class RestartBudget
         return \count($spent);
     }
 
+    public function forgetAttempts(WorkerId $workerId): void
+    {
+        unset($this->restarts[$workerId->value]);
+    }
+
     /** @return list<MonotonicTime> */
     private function listAttemptsWithinWindow(WorkerId $workerId, MonotonicTime $now): array
     {

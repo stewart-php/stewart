@@ -10,8 +10,11 @@ use Stewart\Runtime\Config\ConfigLoader;
 use Stewart\Runtime\Config\ControlConfig;
 use Stewart\Runtime\Control\Client\ControlTarget;
 use Stewart\Runtime\Control\Client\ControlTargetResolver;
+use Stewart\Runtime\Control\Protocol\Frame\CommandResult;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
 abstract class ControlCommand extends StewartCommand
 {
@@ -43,6 +46,15 @@ abstract class ControlCommand extends StewartCommand
             $this->nonEmptyStringOption($input, 'token'),
             fn(): ControlConfig => $this->config->loadConfig($path)->control,
         );
+    }
+
+    protected function writeCommandResult(OutputInterface $output, CommandResult $result): void
+    {
+        $output->writeln($result->message);
+
+        if ($result->warning !== null) {
+            ($output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output)->writeln('<comment>' . $result->warning . '</comment>');
+        }
     }
 
     /** @throws StewartException */

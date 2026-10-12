@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Tests\Fixtures\Broker;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Stewart\Contracts\Time\Clock;
+use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Timers;
 use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Broker\RestartBudget;
@@ -41,6 +42,7 @@ final readonly class WorkerPoolFixture
         Timers&Deadlines $timers = new RevoltTimers(),
         LoggerInterface $logger = new NullLogger(),
         OutboxLimits $outboxLimits = new OutboxLimits(10, 256),
+        ?Duration $requestedRestartGrace = null,
     ): self {
         $clock = $timers instanceof ManualTimers ? $timers->clock : SystemClock::inUtc();
         $supervision ??= ConfigFixture::createSupervisionConfig(['ping_interval' => 'off']);
@@ -49,7 +51,7 @@ final readonly class WorkerPoolFixture
         $restartPolicy = new WorkerRestartPolicy(new RestartBudget($supervision->restartAttempts, $supervision->restartWindow), $supervision, $clock);
 
         return new self(
-            new WorkerPool($spawner, $slots, $restartPolicy, $probes, $supervision, new WorkerMessageReader($logger), $logger, $outboxLimits, $timers, $clock),
+            new WorkerPool($spawner, $slots, $restartPolicy, $probes, $supervision, new WorkerMessageReader($logger), $logger, $outboxLimits, $timers, $clock, $requestedRestartGrace ?? Duration::milliseconds(50)),
             $slots,
             new WorkerWatchdog($slots, $probes, $supervision, $timers, $clock, $logger),
             $restartPolicy,

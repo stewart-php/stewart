@@ -54,7 +54,7 @@ final class HttpAdminApiTest extends TestCase
         $this->port = self::findFreePort();
         $this->server = new AmpHttpListener(
             new HttpListenAddress('127.0.0.1', $this->port),
-            new AdminRequestHandler($fixture->api, $fixture->codec, $fixture->metricsExporter, $logger, self::TOKEN),
+            new AdminRequestHandler($fixture->api, $fixture->workers, $fixture->codec, $fixture->metricsExporter, $logger, self::TOKEN),
             HttpListenerRole::Admin,
             $logger,
         );
@@ -215,6 +215,36 @@ final class HttpAdminApiTest extends TestCase
     {
         self::assertStringStartsWith('HTTP/1.1 401', $this->sendRequest('POST', '/api/apps/demo/pause', null));
         self::assertFalse($this->fixture->registry->isPaused(new AppId('demo')));
+    }
+
+    public function testWorkerRestartIsReportedAsBegun(): void
+    {
+        $this->fixture->startWorker();
+
+        $response = $this->sendRequest('POST', '/api/workers/0/restart');
+
+        self::assertStringStartsWith('HTTP/1.1 200', $response);
+        self::assertJsonStringEqualsJsonString('{"changed":true,"message":"Worker 0 is restarting.","warning":null}', self::extractBody($response));
+    }
+
+    public function testRestartOfUnknownWorkerIsNotFound(): void
+    {
+        foreach (['/api/workers/7/restart', '/api/workers/porch/restart'] as $path) {
+            $response = $this->sendRequest('POST', $path);
+
+            self::assertStringStartsWith('HTTP/1.1 404', $response);
+            self::assertStringContainsString('"reason":"worker_unknown"', self::extractBody($response));
+        }
+    }
+
+    public function testGetOnWorkerRestartIsNotAllowed(): void
+    {
+        self::assertStringStartsWith('HTTP/1.1 405', $this->sendRequest('GET', '/api/workers/0/restart'));
+    }
+
+    public function testWorkerRestartNeedsToken(): void
+    {
+        self::assertStringStartsWith('HTTP/1.1 401', $this->sendRequest('POST', '/api/workers/0/restart', null));
     }
 
     private function sendRequest(string $method, string $path, ?string $token = self::TOKEN): string

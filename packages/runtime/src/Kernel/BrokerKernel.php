@@ -71,6 +71,7 @@ final readonly class BrokerKernel
             ->withArgument('componentRelinkBackoff', $config->reconnectBackoff)
             ->withArgument('userServicesFile', $this->userServicesFile)
             ->withArgument('brokerShutdownGrace', $config->shutdownGrace)
+            ->withArgument('requestedRestartGrace', $config->shutdownGrace)
             ->withArgument('poolWorkerCount', $config->workers)
             ->withArgument('persistenceConfig', $config->persistence)
             ->withArgument('storeConfigured', $config->persistence !== null)

@@ -37,6 +37,7 @@ use Stewart\Runtime\Control\Assembler\WorkerStatusBuilder;
 use Stewart\Runtime\Control\SnapshotAssembler;
 use Stewart\Runtime\Http\Admin\AdminApiCodec;
 use Stewart\Runtime\Http\Admin\AppsAdminApi;
+use Stewart\Runtime\Http\Admin\WorkersAdminApi;
 use Stewart\Runtime\Metrics\PrometheusTextEncoder;
 use Stewart\Runtime\Metrics\RuntimeMetricsCollector;
 use Stewart\Runtime\Metrics\RuntimeMetricsExporter;
@@ -58,6 +59,8 @@ final readonly class AdminApiFixture
     public AppPauseService $pauses;
 
     public AppsAdminApi $api;
+
+    public WorkersAdminApi $workers;
 
     public AdminApiCodec $codec;
 
@@ -88,7 +91,13 @@ final readonly class AdminApiFixture
         $this->api = new AppsAdminApi(new AppStatusBuilder($metrics, $this->registry, FakeHomeAssistant::createUnreachable()->exposures), $this->pauses, new AppPauseOutcomeMessages());
         $this->codec = new AdminApiCodec(AdminApiCodec::createAdminApiWireMapper());
         $this->broker = new BrokerStateFixture();
+        $this->workers = new WorkersAdminApi(WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), $apps)]), $this->broker->pools->pool);
         $this->metricsExporter = $this->createMetricsExporter($startTime, $metrics);
+    }
+
+    public function startWorker(): void
+    {
+        $this->broker->startWorker(0);
     }
 
     public function stopEverything(): void

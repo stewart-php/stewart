@@ -31,6 +31,12 @@ final class AdminRouteTest extends TestCase
         self::assertEquals(new AdminRoute(AdminAction::ResetApp, 'demo'), AdminRoute::fromPath('/api/apps/demo/reset'));
     }
 
+    public function testWorkerRestartPathCarriesTheWorker(): void
+    {
+        self::assertEquals(new AdminRoute(AdminAction::RestartWorker, '1'), AdminRoute::fromPath('/api/workers/1/restart'));
+        self::assertSame(['POST'], AdminAction::RestartWorker->listAllowedMethods());
+    }
+
     public function testMetricsPathShowsMetrics(): void
     {
         self::assertEquals(new AdminRoute(AdminAction::ShowMetrics, null), AdminRoute::fromPath('/metrics'));
@@ -39,7 +45,7 @@ final class AdminRouteTest extends TestCase
 
     public function testEncodedAppIdIsDecoded(): void
     {
-        self::assertSame('a b', AdminRoute::fromPath('/api/apps/a%20b')?->appId);
+        self::assertSame('a b', AdminRoute::fromPath('/api/apps/a%20b')?->resourceId);
     }
 
     /** @return iterable<string, array{string}> */
@@ -49,7 +55,10 @@ final class AdminRouteTest extends TestCase
         yield 'api root' => ['/api'];
         yield 'trailing slash' => ['/api/apps/'];
         yield 'nested unknown' => ['/api/apps/demo/unknown'];
-        yield 'other resource' => ['/api/workers'];
+        yield 'worker list' => ['/api/workers'];
+        yield 'worker without action' => ['/api/workers/1'];
+        yield 'worker unknown action' => ['/api/workers/1/pause'];
+        yield 'worker restart trailing slash' => ['/api/workers/1/restart/'];
         yield 'action trailing slash' => ['/api/apps/demo/pause/'];
         yield 'action on list' => ['/api/apps/pause/now'];
         yield 'metrics trailing slash' => ['/metrics/'];

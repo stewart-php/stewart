@@ -67,6 +67,18 @@ final class RestartBudgetTest extends TestCase
         self::assertSame(1, $budget->claimAttempt(new WorkerId(1), self::createInstantAt(101)), 'One crash-looping worker must not quarantine its neighbors.');
     }
 
+    public function testForgottenAttemptsGiveTheWorkerItsFullBudgetBack(): void
+    {
+        $budget = new RestartBudget(workerRestartAttempts: 1, workerRestartWindow: Duration::seconds(60));
+        $budget->claimAttempt(new WorkerId(0), self::createInstantAt(100));
+        $budget->claimAttempt(new WorkerId(1), self::createInstantAt(100));
+
+        $budget->forgetAttempts(new WorkerId(0));
+
+        self::assertSame(1, $budget->claimAttempt(new WorkerId(0), self::createInstantAt(101)));
+        self::assertNull($budget->claimAttempt(new WorkerId(1), self::createInstantAt(101)));
+    }
+
     public function testZeroBudgetQuarantinesImmediately(): void
     {
         $budget = new RestartBudget(workerRestartAttempts: 0, workerRestartWindow: Duration::seconds(60));

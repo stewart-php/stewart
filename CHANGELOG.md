@@ -6,6 +6,13 @@ minor release may break; its "Upgrading" section says what to change.
 
 ## [Unreleased]
 
+### Added
+
+- `stewart worker:restart <worker>` restarts one worker with a fresh crash budget: a running worker stops gracefully
+  within `shutdown_grace` first, a quarantined or backing-off one starts at once. While it stops, `stewart status`
+  and `stewart_worker_phase` show the new `stopping` phase
+- `POST /api/workers/{id}/restart` on the HTTP admin API does the same as `worker:restart`; an unknown worker is 404
+
 ### Fixed
 
 - History queries and exposure requests count as in-flight calls to Home Assistant, and an exposure request that
@@ -22,6 +29,10 @@ minor release may break; its "Upgrading" section says what to change.
   pushed together
 - A release requires a passing CI run on its commit and the skeleton, image and chart checks, and the runtime image
   is scanned before it is tagged and signed
+- Stewart stops with "None of N workers could be started." when no worker comes up at startup, instead of retrying a
+  broken bootstrap until the crash budget runs out; a worker that fails while others start still retries
+- `/readyz` and `stewart status --probe=readiness` report "no worker is running" while no worker has its apps
+  running, such as during startup or while every worker restarts, not only once a worker is quarantined
 
 ### Added
 
@@ -35,6 +46,7 @@ minor release may break; its "Upgrading" section says what to change.
   one-line factories in `stewart-php/contracts` are gone
 - List collections are built with `XCollection::fromList(...)`; the named factories that only forwarded to it, such
   as `EntityIdCollection::fromIds()` and `HaTriggerCollection::fromTriggers()`, are gone
+- The control protocol is version 29: a `restart_worker` request and the `stopping` worker phase
 - History queries share the `service_calls.max_in_flight[_per_worker]` budget and fail with the new
   `HistoryError::Overloaded` when it is full; exposure requests count toward it but are never refused
 - IPC protocol 27: one `request_failed` message replaces the five per-request error messages; the broker and its
@@ -42,10 +54,12 @@ minor release may break; its "Upgrading" section says what to change.
 
 ### Upgrading
 
-1. Code that built a contracts exception through a removed factory, such as `StoreException::typeMismatch(…)` or
+1. Run `stewart` commands from the same release as the daemon; a 0.10 CLI and a newer daemon refuse each other
+   (control protocol 29).
+2. Code that built a contracts exception through a removed factory, such as `StoreException::typeMismatch(…)` or
    `ScheduleException::cronInvalid(…)`, calls `createForReason()` with the reason case and its context as named
    arguments instead. `CommandException::rejected()` and the factories shared across packages stay.
-2. Replace calls to removed collection factories such as `AppIdCollection::fromIds($ids)` with `fromList($ids)`.
+3. Replace calls to removed collection factories such as `AppIdCollection::fromIds($ids)` with `fromList($ids)`.
    Factories that do more, such as `SelectorCollection::fromSpecs()` and `DayOfWeekCollection::fromDistinctDays()`,
    stay.
 3. `ServiceCallException::fromWire()`, `EventFireException::fromWire()`, `HistoryException::fromWire()`,

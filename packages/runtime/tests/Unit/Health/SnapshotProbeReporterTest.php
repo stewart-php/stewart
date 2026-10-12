@@ -63,12 +63,21 @@ final class SnapshotProbeReporterTest extends TestCase
         self::assertSame(['Home Assistant is connecting'], $report->reasons);
     }
 
-    public function testReadinessIsReadyOnceConnected(): void
+    public function testReadinessIsReadyOnceConnectedWithAReadyWorker(): void
+    {
+        $this->broker->startWorker(0);
+        $this->broker->getPool()->markReady($this->broker->getLiveHandleOf(0));
+        $this->connection->markConnected();
+
+        self::assertEquals(new ProbeReport(ProbeStatus::Ready, []), $this->createReporter()->reportProbe(ProbeKind::Readiness));
+    }
+
+    public function testReadinessWaitsForAWorkerToReportReady(): void
     {
         $this->broker->startWorker(0);
         $this->connection->markConnected();
 
-        self::assertEquals(new ProbeReport(ProbeStatus::Ready, []), $this->createReporter()->reportProbe(ProbeKind::Readiness));
+        self::assertSame(['no worker is running'], $this->createReporter()->reportProbe(ProbeKind::Readiness)->reasons);
     }
 
     private function createReporter(): SnapshotProbeReporter

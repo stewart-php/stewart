@@ -25,6 +25,11 @@ final readonly class WorkerRestartPolicy
             : RestartDecision::restartAfter($this->supervision->restartBackoff->delayFor($attempt));
     }
 
+    public function forgetRestarts(WorkerId $workerId): void
+    {
+        $this->budget->forgetAttempts($workerId);
+    }
+
     public function countRestartsInWindow(WorkerId $workerId): int
     {
         return $this->budget->countUsedAttempts($workerId, $this->clock->getMonotonicTime());
