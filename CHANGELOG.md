@@ -55,6 +55,8 @@ minor release may break; its "Upgrading" section says what to change.
   drop the connection, which for QoS 1 repeated on every reconnect
 - A QoS 1 MQTT message the server has not acknowledged after 5 sends is dropped with an error naming its topic,
   instead of being sent again on every reconnect
+- An MQTT connection that the server drops within one `mqtt.keepalive` keeps the reconnect delay growing, so a
+  duplicate `client_id` or a rejected message no longer reconnects at the shortest delay forever
 
 ### Changed
 

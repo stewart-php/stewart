@@ -25,10 +25,12 @@ use Stewart\Mqtt\Packet\PubAckPacket;
 use Stewart\Mqtt\ReconnectingMqttLink;
 use Stewart\Mqtt\Tests\Fixtures\FakeMqttServer;
 use Stewart\Mqtt\Tests\Fixtures\FakeMqttServerEvent;
+use Stewart\Mqtt\Tests\Fixtures\RecordingDeadlines;
 use Stewart\Mqtt\Tests\Fixtures\RecordingMqttRouter;
 use Stewart\Runtime\Config\BackoffPolicy;
 use Stewart\Runtime\Config\MqttConfig;
 use Stewart\Runtime\Config\MqttServerUrl;
+use Stewart\Runtime\Time\SystemClock;
 use Stewart\Support\Time\RevoltTimers;
 use Stewart\Testing\Logging\RecordedLog;
 use Stewart\Testing\Logging\RecordingLogger;
@@ -48,6 +50,8 @@ final class ReconnectingMqttLinkTest extends TestCase
     private RecordingMqttRouter $router;
 
     private ?ReconnectingMqttLink $link = null;
+
+    private RecordingDeadlines $deadlines;
 
     protected function setUp(): void
     {
@@ -148,6 +152,17 @@ final class ReconnectingMqttLinkTest extends TestCase
         self::assertContains('Could not reach the MQTT server', $this->logger->listMessagesAt(LogLevel::ERROR));
     }
 
+    public function testShortSessionsKeepDoublingTheBackoff(): void
+    {
+        $this->server->dropsAfterConnAck = true;
+        $link = $this->createLink(reconnectDelay: Duration::milliseconds(20), maxReconnectDelay: Duration::milliseconds(160));
+        $threeReconnects = $this->deadlines->waitForDelayCount(3);
+        $link->startInBackground($this->router);
+        self::await($threeReconnects);
+
+        self::assertSame([20, 40, 80], \array_slice($this->deadlines->listDelayMilliseconds(), 0, 3));
+    }
+
     public function testCloseDisconnectsCleanly(): void
     {
         $link = $this->createLink(will: new MqttMessage('stewart/status', 'offline', MqttQos::AtLeastOnce, true));
@@ -197,16 +212,17 @@ final class ReconnectingMqttLinkTest extends TestCase
         self::assertSame(MqttClientError::PacketUnexpected, $reason->reason);
     }
 
-    private function createLink(?Duration $keepalive = null, ?Duration $reconnectDelay = null, ?MqttMessage $will = null): ReconnectingMqttLink
+    private function createLink(?Duration $keepalive = null, ?Duration $reconnectDelay = null, ?MqttMessage $will = null, ?Duration $maxReconnectDelay = null): ReconnectingMqttLink
     {
         $timers = new RevoltTimers();
+        $this->deadlines = new RecordingDeadlines($timers);
         $reconnectDelay ??= Duration::milliseconds(20);
         $config = new MqttConfig(
             serverUrl: MqttServerUrl::parse($this->server->buildUrl()),
             clientId: 'stewart-test',
             keepalive: $keepalive ?? Duration::seconds(30),
             connectTimeout: Duration::seconds(2),
-            reconnectBackoff: new BackoffPolicy($reconnectDelay, $reconnectDelay),
+            reconnectBackoff: new BackoffPolicy($reconnectDelay, $maxReconnectDelay ?? $reconnectDelay),
             outboundBuffer: 10,
             will: $will,
         );
@@ -215,7 +231,8 @@ final class ReconnectingMqttLinkTest extends TestCase
             $config,
             new MqttConnector(new PacketReader(new PacketDecoder()), $timers, $timers),
             new OutboundMqttQueue($config->outboundBuffer),
-            $timers,
+            $this->deadlines,
+            SystemClock::inUtc(),
             $this->logger,
         );
     }

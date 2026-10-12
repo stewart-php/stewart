@@ -20,6 +20,7 @@ use Stewart\Mqtt\Tests\Fixtures\RecordingMqttRouter;
 use Stewart\Runtime\Config\BackoffPolicy;
 use Stewart\Runtime\Config\MqttConfig;
 use Stewart\Runtime\Config\MqttServerUrl;
+use Stewart\Runtime\Time\SystemClock;
 use Stewart\Support\Time\RevoltTimers;
 use Stewart\Testing\Logging\RecordingLogger;
 
@@ -99,6 +100,7 @@ final class MosquittoRoundTripTest extends TestCase
             new MqttConnector(new PacketReader(new PacketDecoder()), $timers, $timers),
             new OutboundMqttQueue($config->outboundBuffer),
             $timers,
+            SystemClock::inUtc(),
             $this->logger,
         );
     }
