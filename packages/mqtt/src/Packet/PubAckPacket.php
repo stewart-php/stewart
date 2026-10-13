@@ -12,9 +12,4 @@ final readonly class PubAckPacket implements InboundPacket
     {
         return PacketType::PubAck;
     }
-
-    public function applyTo(InboundPacketHandler $handler): void
-    {
-        $handler->handlePubAck($this);
-    }
 }

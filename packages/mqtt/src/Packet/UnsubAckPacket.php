@@ -12,9 +12,4 @@ final readonly class UnsubAckPacket implements InboundPacket
     {
         return PacketType::UnsubAck;
     }
-
-    public function applyTo(InboundPacketHandler $handler): void
-    {
-        $handler->handleUnsubAck($this);
-    }
 }

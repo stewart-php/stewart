@@ -10,9 +10,4 @@ final readonly class PingRespPacket implements InboundPacket
     {
         return PacketType::PingResp;
     }
-
-    public function applyTo(InboundPacketHandler $handler): void
-    {
-        $handler->handlePingResp($this);
-    }
 }

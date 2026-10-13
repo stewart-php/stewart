@@ -17,9 +17,4 @@ final readonly class SubAckPacket implements InboundPacket
     {
         return PacketType::SubAck;
     }
-
-    public function applyTo(InboundPacketHandler $handler): void
-    {
-        $handler->handleSubAck($this);
-    }
 }

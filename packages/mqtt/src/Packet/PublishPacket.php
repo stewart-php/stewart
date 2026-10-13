@@ -17,9 +17,4 @@ final readonly class PublishPacket implements InboundPacket
     {
         return PacketType::Publish;
     }
-
-    public function applyTo(InboundPacketHandler $handler): void
-    {
-        $handler->handlePublish($this);
-    }
 }
