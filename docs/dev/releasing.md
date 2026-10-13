@@ -98,6 +98,8 @@ Done once, by an owner of the `stewart-php` organization, before `v0.1.0`.
   them, run `make docs-reference`; `make test-docs` fails until you do.
 - `docs.yml` builds both sites from the release tag and pushes them into `docs/` and `docs-dev/` of
   `stewart-php/stewart-php.github.io`. It keeps the site root (a landing page), `/docs/<major>.x/` and `/docs/next/`.
+- Every push to `main` that changes `docs/` publishes the user docs of `main` to `/docs/next/`, with a banner and
+  `noindex`; `make docs-build-next` builds it locally.
 - A docs-only fix after a release: merge it, then run **Docs** by hand with the ref to publish (empty means the
   latest tag; `main` publishes unreleased docs, so only do that on purpose).
 - **At a new major**, before its first publish: copy the current `docs/` of the site repository to `docs/<old>.x/`,

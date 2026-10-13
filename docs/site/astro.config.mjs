@@ -35,6 +35,8 @@ export default defineConfig({
                 },
             ],
             sidebar: site.sidebar(site),
+            head: site.preview ? [{ tag: 'meta', attrs: { name: 'robots', content: 'noindex' } }] : [],
+            routeMiddleware: site.preview ? ['./src/preview-banner.mjs'] : [],
         }),
     ],
     // The content trees sit above this project, in docs/<tree>/.

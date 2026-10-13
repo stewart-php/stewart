@@ -88,6 +88,10 @@ docs-dev: docs-diagrams ## Serve the developer documentation at http://localhost
 docs-build: docs-clean docs-diagrams ## Build both documentation sites into docs/site/dist, validating every link
 	$(DOCS_RUN) npm run build
 
+.PHONY: docs-build-next
+docs-build-next: docs-clean ## Build the unreleased user documentation for /docs/next/
+	$(DOCS_RUN) npm run build:next
+
 .PHONY: docs-preview
 docs-preview: ## Serve a built documentation site [SITE=user|dev]
 	$(DC) run --rm --no-deps -p 127.0.0.1:$(if $(filter dev,$(SITE)),$(DOCS_DEV_PORT):$(DOCS_DEV_PORT),$(DOCS_USER_PORT):$(DOCS_USER_PORT)) docs npm run preview:$(SITE) -- --host 0.0.0.0

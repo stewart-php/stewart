@@ -6,6 +6,7 @@
     "dev:user": "DOCS_SITE=user astro dev",
     "dev:dev": "DOCS_SITE=dev astro dev",
     "build": "node scripts/check-links.mjs && DOCS_SITE=user astro build && DOCS_SITE=dev astro build",
+    "build:next": "node scripts/check-links.mjs && DOCS_SITE=user DOCS_PREVIEW=1 astro build",
     "preview:user": "DOCS_SITE=user astro preview",
     "preview:dev": "DOCS_SITE=dev astro preview",
     "check-links": "node scripts/check-links.mjs"

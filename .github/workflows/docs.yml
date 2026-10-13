@@ -1,11 +1,14 @@
-# Publishes the user and developer documentation to stewart-php.github.io/docs and /docs-dev on every release tag.
+# Publishes the user and developer documentation to stewart-php.github.io/docs and /docs-dev on every release tag,
+# and the user documentation of main to /docs/next on every push to main that changes docs/.
 # Run it by hand to republish a tag, or another ref, after a docs-only fix.
 # Needs the split GitHub App installed on stewart-php/stewart-php.github.io with contents write.
 name: Docs
 
 on:
   push:
+    branches: [main]
     tags: ['v*.*.*']
+    paths: ['docs/**', '.github/workflows/docs.yml']
   workflow_dispatch:
     inputs:
       ref:
@@ -37,7 +40,11 @@ jobs:
         id: ref
         run: |
           ref="${INPUT_REF:-}"
-          if [ "$GITHUB_EVENT_NAME" = push ]; then
+          target=release
+          if [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF_TYPE" = branch ]; then
+            ref="$GITHUB_REF_NAME"
+            target=next
+          elif [ "$GITHUB_EVENT_NAME" = push ]; then
             ref="$GITHUB_REF_NAME"
           elif [ -z "$ref" ]; then
             ref=$(git tag --list 'v*.*.*' --sort=-version:refname | head -n 1)
@@ -46,6 +53,7 @@ jobs:
           git rev-parse --verify --quiet "$ref^{commit}" > /dev/null || { echo "::error::$ref is not a commit."; exit 1; }
           git checkout --quiet --detach "$ref"
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          echo "target=$target" >> "$GITHUB_OUTPUT"
         env:
           INPUT_REF: ${{ inputs.ref }}
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
@@ -55,6 +63,9 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - run: make docs-install
       - run: make docs-build
+        if: steps.ref.outputs.target == 'release'
+      - run: make docs-build-next
+        if: steps.ref.outputs.target == 'next'
       - id: token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
@@ -67,9 +78,14 @@ jobs:
         run: |
           site="$RUNNER_TEMP/site"
           git clone --quiet "https://x-access-token:$TOKEN@github.com/stewart-php/stewart-php.github.io.git" "$site"
-          # Frozen major versions (/docs/1.x/) and the preview (/docs/next/) are published separately and kept.
-          rsync --archive --delete --exclude '/[0-9]*.x/' --exclude '/next/' docs/site/dist/docs/ "$site/docs/"
-          rsync --archive --delete docs/site/dist/docs-dev/ "$site/docs-dev/"
+          if [ "$TARGET" = next ]; then
+            mkdir -p "$site/docs/next"
+            rsync --archive --delete docs/site/dist/docs/next/ "$site/docs/next/"
+          else
+            # Frozen major versions (/docs/1.x/) and the preview (/docs/next/) are published separately and kept.
+            rsync --archive --delete --exclude '/[0-9]*.x/' --exclude '/next/' docs/site/dist/docs/ "$site/docs/"
+            rsync --archive --delete docs/site/dist/docs-dev/ "$site/docs-dev/"
+          fi
           touch "$site/.nojekyll"
           cd "$site"
           git add --all
@@ -82,6 +98,7 @@ jobs:
         env:
           TOKEN: ${{ steps.token.outputs.token }}
           REF: ${{ steps.ref.outputs.ref }}
+          TARGET: ${{ steps.ref.outputs.target }}
           GIT_AUTHOR_NAME: stewart-split[bot]
           GIT_AUTHOR_EMAIL: stewart-split[bot]@users.noreply.github.com
           GIT_COMMITTER_NAME: stewart-split[bot]
