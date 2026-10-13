@@ -18,7 +18,7 @@ use Stewart\Tests\Architecture\Fixtures\RepositoryFiles;
 #[CoversNothing]
 final class PackageManifestTest extends TestCase
 {
-    private const string BRANCH_ALIAS = '0.x-dev';
+    private const string BRANCH_ALIAS = '1.x-dev';
 
     private const string SIBLING_CONSTRAINT = 'self.version';
 

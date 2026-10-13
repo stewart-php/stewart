@@ -34,7 +34,7 @@ Pick one of these. Each creates a folder called `my-home` with your project in i
 
 ```bash
 docker run --rm -u "$(id -u):$(id -g)" -e COMPOSER_HOME=/tmp/composer -v "$PWD:/work" -w /work \
-  ghcr.io/stewart-php/runtime:0.11 composer create-project stewart-php/skeleton my-home
+  ghcr.io/stewart-php/runtime:1 composer create-project stewart-php/skeleton my-home
 ```
 
 **With Composer on your machine:**

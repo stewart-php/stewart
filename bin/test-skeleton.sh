@@ -35,5 +35,5 @@ sh bin/upgrade-stewart.sh 9.9.1
 grep -q '"stewart-php/runtime": "^9.9"' composer.json
 grep -q '"stewart-php/testing": "^9.9"' composer.json
 grep -q '"psr/log": "^3.0"' composer.json
-grep -q 'stewart-php/runtime:9.9$' Dockerfile
-grep -q 'stewart-php/runtime:9.9-dev$' compose.dev.yaml
+grep -q 'stewart-php/runtime:9$' Dockerfile
+grep -q 'stewart-php/runtime:9-dev$' compose.dev.yaml

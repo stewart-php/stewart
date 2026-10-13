@@ -23,6 +23,16 @@ integration. Upgrade them together.
 Within a major version, such as 1.x, a new release does not break your apps. Notes appear here only when a
 release asks you to do something.
 
+## Upgrade notes
+
+### 1.0
+
+1. Run `make upgrade VERSION=1.0`. Protocols are unchanged, so a 0.11 daemon, `stewart` CLI and Home Assistant
+   integration work with 1.0.
+2. Change the image tag in `Dockerfile` and the compose files from `runtime:1.0` to `runtime:1` (`1-dev` in
+   `compose.dev.yaml`), so the image keeps getting PHP and Alpine fixes after 1.1. Copy `bin/upgrade-stewart.sh` from
+   [the skeleton](https://github.com/stewart-php/skeleton) so later upgrades do the same.
+
 ## Before 1.0
 
 Each 0.x version could break apps; these notes are kept for old projects.

@@ -38,17 +38,21 @@ jobs:
         name: Read the version from the tag
         run: |
           version="${GITHUB_REF_NAME#v}"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "minor=${version%.*}" >> "$GITHUB_OUTPUT"
+          {
+            echo "version=$version"
+            echo "minor=${version%.*}"
+            echo "major=${version%%.*}"
+          } >> "$GITHUB_OUTPUT"
       - name: The skeleton requires this release line
         run: |
           grep -q "\"stewart-php/runtime\": \"^$MINOR\"" skeleton/composer.json
-          grep -q "ghcr.io/stewart-php/runtime:$MINOR\$" skeleton/Dockerfile
-          grep -q "ghcr.io/stewart-php/runtime:$MINOR\$" skeleton/compose.yaml
-          grep -q "ghcr.io/stewart-php/runtime:$MINOR-dev\$" skeleton/compose.dev.yaml
-          grep -q "ghcr.io/stewart-php/runtime:$MINOR\$" skeleton/deploy/compose.git.yaml
+          grep -q "ghcr.io/stewart-php/runtime:$MAJOR\$" skeleton/Dockerfile
+          grep -q "ghcr.io/stewart-php/runtime:$MAJOR\$" skeleton/compose.yaml
+          grep -q "ghcr.io/stewart-php/runtime:$MAJOR-dev\$" skeleton/compose.dev.yaml
+          grep -q "ghcr.io/stewart-php/runtime:$MAJOR\$" skeleton/deploy/compose.git.yaml
         env:
           MINOR: ${{ steps.version.outputs.minor }}
+          MAJOR: ${{ steps.version.outputs.major }}
       - name: The Home Assistant integration carries the version
         run: |
           grep -q "\"version\": \"$VERSION\"" integrations/home-assistant/custom_components/stewart/manifest.json

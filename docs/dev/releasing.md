@@ -20,12 +20,13 @@ This repository is the only place Stewart is developed. Everything else is publi
 - **Lockstep.** One version for every package, the image, the chart, the skeleton and the Home Assistant
   integration. A tag `vX.Y.Z` releases all of them, even the ones that did not change. Packages require each other
   with `self.version`, so an installation never mixes versions.
-- **Semver from 1.0.** On 0.x a minor release (`0.2.0`) may break, and its changelog section has an "Upgrading" part. A
-  patch never breaks. From 1.0, the public surface is what apps code against: `stewart-php/contracts`, the generated
-  classes, configuration keys, environment variables, console commands and the image entrypoint settings.
-- **Trunk and tags.** Releases are cut from `main`. On 0.x a fix for an older minor is not backported; upgrade instead.
-- **Branch alias.** `dev-main` is `0.x-dev` until 1.0, then `1.x-dev`; change it in every `packages/*/composer.json`,
-  the root path repository's `versions`, `PackageManifestTest::BRANCH_ALIAS` and `bin/test-package.sh` together.
+- **Semver.** Only a major release breaks, and its changelog section has an "Upgrading" part. The public surface is
+  what apps code against: `stewart-php/contracts`, the generated classes, configuration keys, environment variables,
+  console commands and the image entrypoint settings. `make bc-check` guards the PHP part.
+- **Trunk and tags.** Releases are cut from `main`. A fix for an older minor is not backported; upgrade instead.
+- **Branch alias.** `dev-main` is `X.x-dev` for the current major; at a new major change it in every
+  `packages/*/composer.json`, the root path repository's `versions`, `PackageManifestTest::BRANCH_ALIAS`,
+  `bin/test-package.sh` and `bin/bc-check.sh` together.
 
 ## Image tags
 
@@ -33,20 +34,20 @@ The runtime image holds PHP, the extensions, Composer, git and the entrypoint; a
 framework version. Its tags follow the release:
 
 - `X.Y.Z` and `X.Y.Z-dev`: the release as built, never changed afterwards.
-- `X.Y` and `X.Y-dev`: rebuilt every week from the latest `X.Y.Z` by `rebuild.yml`, picking up PHP and Alpine fixes.
-  Projects use these.
-- `X` and `X-dev`: from 1.0 on, the same for the latest minor of a major.
-- No `latest`, and no rolling `0`, since every 0.x minor may break.
+- `X.Y` and `X.Y-dev`: the latest `X.Y.Z`. `rebuild.yml` rebuilds only the latest release every week, so an older
+  minor's tag stops getting PHP and Alpine fixes.
+- `X` and `X-dev`: the latest minor of a major, rebuilt every week. Projects use these.
+- No `latest`, and no rolling `0`.
 
 The image uses the newest PHP minor that CI proves (`PHP_VERSION` in `.docker/php/Dockerfile`). Move it only in a
 minor release, after `make check` is green on that PHP in CI, and say so in the changelog.
 
 ## Cutting a release
 
-1. Move the `Unreleased` entries in `CHANGELOG.md` under `## [X.Y.Z] - YYYY-MM-DD`. For a new minor, add the
-   "Upgrading" notes.
+1. Move the `Unreleased` entries in `CHANGELOG.md` under `## [X.Y.Z] - YYYY-MM-DD`. When projects have
+   something to change, add "Upgrading" notes.
 2. For a new minor, point the skeleton at it: `^X.Y` for the `stewart-php/*` requirements in
-   `skeleton/composer.json`, and `ghcr.io/stewart-php/runtime:X.Y` (`X.Y-dev` in `compose.dev.yaml`) in
+   `skeleton/composer.json`. For a new major, also `ghcr.io/stewart-php/runtime:X` (`X-dev` in `compose.dev.yaml`) in
    `skeleton/Dockerfile`, `skeleton/compose.yaml`, `skeleton/compose.dev.yaml` and `skeleton/deploy/compose.git.yaml`.
    `release.yml` refuses a tag that does not match.
 3. Set `version` in `integrations/home-assistant/custom_components/stewart/manifest.json` to `X.Y.Z`; `release.yml`
