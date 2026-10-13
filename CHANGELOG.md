@@ -6,149 +6,67 @@ minor release may break; its "Upgrading" section says what to change.
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-13
+
+Handlers can wait for states and events, apps can define their own Home Assistant actions, and `AppHarness` makes
+apps easy to test. Workers can be restarted on demand, Stewart can run from environment variables alone, and many
+reliability issues are fixed.
+
 ### Added
 
-- `stewart worker:restart <worker>` restarts one worker with a fresh crash budget: a running worker stops gracefully
-  within `shutdown_grace` first, a quarantined or backing-off one starts at once. While it stops, `stewart status`
-  and `stewart_worker_phase` show the new `stopping` phase
-- `POST /api/workers/{id}/restart` on the HTTP admin API does the same as `worker:restart`; an unknown worker is 404
-- `Timers::waitFor()` suspends the calling fiber until its `PendingWait` is resolved or failed, or returns null once
-  its timeout passes
-- `EventStream::waitForNext(?Duration $timeout)` returns the stream's next event, or null once the timeout passes;
-  it throws `WaitException` when the stream completes first or the app stops. An awaited exposed-entity command is
-  accepted when it is returned. A wait the app's stop abandons is not reported as a failure
-- `HaContext::waitForState($entity, 'on', timeout:)` and `Entity::waitForState()` return the entity's state once it
-  is in the given state, at once if it already is, or null once the timeout passes. Generated entity handles get it
-  with their typed state
-- `HaContext::wasCausedByStewart($subject)` tells whether a state change, state or event came from Stewart's own
-  calls
-- `FakeWebsocketConnection::answerEverySend()` in `stewart-php/testing` answers every command of a type
-- `ManualScheduler` in `stewart-php/testing` runs every `Scheduler` method on virtual time, with sun events from
-  `FixedSunCalendar`, whose event times a test sets
-- Stewart runs without a `stewart.yaml`: with no `--config`, a missing default file is read as empty, so the
-  environment alone configures it. `run`, `check` and `config:dump` say where the file was expected
-- `STEWART_APPS__<APP>__OPTIONS__<NAME>_FILE` fills an app option from a file, such as a mounted secret
-- `AppHarness` in `stewart-php/testing` builds an app with its options and recording fakes; tests push states,
-  events and commands, call `advanceTime()` for timers, schedules and waits, and inspect what the app did
-- `StateChange::withFrom()` returns a copy of a state change that starts from another state
-- `EntityExposure::exposeAction()` registers a Home Assistant action, `stewart.<app>_<key>`, with typed fields that
-  Home Assistant validates and shows as a form; `watchCalls()` answers its calls like entity commands.
-  `RecordingEntityExposure` records actions, and `pushCall()` runs their handlers
-
-### Fixed
-
-- A subscription no longer loses part of a resync, or of a batch of state changes, that is larger than
-  `subscription_buffer`: the burst is queued whole and older queued events make room
-- History queries and exposure requests count as in-flight calls to Home Assistant, and an exposure request that
-  fails unexpectedly is answered at once instead of timing out in the worker
-- Reloading the `stewart` integration, or enabling or disabling one of its entities, no longer leaves exposed entities
-  unavailable until Home Assistant reconnects: the daemon opens a new session and sends its entities again
-- A command to an exposed entity that its app had queued is refused at once with the reason, instead of timing out
-  in Home Assistant, when the app pauses, falls behind or stops watching commands before handling it
-- Environment overrides reach apps whose ID has a hyphen (`STEWART_APPS__HALL_LIGHT__…` for `hall-light`) and
-  camelCase options (`…__OPTIONS__MOTION_SENSOR` or `…__MOTIONSENSOR` for `$motionSensor`), also when `stewart.yaml`
-  does not name them; an option name that matches two constructor parameters loosely, or one parameter set under two
-  spellings, fails the app
-- A package repository no longer misses its release tag, or has its `main` rolled back, when `main` and the tag are
-  pushed together
-- A release requires a passing CI run on its commit and the skeleton, image and chart checks, and the runtime image
-  is scanned before it is tagged and signed
-- Stewart stops with "None of N workers could be started." when no worker comes up at startup, instead of retrying a
-  broken bootstrap until the crash budget runs out; a worker that fails while others start still retries
-- `/readyz` and `stewart status --probe=readiness` report "no worker is running" while no worker has its apps
-  running, such as during startup or while every worker restarts, not only once a worker is quarantined
-- A handler that keeps failing from timers or one-shot schedules is reported in full only on its first and every
-  hundredth failure, like a failing subscription; repeated failures are now grouped by the app line that failed,
-  and the worker no longer keeps a counter per timer
-- Publishing to an MQTT topic that is not valid UTF-8 fails with `mqtt_topic_invalid` instead of making the server
-  drop the connection, which for QoS 1 repeated on every reconnect
-- A QoS 1 MQTT message the server has not acknowledged after 5 sends is dropped with an error naming its topic,
-  instead of being sent again on every reconnect
-- An MQTT connection that the server drops within one `mqtt.keepalive` keeps the reconnect delay growing, so a
-  duplicate `client_id` or a rejected message no longer reconnects at the shortest delay forever
-- A one-shot timer (`runAfter()`, `runAt()`, `Timers::startTimer()`, a moment from `runAtEntityTime()`) that comes
-  due while its app is paused runs once when the app resumes, with its original `scheduledFor`, instead of being
-  lost; recurring schedules still skip the runs a pause covers
-- `runAtEntityTime()` called after its app stopped, such as from an `initialize()` that outlived its timeout, is
-  ignored like other late schedules instead of keeping a task in the worker forever
+- Awaitable waits with timeouts: `waitForState()`, `EventStream::waitForNext()` and `Timers::waitFor()`
+- App-defined Home Assistant actions with `EntityExposure::exposeAction()`
+- `AppHarness` and `ManualScheduler` in `stewart-php/testing` for testing apps on virtual time
+- `HaContext::wasCausedByStewart()` to tell Stewart's own changes apart
+- `stewart worker:restart` and `POST /api/workers/{id}/restart`
+- Running without a `stewart.yaml`, configured from the environment alone
+- App options read from a file through `STEWART_APPS__<APP>__OPTIONS__<NAME>_FILE`
+- `StateChange::withFrom()`
 
 ### Changed
 
-- Generated code format 6; regenerate after upgrading
-- A full state-change subscription queue first drops a change that a newer change of the same entity supersedes,
-  starting the newer one from the dropped one's state, so every entity's latest change still reaches the handler.
-  Only when no entity has two queued changes is the oldest dropped
-- `stewart-php/testing` is public, for testing apps, and its API is covered by the backward-compatibility check
-- The `stewart-php/testing` fakes run each handler in its own fiber, so a handler that waits suspends only itself;
-  `ManualTimers::delay()` lets resumed handlers run before the next timer is due, and the recording exposures share
-  their context's `ManualTimers`
-- `stewart.yaml` may name an app with `_` in place of `-` (`hall_light:` for `hall-light`); this no longer fails with
-  "the automation ID is …"
-- Stewart exceptions are raised with `XException::createForReason(XError::Case, $previous, key: $value)`; most
-  one-line factories in `stewart-php/contracts` are gone
-- List collections are built with `XCollection::fromList(...)`; the named factories that only forwarded to it, such
-  as `EntityIdCollection::fromIds()` and `HaTriggerCollection::fromTriggers()`, are gone
-- The control protocol is version 29: a `restart_worker` request and the `stopping` worker phase
-- `off` or an empty value switches off `persistence.url`, `mqtt.url`, `http.listen`, `http.admin.listen` and
-  `control.listen`; an empty `listen` used to be refused
-- History queries share the `service_calls.max_in_flight[_per_worker]` budget and fail with the new
-  `HistoryError::Overloaded` when it is full; exposure requests count toward it but are never refused
-- IPC protocol 29: one `request_failed` message replaces the five per-request error messages; the broker and its
-  workers must run the same version
-- `whenChangedTo()` takes the previous state as `from:` (one state or a list) or `fromAnyState: true`, and returns
-  the same stream type as the other operators; passing both fails with `StateError::TransitionRuleConflict`
-- `stewart-php/contracts` holds the app-facing API only. Stream operators, schedule implementations, the payload and
-  trigger wire helpers, `IndexedRegistry`, `CurrentStateReader` and `JsonShapeException` moved to
-  `stewart-php/support` as internal classes, and contracts no longer requires `dragonmantank/cron-expression`
-- Component protocol 2 for the `stewart` Home Assistant integration: the `action` platform, the `call` command and
-  the `action_taken` error
-- `RecordingExposedEntity` and its subclasses no longer take a seeded snapshot in their constructor;
-  `RecordingEntityExposure::seedSnapshot()` still seeds them
-- `RecordingHaContext::listWatchedTriggers()` returns a `WatchedTriggerCollection`; each `WatchedTrigger` holds the
-  triggers and variables the app watched
-- The control socket and the HTTP admin API share one admin service, so a pause, resume, reset or worker restart
-  answers the same on both; their JSON is unchanged
-- The MQTT client encodes, reads and answers packets in one place each; the bytes on the wire are unchanged
+- `whenChangedTo()` takes `from:` and `fromAnyState:` arguments instead of chained calls
+- `stewart-php/contracts` holds only the app-facing API; internal helpers moved to `stewart-php/support`
+- `stewart-php/testing` is public and covered by the backward-compatibility check
+- Exceptions are created with `createForReason()`, and collections with `fromList()`; most shortcut factories are gone
+- A full subscription queue drops superseded changes first, so each entity's latest change still arrives
+- History queries share the service-call in-flight limit
+- `off` or an empty value disables `persistence.url`, `mqtt.url` and the `listen` settings
+- App IDs in `stewart.yaml` may use `_` in place of `-`
+- Control and IPC protocol 29, component protocol 2 and generated code format 6
+
+### Fixed
+
+- Large resyncs and bursts of state changes are no longer partly lost
+- Exposed entities come back right after the `stewart` integration reloads
+- Commands to a paused or stopped app are refused at once instead of timing out
+- Environment overrides work for hyphenated app IDs and camelCase options
+- One-shot timers that come due while an app is paused run when it resumes
+- Startup stops when no worker can start, and readiness reports when no worker is running
+- Handlers that keep failing from timers log far less
+- MQTT no longer loops on invalid topics, unacknowledged messages or rejected connections
+- Release pipeline: package tags, CI gate and image scanning
 
 ### Removed
 
-- `StateTransitionStream`, `->from()`, `->fromAnyState()` and `StateError::TransitionAlreadyExtended`
-- `StewartIdentity` as a service apps can inject, and `AppHarness::$identity`
-- `Scheduler::runAtSunrise()` and `Scheduler::runAtSunset()`
-- `InMemoryRegistry::getIndexedRegistry()` from the public testing API
+- `StateTransitionStream`, `->from()` and `->fromAnyState()`
+- Injectable `StewartIdentity`
+- `runAtSunrise()` and `runAtSunset()`
 
 ### Upgrading
 
-1. Run `stewart` commands from the same release as the daemon; a 0.10 CLI and a newer daemon refuse each other
-   (control protocol 29).
-2. Code that built a contracts exception through a removed factory, such as `StoreException::typeMismatch(…)` or
-   `ScheduleException::cronInvalid(…)`, calls `createForReason()` with the reason case and its context as named
-   arguments instead. `CommandException::rejected()` and the factories shared across packages stay.
-3. Replace calls to removed collection factories such as `AppIdCollection::fromIds($ids)` with `fromList($ids)`.
-   Factories that do more, such as `SelectorCollection::fromSpecs()`, stay.
-4. `ServiceCallException::fromWire()`, `EventFireException::fromWire()`, `HistoryException::fromWire()`,
-   `RegistryEditException::fromWire()` and `ExposureException::fromWire()` are gone; call
-   `XException::restoreFromWire($reason, $message, $context)` instead.
-5. Classes that implement `Stewart\Contracts\Time\Timers` add `waitFor()`.
-6. Classes that implement `Stewart\Contracts\EventStream` directly add `waitForNext()`; streams built on
-   `Stewart\Support\Stream\ComposedStream` already have it.
-7. Classes that implement `Stewart\Contracts\HaContext` add `waitForState()` and `wasCausedByStewart()`.
-8. Replace `->whenChangedTo('on')->from('off', 'idle')` with `->whenChangedTo('on', from: ['off', 'idle'])`, and
-   `->fromAnyState()` with `fromAnyState: true`. Types written as `StateTransitionStream` become `StateChangeStream`.
-9. Replace an injected `StewartIdentity` with `$ha->wasCausedByStewart($change)`. Harness tests drop
-   `$harness->identity`.
-10. Replace `runAtSunrise($handler, $offset)` with `runAtSunEvent(SunEvent::Sunrise, $handler, $offset)`, and
-    `runAtSunset()` likewise with `SunEvent::Sunset`.
-11. Code that used a moved contracts class, such as `Stewart\Contracts\Stream\StateChanges` or
-    `Stewart\Contracts\Schedule\CronSchedule`, imports it from `Stewart\Support\…`. These classes are internal and
-    may change in any release; prefer the app-facing interfaces.
-12. An app option set through a variable ending in `_FILE`, such as `STEWART_APPS__DEMO__OPTIONS__CERT_FILE`, is now
-    read from that file. To keep passing the path itself, name the option in `stewart.yaml` with any value; the
-    variable still overrides it.
-13. Run `make generate`.
-14. Update the `stewart` Home Assistant integration together with Stewart: this release speaks component protocol 2,
-    and the integration and the daemon refuse each other's older protocol.
-15. Classes that implement `Stewart\Contracts\Exposure\EntityExposure` add `exposeAction()`.
+1. Run `make upgrade VERSION=0.11`, then `make generate`. Upgrade the daemon, the `stewart` CLI and the Home Assistant
+   integration together; older versions refuse to talk to 0.11.
+2. Replace `->whenChangedTo('on')->from('off')` with `->whenChangedTo('on', from: 'off')`, and `->fromAnyState()`
+   with `fromAnyState: true`.
+3. Replace `runAtSunrise()` and `runAtSunset()` with `runAtSunEvent(SunEvent::Sunrise, …)` or `SunEvent::Sunset`.
+4. Replace an injected `StewartIdentity` with `$ha->wasCausedByStewart($change)`.
+5. Replace removed exception factories with `createForReason()`, `fromWire()` with `restoreFromWire()`, and removed
+   collection factories such as `fromIds()` with `fromList()`.
+6. Import classes that moved out of `stewart-php/contracts` from `Stewart\Support\…`.
+7. Custom implementations of `Timers`, `EventStream`, `HaContext` or `EntityExposure` add the new methods.
+8. An app option variable ending in `_FILE` is now read as a file; set the option in `stewart.yaml` to keep passing
+   the path itself.
 
 ## [0.10.0] - 2026-10-12
 

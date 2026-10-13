@@ -6,17 +6,17 @@
     "require": {
         "php": ">=8.5",
         "psr/log": "^3.0",
-        "stewart-php/codegen": "^0.10",
-        "stewart-php/contracts": "^0.10",
-        "stewart-php/mqtt": "^0.10",
-        "stewart-php/runtime": "^0.10",
-        "stewart-php/store-redis": "^0.10",
+        "stewart-php/codegen": "^0.11",
+        "stewart-php/contracts": "^0.11",
+        "stewart-php/mqtt": "^0.11",
+        "stewart-php/runtime": "^0.11",
+        "stewart-php/store-redis": "^0.11",
         "symfony/dependency-injection": "^7.4 || ^8.0"
     },
     "require-dev": {
         "phpstan/phpstan": "^2.2",
         "phpunit/phpunit": "^13.3",
-        "stewart-php/testing": "^0.10"
+        "stewart-php/testing": "^0.11"
     },
     "autoload": {
         "psr-4": {
