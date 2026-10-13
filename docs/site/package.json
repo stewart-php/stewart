@@ -3,9 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "astro dev",
-    "build": "node scripts/check-links.mjs && astro build",
-    "preview": "astro preview",
+    "dev:user": "DOCS_SITE=user astro dev",
+    "dev:dev": "DOCS_SITE=dev astro dev",
+    "build": "node scripts/check-links.mjs && DOCS_SITE=user astro build && DOCS_SITE=dev astro build",
+    "preview:user": "DOCS_SITE=user astro preview",
+    "preview:dev": "DOCS_SITE=dev astro preview",
     "check-links": "node scripts/check-links.mjs"
   },
   "dependencies": {

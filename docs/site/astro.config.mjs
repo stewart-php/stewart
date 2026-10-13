@@ -3,20 +3,29 @@ import { satteri } from '@astrojs/markdown-satteri';
 import starlight from '@astrojs/starlight';
 import starlightThemeRapide from 'starlight-theme-rapide';
 import mdastRelativeDocLinks from './src/plugins/mdast-relative-doc-links.mjs';
-import { directoryItems } from './src/sidebar.mjs';
+import { EDIT_BASE, SITE_URL, listOtherTrees, selectSite } from './src/sites.mjs';
+
+const site = selectSite();
 
 export default defineConfig({
+    site: SITE_URL,
+    base: site.base,
+    outDir: `./dist${site.base}`,
+    // Separate caches keep one site's content store out of the other's build.
+    cacheDir: `./node_modules/.astro/${site.tree}`,
+    server: { port: site.port },
     markdown: {
-        processor: satteri({ mdastPlugins: [mdastRelativeDocLinks()] }),
+        processor: satteri({ mdastPlugins: [mdastRelativeDocLinks(site, listOtherTrees(site))] }),
     },
     integrations: [
         starlight({
             plugins: [starlightThemeRapide()],
             // Content lives outside src/content/docs/, which is the only tree
             // Starlight's Markdown transforms touch by default.
-            markdown: { processedDirs: ['../user', '../dev'] },
-            title: 'Stewart',
-            description: 'Write Home Assistant automations in PHP.',
+            markdown: { processedDirs: [`../${site.tree}`] },
+            title: site.title,
+            description: site.description,
+            editLink: { baseUrl: EDIT_BASE },
             social: [
                 {
                     icon: 'github',
@@ -24,20 +33,9 @@ export default defineConfig({
                     href: 'https://github.com/stewart-php',
                 },
             ],
-            sidebar: [
-                { label: 'User guide', items: directoryItems('user/guides') },
-                {
-                    label: 'Developer guides',
-                    items: [
-                        {
-                            label: 'Internals',
-                            items: ['dev/architecture', 'dev/walkthrough', 'dev/protocol', 'dev/component-protocol'],
-                        },
-                    ],
-                },
-            ],
+            sidebar: site.sidebar(site),
         }),
     ],
-    // The content trees sit above this project, in docs/user/ and docs/dev/.
+    // The content trees sit above this project, in docs/<tree>/.
     vite: { server: { fs: { allow: ['..'] } } },
 });

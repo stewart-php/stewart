@@ -10,7 +10,7 @@ import { REPO_ROOT, resolveDocLink } from './doc-links.mjs';
  * scripts/check-links.mjs is what fails the build on a broken link; the throw
  * here surfaces one during `astro dev`, where that check does not run.
  */
-export default function mdastRelativeDocLinks() {
+export default function mdastRelativeDocLinks(site, otherTrees) {
     return ({ fileURL }) => {
         if (!fileURL) {
             return;
@@ -22,10 +22,18 @@ export default function mdastRelativeDocLinks() {
         return {
             name: 'stewart-relative-doc-links',
             link(node) {
-                const resolved = resolveDocLink(node.url, fromDirectory);
+                const resolved = resolveDocLink(site, otherTrees, node.url, fromDirectory);
 
                 if (!resolved) {
                     return;
+                }
+
+                if (resolved.crossed) {
+                    throw new Error(
+                        `Documentation link ${JSON.stringify(node.url)} in ` +
+                            `${path.relative(REPO_ROOT, sourcePath)} points into docs/${resolved.crossed}/; ` +
+                            'link the other site by its absolute URL.',
+                    );
                 }
 
                 if (resolved.missing) {

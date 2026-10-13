@@ -1,0 +1,67 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import * as path from 'node:path';
+import { contentRootOf, idForRelativePath } from './plugins/doc-links.mjs';
+
+export const SITE_URL = 'https://stewart-php.github.io';
+export const EDIT_BASE = 'https://github.com/stewart-php/stewart/edit/main/docs/site/';
+const ORDER = /^sidebar:\s*\n\s+order:\s*(-?\d+)\s*$/m;
+
+export const SITES = {
+    user: {
+        tree: 'user',
+        base: '/docs',
+        port: 4321,
+        title: 'Stewart',
+        description: 'Write Home Assistant automations in PHP.',
+        sidebar: (site) => [{ label: 'Guides', items: directoryItems(site, 'guides') }],
+    },
+    dev: {
+        tree: 'dev',
+        base: '/docs-dev',
+        port: 4322,
+        title: 'Stewart — Developers',
+        description: 'How Stewart is built: architecture, code walkthrough and protocols.',
+        sidebar: () => [
+            {
+                label: 'Internals',
+                items: ['architecture', 'walkthrough', 'protocol', 'component-protocol'],
+            },
+        ],
+    },
+};
+
+export function selectSite() {
+    const name = process.env.DOCS_SITE ?? 'user';
+    const site = SITES[name];
+
+    if (!site) {
+        throw new Error(`Unknown DOCS_SITE ${JSON.stringify(name)}; expected one of ${Object.keys(SITES).join(', ')}.`);
+    }
+
+    return site;
+}
+
+export function listOtherTrees(site) {
+    return Object.values(SITES)
+        .map(({ tree }) => tree)
+        .filter((tree) => tree !== site.tree);
+}
+
+function sidebarOrder(file) {
+    return Number(ORDER.exec(readFileSync(file, 'utf8'))?.[1] ?? Number.MAX_SAFE_INTEGER);
+}
+
+// Starlight's `autogenerate` matches paths inside its own collection directory, which this project does not use.
+function directoryItems(site, directory) {
+    const absolute = path.join(contentRootOf(site), directory);
+
+    return readdirSync(absolute)
+        .filter((name) => /\.mdx?$/i.test(name))
+        .map((name) => ({
+            slug: idForRelativePath(path.join(directory, name)),
+            order: sidebarOrder(path.join(absolute, name)),
+            name,
+        }))
+        .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))
+        .map(({ slug }) => ({ slug }));
+}

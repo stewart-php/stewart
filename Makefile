@@ -52,9 +52,12 @@ down: ## Stop everything
 	$(DC) down --remove-orphans
 
 DOCS_RUN := $(DC) run --rm --no-deps docs
+DOCS_USER_PORT := 4321
+DOCS_DEV_PORT := 4322
+SITE ?= user
 
 .PHONY: docs
-docs: docs-serve ## Live-preview the documentation site
+docs: docs-user ## Live-preview the user documentation
 
 .PHONY: docs-install
 docs-install: ## Install the documentation site dependencies
@@ -73,17 +76,21 @@ docs-clean: ## Remove the documentation site build output and caches
 	@rm -rf docs/site/dist docs/site/.astro docs/site/node_modules/.astro
 	@echo "Documentation build output and caches removed"
 
-.PHONY: docs-serve
-docs-serve: docs-diagrams ## Serve the documentation site at http://localhost:4321
-	$(DC) run --rm --no-deps --service-ports docs npm run dev -- --host 0.0.0.0
+.PHONY: docs-user
+docs-user: ## Serve the user documentation at http://localhost:4321/docs/
+	$(DC) run --rm --no-deps -p 127.0.0.1:$(DOCS_USER_PORT):$(DOCS_USER_PORT) docs npm run dev:user -- --host 0.0.0.0
+
+.PHONY: docs-dev
+docs-dev: docs-diagrams ## Serve the developer documentation at http://localhost:4322/docs-dev/
+	$(DC) run --rm --no-deps -p 127.0.0.1:$(DOCS_DEV_PORT):$(DOCS_DEV_PORT) docs npm run dev:dev -- --host 0.0.0.0
 
 .PHONY: docs-build
-docs-build: docs-clean docs-diagrams ## Build the documentation site, validating every link
+docs-build: docs-clean docs-diagrams ## Build both documentation sites into docs/site/dist, validating every link
 	$(DOCS_RUN) npm run build
 
 .PHONY: docs-preview
-docs-preview: ## Serve the built documentation site
-	$(DC) run --rm --no-deps --service-ports docs npm run preview -- --host 0.0.0.0
+docs-preview: ## Serve a built documentation site [SITE=user|dev]
+	$(DC) run --rm --no-deps -p 127.0.0.1:$(if $(filter dev,$(SITE)),$(DOCS_DEV_PORT):$(DOCS_DEV_PORT),$(DOCS_USER_PORT):$(DOCS_USER_PORT)) docs npm run preview:$(SITE) -- --host 0.0.0.0
 
 # --- quality --------------------------------------------------------------
 

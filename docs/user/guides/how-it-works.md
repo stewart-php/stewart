@@ -38,4 +38,4 @@ Three consequences worth knowing:
   cache, so nothing reconnects and nothing resyncs.
 
 The developer-facing version of this, with the invariants that hold it
-together, is in [Architecture](../../dev/architecture.md).
+together, is in [Architecture](https://stewart-php.github.io/docs-dev/architecture/).
