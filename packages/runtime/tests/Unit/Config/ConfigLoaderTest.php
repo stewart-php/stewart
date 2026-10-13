@@ -210,6 +210,19 @@ final class ConfigLoaderTest extends TestCase
         self::assertSame(['watch' => 'light.porch', 'light' => 'light.kitchen'], $config->apps->find(new AppId('demo'))?->options);
     }
 
+    public function testOptionSecretReplacesTheFileValue(): void
+    {
+        $secret = $this->temp->getFilePath('weather-key');
+        file_put_contents($secret, "from-a-secret\n");
+
+        $config = $this->loadConfig(
+            self::CONNECTION . "\napps:\n  weather:\n    options:\n      apiKey: changeme\n      city: Budapest\n",
+            ['STEWART_APPS__WEATHER__OPTIONS__API_KEY_FILE' => $secret],
+        );
+
+        self::assertSame(['apiKey' => 'from-a-secret', 'city' => 'Budapest'], $config->apps->find(new AppId('weather'))?->options);
+    }
+
     public function testEnvironmentOptionListReplacesFileList(): void
     {
         $config = $this->loadConfig(

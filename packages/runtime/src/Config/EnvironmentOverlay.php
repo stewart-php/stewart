@@ -103,8 +103,15 @@ final readonly class EnvironmentOverlay
             }
 
             if ($node instanceof PrototypedArrayNode) {
+                $prototype = $node->getPrototype();
+                $secretKey = $index === $lastSegment ? $this->findPrototypedSecretFileKey($prototype, $segment, $file) : null;
+
+                if ($secretKey !== null) {
+                    return new EnvironmentOverrideTarget([...$path, $secretKey], $prototype, readsSecretFile: true);
+                }
+
                 $key = $this->findMatchingFileKey($segment, $file);
-                $node = $node->getPrototype();
+                $node = $prototype;
             } else {
                 $secretKey = $index === $lastSegment ? $this->findSecretFileKey($node, $segment) : null;
 
@@ -180,14 +187,32 @@ final readonly class EnvironmentOverlay
         return isset($children[$secretKey]) && $this->environmentValueParser->supportsNode($children[$secretKey]) ? $secretKey : null;
     }
 
+    // A free-form key the file already names, like an option called cert_file, keeps its literal meaning.
+    /** @param array<array-key, mixed> $file */
+    private function findPrototypedSecretFileKey(NodeInterface $prototype, string $segment, array $file): ?string
+    {
+        if (!str_ends_with(strtolower($segment), self::SECRET_FILE_SUFFIX) || !$this->environmentValueParser->supportsNode($prototype)) {
+            return null;
+        }
+
+        return $this->findExistingFileKey($segment, $file) === null
+            ? $this->findMatchingFileKey(substr($segment, 0, -\strlen(self::SECRET_FILE_SUFFIX)), $file)
+            : null;
+    }
+
     /** @param array<array-key, mixed> $file */
     private function findMatchingFileKey(string $segment, array $file): string
+    {
+        return $this->findExistingFileKey($segment, $file) ?? strtolower($segment);
+    }
+
+    /** @param array<array-key, mixed> $file */
+    private function findExistingFileKey(string $segment, array $file): ?string
     {
         $fileKeys = array_map(strval(...), array_keys($file));
 
         return $this->findFileKeyBy($fileKeys, $segment, $this->normalizeForKeyComparison(...))
-            ?? $this->findFileKeyBy($fileKeys, $segment, $this->foldForKeyComparison(...))
-            ?? strtolower($segment);
+            ?? $this->findFileKeyBy($fileKeys, $segment, $this->foldForKeyComparison(...));
     }
 
     /**

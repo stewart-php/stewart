@@ -102,9 +102,10 @@ final class EnvironmentOverlayTest extends TestCase
             ['workers' => 2],
         ];
 
-        yield 'an option ending in _FILE stays an option' => [
+        yield 'an option the file names with _file stays an option' => [
             ['STEWART_APPS__DEMO__OPTIONS__CERT_FILE' => '/etc/hall.pem'],
-            ['apps' => ['demo' => ['options' => ['cert_file' => '/etc/hall.pem']]]],
+            ['apps' => ['demo' => ['options' => ['certFile' => '/etc/hall.pem']]]],
+            ['apps' => ['demo' => ['options' => ['certFile' => '/etc/old.pem']]]],
         ];
 
         yield 'a setting that starts like a service link' => [
@@ -205,6 +206,47 @@ final class EnvironmentOverlayTest extends TestCase
         $environment = ['STEWART_HOME_ASSISTANT__TOKEN' => 'inline', 'STEWART_HOME_ASSISTANT__TOKEN_FILE' => $this->writeSecret('file')];
 
         $this->assertThrowsReason(ConfigurationError::EnvironmentVariableConflict, static fn() => self::apply($environment));
+    }
+
+    public function testSecretFileFillsAnAppOption(): void
+    {
+        self::assertSame(
+            ['apps' => ['demo' => ['options' => ['api_key' => 'from-the-file']]]],
+            self::apply(['STEWART_APPS__DEMO__OPTIONS__API_KEY_FILE' => $this->writeSecret("from-the-file\n")]),
+        );
+    }
+
+    public function testSecretFileFillsTheOptionTheFileNames(): void
+    {
+        self::assertSame(
+            ['apps' => ['demo' => ['options' => ['apiKey' => 'from-the-file']]]],
+            self::apply(
+                ['STEWART_APPS__DEMO__OPTIONS__API_KEY_FILE' => $this->writeSecret('from-the-file')],
+                ['apps' => ['demo' => ['options' => ['apiKey' => 'placeholder']]]],
+            ),
+        );
+    }
+
+    public function testSecretFileIsTypedLikeAnyOption(): void
+    {
+        self::assertSame(
+            ['apps' => ['demo' => ['options' => ['port' => 8443]]]],
+            self::apply(['STEWART_APPS__DEMO__OPTIONS__PORT_FILE' => $this->writeSecret("8443\n")]),
+        );
+    }
+
+    public function testOptionAndItsSecretFileConflict(): void
+    {
+        $environment = ['STEWART_APPS__DEMO__OPTIONS__API_KEY' => 'inline', 'STEWART_APPS__DEMO__OPTIONS__API_KEY_FILE' => $this->writeSecret('file')];
+
+        $this->assertThrowsReason(ConfigurationError::EnvironmentVariableConflict, static fn() => self::apply($environment));
+    }
+
+    public function testUnreadableOptionSecretFileIsRefused(): void
+    {
+        $environment = ['STEWART_APPS__DEMO__OPTIONS__API_KEY_FILE' => $this->secrets->getFilePath('missing')];
+
+        $this->assertThrowsReason(ConfigurationError::EnvironmentSecretFileUnreadable, static fn() => self::apply($environment));
     }
 
     public function testUnreadableSecretFileIsRefused(): void
