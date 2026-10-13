@@ -1,6 +1,6 @@
 ---
-title: Control protocol
-description: The control socket that stewart status and the app and worker commands use to talk to a running broker.
+title: 'Control protocol'
+description: 'The control socket that stewart status and the app and worker commands use to talk to a running broker.'
 ---
 
 A running broker listens on a control socket. `stewart status`, `app:pause`, `app:resume`, `app:reset` and

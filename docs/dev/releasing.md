@@ -1,6 +1,6 @@
 ---
-title: Releasing
-description: What gets published where, how versions and image tags work, and how to cut a release.
+title: 'Releasing'
+description: 'What gets published where, how versions and image tags work, and how to cut a release.'
 ---
 
 This repository is the only place Stewart is developed. Everything else is published from it.

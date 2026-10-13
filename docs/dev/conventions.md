@@ -1,6 +1,6 @@
 ---
-title: Conventions
-description: How code in the Stewart monorepo is written, and why.
+title: 'Conventions'
+description: 'How code in the Stewart monorepo is written, and why.'
 ---
 
 These rules keep a large codebase consistent. Many are checked by PHPStan rules in `tests/Architecture` and by

@@ -1,6 +1,6 @@
 ---
-title: Contributing
-description: Set up the monorepo, find your way around it, and get a change merged.
+title: 'Contributing'
+description: 'Set up the monorepo, find your way around it, and get a change merged.'
 ---
 
 Everything about Stewart lives in [stewart-php/stewart](https://github.com/stewart-php/stewart): the PHP packages,

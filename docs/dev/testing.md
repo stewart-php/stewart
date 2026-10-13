@@ -1,6 +1,6 @@
 ---
-title: Testing
-description: The test suites, where tests live, and the fixtures and goldens they use.
+title: 'Testing'
+description: 'The test suites, where tests live, and the fixtures and goldens they use.'
 ---
 
 ## Suites

@@ -230,9 +230,10 @@ first sight and remembered. Adding or removing a subscription clears it.
 A worker with no subscriber still applies every change. That is the standing
 cost of the full-state-cache decision.
 
-Handlers each run in their own fiber. A handler that awaits a service call
-therefore cannot stall the events queued behind it — at the price of an app's
-handlers being able to overlap, which is worth knowing when writing one.
+Each subscription has its own queue and one fiber that runs its handler, so one
+subscription handles its events one at a time while different subscriptions run
+concurrently. A handler that awaits a service call holds back only the later
+events of its own subscription.
 
 ---
 

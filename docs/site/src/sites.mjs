@@ -35,7 +35,11 @@ export const SITES = {
             },
             {
                 label: 'Internals',
-                items: ['architecture', 'walkthrough', 'protocol', 'control-protocol', 'component-protocol'],
+                items: ['architecture', 'protocol', 'control-protocol', 'component-protocol'],
+            },
+            {
+                label: 'Code walkthrough',
+                items: ['walkthrough/index', 'walkthrough/console', 'walkthrough/broker', 'walkthrough/worker', 'walkthrough/client'],
             },
         ],
     },

@@ -10,7 +10,7 @@ description: 'How Stewart is built: architecture, code walkthrough and protocols
 | **[Testing](testing.md)** | The test suites, where tests live, fixtures and goldens. |
 | **[Releasing](releasing.md)** | What gets published where, versions, image tags, and cutting a release. |
 | **[Architecture](architecture.md)** | Process model, packages, the API surface, and the invariants that hold it together. |
-| **[Code walkthrough](walkthrough.md)** | The execution path in the order it runs, from `bin/stewart` to an app handling an event. |
+| **[Code walkthrough](walkthrough/index.md)** | The execution path in the order it runs, from `bin/stewart` to an app handling an event. |
 | **[Channel protocol](protocol.md)** | The broker↔worker message set, the sequences that use it, and how it fails. |
 | **[Control protocol](control-protocol.md)** | The control socket behind `stewart status` and the app and worker commands. |
 | **[Component protocol](component-protocol.md)** | How the broker drives the Home Assistant integration for exposed entities. |
