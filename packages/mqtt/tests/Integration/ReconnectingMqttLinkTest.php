@@ -19,9 +19,8 @@ use Stewart\Mqtt\Exception\MqttClientError;
 use Stewart\Mqtt\Exception\MqttClientException;
 use Stewart\Mqtt\OutboundMqttQueue;
 use Stewart\Mqtt\Packet\ConnectReturnCode;
-use Stewart\Mqtt\Packet\PacketDecoder;
+use Stewart\Mqtt\Packet\PacketEncoder;
 use Stewart\Mqtt\Packet\PacketReader;
-use Stewart\Mqtt\Packet\PubAckPacket;
 use Stewart\Mqtt\ReconnectingMqttLink;
 use Stewart\Mqtt\Tests\Fixtures\FakeMqttServer;
 use Stewart\Mqtt\Tests\Fixtures\FakeMqttServerEvent;
@@ -204,7 +203,7 @@ final class ReconnectingMqttLinkTest extends TestCase
         self::await($connected);
 
         $lost = $this->logger->waitForMessage('Lost the MQTT connection');
-        $this->server->sendToClients(new PubAckPacket(4242)->encodePacket());
+        $this->server->sendToClients(new PacketEncoder()->encodePubAck(4242));
         self::await($lost);
 
         $reason = $this->findLoggedException('Lost the MQTT connection');
@@ -229,7 +228,7 @@ final class ReconnectingMqttLinkTest extends TestCase
 
         return $this->link = new ReconnectingMqttLink(
             $config,
-            new MqttConnector(new PacketReader(new PacketDecoder()), $timers, $timers),
+            new MqttConnector(new PacketReader(), new PacketEncoder(), $timers, $timers),
             new OutboundMqttQueue($config->outboundBuffer),
             $this->deadlines,
             SystemClock::inUtc(),

@@ -15,9 +15,4 @@ final readonly class ConnAckPacket implements InboundPacket
     {
         return PacketType::ConnAck;
     }
-
-    public function applyTo(InboundPacketHandler $handler): void
-    {
-        $handler->handleConnAck($this);
-    }
 }

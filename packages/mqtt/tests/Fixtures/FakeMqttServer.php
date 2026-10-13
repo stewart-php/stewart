@@ -15,9 +15,8 @@ use Stewart\Contracts\Mqtt\MqttMessage;
 use Stewart\Contracts\Mqtt\MqttQos;
 use Stewart\Mqtt\Packet\ConnectReturnCode;
 use Stewart\Mqtt\Packet\PacketBytes;
+use Stewart\Mqtt\Packet\PacketEncoder;
 use Stewart\Mqtt\Packet\PacketType;
-use Stewart\Mqtt\Packet\PubAckPacket;
-use Stewart\Mqtt\Packet\PublishPacket;
 use Throwable;
 
 use function Amp\async;
@@ -70,9 +69,12 @@ final class FakeMqttServer
     /** @var array<string, DeferredFuture<null>> */
     private array $waiters = [];
 
+    private readonly PacketEncoder $encoder;
+
     private function __construct(private readonly ServerSocket $server)
     {
         $this->received = MqttMessageCollection::empty();
+        $this->encoder = new PacketEncoder();
     }
 
     public static function startListening(): self
@@ -99,7 +101,7 @@ final class FakeMqttServer
 
     public function publishToClients(MqttMessage $message, ?int $packetId = null): void
     {
-        $this->sendToClients(new PublishPacket($message, $packetId)->encodePacket());
+        $this->sendToClients($this->encoder->encodePublish($message, $packetId));
     }
 
     public function sendToClients(string $bytes): void
@@ -195,7 +197,7 @@ final class FakeMqttServer
         );
 
         if ($packetId !== null) {
-            $client->write(new PubAckPacket($packetId)->encodePacket());
+            $client->write($this->encoder->encodePubAck($packetId));
         }
 
         $this->signal(FakeMqttServerEvent::Published);

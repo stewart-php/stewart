@@ -13,7 +13,7 @@ use Stewart\Contracts\Mqtt\MqttQos;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Mqtt\Connection\MqttConnector;
 use Stewart\Mqtt\OutboundMqttQueue;
-use Stewart\Mqtt\Packet\PacketDecoder;
+use Stewart\Mqtt\Packet\PacketEncoder;
 use Stewart\Mqtt\Packet\PacketReader;
 use Stewart\Mqtt\ReconnectingMqttLink;
 use Stewart\Mqtt\Tests\Fixtures\RecordingMqttRouter;
@@ -97,7 +97,7 @@ final class MosquittoRoundTripTest extends TestCase
 
         return new ReconnectingMqttLink(
             $config,
-            new MqttConnector(new PacketReader(new PacketDecoder()), $timers, $timers),
+            new MqttConnector(new PacketReader(), new PacketEncoder(), $timers, $timers),
             new OutboundMqttQueue($config->outboundBuffer),
             $timers,
             SystemClock::inUtc(),

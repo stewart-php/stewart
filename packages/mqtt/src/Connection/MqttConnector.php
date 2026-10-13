@@ -16,8 +16,8 @@ use Stewart\Contracts\Time\Timers;
 use Stewart\Mqtt\Exception\MqttClientError;
 use Stewart\Mqtt\Exception\MqttClientException;
 use Stewart\Mqtt\Packet\ConnAckPacket;
-use Stewart\Mqtt\Packet\ConnectPacket;
 use Stewart\Mqtt\Packet\ConnectReturnCode;
+use Stewart\Mqtt\Packet\PacketEncoder;
 use Stewart\Mqtt\Packet\PacketReader;
 use Stewart\Runtime\Config\MqttConfig;
 use Stewart\Support\Time\Deadlines;
@@ -30,6 +30,7 @@ final readonly class MqttConnector
 {
     public function __construct(
         private PacketReader $packetReader,
+        private PacketEncoder $encoder,
         private Timers $timers,
         private Deadlines $deadlines,
     ) {}
@@ -46,23 +47,23 @@ final readonly class MqttConnector
 
         try {
             // Only the timeout ends the handshake: abandoning it after CONNECT would make the server publish the will.
-            $this->acceptHandshake($socket, $reader, $this->createConnectPacket($config), $timeout);
+            $this->acceptHandshake($socket, $reader, $this->encodeConnect($config), $timeout);
         } catch (Throwable $e) {
             $socket->close();
 
             throw $e;
         }
 
-        $connection = new MqttConnection($socket, $reader, $this->packetReader, $this->timers, $config->keepalive, $onMessage);
+        $connection = new MqttConnection($socket, $reader, $this->packetReader, $this->encoder, $this->timers, $config->keepalive, $onMessage);
         $connection->startReading();
 
         return $connection;
     }
 
     /** @throws MqttClientException|Throwable */
-    private function acceptHandshake(Socket $socket, BufferedReader $reader, ConnectPacket $connect, Cancellation $timeout): void
+    private function acceptHandshake(Socket $socket, BufferedReader $reader, string $connect, Cancellation $timeout): void
     {
-        $socket->write($connect->encodePacket());
+        $socket->write($connect);
         $answer = $this->packetReader->readPacket($reader, $timeout);
 
         if (!$answer instanceof ConnAckPacket) {
@@ -74,9 +75,9 @@ final readonly class MqttConnector
         }
     }
 
-    private function createConnectPacket(MqttConfig $config): ConnectPacket
+    private function encodeConnect(MqttConfig $config): string
     {
-        return new ConnectPacket(
+        return $this->encoder->encodeConnect(
             clientId: $config->clientId,
             keepalive: $config->keepalive,
             username: $config->serverUrl->username,
