@@ -60,8 +60,8 @@ SITE ?= user
 docs: docs-user ## Live-preview the user documentation
 
 .PHONY: docs-install
-docs-install: ## Install the documentation site dependencies
-	$(DOCS_RUN) npm install
+docs-install: ## Install the documentation site dependencies from the lockfile
+	$(DOCS_RUN) npm ci
 
 .PHONY: docs-diagrams
 docs-diagrams: ## Render the PlantUML sources to SVG
