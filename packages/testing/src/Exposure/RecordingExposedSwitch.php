@@ -7,25 +7,14 @@ namespace Stewart\Testing\Exposure;
 use Stewart\Contracts\EventStream;
 use Stewart\Contracts\Exception\CommandException;
 use Stewart\Contracts\Exposure\Command\SwitchCommand;
-use Stewart\Contracts\Exposure\ExposedEntityKey;
-use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\ExposedSwitch;
 use Stewart\Contracts\Exposure\SwitchConfig;
-use Stewart\Testing\Time\ManualTimers;
 
+/** @extends RecordingExposedEntity<SwitchConfig> */
 final class RecordingExposedSwitch extends RecordingExposedEntity implements ExposedSwitch
 {
-    public function __construct(
-        ExposedEntityKey $key,
-        public private(set) SwitchConfig $config,
-        ?ExposedEntitySnapshot $seeded,
-        ManualTimers $timers,
-    ) {
-        parent::__construct($key, $seeded, $timers);
-    }
-
     public function getConfig(): SwitchConfig
     {
         return $this->config;
@@ -33,8 +22,7 @@ final class RecordingExposedSwitch extends RecordingExposedEntity implements Exp
 
     public function updateConfig(SwitchConfig $config): void
     {
-        $this->assertNotRemoved();
-        $this->config = $config;
+        $this->recordConfig($config);
     }
 
     public function getValue(): ?bool

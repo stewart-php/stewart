@@ -11,6 +11,7 @@ use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exposure\Collection\ExposedStateChangeCollection;
 use Stewart\Contracts\Exposure\Command\ExposedCommand;
 use Stewart\Contracts\Exposure\ExposedEntity;
+use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
@@ -19,7 +20,11 @@ use Stewart\Support\Stream\OperatorStream;
 use Stewart\Testing\Stream\PushSource;
 use Stewart\Testing\Time\ManualTimers;
 
-/** @phpstan-import-type ExposedAttributes from ExposedEntity */
+/**
+ * @phpstan-import-type ExposedAttributes from ExposedEntity
+ *
+ * @template TConfig of ExposedEntityConfig
+ */
 abstract class RecordingExposedEntity implements ExposedEntity
 {
     public private(set) ExposedStateChangeCollection $changes;
@@ -38,20 +43,22 @@ abstract class RecordingExposedEntity implements ExposedEntity
     /** @var PushSource<ExposedCommand> */
     private readonly PushSource $commands;
 
+    /** @param TConfig $config */
     public function __construct(
         private readonly ExposedEntityKey $key,
-        ?ExposedEntitySnapshot $seeded,
+        public private(set) ExposedEntityConfig $config,
         private readonly ManualTimers $timers,
     ) {
         $this->changes = ExposedStateChangeCollection::empty();
         $this->commands = new PushSource($timers->handlerFibers);
+    }
 
-        if ($seeded !== null) {
-            $this->entityId = $seeded->entityId;
-            $this->state = $seeded->state;
-            $this->attributes = $seeded->attributes;
-            $this->available = $seeded->available;
-        }
+    public function applySnapshot(ExposedEntitySnapshot $snapshot): void
+    {
+        $this->entityId = $snapshot->entityId;
+        $this->state = $snapshot->state;
+        $this->attributes = $snapshot->attributes;
+        $this->available = $snapshot->available;
     }
 
     public function getKey(): ExposedEntityKey
@@ -98,6 +105,16 @@ abstract class RecordingExposedEntity implements ExposedEntity
     {
         $this->assertNotRemoved();
         $this->removed = true;
+    }
+
+    /**
+     * @param TConfig $config
+     * @throws ExposureException
+     */
+    protected function recordConfig(ExposedEntityConfig $config): void
+    {
+        $this->assertNotRemoved();
+        $this->config = $config;
     }
 
     /** @throws ExposureException */
