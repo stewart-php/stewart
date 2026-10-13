@@ -6,8 +6,10 @@ namespace Stewart\Runtime\Json;
 
 use BackedEnum;
 use JsonException;
+use LogicException;
 use stdClass;
 use Stewart\Contracts\Exception\StewartException;
+use Stewart\Support\Exception\JsonShapeError;
 use Stewart\Support\Exception\JsonShapeException;
 use Stewart\Support\Json\JsonEncoder;
 use Stewart\Support\Json\JsonShape;
@@ -77,7 +79,11 @@ final class WireMapper
             $arguments[] = $value === null && $field->nullable ? null : $this->decodeValue($field->value, $value, $fieldPath);
         }
 
-        return new $class(...$arguments);
+        try {
+            return new $class(...$arguments);
+        } catch (StewartException $e) {
+            throw JsonShapeException::createForReason(JsonShapeError::ObjectRefused, $e, key: $path);
+        }
     }
 
     /**
@@ -122,6 +128,7 @@ final class WireMapper
         return match ($shape->kind) {
             ValueKind::Enum => $this->normalizeEnum($value),
             ValueKind::Dto => $this->normalizeNestedObject($value),
+            ValueKind::Variant => $this->normalizeVariant($shape, $value),
             ValueKind::Converted => $this->normalizeConvertedValue($shape, $value),
             ValueKind::List => $this->normalizeListItems($shape, $value),
             ValueKind::Map => $this->normalizeMap($value),
@@ -145,6 +152,20 @@ final class WireMapper
         \assert(\is_object($value));
 
         return $this->normalizeFields($this->shapes->resolveClassShape($value::class), $value);
+    }
+
+    /**
+     * @return array<string, mixed>
+     * @throws StewartException
+     */
+    private function normalizeVariant(ValueShape $shape, mixed $value): array
+    {
+        \assert(\is_object($value) && $shape->variants !== null);
+        $name = $shape->variants->findVariantName($value) ?? throw new LogicException(\sprintf('%s is not a listed variant of %s.', $value::class, $shape->type));
+
+        $fields = $this->normalizeNestedObject($value);
+
+        return [$shape->variants->key => $name, ...($fields instanceof stdClass ? [] : $fields)];
     }
 
     private function normalizeConvertedValue(ValueShape $shape, mixed $value): mixed
@@ -182,10 +203,12 @@ final class WireMapper
             ValueKind::String => \is_string($value) ? $value : throw $this->createWrongTypeException($shape, $path, $value),
             ValueKind::Int => \is_int($value) ? $value : throw $this->createWrongTypeException($shape, $path, $value),
             ValueKind::Float => \is_float($value) || \is_int($value) ? (float) $value : throw $this->createWrongTypeException($shape, $path, $value),
+            ValueKind::Number => \is_float($value) || \is_int($value) ? $value : throw $this->createWrongTypeException($shape, $path, $value),
             ValueKind::Bool => \is_bool($value) ? $value : throw $this->createWrongTypeException($shape, $path, $value),
             ValueKind::Json => $value,
             ValueKind::Enum => $this->decodeEnum($shape, $value, $path),
             ValueKind::Dto => $this->decodeNestedObject($shape, $value, $path),
+            ValueKind::Variant => $this->decodeVariant($shape, $value, $path),
             ValueKind::Converted => $this->decodeConvertedValue($shape, $value, $path),
             ValueKind::Map => \is_array($value) ? JsonShape::treatKeysAsStrings($value) : throw $this->createWrongTypeException($shape, $path, $value),
             ValueKind::Fragment => $this->decodeFragment($shape, $value, $path),
@@ -200,6 +223,26 @@ final class WireMapper
         $class = $shape->type;
 
         return \is_array($value) ? $this->decodeObject($class, $value, $path) : throw $this->createWrongTypeException($shape, $path, $value);
+    }
+
+    /** @throws StewartException */
+    private function decodeVariant(ValueShape $shape, mixed $value, string $path): object
+    {
+        \assert($shape->variants !== null);
+
+        if (!\is_array($value)) {
+            throw $this->createWrongTypeException($shape, $path, $value);
+        }
+
+        $key = $shape->variants->key;
+        $name = $value[$key] ?? null;
+        $class = \is_string($name) ? $shape->variants->variants[$name] ?? null : null;
+
+        if ($class === null) {
+            throw JsonShapeException::unexpectedValue($path . '.' . $key, 'one of ' . implode(', ', array_keys($shape->variants->variants)), $name);
+        }
+
+        return $this->decodeObject($class, $value, $path);
     }
 
     /** @throws StewartException */

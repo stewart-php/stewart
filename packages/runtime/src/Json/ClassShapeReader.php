@@ -14,11 +14,14 @@ use ReflectionParameter;
 use ReflectionProperty;
 use ReflectionUnionType;
 use Stewart\Contracts\Wire\ListOf;
+use Stewart\Contracts\Wire\WireVariants;
 use Stewart\Runtime\Json\Collection\ValueConverterCollection;
 
 final class ClassShapeReader
 {
     private const array ANY_JSON = ['array', 'bool', 'float', 'int', 'null', 'string'];
+
+    private const array NUMBER = ['float', 'int'];
 
     private const array SCALARS = [
         'string' => ValueKind::String,
@@ -74,7 +77,7 @@ final class ClassShapeReader
         $name = $parameter->getName();
         $where = $class . '::$' . $name;
 
-        if (!$parameter->isPromoted() || !new ReflectionProperty($class, $name)->isPublic()) {
+        if (!self::isPublicPromotedProperty($class, $name)) {
             throw new LogicException(\sprintf('%s must be a public promoted constructor parameter.', $where));
         }
 
@@ -84,11 +87,15 @@ final class ClassShapeReader
             $names = array_map(static fn(ReflectionNamedType|ReflectionIntersectionType $part): string => (string) $part, $type->getTypes());
             sort($names);
 
-            if ($names !== self::ANY_JSON) {
+            if ($names === self::ANY_JSON) {
+                return new FieldShape($name, $this->convertToWireKey($name), true, new ValueShape(ValueKind::Json));
+            }
+
+            if (array_values(array_diff($names, ['null'])) !== self::NUMBER) {
                 throw new LogicException(\sprintf('%s has a union type the wire cannot carry.', $where));
             }
 
-            return new FieldShape($name, $this->convertToWireKey($name), true, new ValueShape(ValueKind::Json));
+            return new FieldShape($name, $this->convertToWireKey($name), $type->allowsNull(), new ValueShape(ValueKind::Number));
         }
 
         if (!$type instanceof ReflectionNamedType) {
@@ -133,6 +140,12 @@ final class ClassShapeReader
             return new ValueShape(ValueKind::Enum, $type, enumBackingType: (string) new ReflectionEnum($type)->getBackingType());
         }
 
+        $variants = self::findWireVariants($type);
+
+        if ($variants !== null) {
+            return new ValueShape(ValueKind::Variant, $type, variants: $variants);
+        }
+
         if (!class_exists($type) || new ReflectionClass($type)->isAbstract()) {
             throw new LogicException(\sprintf('%s is a %s, which has no converter.', $where, $type));
         }
@@ -142,6 +155,30 @@ final class ClassShapeReader
         }
 
         return new ValueShape(ValueKind::Dto, $type);
+    }
+
+    // A subclass passes inherited fields through to the parent, which promotes them.
+    /** @param class-string $class */
+    private static function isPublicPromotedProperty(string $class, string $name): bool
+    {
+        if (!property_exists($class, $name)) {
+            return false;
+        }
+
+        $property = new ReflectionProperty($class, $name);
+
+        return $property->isPromoted() && $property->isPublic();
+    }
+
+    private static function findWireVariants(string $type): ?WireVariants
+    {
+        if (!class_exists($type) && !interface_exists($type)) {
+            return null;
+        }
+
+        $attribute = new ReflectionClass($type)->getAttributes(WireVariants::class)[0] ?? null;
+
+        return $attribute?->newInstance();
     }
 
     private function convertToWireKey(string $propertyName): string

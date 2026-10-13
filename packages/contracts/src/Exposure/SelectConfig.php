@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Contracts\Exposure;
 
 use Stewart\Contracts\Exception\ExposureException;
+use Stewart\Contracts\Wire\ListOf;
 
 final readonly class SelectConfig extends ExposedEntityConfig
 {
@@ -13,6 +14,7 @@ final readonly class SelectConfig extends ExposedEntityConfig
      * @throws ExposureException
      */
     public function __construct(
+        #[ListOf('string')]
         public array $options,
         ?string $name = null,
         ?string $icon = null,
