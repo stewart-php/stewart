@@ -13,6 +13,7 @@ This repository is the only place Stewart is developed. Everything else is publi
 | `ghcr.io/stewart-php/runtime`, `…-dev` | GHCR, linux/amd64 and linux/arm64 | `release.yml`, `rebuild.yml` via `runtime-image.yml` |
 | `oci://ghcr.io/stewart-php/charts/stewart` | GHCR | `release.yml` |
 | Release notes | GitHub releases | `release.yml`, from `CHANGELOG.md` |
+| Documentation | `stewart-php.github.io/docs` and `/docs-dev`, from `stewart-php/stewart-php.github.io` | `docs.yml` |
 
 ## Versioning
 
@@ -54,8 +55,9 @@ minor release, after `make check` is green on that PHP in CI, and say so in the 
 5. Tag and push the tag: `git tag -s vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z`. `release.yml` refuses a commit
    without a passing `CI` run; once CI passes, re-run the failed jobs instead of moving the tag. It runs the
    `Distribution` checks before it builds the image, and the image is scanned before it is tagged and signed.
-6. Watch `Split` and `Release`. When they are green, `composer create-project stewart-php/skeleton` in a scratch
-   directory should install `X.Y.Z`, and `stewart-php/hass-stewart` should have an `X.Y.Z` release with `stewart.zip`.
+6. Watch `Split`, `Release` and `Docs`. When they are green, `composer create-project stewart-php/skeleton` in a scratch
+   directory should install `X.Y.Z`, and `stewart-php/hass-stewart` should have an `X.Y.Z` release with `stewart.zip`, and
+`https://stewart-php.github.io/docs/` should show the new version's pages.
 
 A broken release is fixed by a new patch release, never by moving or deleting a tag.
 
@@ -83,13 +85,23 @@ Done once, by an owner of the `stewart-php` organization, before `v0.1.0`.
    repositories.
 7. **HACS.** Until `hass-stewart` is in the HACS default store, users add it as a custom repository (category
    *Integration*); its README says how.
-8. **Optional.** List the chart on Artifact Hub (`oci://ghcr.io/stewart-php/charts/stewart`).
+8. **Documentation site.** Create the public repository `stewart-php/stewart-php.github.io` with a `main` branch
+   holding a `.nojekyll` file and a placeholder `index.html`. In its settings, set Pages to deploy from the `main`
+   branch, root folder. Install the split GitHub App on it too (it needs *Contents: read and write*). Never create a
+   `stewart` directory there: `stewart-php.github.io/stewart/` belongs to this repository's quality reports. Then run
+   **Docs** by hand once.
+9. **Optional.** List the chart on Artifact Hub (`oci://ghcr.io/stewart-php/charts/stewart`).
 
 ## Documentation
 
 - `help/upgrading.md` in the user docs is generated from the "Upgrading" sections of `CHANGELOG.md`. After editing
   them, run `make docs-reference`; `make test-docs` fails until you do.
-- The docs are published from the release tag; see the docs workflow once it exists (step 11 of `DOCS_PLAN.md`).
+- `docs.yml` builds both sites from the release tag and pushes them into `docs/` and `docs-dev/` of
+  `stewart-php/stewart-php.github.io`. It keeps the site root (a landing page), `/docs/<major>.x/` and `/docs/next/`.
+- A docs-only fix after a release: merge it, then run **Docs** by hand with the ref to publish (empty means the
+  latest tag; `main` publishes unreleased docs, so only do that on purpose).
+- **At a new major**, before its first publish: copy the current `docs/` of the site repository to `docs/<old>.x/`,
+  add a note on its pages that they describe an old version, and commit it. Then tag the release.
 
 ## Verifying a published release
 
