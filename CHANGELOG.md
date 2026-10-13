@@ -104,6 +104,8 @@ minor release may break; its "Upgrading" section says what to change.
   `RecordingEntityExposure::seedSnapshot()` still seeds them
 - `RecordingHaContext::listWatchedTriggers()` returns a `WatchedTriggerCollection`; each `WatchedTrigger` holds the
   triggers and variables the app watched
+- The control socket and the HTTP admin API share one admin service, so a pause, resume, reset or worker restart
+  answers the same on both; their JSON is unchanged
 
 ### Removed
 
