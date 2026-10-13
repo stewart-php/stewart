@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Tests\Fixtures\Http;
 
 use Psr\Log\NullLogger;
-use Stewart\Client\Component\ComponentInstance;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
-use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Admin\RuntimeAdmin;
 use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\App\AppDefinition;
@@ -19,22 +17,11 @@ use Stewart\Runtime\Broker\AppPauseOverrideStore;
 use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\AppPauseService;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
-use Stewart\Runtime\Broker\Component\ComponentTracker;
 use Stewart\Runtime\Broker\ConnectionTracker;
 use Stewart\Runtime\Broker\DaemonStartTime;
-use Stewart\Runtime\Broker\Deploy\DeployState;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Broker\WorkerSlotRegistry;
-use Stewart\Runtime\Config\ExposeConfig;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
-use Stewart\Runtime\Control\Assembler\BrokerStatsBuilder;
-use Stewart\Runtime\Control\Assembler\ComponentStatusBuilder;
-use Stewart\Runtime\Control\Assembler\DaemonInfoBuilder;
-use Stewart\Runtime\Control\Assembler\DeployStatusBuilder;
-use Stewart\Runtime\Control\Assembler\RegistrationInfoBuilder;
-use Stewart\Runtime\Control\Assembler\StoreHealthBuilder;
-use Stewart\Runtime\Control\Assembler\WorkerStatusBuilder;
-use Stewart\Runtime\Control\SnapshotAssembler;
 use Stewart\Runtime\Http\Admin\AdminApiCodec;
 use Stewart\Runtime\Metrics\PrometheusTextEncoder;
 use Stewart\Runtime\Metrics\RuntimeMetricsCollector;
@@ -42,7 +29,6 @@ use Stewart\Runtime\Metrics\RuntimeMetricsExporter;
 use Stewart\Runtime\Metrics\Source\AppMetricSource;
 use Stewart\Runtime\Metrics\Source\DaemonMetricSource;
 use Stewart\Runtime\Metrics\Source\WorkerMetricSource;
-use Stewart\Runtime\Model\StewartVersion;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
@@ -122,19 +108,8 @@ final readonly class AdminApiFixture
 
     private function createMetricsExporter(DaemonStartTime $startTime, AppMetrics $metrics): RuntimeMetricsExporter
     {
-        $broker = $this->broker;
-        $snapshots = new SnapshotAssembler(
-            daemonInfo: new DaemonInfoBuilder($broker->session, new StewartVersion('0.1.0-test'), $startTime),
-            brokerStats: new BrokerStatsBuilder($broker->pools->slots, $broker->callSlots, $broker->registry),
-            workerStatuses: new WorkerStatusBuilder($broker->pools->slots, $broker->pools->watchdog, $broker->pools->restartPolicy, $broker->callSlots),
-            registrationInfos: new RegistrationInfoBuilder($broker->registry),
-            storeHealth: new StoreHealthBuilder($broker->pools->slots, ConfigFixture::createPersistenceConfig()),
-            appStatuses: new AppStatusBuilder($metrics, $this->registry, FakeHomeAssistant::createUnreachable()->exposures),
-            deployStatus: new DeployStatusBuilder(new DeployState()),
-            componentStatus: new ComponentStatusBuilder(new ComponentTracker($this->clock), new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10))),
-            connection: new ConnectionTracker($this->clock),
-            clock: $this->clock,
-        );
+        $appStatuses = new AppStatusBuilder($metrics, $this->registry, FakeHomeAssistant::createUnreachable()->exposures);
+        $snapshots = $this->broker->createSnapshotAssembler($startTime, new ConnectionTracker($this->clock), $appStatuses);
         $collector = new RuntimeMetricsCollector([new DaemonMetricSource(), new WorkerMetricSource(), new AppMetricSource()]);
 
         return new RuntimeMetricsExporter($snapshots, $collector, new PrometheusTextEncoder());

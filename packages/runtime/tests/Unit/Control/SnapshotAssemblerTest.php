@@ -6,26 +6,18 @@ namespace Stewart\Runtime\Tests\Unit\Control;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Stewart\Client\Component\ComponentInstance;
+use Stewart\Client\Component\ComponentVersion;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\Time\Duration;
-use Stewart\Runtime\App\Collection\AppDefinitionCollection;
-use Stewart\Runtime\Broker\AppPauseRegistry;
+use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\Broker\BrokerSubscription;
 use Stewart\Runtime\Broker\Component\ComponentTracker;
 use Stewart\Runtime\Broker\ConnectionTracker;
 use Stewart\Runtime\Broker\DaemonStartTime;
+use Stewart\Runtime\Broker\Deploy\CommitId;
 use Stewart\Runtime\Broker\Deploy\DeployState;
-use Stewart\Runtime\Config\ExposeConfig;
-use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
-use Stewart\Runtime\Control\Assembler\BrokerStatsBuilder;
-use Stewart\Runtime\Control\Assembler\ComponentStatusBuilder;
-use Stewart\Runtime\Control\Assembler\DaemonInfoBuilder;
-use Stewart\Runtime\Control\Assembler\DeployStatusBuilder;
-use Stewart\Runtime\Control\Assembler\RegistrationInfoBuilder;
-use Stewart\Runtime\Control\Assembler\StoreHealthBuilder;
-use Stewart\Runtime\Control\Assembler\WorkerStatusBuilder;
+use Stewart\Runtime\Broker\Deploy\ReleaseFailure;
 use Stewart\Runtime\Control\Protocol\Status\DaemonInfo;
 use Stewart\Runtime\Control\Protocol\Status\RegistrationInfo;
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
@@ -37,19 +29,12 @@ use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
 use Stewart\Runtime\Model\ResourceScope;
-use Stewart\Runtime\Model\StewartVersion;
 use Stewart\Runtime\Model\SubscriptionId;
 use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Runtime\Model\WorkerId;
-use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
-use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Runtime\Tests\Fixtures\Control\BrokerStateFixture;
-use Stewart\Testing\Time\VirtualClock;
 
 #[CoversClass(SnapshotAssembler::class)]
-#[CoversClass(DaemonInfoBuilder::class)]
-#[CoversClass(BrokerStatsBuilder::class)]
-#[CoversClass(RegistrationInfoBuilder::class)]
 #[CoversClass(RuntimeSnapshot::class)]
 #[CoversClass(DaemonInfo::class)]
 #[CoversClass(RegistrationInfo::class)]
@@ -119,23 +104,38 @@ final class SnapshotAssemblerTest extends TestCase
         self::assertSame(ComponentState::Unchecked, $snapshot->component?->state);
     }
 
+    public function testDeployStatusCarriesPollAndLastFailure(): void
+    {
+        $state = new DeployState();
+        $state->recordRunningCommit(new CommitId(str_repeat('a', 40)));
+        $state->recordPoll(Instant::fromIso('2026-10-08T12:00:00Z'));
+        $state->recordFailure(new ReleaseFailure(new CommitId(str_repeat('b', 40)), 'first', Instant::fromIso('2026-10-08T11:00:00Z')));
+        $state->recordFailure(new ReleaseFailure(new CommitId(str_repeat('c', 40)), 'second', Instant::fromIso('2026-10-08T11:30:00Z')));
+
+        $status = $this->broker->createSnapshotAssembler($this->startTime, new ConnectionTracker($this->broker->timers->clock), deployState: $state)->takeSnapshot()->deploy;
+
+        self::assertSame(str_repeat('a', 40), $status?->commit);
+        self::assertSame('2026-10-08T12:00:00.000000Z', $status->lastPolledAt?->toIso8601());
+        self::assertSame(2, $status->failures);
+        self::assertNotNull($status->lastFailure);
+        self::assertSame([str_repeat('c', 40), 'second'], [$status->lastFailure->commit, $status->lastFailure->reason]);
+    }
+
+    public function testComponentStatusCarriesDetectionAndInstance(): void
+    {
+        $tracker = new ComponentTracker($this->broker->timers->clock);
+        $tracker->recordState(ComponentState::Active, new ComponentVersion('0.9.0', 1));
+
+        $status = $this->broker->createSnapshotAssembler($this->startTime, new ConnectionTracker($this->broker->timers->clock), componentTracker: $tracker, componentInstance: 'upstairs')->takeSnapshot()->component;
+
+        self::assertSame([ComponentState::Active, 'upstairs', '0.9.0', 1], [$status?->state, $status?->instance, $status?->version, $status?->protocol]);
+    }
+
     private function createAssembler(): SnapshotAssembler
     {
-        $broker = $this->broker;
-        $connection = new ConnectionTracker($broker->timers->clock);
+        $connection = new ConnectionTracker($this->broker->timers->clock);
         $connection->markConnected();
 
-        return new SnapshotAssembler(
-            daemonInfo: new DaemonInfoBuilder($broker->session, new StewartVersion('0.1.0-test'), $this->startTime),
-            brokerStats: new BrokerStatsBuilder($broker->pools->slots, $broker->callSlots, $broker->registry),
-            workerStatuses: new WorkerStatusBuilder($broker->pools->slots, $broker->pools->watchdog, $broker->pools->restartPolicy, $broker->callSlots),
-            registrationInfos: new RegistrationInfoBuilder($broker->registry),
-            storeHealth: new StoreHealthBuilder($broker->pools->slots, ConfigFixture::createPersistenceConfig()),
-            appStatuses: new AppStatusBuilder($broker->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock())), FakeHomeAssistant::createUnreachable()->exposures),
-            deployStatus: new DeployStatusBuilder(new DeployState()),
-            componentStatus: new ComponentStatusBuilder(new ComponentTracker($broker->timers->clock), new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10))),
-            connection: $connection,
-            clock: $broker->timers->clock,
-        );
+        return $this->broker->createSnapshotAssembler($this->startTime, $connection);
     }
 }
