@@ -22,6 +22,7 @@ use Stewart\Runtime\Broker\WorkerWatchdog;
 use Stewart\Runtime\Config\ProjectRoot;
 use Stewart\Runtime\Kernel\BrokerKernel;
 use Stewart\Runtime\Kernel\SyntheticServices;
+use Stewart\Runtime\Model\StewartVersion;
 use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Runtime\Tests\Fixtures\Time\RecordingProcessTimeZone;
 use Stewart\Runtime\Time\ProcessTimeZone;
@@ -49,7 +50,7 @@ final class BrokerKernelFixture
         $config = ConfigFixture::createStewartConfig([...self::QUIET_YAML, ...$yaml]);
         $startTime = new DaemonStartTime($pools->clock);
         $mqttLink ??= new DisabledMqttLink($logger);
-        $run = new BrokerRun($pools->pool, $pools->watchdog, $session, $mqttLink, $logger, $config->shutdownGrace, $startTime);
+        $run = new BrokerRun($pools->pool, $pools->watchdog, $session, $mqttLink, $logger, $config, $startTime);
         $services = $homeAssistant->addSyntheticServicesTo(new SyntheticServices())
             ->withService(HaSession::class, $session)
             ->withService(SystemClock::class, $pools->clock)
@@ -65,7 +66,7 @@ final class BrokerKernelFixture
             ->withService(DaemonStartTime::class, $startTime)
             ->withOverrides($overrides);
 
-        $lifecycle = new BrokerKernel('test', '/nonexistent/services.php', new ProjectRoot(sys_get_temp_dir()), $services)->createBroker(
+        $lifecycle = new BrokerKernel(new StewartVersion('test'), '/nonexistent/services.php', new ProjectRoot(sys_get_temp_dir()), $services)->createBroker(
             $config,
             new AppCatalog(self::listEnabledApps($workerSlots), $knownAppIds, AppIdCollection::fromList([])),
             $logger,

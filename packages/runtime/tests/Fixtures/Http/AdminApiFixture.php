@@ -44,6 +44,7 @@ use Stewart\Runtime\Metrics\RuntimeMetricsExporter;
 use Stewart\Runtime\Metrics\Source\AppMetricSource;
 use Stewart\Runtime\Metrics\Source\DaemonMetricSource;
 use Stewart\Runtime\Metrics\Source\WorkerMetricSource;
+use Stewart\Runtime\Model\StewartVersion;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
@@ -110,7 +111,7 @@ final readonly class AdminApiFixture
     {
         $broker = $this->broker;
         $snapshots = new SnapshotAssembler(
-            daemonInfo: new DaemonInfoBuilder($broker->session, '0.1.0-test', $startTime),
+            daemonInfo: new DaemonInfoBuilder($broker->session, new StewartVersion('0.1.0-test'), $startTime),
             brokerStats: new BrokerStatsBuilder($broker->pools->slots, $broker->callSlots, $broker->registry),
             workerStatuses: new WorkerStatusBuilder($broker->pools->slots, $broker->pools->watchdog, $broker->pools->restartPolicy, $broker->callSlots),
             registrationInfos: new RegistrationInfoBuilder($broker->registry),

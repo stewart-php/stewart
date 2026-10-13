@@ -6,17 +6,17 @@ namespace Stewart\Runtime\Tests\Unit\Broker;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\MonotonicTime;
 use Stewart\Runtime\Broker\RestartBudget;
 use Stewart\Runtime\Model\WorkerId;
+use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 
 #[CoversClass(RestartBudget::class)]
 final class RestartBudgetTest extends TestCase
 {
     public function testWorkerMayRestartUpToItsBudget(): void
     {
-        $budget = new RestartBudget(workerRestartAttempts: 3, workerRestartWindow: Duration::seconds(60));
+        $budget = new RestartBudget(ConfigFixture::createSupervisionConfig(['restart_attempts' => 3, 'restart_window' => '60s']));
 
         self::assertSame(1, $budget->claimAttempt(new WorkerId(0), self::createInstantAt(100)));
         self::assertSame(2, $budget->claimAttempt(new WorkerId(0), self::createInstantAt(101)));
@@ -26,7 +26,7 @@ final class RestartBudgetTest extends TestCase
 
     public function testRestartsSpentInsideTheWindowCanBeCounted(): void
     {
-        $budget = new RestartBudget(workerRestartAttempts: 3, workerRestartWindow: Duration::seconds(60));
+        $budget = new RestartBudget(ConfigFixture::createSupervisionConfig(['restart_attempts' => 3, 'restart_window' => '60s']));
 
         self::assertSame(0, $budget->countUsedAttempts(new WorkerId(0), self::createInstantAt(100)));
 
@@ -40,7 +40,7 @@ final class RestartBudgetTest extends TestCase
 
     public function testClaimReturnsTheAttemptNumber(): void
     {
-        $budget = new RestartBudget(workerRestartAttempts: 5, workerRestartWindow: Duration::seconds(60));
+        $budget = new RestartBudget(ConfigFixture::createSupervisionConfig(['restart_attempts' => 5, 'restart_window' => '60s']));
 
         self::assertSame(1, $budget->claimAttempt(new WorkerId(0), self::createInstantAt(100)));
         self::assertSame(2, $budget->claimAttempt(new WorkerId(0), self::createInstantAt(101)));
@@ -49,7 +49,7 @@ final class RestartBudgetTest extends TestCase
 
     public function testWindowSlides(): void
     {
-        $budget = new RestartBudget(workerRestartAttempts: 2, workerRestartWindow: Duration::seconds(60));
+        $budget = new RestartBudget(ConfigFixture::createSupervisionConfig(['restart_attempts' => 2, 'restart_window' => '60s']));
 
         self::assertSame(1, $budget->claimAttempt(new WorkerId(0), self::createInstantAt(100)));
         self::assertSame(2, $budget->claimAttempt(new WorkerId(0), self::createInstantAt(110)));
@@ -60,7 +60,7 @@ final class RestartBudgetTest extends TestCase
 
     public function testEachWorkerHasItsOwnBudget(): void
     {
-        $budget = new RestartBudget(workerRestartAttempts: 1, workerRestartWindow: Duration::seconds(60));
+        $budget = new RestartBudget(ConfigFixture::createSupervisionConfig(['restart_attempts' => 1, 'restart_window' => '60s']));
 
         self::assertSame(1, $budget->claimAttempt(new WorkerId(0), self::createInstantAt(100)));
         self::assertNull($budget->claimAttempt(new WorkerId(0), self::createInstantAt(101)));
@@ -69,7 +69,7 @@ final class RestartBudgetTest extends TestCase
 
     public function testForgottenAttemptsGiveTheWorkerItsFullBudgetBack(): void
     {
-        $budget = new RestartBudget(workerRestartAttempts: 1, workerRestartWindow: Duration::seconds(60));
+        $budget = new RestartBudget(ConfigFixture::createSupervisionConfig(['restart_attempts' => 1, 'restart_window' => '60s']));
         $budget->claimAttempt(new WorkerId(0), self::createInstantAt(100));
         $budget->claimAttempt(new WorkerId(1), self::createInstantAt(100));
 
@@ -81,7 +81,7 @@ final class RestartBudgetTest extends TestCase
 
     public function testZeroBudgetQuarantinesImmediately(): void
     {
-        $budget = new RestartBudget(workerRestartAttempts: 0, workerRestartWindow: Duration::seconds(60));
+        $budget = new RestartBudget(ConfigFixture::createSupervisionConfig(['restart_attempts' => 0, 'restart_window' => '60s']));
 
         self::assertNull($budget->claimAttempt(new WorkerId(0), self::createInstantAt(100)));
     }

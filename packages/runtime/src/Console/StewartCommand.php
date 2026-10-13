@@ -7,6 +7,8 @@ namespace Stewart\Runtime\Console;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
 abstract class StewartCommand extends Command
 {
@@ -25,6 +27,18 @@ abstract class StewartCommand extends Command
         $value = $input->getOption($name);
 
         return \is_string($value) && $value !== '' ? $value : null;
+    }
+
+    protected function writeMissingConfigFileNotice(OutputInterface $output, ?string $missingConfigFile): void
+    {
+        if ($missingConfigFile !== null) {
+            $this->writeNotice($output, \sprintf('No config file at %s; using the environment only.', $missingConfigFile));
+        }
+    }
+
+    protected function writeNotice(OutputInterface $output, string $notice): void
+    {
+        ($output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output)->writeln('<comment>' . $notice . '</comment>');
     }
 
     protected function readStringArgument(InputInterface $input, string $name): string

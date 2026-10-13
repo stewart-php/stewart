@@ -22,6 +22,7 @@ use Stewart\Runtime\Kernel\NamedArguments;
 use Stewart\Runtime\Kernel\NamedArgumentsPass;
 use Stewart\Runtime\Kernel\ProfileCompiler;
 use Stewart\Runtime\Kernel\SyntheticServices;
+use Stewart\Runtime\Model\StewartVersion;
 use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Testing\Logging\RecordingLogger;
 
@@ -90,7 +91,7 @@ final class KernelCompileTest extends TestCase
     /** @param array<string, mixed> $yaml */
     private static function bootBroker(array $yaml, LoggerInterface $logger = new NullLogger()): BrokerLifecycle
     {
-        return new BrokerKernel('test', self::EMPTY_SERVICES_FILE, new ProjectRoot(sys_get_temp_dir()))->createBroker(
+        return new BrokerKernel(new StewartVersion('test'), self::EMPTY_SERVICES_FILE, new ProjectRoot(sys_get_temp_dir()))->createBroker(
             ConfigFixture::createStewartConfig($yaml),
             new AppCatalog(AppDefinitionCollection::keyedByAppId([]), AppIdCollection::fromList([]), AppIdCollection::fromList([])),
             $logger,

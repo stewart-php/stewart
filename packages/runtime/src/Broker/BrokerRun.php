@@ -8,8 +8,8 @@ use Amp\DeferredFuture;
 use Closure;
 use LogicException;
 use Psr\Log\LoggerInterface;
-use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Broker\Mqtt\MqttLink;
+use Stewart\Runtime\Config\StewartConfig;
 use Stewart\Runtime\Lifecycle\BrokerRunPhase;
 use Stewart\Runtime\Lifecycle\BrokerStopOutcome;
 use Throwable;
@@ -27,7 +27,7 @@ final class BrokerRun
         private readonly HaSession $session,
         private readonly MqttLink $mqtt,
         private readonly LoggerInterface $logger,
-        private readonly Duration $brokerShutdownGrace,
+        private readonly StewartConfig $config,
         private readonly DaemonStartTime $startTime,
     ) {
         $this->runFinished = new DeferredFuture();
@@ -88,7 +88,7 @@ final class BrokerRun
 
         $this->moveTo(BrokerRunPhase::Stopping);
 
-        $this->logger->info('Shutting down', ['reason' => $reason, 'grace' => (string) $this->brokerShutdownGrace]);
+        $this->logger->info('Shutting down', ['reason' => $reason, 'grace' => (string) $this->config->shutdownGrace]);
 
         $stepFailure = $this->runStopSteps($reason);
         $failure = $error ?? $stepFailure;
@@ -105,7 +105,7 @@ final class BrokerRun
     {
         $workersFailure = $this->attemptStopStep('Could not stop the workers while shutting down', function () use ($reason): void {
             $this->watchdog->stopProbing();
-            $this->pool->shutdown($reason, $this->brokerShutdownGrace);
+            $this->pool->shutdown($reason, $this->config->shutdownGrace);
         });
         $sessionFailure = $this->attemptStopStep('Could not close the Home Assistant session while shutting down', $this->session->close(...));
         $mqttFailure = $this->attemptStopStep('Could not close the MQTT connection while shutting down', $this->mqtt->close(...));

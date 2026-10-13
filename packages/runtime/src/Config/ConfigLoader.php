@@ -30,7 +30,7 @@ final readonly class ConfigLoader
     public function mergeConfigTree(?string $path, array $cliOverrides = []): array
     {
         $tree = $this->configuration->buildConfigTree();
-        $fileConfig = $this->placeholders->resolve($tree, $this->files->readYamlMap($this->locateConfigFile($path)));
+        $fileConfig = $this->placeholders->resolve($tree, $this->readConfigFile($path));
         $configs = [$fileConfig, $this->overlay->collectEnvironmentOverrides($tree, $fileConfig)];
 
         if ($cliOverrides !== []) {
@@ -70,5 +70,22 @@ final readonly class ConfigLoader
     public function locateConfigFile(?string $path): string
     {
         return $path ?? $this->projectRoot->resolvePath(self::DEFAULT_CONFIG_FILE);
+    }
+
+    public function findMissingDefaultFile(?string $path): ?string
+    {
+        $defaultFile = $this->locateConfigFile(null);
+
+        return $path === null && !is_file($defaultFile) ? $defaultFile : null;
+    }
+
+    /**
+     * @return array<array-key, mixed>
+     * @throws ConfigurationException
+     */
+    private function readConfigFile(?string $path): array
+    {
+        // Container setups may configure everything through the environment.
+        return $this->findMissingDefaultFile($path) !== null ? [] : $this->files->readYamlMap($this->locateConfigFile($path));
     }
 }

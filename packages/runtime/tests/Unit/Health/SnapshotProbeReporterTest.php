@@ -29,6 +29,7 @@ use Stewart\Runtime\Health\ProbeReport;
 use Stewart\Runtime\Health\ProbeStatus;
 use Stewart\Runtime\Health\ReadinessCheck;
 use Stewart\Runtime\Health\SnapshotProbeReporter;
+use Stewart\Runtime\Model\StewartVersion;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
 use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Runtime\Tests\Fixtures\Control\BrokerStateFixture;
@@ -88,7 +89,7 @@ final class SnapshotProbeReporterTest extends TestCase
         $startTime->recordStart();
 
         $snapshots = new SnapshotAssembler(
-            daemonInfo: new DaemonInfoBuilder($broker->session, '0.1.0-test', $startTime),
+            daemonInfo: new DaemonInfoBuilder($broker->session, new StewartVersion('0.1.0-test'), $startTime),
             brokerStats: new BrokerStatsBuilder($broker->pools->slots, $broker->callSlots, $broker->registry),
             workerStatuses: new WorkerStatusBuilder($broker->pools->slots, $broker->pools->watchdog, $broker->pools->restartPolicy, $broker->callSlots),
             registrationInfos: new RegistrationInfoBuilder($broker->registry),

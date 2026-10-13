@@ -10,14 +10,14 @@ use Closure;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Stewart\Client\Exception\HaClientException;
-use Stewart\Runtime\Config\BackoffPolicy;
+use Stewart\Runtime\Config\StewartConfig;
 use Stewart\Support\Time\Deadlines;
 use Throwable;
 
 final readonly class Reconnector
 {
     public function __construct(
-        private BackoffPolicy $reconnectBackoff,
+        private StewartConfig $config,
         private LoggerInterface $logger,
         private Deadlines $deadlines,
     ) {}
@@ -45,7 +45,7 @@ final readonly class Reconnector
             try {
                 $stop->throwIfRequested();
 
-                $delay = $this->reconnectBackoff->delayFor($failures + 1);
+                $delay = $this->config->reconnectBackoff->delayFor($failures + 1);
 
                 $this->logger->info('Retrying Home Assistant', ['in' => (string) $delay, 'attempt' => $failures + 2]);
                 $this->deadlines->delay($delay, $stop);

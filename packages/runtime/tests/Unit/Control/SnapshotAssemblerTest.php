@@ -37,6 +37,7 @@ use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
 use Stewart\Runtime\Model\ResourceScope;
+use Stewart\Runtime\Model\StewartVersion;
 use Stewart\Runtime\Model\SubscriptionId;
 use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Runtime\Model\WorkerId;
@@ -125,7 +126,7 @@ final class SnapshotAssemblerTest extends TestCase
         $connection->markConnected();
 
         return new SnapshotAssembler(
-            daemonInfo: new DaemonInfoBuilder($broker->session, '0.1.0-test', $this->startTime),
+            daemonInfo: new DaemonInfoBuilder($broker->session, new StewartVersion('0.1.0-test'), $this->startTime),
             brokerStats: new BrokerStatsBuilder($broker->pools->slots, $broker->callSlots, $broker->registry),
             workerStatuses: new WorkerStatusBuilder($broker->pools->slots, $broker->pools->watchdog, $broker->pools->restartPolicy, $broker->callSlots),
             registrationInfos: new RegistrationInfoBuilder($broker->registry),

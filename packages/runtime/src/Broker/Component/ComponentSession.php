@@ -11,7 +11,7 @@ use Psr\Log\LoggerInterface;
 use Stewart\Client\Exception\HaClientException;
 use Stewart\Runtime\Broker\Exposure\ExposureLink;
 use Stewart\Runtime\Broker\Exposure\ExposureReconciler;
-use Stewart\Runtime\Config\BackoffPolicy;
+use Stewart\Runtime\Config\StewartConfig;
 use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Support\Time\Deadlines;
 
@@ -26,7 +26,7 @@ final class ComponentSession
         private readonly ExposureLink $exposures,
         private readonly ExposureReconciler $reconciler,
         private readonly ComponentTracker $tracker,
-        private readonly BackoffPolicy $componentRelinkBackoff,
+        private readonly StewartConfig $config,
         private readonly Deadlines $deadlines,
         private readonly LoggerInterface $logger,
     ) {
@@ -87,7 +87,7 @@ final class ComponentSession
             }
 
             try {
-                $this->deadlines->delay($this->componentRelinkBackoff->delayFor($attempt), $stop);
+                $this->deadlines->delay($this->config->reconnectBackoff->delayFor($attempt), $stop);
             } catch (CancelledException) {
                 return;
             }

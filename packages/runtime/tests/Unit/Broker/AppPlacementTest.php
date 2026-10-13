@@ -13,6 +13,7 @@ use Stewart\Runtime\Broker\AppPlacement;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
+use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 
 #[CoversClass(AppPlacement::class)]
 #[CoversClass(WorkerSlotCollection::class)]
@@ -21,21 +22,21 @@ final class AppPlacementTest extends TestCase
 {
     public function testUnpinnedAppsAreSpreadRoundRobin(): void
     {
-        $workerSlots = new AppPlacement(autoPoolSize: 4)->planWorkerSlots(AppDefinitionCollection::keyedByAppId(self::createAppDefinitions(['a', 'b', 'c', 'd'])), poolWorkerCount: 2);
+        $workerSlots = new AppPlacement(autoPoolSize: 4)->planWorkerSlots(AppDefinitionCollection::keyedByAppId(self::createAppDefinitions(['a', 'b', 'c', 'd'])), ConfigFixture::createStewartConfig(['workers' => 2]));
 
         self::assertSame([[0, ['a', 'c']], [1, ['b', 'd']]], self::describeWorkerSlots($workerSlots));
     }
 
     public function testOnlyWorkersWithAppsAreSpawned(): void
     {
-        $workerSlots = new AppPlacement(autoPoolSize: 4)->planWorkerSlots(AppDefinitionCollection::keyedByAppId(self::createAppDefinitions(['a', 'b'])), poolWorkerCount: 0);
+        $workerSlots = new AppPlacement(autoPoolSize: 4)->planWorkerSlots(AppDefinitionCollection::keyedByAppId(self::createAppDefinitions(['a', 'b'])), ConfigFixture::createStewartConfig(['workers' => 0]));
 
         self::assertSame([[0, ['a']], [1, ['b']]], self::describeWorkerSlots($workerSlots));
     }
 
     public function testNoAppsMeansNoWorkers(): void
     {
-        self::assertTrue(new AppPlacement(autoPoolSize: 4)->planWorkerSlots(AppDefinitionCollection::keyedByAppId([]), poolWorkerCount: 0)->isEmpty());
+        self::assertTrue(new AppPlacement(autoPoolSize: 4)->planWorkerSlots(AppDefinitionCollection::keyedByAppId([]), ConfigFixture::createStewartConfig(['workers' => 0]))->isEmpty());
     }
 
     public function testPinnedAppGoesWhereItAsked(): void
@@ -45,7 +46,7 @@ final class AppPlacementTest extends TestCase
             'pinned' => new AppDefinition(new AppId('pinned'), Demo::class, worker: 1),
         ];
 
-        self::assertSame([[0, ['free']], [1, ['pinned']]], self::describeWorkerSlots(new AppPlacement(4)->planWorkerSlots(AppDefinitionCollection::keyedByAppId($apps), poolWorkerCount: 2)));
+        self::assertSame([[0, ['free']], [1, ['pinned']]], self::describeWorkerSlots(new AppPlacement(4)->planWorkerSlots(AppDefinitionCollection::keyedByAppId($apps), ConfigFixture::createStewartConfig(['workers' => 2]))));
     }
 
     public function testPinGrowsAnAutomaticallySizedPool(): void
@@ -56,7 +57,7 @@ final class AppPlacementTest extends TestCase
             'far' => new AppDefinition(new AppId('far'), Demo::class, worker: 5),
         ];
 
-        $workerSlots = new AppPlacement(autoPoolSize: 1)->planWorkerSlots(AppDefinitionCollection::keyedByAppId($apps), poolWorkerCount: 0);
+        $workerSlots = new AppPlacement(autoPoolSize: 1)->planWorkerSlots(AppDefinitionCollection::keyedByAppId($apps), ConfigFixture::createStewartConfig(['workers' => 0]));
 
         self::assertSame([[0, ['a']], [1, ['b']], [5, ['far']]], self::describeWorkerSlots($workerSlots));
     }

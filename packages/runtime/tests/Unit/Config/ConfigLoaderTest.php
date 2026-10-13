@@ -276,7 +276,29 @@ final class ConfigLoaderTest extends TestCase
         $this->assertThrowsReason(ConfigurationError::HomeAssistantMissing, fn() => $config->requireHomeAssistant());
     }
 
-    public function testMissingFileSaysSo(): void
+    public function testMissingDefaultFileLeavesTheEnvironmentAlone(): void
+    {
+        $loader = ConfigLoaderFixture::createLoader(
+            new EnvironmentVariables(['STEWART_HOME_ASSISTANT__URL' => 'ws://ha.local:8123', 'STEWART_HOME_ASSISTANT__TOKEN' => 'from-the-env']),
+            new ProjectRoot($this->temp->path),
+        );
+
+        self::assertSame('from-the-env', $loader->loadConfig(null)->requireHomeAssistant()->token);
+        self::assertSame($this->temp->getFilePath('stewart.yaml'), $loader->findMissingDefaultFile(null));
+    }
+
+    public function testFoundOrExplicitFileIsNotMissing(): void
+    {
+        $loader = ConfigLoaderFixture::createLoader(projectRoot: new ProjectRoot($this->temp->path));
+
+        self::assertNull($loader->findMissingDefaultFile($this->temp->getFilePath('absent.yaml')));
+
+        file_put_contents($this->temp->getFilePath('stewart.yaml'), self::CONNECTION);
+
+        self::assertNull($loader->findMissingDefaultFile(null));
+    }
+
+    public function testMissingExplicitFileSaysSo(): void
     {
         $e = $this->assertThrowsReason(ConfigurationError::ConfigFileMissing, fn() => ConfigLoaderFixture::createLoader()->loadConfig($this->temp->getFilePath('absent.yaml')));
 

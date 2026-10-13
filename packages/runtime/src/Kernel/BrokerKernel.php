@@ -21,11 +21,12 @@ use Stewart\Runtime\Config\ServiceCallPolicy;
 use Stewart\Runtime\Config\StewartConfig;
 use Stewart\Runtime\Config\SupervisionConfig;
 use Stewart\Runtime\Exception\ConfigurationException;
+use Stewart\Runtime\Model\StewartVersion;
 
 final readonly class BrokerKernel
 {
     public function __construct(
-        private string $daemonVersion,
+        private StewartVersion $stewartVersion,
         private string $userServicesFile,
         private ProjectRoot $projectRoot,
         private SyntheticServices $overrides = new SyntheticServices(),
@@ -39,7 +40,7 @@ final readonly class BrokerKernel
         $this->warnAboutReadyTimeoutBelowInitialize($config, $logger);
 
         return $this->compiler
-            ->compileProfileContainer(ContainerProfile::Broker, $this->buildSyntheticServicesFor($config, $apps, $logger)->withOverrides($this->overrides), $this->buildNamedArgumentsFor($config, $configFileOption))
+            ->compileProfileContainer(ContainerProfile::Broker, $this->buildSyntheticServicesFor($config, $apps, $logger)->withOverrides($this->overrides), $this->buildNamedArgumentsFor($configFileOption))
             ->resolveService(BrokerLifecycle::class);
     }
 
@@ -48,6 +49,7 @@ final readonly class BrokerKernel
     {
         return new SyntheticServices()
             ->withService(StewartConfig::class, $config)
+            ->withService(StewartVersion::class, $this->stewartVersion)
             ->withService(AppCatalog::class, $apps)
             ->withService(AppDefinitionCollection::class, $apps->enabled)
             ->withService(LoggerInterface::class, $logger)
@@ -64,19 +66,10 @@ final readonly class BrokerKernel
             ->withService(OutboxLimits::class, new OutboxLimits($config->workerEventBuffer, $config->workerStateBatch));
     }
 
-    private function buildNamedArgumentsFor(StewartConfig $config, ?string $configFileOption): NamedArguments
+    private function buildNamedArgumentsFor(?string $configFileOption): NamedArguments
     {
         return new NamedArguments()
-            ->withArgument('daemonVersion', $this->daemonVersion)
-            ->withArgument('componentSessionStewartVersion', $this->daemonVersion)
-            ->withArgument('reconnectBackoff', $config->reconnectBackoff)
-            ->withArgument('componentRelinkBackoff', $config->reconnectBackoff)
             ->withArgument('userServicesFile', $this->userServicesFile)
-            ->withArgument('brokerShutdownGrace', $config->shutdownGrace)
-            ->withArgument('requestedRestartGrace', $config->shutdownGrace)
-            ->withArgument('poolWorkerCount', $config->workers)
-            ->withArgument('workerRestartAttempts', $config->supervision->restartAttempts)
-            ->withArgument('workerRestartWindow', $config->supervision->restartWindow)
             ->withArgument('releaseCheckConfigFile', $configFileOption);
     }
 
