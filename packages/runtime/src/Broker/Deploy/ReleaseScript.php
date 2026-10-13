@@ -19,7 +19,7 @@ final readonly class ReleaseScript
     public function __construct(
         private ExternalCommandRunner $commands,
         private GitDeployConfig $gitDeploy,
-        private ?string $releaseCheckConfigFile = null,
+        private ?string $releaseCheckConfigFile,
     ) {}
 
     /**

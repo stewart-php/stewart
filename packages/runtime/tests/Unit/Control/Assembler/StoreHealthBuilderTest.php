@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\Control\Assembler\StoreHealthBuilder;
+use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Runtime\Tests\Fixtures\Control\BrokerStateFixture;
 use Stewart\Store\StoreHealth;
 
@@ -28,7 +29,7 @@ final class StoreHealthBuilderTest extends TestCase
 
     public function testWithoutPersistenceThereIsNoStoreToReport(): void
     {
-        self::assertNull(new StoreHealthBuilder($this->broker->pools->slots, storeConfigured: false)->buildStoreHealth());
+        self::assertNull(new StoreHealthBuilder($this->broker->pools->slots, ConfigFixture::createPersistenceConfig())->buildStoreHealth());
     }
 
     public function testStoreDownWhenAnyWorkerReportsIt(): void
@@ -55,6 +56,6 @@ final class StoreHealthBuilderTest extends TestCase
 
     private function createBuilder(): StoreHealthBuilder
     {
-        return new StoreHealthBuilder($this->broker->pools->slots, storeConfigured: true);
+        return new StoreHealthBuilder($this->broker->pools->slots, ConfigFixture::createPersistenceConfig(['url' => 'redis://valkey']));
     }
 }

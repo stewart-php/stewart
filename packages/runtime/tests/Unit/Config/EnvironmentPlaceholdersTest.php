@@ -7,7 +7,7 @@ namespace Stewart\Runtime\Tests\Unit\Config;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Stewart\Runtime\Config\Environment\LeafParserChain;
+use Stewart\Runtime\Config\Environment\EnvironmentValueParser;
 use Stewart\Runtime\Config\EnvironmentPlaceholders;
 use Stewart\Runtime\Config\EnvironmentVariables;
 use Stewart\Runtime\Config\StewartConfigSchema;
@@ -16,7 +16,7 @@ use Stewart\Runtime\Tests\Fixtures\Config\ConfigLoaderFixture;
 use Stewart\Testing\Exception\AssertsReason;
 
 #[CoversClass(EnvironmentPlaceholders::class)]
-#[CoversClass(LeafParserChain::class)]
+#[CoversClass(EnvironmentValueParser::class)]
 final class EnvironmentPlaceholdersTest extends TestCase
 {
     use AssertsReason;

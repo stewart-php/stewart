@@ -32,7 +32,7 @@ final class BrokerMessageDispatcherTest extends TestCase
     {
         $logger = new RecordingLogger();
 
-        new BrokerMessageDispatcher([new SubscriptionAckHandler($logger, RecordingDispatchListener::createDispatcher('w0', 10))], new NullLogger())
+        new BrokerMessageDispatcher([new SubscriptionAckHandler($logger, RecordingDispatchListener::createDispatcher(10))], new NullLogger())
             ->dispatch(new SubscriptionAck(new SubscriptionId('w0:1'), false, 'worker-local'));
 
         self::assertSame(['Broker rejected a subscription'], $logger->listMessagesAt('error'));
@@ -43,7 +43,7 @@ final class BrokerMessageDispatcherTest extends TestCase
     {
         $logger = new RecordingLogger();
 
-        new BrokerMessageDispatcher([new SubscriptionAckHandler($logger, RecordingDispatchListener::createDispatcher('w0', 10))], new NullLogger())
+        new BrokerMessageDispatcher([new SubscriptionAckHandler($logger, RecordingDispatchListener::createDispatcher(10))], new NullLogger())
             ->dispatch(new SubscriptionAck(new SubscriptionId('w0:1'), true, null));
 
         self::assertTrue($logger->records->isEmpty());

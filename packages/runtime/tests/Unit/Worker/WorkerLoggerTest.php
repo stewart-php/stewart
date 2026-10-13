@@ -15,6 +15,7 @@ use Stewart\Runtime\Model\LogLevel;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Ipc\NullTransport;
+use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Stewart\Runtime\Worker\StderrFallback;
 use Stewart\Runtime\Worker\WorkerLogger;
 
@@ -23,7 +24,7 @@ final class WorkerLoggerTest extends TestCase
 {
     public function testUnknownLevelIsRejectedWhereTheAppLogged(): void
     {
-        $logger = new WorkerLogger(new NullTransport(), new StderrFallback(new WorkerId(0)), ResourceScope::forApp(new AppId('demo')));
+        $logger = new WorkerLogger(new NullTransport(), new StderrFallback(new WorkerId(0)), ResourceScope::forApp(new AppId('demo')), TestBootstrap::createWorkerSettings());
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessageIsOrContains('Unknown log level "trace"');
@@ -34,7 +35,7 @@ final class WorkerLoggerTest extends TestCase
     public function testRecordsBelowTheThresholdStayInTheWorker(): void
     {
         $transport = new NullTransport();
-        $logger = new WorkerLogger($transport, new StderrFallback(new WorkerId(0)), ResourceScope::forApp(new AppId('demo')), LogLevel::Warning);
+        $logger = new WorkerLogger($transport, new StderrFallback(new WorkerId(0)), ResourceScope::forApp(new AppId('demo')), TestBootstrap::createWorkerSettings(logLevel: LogLevel::Warning));
 
         $logger->info('quiet');
         $logger->error('loud');
@@ -47,7 +48,7 @@ final class WorkerLoggerTest extends TestCase
     public function testContextIsReducedToValuesThatCrossProcesses(): void
     {
         $transport = new NullTransport();
-        $logger = new WorkerLogger($transport, new StderrFallback(new WorkerId(0)), ResourceScope::forApp(new AppId('worker')));
+        $logger = new WorkerLogger($transport, new StderrFallback(new WorkerId(0)), ResourceScope::forApp(new AppId('worker')), TestBootstrap::createWorkerSettings());
 
         $logger->forApp(new AppId('demo'))->warning('context', [
             'list' => [1, 'two', new stdClass()],

@@ -16,12 +16,12 @@ final readonly class NamedArguments
         return new self([...$this->values, '$' . $name => $value]);
     }
 
-    // Untracked: a profile may leave one unused, e.g. projectDir without the codegen package.
+    // Tracked, so compiling fails when no service takes a bound name, e.g. after a parameter rename.
     /** @return array<string, BoundArgument> */
     public function toBoundArguments(): array
     {
         return array_map(
-            static fn(mixed $value): BoundArgument => new BoundArgument($value, false),
+            static fn(mixed $value): BoundArgument => new BoundArgument($value, true),
             $this->values,
         );
     }

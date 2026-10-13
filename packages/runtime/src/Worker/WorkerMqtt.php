@@ -15,6 +15,7 @@ use Stewart\Contracts\Selector\Selector;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\MqttPublish;
 use Stewart\Runtime\Ipc\Transport;
+use Stewart\Runtime\Ipc\WorkerSettings;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Worker\Context\DispatchStreams;
 
@@ -24,7 +25,7 @@ final readonly class WorkerMqtt implements Mqtt
         private Transport $transport,
         private DispatchStreams $streams,
         private AppActivityCounters $activityCounters,
-        private bool $brokerMqttEnabled,
+        private WorkerSettings $workerSettings,
         private ResourceScope $resourceScope,
     ) {}
 
@@ -33,7 +34,7 @@ final readonly class WorkerMqtt implements Mqtt
     {
         $this->assertBrokerMqttEnabled();
 
-        return new self($this->transport, $this->streams, $this->activityCounters, $this->brokerMqttEnabled, ResourceScope::forApp($appId));
+        return new self($this->transport, $this->streams, $this->activityCounters, $this->workerSettings, ResourceScope::forApp($appId));
     }
 
     public function publish(string $topic, string|array $payload, MqttQos $qos = MqttQos::AtMostOnce, bool $retain = false): void
@@ -60,7 +61,7 @@ final readonly class WorkerMqtt implements Mqtt
     /** @throws MqttException */
     private function assertBrokerMqttEnabled(): void
     {
-        if (!$this->brokerMqttEnabled) {
+        if (!$this->workerSettings->mqttEnabled) {
             throw MqttException::createForReason(MqttError::NotConfigured);
         }
     }

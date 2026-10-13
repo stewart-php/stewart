@@ -17,6 +17,7 @@ use Stewart\Contracts\Schedule\ScheduledTask;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\Model\ResourceScope;
+use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Schedule\AsyncHandlerRunner;
 use Stewart\Runtime\Schedule\ElapsedTrigger;
 use Stewart\Runtime\Schedule\ScheduleContext;
@@ -74,7 +75,7 @@ final class ScheduleRegistryTest extends TestCase
         $this->listener = new RecordingScheduleListener();
         $this->logger = new RecordingLogger();
         $this->scopes = new ScopeLifecycle();
-        $this->registry = new ScheduleRegistry('w0', new ScheduleContext($this->timers, $this->clock, new InlineHandlerRunner(), $this->listener), new TriggerFactory($this->clock), $this->scopes);
+        $this->registry = new ScheduleRegistry(new WorkerId(0), new ScheduleContext($this->timers, $this->clock, new InlineHandlerRunner(), $this->listener), new TriggerFactory($this->clock), $this->scopes);
         $this->scheduler = WorkerSchedulerFixture::createWorkerScheduler($this->registry, new UnlocatedSunCalendar(), $this->logger, self::createScope('demo'));
         $this->runs = [];
     }
@@ -199,7 +200,7 @@ final class ScheduleRegistryTest extends TestCase
         // Clocks go back 03:00 +02:00 -> 02:00 +01:00 on 2026-10-25, so 02:00-02:59 happens twice.
         $zone = new DateTimeZone('Europe/Budapest');
         $timers = new ManualTimers(new VirtualClock(new DateTimeImmutable('2026-10-25 01:30:00', $zone)));
-        $registry = new ScheduleRegistry('w0', new ScheduleContext($timers, $timers->clock, new InlineHandlerRunner(), $this->listener), new TriggerFactory($timers->clock), $this->scopes);
+        $registry = new ScheduleRegistry(new WorkerId(0), new ScheduleContext($timers, $timers->clock, new InlineHandlerRunner(), $this->listener), new TriggerFactory($timers->clock), $this->scopes);
         $scheduler = WorkerSchedulerFixture::createWorkerScheduler($registry, new UnlocatedSunCalendar(), $this->logger, self::createScope('demo'));
 
         $this->goLive('demo', $registry);
@@ -357,7 +358,7 @@ final class ScheduleRegistryTest extends TestCase
 
     public function testRunInFlightDisplacesNextAndWarnsOnce(): void
     {
-        $registry = new ScheduleRegistry('w0', new ScheduleContext($this->timers, $this->clock, new AsyncHandlerRunner(), $this->listener), new TriggerFactory($this->clock), $this->scopes);
+        $registry = new ScheduleRegistry(new WorkerId(0), new ScheduleContext($this->timers, $this->clock, new AsyncHandlerRunner(), $this->listener), new TriggerFactory($this->clock), $this->scopes);
         $scheduler = WorkerSchedulerFixture::createWorkerScheduler($registry, new UnlocatedSunCalendar(), $this->logger, self::createScope('demo'));
         $gate = new DeferredFuture();
 

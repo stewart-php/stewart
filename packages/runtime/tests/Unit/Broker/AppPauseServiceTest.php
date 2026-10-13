@@ -28,7 +28,7 @@ use Stewart\Runtime\Lifecycle\AppPauseOverridePersistence;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
 use Stewart\Runtime\Lifecycle\AppStateAfterReset;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
-use Stewart\Store\StorePrefix;
+use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Logging\RecordingLogger;
 use Stewart\Testing\Store\InMemoryStoreBackend;
@@ -122,7 +122,7 @@ final class AppPauseServiceTest extends TestCase
         $service = new AppPauseService(
             self::createCatalog(),
             $this->createRegistry(),
-            new AppPauseOverrideStore(new AppPauseOverrideCodec(AppPauseOverrideCodec::createOverrideWireMapper()), new NullLogger()),
+            new AppPauseOverrideStore(new AppPauseOverrideCodec(AppPauseOverrideCodec::createOverrideWireMapper()), new NullLogger(), ConfigFixture::createPersistenceConfig()),
             new WorkerSlotRegistry(),
             $this->clock,
             $this->logger,
@@ -227,7 +227,7 @@ final class AppPauseServiceTest extends TestCase
 
     private function createOverrideStore(): AppPauseOverrideStore
     {
-        return new AppPauseOverrideStore(new AppPauseOverrideCodec(AppPauseOverrideCodec::createOverrideWireMapper()), new NullLogger(), $this->backend, new StorePrefix('stewart'));
+        return new AppPauseOverrideStore(new AppPauseOverrideCodec(AppPauseOverrideCodec::createOverrideWireMapper()), new NullLogger(), ConfigFixture::createPersistenceConfig(['prefix' => 'stewart']), $this->backend);
     }
 
     private static function createCatalog(): AppCatalog

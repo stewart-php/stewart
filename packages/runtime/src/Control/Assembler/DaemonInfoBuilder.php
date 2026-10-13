@@ -7,12 +7,13 @@ namespace Stewart\Runtime\Control\Assembler;
 use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\HaSession;
 use Stewart\Runtime\Control\Protocol\Status\DaemonInfo;
+use Stewart\Runtime\Model\StewartVersion;
 
 final readonly class DaemonInfoBuilder
 {
     public function __construct(
         private HaSession $session,
-        private string $daemonVersion,
+        private StewartVersion $stewartVersion,
         private DaemonStartTime $startTime,
     ) {}
 
@@ -22,7 +23,7 @@ final readonly class DaemonInfoBuilder
             pid: getmypid() ?: 0,
             startedAt: $this->startTime->getStartedAt(),
             memoryBytes: memory_get_usage(true),
-            version: $this->daemonVersion,
+            version: $this->stewartVersion->value,
             timeZone: $this->session->getTimeZone()->getName(),
             entities: $this->session->countEntities(),
             haVersion: $this->session->getHaVersion(),

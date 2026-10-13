@@ -9,6 +9,7 @@ use Stewart\Runtime\Config\ProjectRoot;
 use Stewart\Runtime\Config\Psr4Map;
 use Stewart\Runtime\Console\StewartApplication;
 use Stewart\Runtime\Container\TypedContainer;
+use Stewart\Runtime\Model\StewartVersion;
 use Symfony\Component\Console\CommandLoader\CommandLoaderInterface;
 
 final readonly class ConsoleKernel
@@ -32,7 +33,7 @@ final readonly class ConsoleKernel
     {
         $container = $this->compileContainer();
 
-        $application = new StewartApplication($this->detectInstalledVersion());
+        $application = new StewartApplication($this->detectInstalledVersion()->value);
         $application->setCommandLoader($container->resolveService(CommandLoaderInterface::class, 'console.command_loader'));
 
         return $application;
@@ -48,21 +49,23 @@ final readonly class ConsoleKernel
         return new SyntheticServices()
             ->withService(ProjectRoot::class, new ProjectRoot($this->projectDir))
             ->withService(Psr4Map::class, new Psr4Map($this->psr4))
+            ->withService(StewartVersion::class, $this->detectInstalledVersion())
             ->withOverrides($this->overrides);
     }
 
     private function buildNamedArgumentsForProject(): NamedArguments
     {
         return new NamedArguments()
-            ->withArgument('daemonVersion', $this->detectInstalledVersion())
             ->withArgument('appsDirectory', $this->projectDir . self::APPS_DIRECTORY)
             ->withArgument('userServicesFile', $this->projectDir . self::SERVICES_FILE);
     }
 
-    private function detectInstalledVersion(): string
+    private function detectInstalledVersion(): StewartVersion
     {
-        return InstalledVersions::isInstalled(self::RUNTIME_PACKAGE)
-            ? InstalledVersions::getPrettyVersion(self::RUNTIME_PACKAGE) ?? self::UNKNOWN_VERSION
-            : self::UNKNOWN_VERSION;
+        return new StewartVersion(
+            InstalledVersions::isInstalled(self::RUNTIME_PACKAGE)
+                ? InstalledVersions::getPrettyVersion(self::RUNTIME_PACKAGE) ?? self::UNKNOWN_VERSION
+                : self::UNKNOWN_VERSION,
+        );
     }
 }

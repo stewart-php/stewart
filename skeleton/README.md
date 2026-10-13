@@ -83,7 +83,9 @@ shows what is in effect. Every setting can also come from the environment: `STEW
 joined by a double underscore (`apps.hello.options.watch` → `STEWART_APPS__HELLO__OPTIONS__WATCH`).
 
 - Secrets belong in `.env` or in files: `STEWART_HOME_ASSISTANT__TOKEN_FILE=/run/secrets/ha` reads the token from a
-  file, which fits Docker and Kubernetes secrets.
+  file, which fits Docker and Kubernetes secrets. App options take the same suffix:
+  `STEWART_APPS__WEATHER__OPTIONS__API_KEY_FILE=/run/secrets/weather` fills the `apiKey` option.
+- `stewart.yaml` is optional: without it, the environment alone configures Stewart.
 - `STEWART_BOOT_*` variables are read by the container entrypoint, not by Stewart; they are listed below.
 
 ## Deploying

@@ -30,10 +30,11 @@ use Stewart\Runtime\Broker\Component\ComponentSession;
 use Stewart\Runtime\Broker\Component\ComponentTracker;
 use Stewart\Runtime\Broker\Exposure\ExposureLink;
 use Stewart\Runtime\Broker\Exposure\ExposureReconciler;
-use Stewart\Runtime\Config\BackoffPolicy;
 use Stewart\Runtime\Config\ExposeConfig;
 use Stewart\Runtime\Lifecycle\ComponentState;
+use Stewart\Runtime\Model\StewartVersion;
 use Stewart\Runtime\Model\WorkerId;
+use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Testing\Logging\RecordingLogger;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
@@ -70,11 +71,11 @@ final class ComponentSessionTest extends TestCase
         $expose = new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10));
         $this->exposures = new ExposureLink($client, new NullLogger(), $this->tracker, $expose);
         $this->session = new ComponentSession(
-            new ComponentLink($client, $this->logger, $this->tracker, $expose, '0.11.0'),
+            new ComponentLink($client, $this->logger, $this->tracker, $expose, new StewartVersion('0.11.0')),
             $this->exposures,
             new ExposureReconciler(WorkerSlotCollection::fromList([]), $this->exposures, $client, $this->tracker, $expose, $this->timers, new NullLogger()),
             $this->tracker,
-            new BackoffPolicy(Duration::seconds(1), Duration::seconds(4)),
+            ConfigFixture::createStewartConfig(['reconnect' => ['initial_delay' => '1s', 'max_delay' => '4s']]),
             $this->timers,
             $this->logger,
         );

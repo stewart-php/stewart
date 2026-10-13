@@ -69,10 +69,10 @@ return static function (ContainerConfigurator $container): void {
     $services->set(StateCache::class);
     $services->set(RegistryCache::class);
     $services->set(StoreValueCodec::class);
-    $services->set(GeneratedRoots::class)->factory([GeneratedRoots::class, 'fromNamespace']);
+    $services->set(GeneratedRoots::class)->factory([GeneratedRoots::class, 'fromWorkerSettings']);
 
     $services->alias(StoreBackendOpener::class, DsnStoreBackendOpener::class);
-    $services->set(GuardedStoreBackend::class)->factory([service(StoreBackendOpener::class), 'openForStoreSettings']);
+    $services->set(GuardedStoreBackend::class)->factory([service(StoreBackendOpener::class), 'openForBootstrap']);
     $services->alias(StoreBackend::class, GuardedStoreBackend::class);
     $services->set(Stores::class)->factory([service(WorkerStoresFactory::class), 'createStores']);
 

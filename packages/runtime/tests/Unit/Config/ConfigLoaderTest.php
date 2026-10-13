@@ -210,6 +210,19 @@ final class ConfigLoaderTest extends TestCase
         self::assertSame(['watch' => 'light.porch', 'light' => 'light.kitchen'], $config->apps->find(new AppId('demo'))?->options);
     }
 
+    public function testOptionSecretReplacesTheFileValue(): void
+    {
+        $secret = $this->temp->getFilePath('weather-key');
+        file_put_contents($secret, "from-a-secret\n");
+
+        $config = $this->loadConfig(
+            self::CONNECTION . "\napps:\n  weather:\n    options:\n      apiKey: changeme\n      city: Budapest\n",
+            ['STEWART_APPS__WEATHER__OPTIONS__API_KEY_FILE' => $secret],
+        );
+
+        self::assertSame(['apiKey' => 'from-a-secret', 'city' => 'Budapest'], $config->apps->find(new AppId('weather'))?->options);
+    }
+
     public function testEnvironmentOptionListReplacesFileList(): void
     {
         $config = $this->loadConfig(
@@ -276,7 +289,29 @@ final class ConfigLoaderTest extends TestCase
         $this->assertThrowsReason(ConfigurationError::HomeAssistantMissing, fn() => $config->requireHomeAssistant());
     }
 
-    public function testMissingFileSaysSo(): void
+    public function testMissingDefaultFileLeavesTheEnvironmentAlone(): void
+    {
+        $loader = ConfigLoaderFixture::createLoader(
+            new EnvironmentVariables(['STEWART_HOME_ASSISTANT__URL' => 'ws://ha.local:8123', 'STEWART_HOME_ASSISTANT__TOKEN' => 'from-the-env']),
+            new ProjectRoot($this->temp->path),
+        );
+
+        self::assertSame('from-the-env', $loader->loadConfig(null)->requireHomeAssistant()->token);
+        self::assertSame($this->temp->getFilePath('stewart.yaml'), $loader->findMissingDefaultFile(null));
+    }
+
+    public function testFoundOrExplicitFileIsNotMissing(): void
+    {
+        $loader = ConfigLoaderFixture::createLoader(projectRoot: new ProjectRoot($this->temp->path));
+
+        self::assertNull($loader->findMissingDefaultFile($this->temp->getFilePath('absent.yaml')));
+
+        file_put_contents($this->temp->getFilePath('stewart.yaml'), self::CONNECTION);
+
+        self::assertNull($loader->findMissingDefaultFile(null));
+    }
+
+    public function testMissingExplicitFileSaysSo(): void
     {
         $e = $this->assertThrowsReason(ConfigurationError::ConfigFileMissing, fn() => ConfigLoaderFixture::createLoader()->loadConfig($this->temp->getFilePath('absent.yaml')));
 
@@ -301,8 +336,9 @@ final class ConfigLoaderTest extends TestCase
 
     public function testWithoutAUrlThereIsNoPersistence(): void
     {
-        self::assertNull($this->loadConfig(self::CONNECTION)->persistence);
-        self::assertNull($this->loadConfig(self::CONNECTION . "\npersistence:\n  url: ''\n")->persistence);
+        self::assertFalse($this->loadConfig(self::CONNECTION)->persistence->isStoreConfigured());
+        self::assertFalse($this->loadConfig(self::CONNECTION . "\npersistence:\n  url: ''\n")->persistence->isStoreConfigured());
+        self::assertNull($this->loadConfig(self::CONNECTION . "\npersistence:\n  url: 'off'\n")->persistence->url);
     }
 
     public function testStorageUrlIsParsedIntoATypedSetting(): void
@@ -315,7 +351,7 @@ final class ConfigLoaderTest extends TestCase
               timeout: 500ms
             YAML)->persistence;
 
-        self::assertNotNull($persistence);
+        self::assertNotNull($persistence->url);
         self::assertSame('redis', $persistence->url->scheme);
         self::assertSame('redis://valkey:6379/3', $persistence->url->reveal());
         self::assertSame('upstairs', $persistence->prefix->value);
@@ -327,8 +363,7 @@ final class ConfigLoaderTest extends TestCase
     {
         $persistence = $this->loadConfig(self::CONNECTION, ['STEWART_PERSISTENCE__URL' => 'redis://elsewhere:6379'])->persistence;
 
-        self::assertNotNull($persistence);
-        self::assertSame('redis://elsewhere:6379', $persistence->url->reveal());
+        self::assertSame('redis://elsewhere:6379', $persistence->url?->reveal());
     }
 
     public function testInvalidUrlIsNotEchoed(): void

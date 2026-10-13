@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Tests\Fixtures\Config;
 
 use Stewart\Runtime\Config\ConfigSection;
+use Stewart\Runtime\Config\PersistenceConfig;
 use Stewart\Runtime\Config\ServiceCallPolicy;
 use Stewart\Runtime\Config\StewartConfig;
 use Stewart\Runtime\Config\StewartConfigSchema;
@@ -36,6 +37,12 @@ final class ConfigFixture
     public static function createSupervisionConfig(array $supervision = []): SupervisionConfig
     {
         return self::createStewartConfig(['supervision' => $supervision])->supervision;
+    }
+
+    /** @param array<string, mixed> $persistence */
+    public static function createPersistenceConfig(array $persistence = []): PersistenceConfig
+    {
+        return self::createStewartConfig(['persistence' => $persistence])->persistence;
     }
 
     /** @param array<string, mixed> $serviceCalls */

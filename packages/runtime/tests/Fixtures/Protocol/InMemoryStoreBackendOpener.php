@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Tests\Fixtures\Protocol;
 
 use Stewart\Contracts\Time\Clock;
-use Stewart\Runtime\Ipc\StoreSettings;
+use Stewart\Runtime\Ipc\Message\Bootstrap;
 use Stewart\Runtime\Worker\StoreBackendOpener;
 use Stewart\Store\GuardedStoreBackend;
 use Stewart\Store\StoreBackend;
@@ -19,16 +19,18 @@ final readonly class InMemoryStoreBackendOpener implements StoreBackendOpener
         private Clock $clock,
     ) {}
 
-    public function openForStoreSettings(?StoreSettings $workerStoreSettings): ?GuardedStoreBackend
+    public function openForBootstrap(Bootstrap $bootstrap): ?GuardedStoreBackend
     {
-        if ($workerStoreSettings === null) {
+        $storeSettings = $bootstrap->store;
+
+        if ($storeSettings === null) {
             return null;
         }
 
         return new GuardedStoreBackend(
             $this->backend,
-            StoreDsn::parse($workerStoreSettings->dsn),
-            new StoreTiming($workerStoreSettings->timeout, $workerStoreSettings->recoveryInterval),
+            StoreDsn::parse($storeSettings->dsn),
+            new StoreTiming($storeSettings->timeout, $storeSettings->recoveryInterval),
             $this->clock,
         );
     }

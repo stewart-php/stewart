@@ -15,7 +15,7 @@ final readonly class OptionalDuration implements Stringable
     /** @throws TimeException */
     public static function parse(string $text): self
     {
-        return strcasecmp(trim($text), StewartConfigSchema::OFF) === 0 ? self::off() : new self(Duration::parse($text));
+        return StewartConfigSchema::isOff($text) ? self::off() : new self(Duration::parse($text));
     }
 
     public static function off(): self

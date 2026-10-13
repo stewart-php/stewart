@@ -9,11 +9,11 @@ use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\RegistryEditException;
 use Stewart\Contracts\Registry\RegisteredEntity;
 use Stewart\Contracts\Registry\Update\EntityRegistryUpdate;
-use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateRequest;
 use Stewart\Runtime\Ipc\Transport;
+use Stewart\Runtime\Ipc\WorkerSettings;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Worker\ConnectionStatus;
 use Stewart\Runtime\Worker\PendingRequests;
@@ -27,7 +27,7 @@ final readonly class RegistryEditRequester
         private PendingRequests $pending,
         private ConnectionStatus $connection,
         private Deadlines $deadlines,
-        private Duration $registryEditTimeout,
+        private WorkerSettings $workerSettings,
     ) {}
 
     /** @throws RegistryEditException */
@@ -45,9 +45,9 @@ final readonly class RegistryEditRequester
         try {
             $this->sendRequest(new RegistryEntityUpdateRequest($edit->correlationId, $scope, $entityId, $update));
 
-            return $edit->getFuture()->await($this->deadlines->timeout($this->registryEditTimeout));
+            return $edit->getFuture()->await($this->deadlines->timeout($this->workerSettings->callTimeout));
         } catch (CancelledException $e) {
-            throw RegistryEditException::timedOut($entityId, \sprintf('no answer from the broker within %s', $this->registryEditTimeout), $e);
+            throw RegistryEditException::timedOut($entityId, \sprintf('no answer from the broker within %s', $this->workerSettings->callTimeout), $e);
         } finally {
             $this->pending->forget($edit->correlationId);
         }

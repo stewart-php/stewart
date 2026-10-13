@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Tests\Unit\Config;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Config\ConfigSection;
+use Stewart\Runtime\Config\ControlAddress;
 use Stewart\Runtime\Config\OptionalDuration;
 use Stewart\Runtime\Exception\ConfigurationError;
 use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
@@ -41,11 +43,32 @@ final class ConfigSectionTest extends TestCase
         self::assertNull(ConfigSection::forRoot(['ping' => 'Off'])->readOptionalDuration('ping', Duration::seconds(1))->findDuration());
     }
 
-    public function testWrongTypeNamesWhatWasExpected(): void
+    public function testTypeTheSchemaGuaranteesIsABugWhenMissing(): void
     {
-        $e = $this->assertThrowsReason(ConfigurationError::KeyInvalid, fn() => ConfigSection::forRoot(['workers' => '3'])->readInt('workers'));
+        $this->expectExceptionObject(new LogicException('The config schema and its reader disagree on supervision.unresponsive_after.'));
 
-        self::assertStringContainsString('workers must be a whole number.', $e->getMessage());
+        ConfigSection::forRoot(['supervision' => ['unresponsive_after' => '3']])->readSection('supervision')->readInt('unresponsive_after');
+    }
+
+    #[DataProvider('provideSwitchedOffValues')]
+    public function testSwitchableValueIsNullWhenSwitchedOff(?string $raw): void
+    {
+        self::assertNull(ConfigSection::forRoot(['listen' => $raw])->findSwitchableValue('listen', ControlAddress::parse(...)));
+    }
+
+    /** @return iterable<string, array{?string}> */
+    public static function provideSwitchedOffValues(): iterable
+    {
+        yield 'missing' => [null];
+        yield 'empty' => [''];
+        yield 'off with any case and spacing' => [' OFF '];
+    }
+
+    public function testSwitchableValueIsParsedOtherwise(): void
+    {
+        $address = ConfigSection::forRoot(['listen' => 'tcp://127.0.0.1:9000'])->findSwitchableValue('listen', ControlAddress::parse(...));
+
+        self::assertEquals(ControlAddress::parse('tcp://127.0.0.1:9000'), $address);
     }
 
     /** @param array<string, mixed> $yaml */
@@ -63,7 +86,6 @@ final class ConfigSectionTest extends TestCase
         yield 'negative reconnect delay' => [['reconnect' => ['initial_delay' => -1.0]], ConfigurationError::KeyParseFailed, 'reconnect.initial_delay'];
         yield 'store probed faster than one operation' => [['persistence' => ['url' => 'redis://valkey', 'recovery_interval' => '10ms']], ConfigurationError::DurationTooShort, 'persistence.recovery_interval'];
         yield 'control address in neither shape' => [['control' => ['listen' => 'http://localhost:8080']], ConfigurationError::KeyParseFailed, 'control.listen'];
-        yield 'empty control address' => [['control' => ['listen' => '']], ConfigurationError::KeyParseFailed, 'control.listen'];
         yield 'store URL without a scheme' => [['persistence' => ['url' => 'valkey']], ConfigurationError::KeyParseFailed, 'persistence.url'];
         yield 'store prefix read as a pattern' => [['persistence' => ['url' => 'redis://valkey', 'prefix' => 'st*']], ConfigurationError::KeyParseFailed, 'persistence.prefix'];
         yield 'namespace PHP cannot declare' => [['codegen' => ['namespace' => 'Stewart\\1Generated']], ConfigurationError::KeyParseFailed, 'codegen.namespace'];

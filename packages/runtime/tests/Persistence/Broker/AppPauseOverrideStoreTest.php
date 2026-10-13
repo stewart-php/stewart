@@ -15,6 +15,7 @@ use Stewart\Runtime\Broker\AppPauseOverrideCodec;
 use Stewart\Runtime\Broker\AppPauseOverrideStore;
 use Stewart\Runtime\Lifecycle\AppPauseOverridePersistence;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
+use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Store\Redis\RedisStoreBackendFactory;
 use Stewart\Store\StoreBackend;
 use Stewart\Store\StoreDsn;
@@ -58,7 +59,7 @@ final class AppPauseOverrideStoreTest extends TestCase
 
     private function createStore(): AppPauseOverrideStore
     {
-        return new AppPauseOverrideStore(new AppPauseOverrideCodec(AppPauseOverrideCodec::createOverrideWireMapper()), new NullLogger(), $this->backend, $this->prefix);
+        return new AppPauseOverrideStore(new AppPauseOverrideCodec(AppPauseOverrideCodec::createOverrideWireMapper()), new NullLogger(), ConfigFixture::createPersistenceConfig(['prefix' => $this->prefix->value]), $this->backend);
     }
 
     private static function getStoreDsn(): StoreDsn

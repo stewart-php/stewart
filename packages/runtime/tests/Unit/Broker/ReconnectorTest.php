@@ -13,7 +13,7 @@ use Stewart\Client\Exception\HaClientError;
 use Stewart\Client\Exception\HaClientException;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Broker\Reconnector;
-use Stewart\Runtime\Config\BackoffPolicy;
+use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Testing\Time\ManualTimers;
 
 #[CoversClass(Reconnector::class)]
@@ -119,7 +119,7 @@ final class ReconnectorTest extends TestCase
     private function createReconnector(): Reconnector
     {
         return new Reconnector(
-            reconnectBackoff: new BackoffPolicy(Duration::seconds(1), Duration::seconds(4)),
+            config: ConfigFixture::createStewartConfig(['reconnect' => ['initial_delay' => '1s', 'max_delay' => '4s']]),
             logger: new NullLogger(),
             deadlines: $this->timers,
         );

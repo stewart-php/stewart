@@ -33,7 +33,7 @@ final class CheckCommand extends StewartCommand
         $errors = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
 
         try {
-            $config = $this->config->loadConfig($this->config->locateConfigFile($this->findConfigOption($input)));
+            $config = $this->config->loadConfig($this->findConfigOption($input));
             $config->requireHomeAssistant();
             $discovered = $this->discovery->discover();
             $apps = $this->catalogs->resolveCatalog($discovered, $config->apps, $config->workers);
@@ -51,6 +51,7 @@ final class CheckCommand extends StewartCommand
             return Command::FAILURE;
         }
 
+        $this->writeMissingConfigFileNotice($output, $this->config->findMissingDefaultFile($this->findConfigOption($input)));
         $output->writeln(\sprintf('Configuration and %d automations load; %d enabled.', $discovered->apps->count(), $apps->enabled->count()));
 
         return Command::SUCCESS;

@@ -23,6 +23,7 @@ use Stewart\Runtime\Broker\Component\ComponentLink;
 use Stewart\Runtime\Broker\Component\ComponentTracker;
 use Stewart\Runtime\Config\ExposeConfig;
 use Stewart\Runtime\Lifecycle\ComponentState;
+use Stewart\Runtime\Model\StewartVersion;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
@@ -56,7 +57,7 @@ final class ComponentLinkTest extends TestCase
         $this->socket = FakeWebsocketConnector::createAuthenticatedConnection();
         $this->client = $this->createClient();
         $this->tracker = new ComponentTracker($this->timers->clock);
-        $this->link = new ComponentLink($this->client, new NullLogger(), $this->tracker, new ExposeConfig(ComponentInstance::parse('upstairs'), Duration::seconds(12)), self::STEWART_VERSION);
+        $this->link = new ComponentLink($this->client, new NullLogger(), $this->tracker, new ExposeConfig(ComponentInstance::parse('upstairs'), Duration::seconds(12)), new StewartVersion(self::STEWART_VERSION));
         $this->link->onCommand(function (ComponentCommand $command): void {
             $this->commands[] = $command;
         });

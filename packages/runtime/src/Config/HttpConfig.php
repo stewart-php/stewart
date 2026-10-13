@@ -16,12 +16,8 @@ final readonly class HttpConfig
     /** @throws ConfigurationException */
     public static function fromSection(ConfigSection $http): self
     {
-        $listen = $http->findString('listen');
-
         return new self(
-            listen: $listen === null || strcasecmp(trim($listen), StewartConfigSchema::OFF) === 0
-                ? null
-                : $http->readParsedValue('listen', HttpListenAddress::parse(...)),
+            listen: $http->findSwitchableValue('listen', HttpListenAddress::parse(...)),
             admin: HttpAdminConfig::fromSection($http->readSection('admin')),
         );
     }

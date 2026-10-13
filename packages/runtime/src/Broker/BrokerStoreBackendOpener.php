@@ -17,7 +17,7 @@ final readonly class BrokerStoreBackendOpener
     public function __construct(
         private StoreBackendConnector $storeBackendConnector,
         private LoggerInterface $logger,
-        private ?PersistenceConfig $persistenceConfig = null,
+        private PersistenceConfig $persistenceConfig,
     ) {}
 
     /**
@@ -26,17 +26,17 @@ final readonly class BrokerStoreBackendOpener
      */
     public function openConfiguredBackend(): ?GuardedStoreBackend
     {
-        $persistenceConfig = $this->persistenceConfig;
+        $url = $this->persistenceConfig->url;
 
-        if ($persistenceConfig === null) {
+        if ($url === null) {
             return null;
         }
 
-        $this->logger->debug('Apps will store to ' . $persistenceConfig->url, ['prefix' => $persistenceConfig->prefix->value]);
+        $this->logger->debug('Apps will store to ' . $url, ['prefix' => $this->persistenceConfig->prefix->value]);
 
         return $this->storeBackendConnector->connectToBackend(
-            $persistenceConfig->url,
-            new StoreTiming($persistenceConfig->timeout, $persistenceConfig->recoveryInterval),
+            $url,
+            new StoreTiming($this->persistenceConfig->timeout, $this->persistenceConfig->recoveryInterval),
         );
     }
 }

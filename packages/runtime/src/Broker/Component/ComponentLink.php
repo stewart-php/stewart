@@ -17,6 +17,7 @@ use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
 use Stewart\Runtime\Config\ExposeConfig;
 use Stewart\Runtime\Lifecycle\ComponentState;
+use Stewart\Runtime\Model\StewartVersion;
 
 // Session subscriptions live as long as one connection, so every connect detects the component again.
 final class ComponentLink
@@ -34,7 +35,7 @@ final class ComponentLink
         private readonly LoggerInterface $logger,
         private readonly ComponentTracker $tracker,
         private readonly ExposeConfig $expose,
-        private readonly string $componentSessionStewartVersion,
+        private readonly StewartVersion $stewartVersion,
     ) {
         $this->onCommand = static function (): void {};
         $this->onSessionEnded = static function (): void {};
@@ -82,7 +83,7 @@ final class ComponentLink
             }
 
             $this->client->subscribeComponentSession(
-                new ComponentSessionRequest($this->expose->instance, $this->componentSessionStewartVersion, $this->expose->commandTimeout),
+                new ComponentSessionRequest($this->expose->instance, $this->stewartVersion->value, $this->expose->commandTimeout),
                 fn(ComponentSessionEvent $event) => $this->handleSessionEvent($event, $generation),
             );
         } catch (HaClientException $e) {

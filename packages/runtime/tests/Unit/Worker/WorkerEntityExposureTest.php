@@ -43,6 +43,7 @@ use Stewart\Runtime\Ipc\Message\UpdateExposedEntityRequest;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Scope\ScopeLifecycle;
+use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Stewart\Runtime\Tests\Fixtures\Worker\ExposureBrokerStub;
 use Stewart\Runtime\Tests\Fixtures\Worker\RecordingDispatchListener;
 use Stewart\Runtime\Worker\CorrelationIdSequence;
@@ -110,11 +111,11 @@ final class WorkerEntityExposureTest extends TestCase
         $scopes = new ScopeLifecycle();
         $scopes->activateScope(ResourceScope::forApp(new AppId('climate')));
         $settlements = new ExposedCommandSettlements($this->broker, new NullLogger());
-        $this->dispatcher = RecordingDispatchListener::createDispatcher('w0', 10, scopes: $scopes);
+        $this->dispatcher = RecordingDispatchListener::createDispatcher(10, scopes: $scopes);
         $commandStreams = new ExposedCommandStreams($this->dispatcher, $timers, $settlements);
         $this->commandHandler = new ExposedEntityCommandedHandler($this->handles, $commandStreams, $settlements);
         $this->shared = new WorkerEntityExposure(
-            new ExposureRequester($this->broker, $pending, $timers, Duration::seconds(1)),
+            new ExposureRequester($this->broker, $pending, $timers, TestBootstrap::createWorkerSettings(callTimeout: Duration::seconds(1))),
             $this->handles,
             $commandStreams,
             ResourceScope::shared(),

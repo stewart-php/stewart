@@ -35,13 +35,14 @@ use Stewart\Runtime\Broker\Exposure\ExposureReconciler;
 use Stewart\Runtime\Broker\Reconnector;
 use Stewart\Runtime\Broker\Trigger\HaTriggerLink;
 use Stewart\Runtime\Broker\WebsocketHaSession;
-use Stewart\Runtime\Config\BackoffPolicy;
 use Stewart\Runtime\Config\ExposeConfig;
 use Stewart\Runtime\Lifecycle\ComponentState;
+use Stewart\Runtime\Model\StewartVersion;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Tests\Fixtures\Broker\RecordingSessionListener;
+use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Support\Wire\TriggerSpec;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Logging\RecordingLogger;
@@ -507,14 +508,14 @@ final class WebsocketHaSessionTest extends TestCase
 
         $client = new HaClient($connection, new EventDecoder(new EntityStateDecoder()), new EntityStateDecoder(), new RegistryDecoder(), new ComponentEventDecoder(), new NullLogger());
         $expose = new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10));
-        $backoff = new BackoffPolicy(Duration::seconds(1), Duration::seconds(4));
+        $config = ConfigFixture::createStewartConfig(['reconnect' => ['initial_delay' => '1s', 'max_delay' => '4s']]);
         $this->componentTracker = new ComponentTracker($this->timers->clock);
         $exposures = $this->exposures = new ExposureLink($client, new NullLogger(), $this->componentTracker, $expose);
 
         return $this->session = new WebsocketHaSession(
             $client,
             new Reconnector(
-                reconnectBackoff: $backoff,
+                config: $config,
                 logger: new NullLogger(),
                 deadlines: $this->timers,
             ),
@@ -524,11 +525,11 @@ final class WebsocketHaSessionTest extends TestCase
             new RegistryCache(),
             $this->triggers = new HaTriggerLink($client, new NullLogger()),
             new ComponentSession(
-                new ComponentLink($client, new NullLogger(), $this->componentTracker, $expose, '0.9.0'),
+                new ComponentLink($client, new NullLogger(), $this->componentTracker, $expose, new StewartVersion('0.9.0')),
                 $exposures,
                 new ExposureReconciler(WorkerSlotCollection::fromList([]), $exposures, $client, $this->componentTracker, $expose, $this->timers, new NullLogger()),
                 $this->componentTracker,
-                $backoff,
+                $config,
                 $this->timers,
                 new NullLogger(),
             ),

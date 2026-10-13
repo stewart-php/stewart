@@ -13,7 +13,6 @@ use Stewart\Runtime\Control\Client\ControlTargetResolver;
 use Stewart\Runtime\Control\Protocol\Frame\CommandResult;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 abstract class ControlCommand extends StewartCommand
@@ -53,7 +52,7 @@ abstract class ControlCommand extends StewartCommand
         $output->writeln($result->message);
 
         if ($result->warning !== null) {
-            ($output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output)->writeln('<comment>' . $result->warning . '</comment>');
+            $this->writeNotice($output, $result->warning);
         }
     }
 

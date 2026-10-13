@@ -9,6 +9,7 @@ use Psr\Log\LoggerInterface;
 use Stewart\Contracts\Schedule\ScheduledRun;
 use Stewart\Contracts\Schedule\ScheduledTask;
 use Stewart\Runtime\Model\ResourceScope;
+use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Scope\ScopeLifecycle;
 use Stewart\Support\Schedule\ElapsedSchedule;
 use Stewart\Support\Schedule\WallClockSchedule;
@@ -21,12 +22,16 @@ final class ScheduleRegistry
 
     private int $counter = 0;
 
+    private readonly string $scheduleIdPrefix;
+
     public function __construct(
-        private readonly string $scheduleIdPrefix,
+        WorkerId $workerId,
         private readonly ScheduleContext $context,
         private readonly TriggerFactory $triggers,
         private readonly ScopeLifecycle $scopes,
-    ) {}
+    ) {
+        $this->scheduleIdPrefix = $workerId->toProcessIdPrefix();
+    }
 
     /** @param Closure(ScheduledRun): void $handler */
     public function arm(ResourceScope $scope, WallClockSchedule|ElapsedSchedule $schedule, LoggerInterface $logger, Closure $handler): ScheduledTask

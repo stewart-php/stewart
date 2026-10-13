@@ -9,11 +9,11 @@ use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\EventContext;
-use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Transport;
+use Stewart\Runtime\Ipc\WorkerSettings;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Worker\ConnectionStatus;
 use Stewart\Runtime\Worker\PendingRequests;
@@ -28,7 +28,7 @@ final readonly class ServiceCaller
         private PendingRequests $pending,
         private ConnectionStatus $connection,
         private Deadlines $deadlines,
-        private Duration $workerCallTimeout,
+        private WorkerSettings $workerSettings,
     ) {}
 
     /** @throws ServiceCallException */
@@ -72,12 +72,12 @@ final readonly class ServiceCaller
                 returnResponse: $returnResponse,
             ));
 
-            return $call->getFuture()->await($this->deadlines->timeout($this->workerCallTimeout));
+            return $call->getFuture()->await($this->deadlines->timeout($this->workerSettings->callTimeout));
         } catch (CancelledException $e) {
             throw ServiceCallException::timedOut(
                 $domain,
                 $service,
-                \sprintf('no answer from the broker within %s', $this->workerCallTimeout),
+                \sprintf('no answer from the broker within %s', $this->workerSettings->callTimeout),
                 $e,
             );
         } finally {

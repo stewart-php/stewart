@@ -25,6 +25,9 @@ minor release may break; its "Upgrading" section says what to change.
 - `FakeWebsocketConnection::answerEverySend()` in `stewart-php/testing` answers every command of a type
 - `ManualScheduler` in `stewart-php/testing` runs every `Scheduler` method on virtual time, with sun events from
   `FixedSunCalendar`, whose event times a test sets
+- Stewart runs without a `stewart.yaml`: with no `--config`, a missing default file is read as empty, so the
+  environment alone configures it. `run`, `check` and `config:dump` say where the file was expected
+- `STEWART_APPS__<APP>__OPTIONS__<NAME>_FILE` fills an app option from a file, such as a mounted secret
 - `AppHarness` in `stewart-php/testing` builds an app with its options and recording fakes; tests push states,
   events and commands, call `advanceTime()` for timers, schedules and waits, and inspect what the app did
 
@@ -77,6 +80,8 @@ minor release may break; its "Upgrading" section says what to change.
 - List collections are built with `XCollection::fromList(...)`; the named factories that only forwarded to it, such
   as `EntityIdCollection::fromIds()` and `HaTriggerCollection::fromTriggers()`, are gone
 - The control protocol is version 29: a `restart_worker` request and the `stopping` worker phase
+- `off` or an empty value switches off `persistence.url`, `mqtt.url`, `http.listen`, `http.admin.listen` and
+  `control.listen`; an empty `listen` used to be refused
 - History queries share the `service_calls.max_in_flight[_per_worker]` budget and fail with the new
   `HistoryError::Overloaded` when it is full; exposure requests count toward it but are never refused
 - IPC protocol 27: one `request_failed` message replaces the five per-request error messages; the broker and its
@@ -121,7 +126,10 @@ minor release may break; its "Upgrading" section says what to change.
 11. Code that used a moved contracts class, such as `Stewart\Contracts\Stream\StateChanges` or
     `Stewart\Contracts\Schedule\CronSchedule`, imports it from `Stewart\Support\…`. These classes are internal and
     may change in any release; prefer the app-facing interfaces.
-12. Run `make generate`.
+12. An app option set through a variable ending in `_FILE`, such as `STEWART_APPS__DEMO__OPTIONS__CERT_FILE`, is now
+    read from that file. To keep passing the path itself, name the option in `stewart.yaml` with any value; the
+    variable still overrides it.
+13. Run `make generate`.
 
 ## [0.10.0] - 2026-10-12
 

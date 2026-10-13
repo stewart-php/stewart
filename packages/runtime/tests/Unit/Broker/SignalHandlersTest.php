@@ -7,7 +7,6 @@ namespace Stewart\Runtime\Tests\Unit\Broker;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\App\AppId;
-use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\BrokerRun;
@@ -22,6 +21,7 @@ use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerSpawner;
 use Stewart\Runtime\Tests\Fixtures\Broker\RecordingPoolListener;
 use Stewart\Runtime\Tests\Fixtures\Broker\WorkerPoolFixture;
+use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Testing\Async\Latch;
 use Stewart\Testing\Logging\RecordingLogger;
 use Stewart\Testing\Time\EventLoopTicks;
@@ -47,7 +47,7 @@ final class SignalHandlersTest extends TestCase
         $this->spawner = new FakeWorkerSpawner(joinLatch: new Latch());
         $pools = WorkerPoolFixture::createWorkerPool($this->spawner, timers: new ManualTimers(), logger: $this->logger);
         $this->pool = $pools->pool;
-        $this->run = new BrokerRun($pools->pool, $pools->watchdog, FakeHaSession::createOpened(), new DisabledMqttLink($this->logger), $this->logger, Duration::minutes(1), new DaemonStartTime($pools->clock));
+        $this->run = new BrokerRun($pools->pool, $pools->watchdog, FakeHaSession::createOpened(), new DisabledMqttLink($this->logger), $this->logger, ConfigFixture::createStewartConfig(['shutdown_grace' => '1m']), new DaemonStartTime($pools->clock));
         $this->run->start();
 
         $this->signals = new SignalHandlers($this->run, $this->logger);

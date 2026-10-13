@@ -21,7 +21,8 @@ helm install home oci://ghcr.io/stewart-php/charts/stewart \
   connection and no quarantined worker, so `kubectl get pods` shows when automations are not running.
   `probes.mode: exec` runs `stewart status --probe` inside the pod instead.
 - **Secrets** are mounted as files and read through `STEWART_*_FILE` variables; none is passed as a plain environment
-  value. The control token, used by `stewart status` and `exec` probes inside the pod, is generated once per release.
+  value. An app option can come from a mounted secret the same way, through `env`:
+  `STEWART_APPS__WEATHER__OPTIONS__API_KEY_FILE`. The control token, used by `stewart status` and `exec` probes inside the pod, is generated once per release.
 - **Locked down**: non-root (uid 10001), read-only root filesystem, no capabilities, no service account token,
   `enableServiceLinks: false`.
 
@@ -61,7 +62,7 @@ classes are rewritten inside the image.
 | `adminApi.existingSecret`, `.existingSecretKey` | `""`, `token` | Secret with the admin bearer token; name one when rendering with `helm template`, or the generated token changes on every render |
 | `adminApi.podMonitor.enabled` | `false` | Create a Prometheus Operator `PodMonitor` that scrapes `/metrics` with the admin token; needs `adminApi.host: 0.0.0.0` |
 | `adminApi.podMonitor.interval`, `.scrapeTimeout`, `.labels` | `""`, `""`, `{}` | Scrape settings, and labels your Prometheus selects PodMonitors by (`release: …` for kube-prometheus-stack) |
-| `config` | `{}` | `stewart.yaml` content; when set it replaces the project's file |
+| `config` | `{}` | `stewart.yaml` content; when set it replaces the project's file. Left empty, the project's own `stewart.yaml` is used, or the environment alone when the project has none |
 | `logLevel`, `logFormat` | `info`, `json` | |
 | `workers` | `0` | Worker processes; `0` is min(4, CPUs), and a CPU limit counts |
 | `env` | `[]` | Extra environment variables, such as `STEWART_APPS__HELLO__ENABLED` |

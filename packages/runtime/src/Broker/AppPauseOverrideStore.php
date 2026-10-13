@@ -12,40 +12,39 @@ use Stewart\Contracts\Exception\StewartException;
 use Stewart\Contracts\Exception\StoreException;
 use Stewart\Runtime\App\AppPauseOverride;
 use Stewart\Runtime\App\Collection\AppPauseOverrideCollection;
+use Stewart\Runtime\Config\PersistenceConfig;
 use Stewart\Runtime\Lifecycle\AppPauseOverridePersistence;
 use Stewart\Store\Keyspace;
 use Stewart\Store\StoreBackend;
-use Stewart\Store\StorePrefix;
 
 final readonly class AppPauseOverrideStore
 {
     private const string KEY_STEM = 'app-pause:';
 
-    private ?Keyspace $keyspace;
+    private Keyspace $keyspace;
 
     public function __construct(
         private AppPauseOverrideCodec $codec,
         private LoggerInterface $logger,
+        PersistenceConfig $persistenceConfig,
         private ?StoreBackend $store = null,
-        ?StorePrefix $appPauseOverridePrefix = null,
     ) {
-        $this->keyspace = $appPauseOverridePrefix === null ? null : Keyspace::forRuntime($appPauseOverridePrefix);
+        $this->keyspace = Keyspace::forRuntime($persistenceConfig->prefix);
     }
 
     /** @throws StoreException */
     public function loadOverrides(): AppPauseOverrideCollection
     {
         $store = $this->store;
-        $keyspace = $this->keyspace;
 
-        if ($store === null || $keyspace === null) {
+        if ($store === null) {
             return AppPauseOverrideCollection::keyedByAppId([]);
         }
 
         $overrides = [];
 
-        foreach ($store->keysWithPrefix($keyspace->prefix . self::KEY_STEM) as $fullKey) {
-            $override = $this->readOverride($store, $keyspace, $fullKey);
+        foreach ($store->keysWithPrefix($this->keyspace->prefix . self::KEY_STEM) as $fullKey) {
+            $override = $this->readOverride($store, $fullKey);
 
             if ($override !== null) {
                 $overrides[] = $override;
@@ -59,9 +58,8 @@ final readonly class AppPauseOverrideStore
     public function hasOverride(AppId $appId): bool
     {
         $store = $this->store;
-        $keyspace = $this->keyspace;
 
-        return $store !== null && $keyspace !== null && $store->exists($this->buildOverrideKey($keyspace, $appId));
+        return $store !== null && $store->exists($this->buildOverrideKey($appId));
     }
 
     public function saveOverride(AppPauseOverride $override): AppPauseOverridePersistence
@@ -78,14 +76,13 @@ final readonly class AppPauseOverrideStore
     private function runWrite(AppId $appId, Closure $write): AppPauseOverridePersistence
     {
         $store = $this->store;
-        $keyspace = $this->keyspace;
 
-        if ($store === null || $keyspace === null) {
+        if ($store === null) {
             return AppPauseOverridePersistence::NotConfigured;
         }
 
         try {
-            $write($store, $this->buildOverrideKey($keyspace, $appId));
+            $write($store, $this->buildOverrideKey($appId));
         } catch (JsonException|StewartException $e) {
             $this->logger->warning('Could not store the pause override', ['app' => $appId->value, 'exception' => $e]);
 
@@ -96,13 +93,13 @@ final readonly class AppPauseOverrideStore
     }
 
     /** @throws StoreException */
-    private function buildOverrideKey(Keyspace $keyspace, AppId $appId): string
+    private function buildOverrideKey(AppId $appId): string
     {
-        return $keyspace->buildFullKey(self::KEY_STEM . $appId->value);
+        return $this->keyspace->buildFullKey(self::KEY_STEM . $appId->value);
     }
 
     /** @throws StoreException */
-    private function readOverride(StoreBackend $store, Keyspace $keyspace, string $fullKey): ?AppPauseOverride
+    private function readOverride(StoreBackend $store, string $fullKey): ?AppPauseOverride
     {
         $json = $store->read($fullKey);
 
@@ -111,7 +108,7 @@ final readonly class AppPauseOverrideStore
         }
 
         try {
-            return $this->codec->decodeOverride(new AppId(substr($keyspace->extractRelativeKey($fullKey), \strlen(self::KEY_STEM))), $json);
+            return $this->codec->decodeOverride(new AppId(substr($this->keyspace->extractRelativeKey($fullKey), \strlen(self::KEY_STEM))), $json);
         } catch (JsonException|StewartException $e) {
             $this->logger->warning('Ignoring an unreadable pause override', ['key' => $fullKey, 'exception' => $e]);
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Config;
 
 use Closure;
+use LogicException;
 use SensitiveParameter;
 use Stewart\Contracts\Exception\StewartException;
 use Stewart\Contracts\Time\Duration;
@@ -26,10 +27,9 @@ final readonly class ConfigSection
         return new self($values, '');
     }
 
-    /** @throws ConfigurationException */
     public function readSection(string $key): self
     {
-        return $this->findSection($key) ?? throw $this->createKeyInvalidFailure($key, 'a section');
+        return $this->findSection($key) ?? throw $this->createSchemaMismatchFailure($key);
     }
 
     public function findSection(string $key): ?self
@@ -57,26 +57,23 @@ final readonly class ConfigSection
         return $mapped;
     }
 
-    /** @throws ConfigurationException */
     public function readInt(string $key): int
     {
         $value = $this->values[$key] ?? null;
 
-        return \is_int($value) ? $value : throw $this->createKeyInvalidFailure($key, 'a whole number');
+        return \is_int($value) ? $value : throw $this->createSchemaMismatchFailure($key);
     }
 
-    /** @throws ConfigurationException */
     public function readBool(string $key): bool
     {
         $value = $this->values[$key] ?? null;
 
-        return \is_bool($value) ? $value : throw $this->createKeyInvalidFailure($key, 'true or false');
+        return \is_bool($value) ? $value : throw $this->createSchemaMismatchFailure($key);
     }
 
-    /** @throws ConfigurationException */
     public function readString(string $key): string
     {
-        return $this->findString($key) ?? throw $this->createKeyInvalidFailure($key, 'a string');
+        return $this->findString($key) ?? throw $this->createSchemaMismatchFailure($key);
     }
 
     public function findString(string $key): ?string
@@ -117,16 +114,13 @@ final readonly class ConfigSection
         return $strings;
     }
 
-    /**
-     * @return array<string, mixed>
-     * @throws ConfigurationException
-     */
+    /** @return array<string, mixed> */
     public function readMap(string $key): array
     {
         $value = $this->values[$key] ?? [];
 
         if (!\is_array($value)) {
-            throw $this->createKeyInvalidFailure($key, 'a map');
+            throw $this->createSchemaMismatchFailure($key);
         }
 
         $map = [];
@@ -162,6 +156,19 @@ final readonly class ConfigSection
         }
 
         return $duration;
+    }
+
+    /**
+     * @template T
+     * @param Closure(string): T $parse
+     * @return T|null
+     * @throws ConfigurationException
+     */
+    public function findSwitchableValue(string $key, Closure $parse): mixed
+    {
+        $raw = $this->findString($key);
+
+        return $raw === null || $raw === '' || StewartConfigSchema::isOff($raw) ? null : $this->readParsedValue($key, $parse);
     }
 
     /** @throws ConfigurationException */
@@ -222,6 +229,12 @@ final readonly class ConfigSection
     private function createKeyInvalidFailure(string $key, string $expected): ConfigurationException
     {
         return ConfigurationException::createForReason(ConfigurationError::KeyInvalid, path: $this->buildKeyPath($key), expected: $expected);
+    }
+
+    // The schema already guarantees these types; a mismatch is a bug, not a user error.
+    private function createSchemaMismatchFailure(string $key): LogicException
+    {
+        return new LogicException(\sprintf('The config schema and its reader disagree on %s.', $this->buildKeyPath($key)));
     }
 
     private function buildKeyPath(string $key): string

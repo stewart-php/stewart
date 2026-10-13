@@ -62,6 +62,22 @@ final class ConsoleConfigLoadTest extends TestCase
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
     }
 
+    public function testEnvironmentAloneConfiguresAProjectWithoutAFile(): void
+    {
+        $tokenFile = $this->temp->getFilePath('ha-token');
+        file_put_contents($tokenFile, "from-a-secret\n");
+        $tester = ConfigLoaderFixture::createConsoleConfigDump($this->temp->path, new EnvironmentVariables([
+            'STEWART_HOME_ASSISTANT__URL' => 'ws://ha.local:8123',
+            'STEWART_HOME_ASSISTANT__TOKEN_FILE' => $tokenFile,
+        ]));
+
+        $tester->execute(['--show-secrets' => true], ['capture_stderr_separately' => true]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertMatchesRegularExpression('/^  token: from-a-secret$/m', $tester->getDisplay());
+        self::assertStringContainsString('using the environment only', $tester->getErrorOutput());
+    }
+
     /** @param array<string, string> $environment */
     private function dumpConfig(string $yaml, array $environment = []): CommandTester
     {

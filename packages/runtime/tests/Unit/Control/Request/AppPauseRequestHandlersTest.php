@@ -31,6 +31,7 @@ use Stewart\Runtime\Control\Request\ResumeAppRequestHandler;
 use Stewart\Runtime\Exception\AppError;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
+use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Logging\RecordingLogger;
 use Stewart\Testing\Time\VirtualClock;
@@ -61,7 +62,7 @@ final class AppPauseRequestHandlersTest extends TestCase
         $service = new AppPauseService(
             new AppCatalog($apps, AppIdCollection::fromList([new AppId('demo'), new AppId('porch')]), AppIdCollection::fromList([])),
             $this->registry,
-            new AppPauseOverrideStore(new AppPauseOverrideCodec(AppPauseOverrideCodec::createOverrideWireMapper()), new NullLogger()),
+            new AppPauseOverrideStore(new AppPauseOverrideCodec(AppPauseOverrideCodec::createOverrideWireMapper()), new NullLogger(), ConfigFixture::createPersistenceConfig()),
             new WorkerSlotRegistry(),
             $clock,
             new RecordingLogger(),

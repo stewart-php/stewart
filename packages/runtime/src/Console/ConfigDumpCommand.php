@@ -46,6 +46,7 @@ final class ConfigDumpCommand extends StewartCommand
             return Command::FAILURE;
         }
 
+        $this->writeMissingConfigFileNotice($output, $this->config->findMissingDefaultFile($this->findConfigOption($input)));
         $values = $input->getOption('show-secrets') === true ? $processed : $this->maskSecrets($processed);
 
         $output->write(Yaml::dump($values, self::YAML_INLINE_DEPTH, 2, Yaml::DUMP_EMPTY_ARRAY_AS_SEQUENCE));

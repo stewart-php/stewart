@@ -16,7 +16,7 @@ use Stewart\Runtime\Broker\AppPauseOverrideCodec;
 use Stewart\Runtime\Broker\AppPauseOverrideStore;
 use Stewart\Runtime\Lifecycle\AppPauseOverridePersistence;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
-use Stewart\Store\StorePrefix;
+use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Logging\RecordingLogger;
 use Stewart\Testing\Store\InMemoryStoreBackend;
@@ -84,7 +84,7 @@ final class AppPauseOverrideStoreTest extends TestCase
 
     public function testWithoutStoreNothingIsPersisted(): void
     {
-        $store = new AppPauseOverrideStore(new AppPauseOverrideCodec(AppPauseOverrideCodec::createOverrideWireMapper()), new NullLogger());
+        $store = new AppPauseOverrideStore(new AppPauseOverrideCodec(AppPauseOverrideCodec::createOverrideWireMapper()), new NullLogger(), ConfigFixture::createPersistenceConfig());
 
         self::assertSame(AppPauseOverridePersistence::NotConfigured, $store->saveOverride(self::createOverride('heating', true)));
         self::assertSame(AppPauseOverridePersistence::NotConfigured, $store->removeOverride(new AppId('heating')));
@@ -131,8 +131,8 @@ final class AppPauseOverrideStoreTest extends TestCase
         return new AppPauseOverrideStore(
             new AppPauseOverrideCodec(AppPauseOverrideCodec::createOverrideWireMapper()),
             $this->logger,
+            ConfigFixture::createPersistenceConfig(['prefix' => 'stewart']),
             $this->backend,
-            new StorePrefix('stewart'),
         );
     }
 

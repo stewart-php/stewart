@@ -235,7 +235,7 @@ final class WorkerShutdownTest extends TestCase
             new AppContainerBuilder(new AppOptionResolver(new ClosestNameFinder())),
         );
 
-        $this->shutdown = new WorkerShutdown($this->apps, $resources->resources, $this->pending, $this->timers, $this->logger, Duration::seconds(5));
+        $this->shutdown = new WorkerShutdown($this->apps, $resources->resources, $this->pending, $this->timers, $this->logger, TestBootstrap::createWorkerSettings(shutdownGrace: Duration::seconds(5)));
         $this->stopped = async($this->shutdown->awaitStopped(...));
     }
 

@@ -18,6 +18,7 @@ use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Time\SunOffset;
 use Stewart\Runtime\Model\ResourceScope;
+use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Schedule\ScheduleContext;
 use Stewart\Runtime\Schedule\ScheduleRegistry;
 use Stewart\Runtime\Schedule\TriggerFactory;
@@ -62,7 +63,7 @@ final class WorkerSchedulerSunTest extends TestCase
         $this->timers = new ManualTimers(new VirtualClock(new DateTimeImmutable('2026-10-05 04:00', $zone)));
         $this->scopes = new ScopeLifecycle();
         $this->registry = new ScheduleRegistry(
-            'w0',
+            new WorkerId(0),
             new ScheduleContext($this->timers, $this->timers->clock, new InlineHandlerRunner(), new RecordingScheduleListener()),
             new TriggerFactory($this->timers->clock),
             $this->scopes,

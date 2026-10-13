@@ -42,7 +42,7 @@ final readonly class BootstrapMessageFactory
             generatedNamespace: $config->codegen->namespace->value,
             mqttEnabled: $config->mqtt !== null,
         );
-        $this->storeSettings = $config->persistence === null ? null : $this->buildStoreSettings($config->persistence);
+        $this->storeSettings = $this->buildStoreSettings($config->persistence);
     }
 
     public function createBootstrapMessage(WorkerHandle $handle, HaSession $session): Bootstrap
@@ -61,10 +61,12 @@ final readonly class BootstrapMessageFactory
         );
     }
 
-    private function buildStoreSettings(PersistenceConfig $persistence): StoreSettings
+    private function buildStoreSettings(PersistenceConfig $persistence): ?StoreSettings
     {
-        return new StoreSettings(
-            dsn: $persistence->url->reveal(),
+        $url = $persistence->url;
+
+        return $url === null ? null : new StoreSettings(
+            dsn: $url->reveal(),
             prefix: $persistence->prefix->value,
             timeout: $persistence->timeout,
             recoveryInterval: $persistence->recoveryInterval,

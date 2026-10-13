@@ -80,8 +80,8 @@ final class RunCommand extends StewartCommand
     /** @throws StewartException */
     private function prepareDaemon(InputInterface $input): PreparedDaemon
     {
-        $configPath = $this->config->locateConfigFile($this->findConfigOption($input));
-        $config = $this->config->loadConfig($configPath, $this->configOverridesFromOptions($input));
+        $configOption = $this->findConfigOption($input);
+        $config = $this->config->loadConfig($configOption, $this->configOverridesFromOptions($input));
         // Validated before the logger exists, so a missing home_assistant section fails as a config error.
         $config->requireHomeAssistant();
         $discovered = $this->discovery->discover();
@@ -89,7 +89,8 @@ final class RunCommand extends StewartCommand
         $apps = $this->catalogs->resolveCatalog($discovered, $config->apps, $config->workers, $selection);
         $logger = $this->loggers->createStdoutLogger($config->logLevel, $this->logFormatFromOptions($input, $config->logFormat));
 
-        $this->warnAboutDiscovery($discovered, $apps, $configPath, $logger);
+        $this->noteMissingConfigFile($this->config->findMissingDefaultFile($configOption), $logger);
+        $this->warnAboutDiscovery($discovered, $apps, $this->config->locateConfigFile($configOption), $logger);
 
         if ($config->serviceCalls->dryRun) {
             $logger->warning('service_calls.dry_run is on: service calls are logged, not sent to Home Assistant.');
@@ -99,7 +100,14 @@ final class RunCommand extends StewartCommand
             $logger->notice('Running only the automations named by --only.', ['apps' => $selection->onlyIds->toStrings()]);
         }
 
-        return new PreparedDaemon($this->brokers->createBroker($config, $apps, $logger, $this->findConfigOption($input)), $logger);
+        return new PreparedDaemon($this->brokers->createBroker($config, $apps, $logger, $configOption), $logger);
+    }
+
+    private function noteMissingConfigFile(?string $missingConfigFile, LoggerInterface $logger): void
+    {
+        if ($missingConfigFile !== null) {
+            $logger->info('No config file found; using the environment only.', ['config' => $missingConfigFile]);
+        }
     }
 
     private function warnAboutDiscovery(DiscoveryResult $discovered, AppCatalog $apps, string $configPath, LoggerInterface $logger): void

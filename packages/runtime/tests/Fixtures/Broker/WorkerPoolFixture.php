@@ -48,10 +48,10 @@ final readonly class WorkerPoolFixture
         $supervision ??= ConfigFixture::createSupervisionConfig(['ping_interval' => 'off']);
         $slots = new WorkerSlotRegistry();
         $probes = new WorkerProbeSequence();
-        $restartPolicy = new WorkerRestartPolicy(new RestartBudget($supervision->restartAttempts, $supervision->restartWindow), $supervision, $clock);
+        $restartPolicy = new WorkerRestartPolicy(new RestartBudget($supervision), $supervision, $clock);
 
         return new self(
-            new WorkerPool($spawner, $slots, $restartPolicy, $probes, $supervision, new WorkerMessageReader($logger), $logger, $outboxLimits, $timers, $clock, $requestedRestartGrace ?? Duration::milliseconds(50)),
+            new WorkerPool($spawner, $slots, $restartPolicy, $probes, $supervision, new WorkerMessageReader($logger), $logger, $outboxLimits, $timers, $clock, ConfigFixture::createStewartConfig(['shutdown_grace' => ($requestedRestartGrace ?? Duration::milliseconds(50))->toMilliseconds() . 'ms'])),
             $slots,
             new WorkerWatchdog($slots, $probes, $supervision, $timers, $clock, $logger),
             $restartPolicy,

@@ -13,9 +13,11 @@ use Stewart\Contracts\StateChangeStream;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Dispatch\LocalDispatcher;
 use Stewart\Runtime\Model\ResourceScope;
+use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\Scope\ScopeLifecycle;
 use Stewart\Runtime\State\StateCache;
+use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Stewart\Runtime\Tests\Fixtures\Worker\RecordingDispatchListener;
 use Stewart\Runtime\Worker\Context\DispatchStreams;
 use Stewart\Testing\Time\EventLoopTicks;
@@ -48,7 +50,7 @@ final class QueuedStreamFixture
         $this->scopes->activateScope($this->scope);
 
         $registry = new RegistryCache();
-        $this->dispatcher = new LocalDispatcher('w0', $subscriptionQueueLimit, $this->listener, $this->listener, $this->scopes, $registry);
+        $this->dispatcher = new LocalDispatcher(new WorkerId(0), TestBootstrap::createWorkerSettings(subscriptionBuffer: $subscriptionQueueLimit), $this->listener, $this->listener, $this->scopes, $registry);
         $this->streams = new DispatchStreams($this->dispatcher, $this->timers, $this->states, $registry);
     }
 

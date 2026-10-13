@@ -11,6 +11,7 @@ use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\TimerHandle;
 use Stewart\Contracts\Time\Timers;
+use Stewart\Runtime\Config\StewartConfig;
 use Stewart\Runtime\Config\SupervisionConfig;
 use Stewart\Runtime\Exception\BrokerError;
 use Stewart\Runtime\Exception\BrokerException;
@@ -47,7 +48,7 @@ final class WorkerPool
         private readonly OutboxLimits $outboxLimits,
         private readonly Timers&Deadlines $timers,
         private readonly Clock $clock,
-        private readonly Duration $requestedRestartGrace,
+        private readonly StewartConfig $config,
     ) {}
 
     public function startWorker(WorkerSlot $slot, WorkerPoolListener $listener): bool
@@ -307,8 +308,8 @@ final class WorkerPool
     private function respawnOnRequest(WorkerSlotState $state, ?WorkerHandle $stopping): void
     {
         if ($stopping !== null) {
-            $stopping->sendShutdown(new Shutdown('restart requested', $this->requestedRestartGrace));
-            $this->awaitWorkerExit($stopping, $this->timers->timeout($this->requestedRestartGrace->plus(Duration::milliseconds(self::JOIN_MARGIN_MILLISECONDS))));
+            $stopping->sendShutdown(new Shutdown('restart requested', $this->config->shutdownGrace));
+            $this->awaitWorkerExit($stopping, $this->timers->timeout($this->config->shutdownGrace->plus(Duration::milliseconds(self::JOIN_MARGIN_MILLISECONDS))));
             $state->listener->workerGone($stopping, 'restart requested');
         }
 

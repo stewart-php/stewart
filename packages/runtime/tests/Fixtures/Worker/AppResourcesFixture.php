@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Tests\Fixtures\Worker;
 
 use Psr\Log\NullLogger;
 use Stewart\Runtime\Dispatch\LocalDispatcher;
+use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\Schedule\EntityTimeScheduler;
 use Stewart\Runtime\Schedule\ScheduleContext;
@@ -46,9 +47,9 @@ final readonly class AppResourcesFixture
         $this->scopes = new ScopeLifecycle();
         $registry = new RegistryCache();
         $this->states = new StateCache();
-        $this->dispatcher = RecordingDispatchListener::createDispatcher('w0', $subscriptionQueueLimit, $registry, $this->scopes);
+        $this->dispatcher = RecordingDispatchListener::createDispatcher($subscriptionQueueLimit, $registry, $this->scopes);
         $this->schedules = new ScheduleRegistry(
-            'w0',
+            new WorkerId(0),
             new ScheduleContext($timers, $timers->clock, new InlineHandlerRunner(), $scheduleListener),
             new TriggerFactory($timers->clock),
             $this->scopes,

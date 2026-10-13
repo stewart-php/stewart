@@ -16,6 +16,7 @@ use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Tests\Fixtures\Ipc\NullTransport;
+use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Stewart\Runtime\Tests\Fixtures\Schedule\WorkerSchedulerFixture;
 use Stewart\Runtime\Tests\Fixtures\Worker\AppResourcesFixture;
 use Stewart\Runtime\Tests\Fixtures\Worker\WorkerHaContextFixture;
@@ -58,7 +59,7 @@ final class AppRuntimeServicesFixture
         ?SunCalendar $sunCalendar = null,
     ): AppRuntimeServices {
         $timers = $resources->timers;
-        $logger ??= new WorkerLogger($transport, new StderrFallback(new WorkerId(0)), ResourceScope::shared());
+        $logger ??= new WorkerLogger($transport, new StderrFallback(new WorkerId(0)), ResourceScope::shared(), TestBootstrap::createWorkerSettings());
         $sunCalendar ??= new LocatedSunCalendar(new GeoLocation(self::LATITUDE, 19.0402), $timers->clock, new NoaaSolarCalculator());
 
         return new AppRuntimeServices(
@@ -80,17 +81,17 @@ final class AppRuntimeServicesFixture
                 $transport,
                 new DispatchStreams($resources->dispatcher, $timers, $stateCache, new RegistryCache()),
                 new AppActivityCounters(),
-                $mqttEnabled,
+                TestBootstrap::createWorkerSettings(mqttEnabled: $mqttEnabled),
                 ResourceScope::shared(),
             ),
             exposure: new WorkerEntityExposure(
-                new ExposureRequester($transport, new PendingRequests(new CorrelationIdSequence(new WorkerId(0))), $timers, Duration::seconds(30)),
+                new ExposureRequester($transport, new PendingRequests(new CorrelationIdSequence(new WorkerId(0))), $timers, TestBootstrap::createWorkerSettings(callTimeout: Duration::seconds(30))),
                 $resources->exposedHandles,
                 new ExposedCommandStreams($resources->dispatcher, $timers, new ExposedCommandSettlements($transport, new NullLogger())),
                 ResourceScope::shared(),
             ),
             registryEditor: new WorkerRegistryEditor(
-                new RegistryEditRequester($transport, new PendingRequests(new CorrelationIdSequence(new WorkerId(0))), new ConnectionStatus(), $timers, Duration::seconds(30)),
+                new RegistryEditRequester($transport, new PendingRequests(new CorrelationIdSequence(new WorkerId(0))), new ConnectionStatus(), $timers, TestBootstrap::createWorkerSettings(callTimeout: Duration::seconds(30))),
                 ResourceScope::shared(),
             ),
             sunCalendar: $sunCalendar,

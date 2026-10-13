@@ -7,15 +7,16 @@ namespace Stewart\Runtime\Broker;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
+use Stewart\Runtime\Config\StewartConfig;
 use Stewart\Runtime\Model\WorkerId;
 
 final readonly class AppPlacement
 {
     public function __construct(private int $autoPoolSize) {}
 
-    public function planWorkerSlots(AppDefinitionCollection $apps, int $poolWorkerCount): WorkerSlotCollection
+    public function planWorkerSlots(AppDefinitionCollection $apps, StewartConfig $config): WorkerSlotCollection
     {
-        $poolSize = $this->resolvePoolSize($apps, $poolWorkerCount);
+        $poolSize = $this->resolvePoolSize($apps, $config->workers);
         $byWorker = [];
         $next = 0;
 
