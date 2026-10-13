@@ -3,6 +3,12 @@
     "description": "Test Stewart apps without Home Assistant: an app harness, recording fakes and virtual time",
     "type": "library",
     "license": "MIT",
+    "homepage": "https://github.com/stewart-php/stewart",
+    "support": {
+        "issues": "https://github.com/stewart-php/stewart/issues",
+        "source": "https://github.com/stewart-php/stewart",
+        "docs": "https://stewart-php.github.io/docs/"
+    },
     "require": {
         "php": ">=8.5",
         "amphp/amp": "^3.1.1",

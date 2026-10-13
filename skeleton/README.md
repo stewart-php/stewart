@@ -1,6 +1,8 @@
 # My Stewart automations
 
-Home Assistant automations in PHP, built on [Stewart](https://github.com/stewart-php/stewart).
+Home Assistant automations in PHP, built on [Stewart](https://github.com/stewart-php/stewart). The
+[documentation](https://stewart-php.github.io/docs/) covers writing and testing apps, recipes and deploying in full;
+this README is the short version.
 
 You need Docker with Compose and a long-lived access token from Home Assistant (Profile → Security). PHP and Composer
 run in the container; nothing else is installed on your machine. `vendor/` lives in this directory, so your IDE sees

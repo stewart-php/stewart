@@ -4,6 +4,7 @@
 [![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fstewart-php.github.io%2Fstewart%2Freports%2Fbadge-coverage.json)](https://stewart-php.github.io/stewart/reports/coverage/)
 [![Mutation MSI](https://img.shields.io/endpoint?url=https%3A%2F%2Fstewart-php.github.io%2Fstewart%2Freports%2Fbadge-msi.json)](https://stewart-php.github.io/stewart/reports/mutation/)
 [![Metrics](https://img.shields.io/badge/metrics-phpmetrics-informational)](https://stewart-php.github.io/stewart/reports/metrics/)
+[![Documentation](https://img.shields.io/badge/docs-stewart--php.github.io-blue)](https://stewart-php.github.io/docs/)
 
 Write Home Assistant automations in PHP.
 
@@ -11,6 +12,13 @@ An automation is an ordinary PHP class. Stewart holds one WebSocket connection t
 process, keeps the state of every entity, and runs your apps in worker processes, so one misbehaving app does not
 stall the connection. Apps subscribe to state changes and events, call services, keep state across restarts in a
 key-value store, and get IDE autocomplete over your own entities and services through generated classes.
+
+## Documentation
+
+- **[User documentation](https://stewart-php.github.io/docs/)**: installing, writing and testing apps, recipes,
+  deploying, and the configuration, command and error reference.
+- **[Developer documentation](https://stewart-php.github.io/docs-dev/)**: contributing, conventions, architecture,
+  the protocols and a code walkthrough.
 
 ## Using Stewart
 
@@ -20,45 +28,10 @@ Start a project from the skeleton; this repository is where Stewart itself is de
 composer create-project stewart-php/skeleton my-home   # or "Use this template" on stewart-php/skeleton
 ```
 
-The skeleton's README covers development, generated classes and deployment: a checkout on a server, an image built by
-CI, a clone that deploys each pushed commit, or Kubernetes through the Helm chart
-(`oci://ghcr.io/stewart-php/charts/stewart`). Each runs `ghcr.io/stewart-php/runtime`, which holds PHP and an
-entrypoint; the framework version comes from the project's `composer.lock`.
-
-## Configuration
-
-A project's `stewart.yaml` holds only what differs from the defaults, and is optional: without one and without
-`--config`, the environment alone configures Stewart. `vendor/bin/stewart config:reference` prints
-every setting with its default; `vendor/bin/stewart config:dump` prints what is in effect, secrets masked.
-`vendor/bin/stewart check` fails when the configuration or any file in `apps/` does not load, for CI or before a deploy.
-
-Every setting can also come from the environment: the `STEWART_` prefix, then the keys uppercased and joined by a
-**double** underscore. A single underscore is part of a key name.
-
-| `stewart.yaml` | Environment variable |
-|---|---|
-| `log_level` | `STEWART_LOG_LEVEL` |
-| `worker_event_buffer` | `STEWART_WORKER_EVENT_BUFFER` |
-| `apps.hello.worker` | `STEWART_APPS__HELLO__WORKER` |
-| `apps.hello.options.watch` | `STEWART_APPS__HELLO__OPTIONS__WATCH` |
-
-- Environment variables win over the file; `--config`, `--log-level` and `--json-logs` on the command line win over
-  both.
-- Durations take a unit: `500ms`, `5s`, `2m`, `1h`. A bare number is refused. Delays and windows are at least `1ms`,
-  a `max_delay` is at least its `initial_delay`, and `supervision.restart_window` must outlast the backoff of
-  `restart_attempts` restarts.
-- A setting ending in `_FILE` is read from that file, which fits Docker and Kubernetes secrets:
-  `STEWART_HOME_ASSISTANT__TOKEN_FILE=/run/secrets/ha`. This works for app options too:
-  `STEWART_APPS__WEATHER__OPTIONS__API_KEY_FILE` fills `apiKey`, unless `stewart.yaml` itself names an option
-  `api_key_file`.
-- The word `off` switches off a timer, a listener, the control socket, `persistence.url` or `mqtt.url`. An empty
-  variable means unset, so the default applies.
-- A list setting or an app option takes inline YAML: `STEWART_CODEGEN__INCLUDE='[light.*, switch.*]'`. An app option
-  that is not valid inline YAML stays text, so a template or a regex passes through.
-- A string in `stewart.yaml` can read a variable, with a fallback: `token: ${HA_TOKEN}`, `${LOG_LEVEL:-info}`. A value
-  that is exactly one placeholder is typed like its setting, so `workers: ${POOL:-2}` is a number.
-- Kubernetes service links (`STEWART_SERVICE_HOST`, `STEWART_PORT_…`) are ignored; any other unknown `STEWART_`
-  variable stops the start.
+[Install Stewart](https://stewart-php.github.io/docs/start/install/) walks through the first run, and
+[Deploying](https://stewart-php.github.io/docs/deploy/) covers a checkout on a server, an image built by CI, a clone
+that deploys each pushed commit, and Kubernetes through the Helm chart (`oci://ghcr.io/stewart-php/charts/stewart`).
+Every setting is in the [configuration reference](https://stewart-php.github.io/docs/reference/configuration/).
 
 ## Packages
 
@@ -94,8 +67,8 @@ make chart-lint                     # lint the Helm chart and validate what it r
 make cs-fix                         # fix code style
 ```
 
-`make help` lists every target. To try a change against Home Assistant, run a project made from the skeleton with a
-Composer path repository pointing at this checkout's `packages/*`, as `bin/test-skeleton.sh` does.
+`make help` lists every target. To try a change against Home Assistant, `make demo` runs a project made from
+`skeleton/` against this checkout. [Contributing](https://stewart-php.github.io/docs-dev/contributing/) has the rest.
 
 ## License
 

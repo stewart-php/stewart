@@ -90,9 +90,19 @@ A variable that is not set and has no fallback stops Stewart with the setting's 
 ## Values
 
 - **Durations** are a number and a unit: `500ms`, `5s`, `2m`, `1h`. A bare number is refused, because its unit
-  would be a guess.
-- **`off`** switches off the settings that allow it, such as `supervision.ping_interval: off` or `control.listen: off`.
-  `make config-reference` says which settings accept it.
+  would be a guess. Delays and windows are at least `1ms`, a `max_delay` is at least its `initial_delay`, and
+  `supervision.restart_window` must outlast the backoff of `restart_attempts` restarts.
+- **`off`** switches off a timer, a listener, the control socket, `persistence.url` or `mqtt.url`, for example
+  `supervision.ping_interval: off`. `make config-reference` says which settings accept it.
+- **App options** from the environment take inline YAML. A value that is not valid inline YAML stays text, so a
+  template or a regular expression passes through.
+- **A whole-value variable** in `stewart.yaml` is typed like its setting: `workers: ${POOL:-2}` is a number.
+
+## Checking a configuration
+
+`stewart check` loads the configuration and every file in `apps/`, and fails if any does not load. Run it in CI or
+before a deploy: `make sh`, then `stewart check`. The [Git deploy mode](../deploy/git.md) runs it on every new
+commit.
 
 ## Settings you are likely to change
 
