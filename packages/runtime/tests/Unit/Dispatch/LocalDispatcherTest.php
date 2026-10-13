@@ -54,6 +54,7 @@ use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\Scope\ScopeLifecycle;
 use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Stewart\Runtime\Tests\Fixtures\Worker\RecordingDispatchListener;
+use Stewart\Support\State\Collection\StateChangeCollection;
 use Stewart\Support\State\IndexedRegistry;
 use Stewart\Support\Stream\SubscriptionScope;
 use Stewart\Support\Wire\TriggerSpec;
@@ -552,6 +553,51 @@ final class LocalDispatcherTest extends TestCase
         self::assertSame([1], $this->listener->dropReports);
     }
 
+    public function testBurstLargerThanTheBufferIsQueuedWhole(): void
+    {
+        $delivered = $this->deliverToDormantStateChangeQueue(2, [
+            StateChangeCollection::fromList([
+                self::createTransition('light.hall', 'off', 'on'),
+                self::createTransition('light.porch', 'off', 'on'),
+                self::createTransition('light.attic', 'off', 'on'),
+            ]),
+        ], expectedDeliveries: 3);
+
+        self::assertSame(['light.hall off→on', 'light.porch off→on', 'light.attic off→on'], $delivered);
+        self::assertSame([], $this->listener->dropReports);
+    }
+
+    public function testBurstMakesRoomByDroppingOlderQueuedChanges(): void
+    {
+        $delivered = $this->deliverToDormantStateChangeQueue(2, [
+            self::createTransition('light.hall', 'off', 'on'),
+            self::createTransition('light.porch', 'off', 'on'),
+            StateChangeCollection::fromList([
+                self::createTransition('light.porch', 'on', 'off'),
+                self::createTransition('light.attic', 'off', 'on'),
+                self::createTransition('light.cellar', 'off', 'on'),
+            ]),
+        ], expectedDeliveries: 3);
+
+        self::assertSame(['light.porch off→off', 'light.attic off→on', 'light.cellar off→on'], $delivered);
+        self::assertSame([1, 2], $this->listener->dropReports);
+    }
+
+    public function testSinglePushAfterABurstStillEvictsTheOldest(): void
+    {
+        $delivered = $this->deliverToDormantStateChangeQueue(2, [
+            StateChangeCollection::fromList([
+                self::createTransition('light.hall', 'off', 'on'),
+                self::createTransition('light.porch', 'off', 'on'),
+                self::createTransition('light.attic', 'off', 'on'),
+            ]),
+            self::createTransition('light.cellar', 'off', 'on'),
+        ], expectedDeliveries: 3);
+
+        self::assertSame(['light.porch off→on', 'light.attic off→on', 'light.cellar off→on'], $delivered);
+        self::assertSame([1], $this->listener->dropReports);
+    }
+
     public function testOperatorEmissionIsNotEvictedByABusyQueue(): void
     {
         $dispatcher = $this->createDispatcher(queueLimit: 1);
@@ -879,10 +925,10 @@ final class LocalDispatcherTest extends TestCase
     }
 
     /**
-     * @param list<StateChange> $changes
+     * @param list<StateChange|StateChangeCollection> $dispatches
      * @return list<string>
      */
-    private function deliverToDormantStateChangeQueue(int $queueLimit, array $changes): array
+    private function deliverToDormantStateChangeQueue(int $queueLimit, array $dispatches, ?int $expectedDeliveries = null): array
     {
         $dispatcher = $this->createDispatcher($queueLimit);
         $delivered = [];
@@ -891,13 +937,18 @@ final class LocalDispatcherTest extends TestCase
             $delivered[] = \sprintf('%s %s→%s', $change->entityId->value, $change->from?->state, $change->to?->state);
         }, activate: false);
 
-        foreach ($changes as $change) {
-            $dispatcher->dispatchStateChange($change);
+        foreach ($dispatches as $dispatch) {
+            if ($dispatch instanceof StateChangeCollection) {
+                $dispatcher->dispatchStateChanges($dispatch);
+            } else {
+                $dispatcher->dispatchStateChange($dispatch);
+            }
         }
 
+        $expectedDeliveries ??= $queueLimit;
         $this->goLive($dispatcher, 'app');
-        EventLoopTicks::settleUntil(static function () use (&$delivered, $queueLimit): bool {
-            return \count($delivered) === $queueLimit;
+        EventLoopTicks::settleUntil(static function () use (&$delivered, $expectedDeliveries): bool {
+            return \count($delivered) === $expectedDeliveries;
         });
 
         return $delivered;

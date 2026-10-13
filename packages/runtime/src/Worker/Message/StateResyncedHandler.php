@@ -47,9 +47,7 @@ final readonly class StateResyncedHandler implements BrokerMessageHandler
         $restoredAt = $this->clock->getNow();
         $reconstructed = $this->stateCacheSync->replaceWithResyncedStates($message->states->collection, $message->revision, $restoredAt);
 
-        foreach ($reconstructed as $change) {
-            $this->dispatcher->dispatchStateChange($change);
-        }
+        $this->dispatcher->dispatchStateChanges($reconstructed);
 
         $this->logger->info('State rebuilt after losing Home Assistant', [
             'entities' => $this->stateCacheSync->countEntities(),

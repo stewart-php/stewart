@@ -37,26 +37,17 @@ final class SubscriptionQueue
     /** @param ?Closure(QueueDiscardReason): void $onDiscarded */
     public function push(object $event, ?Closure $onDiscarded = null): void
     {
-        if ($this->cancelled) {
-            $onDiscarded?->__invoke(QueueDiscardReason::Cancelled);
+        $this->pushWithin($event, $this->limit, $onDiscarded);
+    }
 
-            return;
+    /** @param list<StateChange> $changes */
+    public function pushBurst(array $changes): void
+    {
+        $capacity = max($this->limit, \count($changes));
+
+        foreach ($changes as $change) {
+            $this->pushWithin($change, $capacity);
         }
-
-        if ($this->scopeState->isPaused()) {
-            $this->listener->eventSuppressed($this->subscription);
-            $onDiscarded?->__invoke(QueueDiscardReason::Paused);
-
-            return;
-        }
-
-        if ($this->pendingEvents >= $this->limit) {
-            $event = $this->dropOnOverflow($event);
-        }
-
-        ++$this->pendingEvents;
-
-        $this->enqueue(QueuedWork::forDroppableEvent($event, $this->subscription->handler, $onDiscarded));
     }
 
     /** @param Closure(): void $emission */
@@ -118,6 +109,31 @@ final class SubscriptionQueue
         } catch (Throwable $e) {
             $this->listener->handlerFailed($this->subscription, $e);
         }
+    }
+
+    /** @param ?Closure(QueueDiscardReason): void $onDiscarded */
+    private function pushWithin(object $event, int $capacity, ?Closure $onDiscarded = null): void
+    {
+        if ($this->cancelled) {
+            $onDiscarded?->__invoke(QueueDiscardReason::Cancelled);
+
+            return;
+        }
+
+        if ($this->scopeState->isPaused()) {
+            $this->listener->eventSuppressed($this->subscription);
+            $onDiscarded?->__invoke(QueueDiscardReason::Paused);
+
+            return;
+        }
+
+        if ($this->pendingEvents >= $capacity) {
+            $event = $this->dropOnOverflow($event);
+        }
+
+        ++$this->pendingEvents;
+
+        $this->enqueue(QueuedWork::forDroppableEvent($event, $this->subscription->handler, $onDiscarded));
     }
 
     private function dropOnOverflow(object $incoming): object
