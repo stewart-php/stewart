@@ -42,7 +42,8 @@ secrets:
     file: ./git-token
 ```
 
-For an SSH URL (`git@github.com:you/my-home.git`), use a deploy key and `STEWART_BOOT_GIT_SSH_KEY_FILE` instead.
+For an SSH URL (`git@github.com:you/my-home.git`), use a deploy key instead: mount it as a secret the same way,
+readable by user 10001, and set `STEWART_BOOT_GIT_SSH_KEY_FILE: /run/secrets/<name>`.
 
 ## What happens on a push
 
@@ -51,8 +52,12 @@ For an SSH URL (`git@github.com:you/my-home.git`), use a deploy key and `STEWART
    reused; otherwise they are installed.
 3. The new commit must pass `stewart check`: the configuration loads and every app class loads.
 4. If it passes, Stewart stops gracefully and starts again on the new commit, in the same container.
-5. If it fails, Stewart logs why, keeps running the old commit, and never tries that commit again. `make status`
-   shows it on the `deploy` row. Push a fix to move on.
+5. If it fails, Stewart logs why, keeps running the old commit, and never tries that commit again. Status shows it
+   on the `deploy` row. Push a fix to move on.
+
+The server has no Makefile. Check Stewart there with
+`docker compose -f compose.git.yaml exec stewart stewart status`, and follow its log with
+`docker compose -f compose.git.yaml logs -f stewart`.
 
 To go back to an older commit, set `STEWART_BOOT_GIT_REF` to it and restart the container.
 
@@ -67,7 +72,7 @@ These variables are read by the container's start-up script, not by Stewart:
 | `STEWART_BOOT_GIT_TOKEN_FILE` | A file holding an HTTPS token, for a private repository |
 | `STEWART_BOOT_GIT_SSH_KEY_FILE` | A file holding an SSH deploy key, for `git@` URLs |
 | `STEWART_BOOT_COMPOSER` | `auto` installs dependencies when `composer.lock` changed, `always`, or `never` |
-| `STEWART_BOOT_GENERATE` | `1` regenerates the typed classes from Home Assistant on every start; a failure keeps the committed ones |
+| `STEWART_BOOT_GENERATE` | `1` tries to regenerate the typed classes on start. A server installs without development packages, which include the generator, so this usually keeps the committed classes |
 
 `STEWART_DEPLOY__GIT__POLL` sets how often to look for commits (`1m`); `off` deploys only when the container starts.
 

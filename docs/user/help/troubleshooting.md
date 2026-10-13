@@ -7,6 +7,8 @@ sidebar:
 
 Start with two commands. `make logs` (or `make run` in the foreground) shows what Stewart says, and `make status`
 shows each app's state and last failure. Most problems name themselves in one of them.
+On a [Git](../deploy/git.md) or [image](../deploy/image.md) server, which has no Makefile, use
+`docker compose -f compose.git.yaml logs -f stewart` and `… exec stewart stewart status` instead.
 
 ## Stewart does not start
 
@@ -95,8 +97,7 @@ restarted after installing it. See [Exposed entities](../guides/exposed-entities
 keeps running. `make status` shows it on the `deploy` row; the log says why.
 
 **`make status` cannot connect on Docker Desktop.** macOS and Windows cannot share the control socket with the host.
-Set `STEWART_CONTROL__LISTEN=tcp://0.0.0.0:7333` and use `--address tcp://localhost:7333`, or run `stewart status`
-inside the container.
+Run it inside the container instead: `docker compose exec stewart stewart status`.
 
 ## Still stuck?
 

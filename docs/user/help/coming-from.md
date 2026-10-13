@@ -46,8 +46,9 @@ entity IDs.
 | `self.run_at_sunset(cb)` | `runAtSunEvent(SunEvent::Sunset, …)` |
 | Global variables between apps | The [global store](../guides/persistence.md#storage-all-apps-share), or `publish()` and `watchTopic()` |
 
-Like AppDaemon, Stewart runs apps outside Home Assistant. Unlike it, each app is isolated in a worker process, and
-the [test harness](../guides/testing.md) runs apps without Home Assistant.
+Like AppDaemon, Stewart runs apps outside Home Assistant. Unlike it, apps run in several worker processes, so a crash in
+one worker does not stop apps on the others, and the [test harness](../guides/testing.md) runs apps without Home
+Assistant.
 
 ## NetDaemon
 

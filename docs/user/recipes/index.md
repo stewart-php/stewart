@@ -1,5 +1,5 @@
 ---
-title: Recipes
+title: All recipes
 description: Complete, tested automations to copy into your project and adapt.
 sidebar:
   order: 1

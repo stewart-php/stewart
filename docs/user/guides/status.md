@@ -5,7 +5,8 @@ sidebar:
   order: 17
 ---
 
-A running Stewart answers questions about itself over a small control socket. `make status` asks it:
+A running Stewart answers questions about itself through a **control socket**: a private connection that
+`stewart status` and the other commands on this page use. `make status` asks it:
 
 ```bash
 make status      # Stewart, its workers and its apps, as tables
@@ -17,99 +18,93 @@ It needs the control token from `.env`, which `make setup` creates:
 STEWART_CONTROL__TOKEN=…      # openssl rand -hex 16 makes a new one
 ```
 
-The other commands on this page run inside the Stewart container. With `make up`, that is
-`docker compose exec stewart stewart …`; on Kubernetes, `kubectl exec deployment/<release>-stewart -- stewart …`.
+Stewart refuses to start without a token while the socket is on. To run without the socket, set
+`STEWART_CONTROL__LISTEN=off` (the word: an empty variable means "not set").
 
-The daemon refuses to start while the socket is on and no token is set. To run
-without the socket, set `STEWART_CONTROL__LISTEN=off` (the word, not an empty
-value: an empty variable means "unset").
+The other commands on this page run inside the Stewart container:
+
+| Where Stewart runs | Prefix |
+|---|---|
+| `make up` on your machine or a server checkout | `docker compose exec stewart stewart …` |
+| A [Git](../deploy/git.md) or [image](../deploy/image.md) server | `docker compose -f compose.git.yaml exec stewart stewart …` (or `compose.image.yaml`) |
+| Kubernetes | `kubectl exec deployment/<release>-stewart -- stewart …` |
 
 ## What you see
 
 | Table | Shows |
 |---|---|
-| Daemon | Version, uptime, memory, the Home Assistant connection and its last outage, store health, the deployed commit and its last rejected one, routing figures, service calls in flight and refused. |
-| Workers | Phase, pid, readiness, loop lag, memory, how long ago the worker last answered a ping, missed probes, restarts inside the window (and since start, once there were any), queued and dropped messages, state batches sent. |
-| Apps | State (`(paused by control 2m ago)` when paused, naming `config` or `control`; `(resumed by control 5m ago over config)` when a resume beats `apps.<id>.paused: true`), subscriptions, schedules, exposed entities (unavailable ones included), events delivered and dropped inside the worker, events and schedule runs suppressed while paused, schedule runs, publishes, service calls succeeded and failed, the bucket the 95th-percentile call latency falls in, failures. |
-| Failures | Each app's last failure: when, in which phase, the reason and the message. |
+| Daemon | Stewart's version, uptime and memory; the Home Assistant connection and its last outage; whether the store is up; the `component` row (the Stewart integration in Home Assistant); the `deploy` row (the running commit and the last rejected one, in Git mode); service calls waiting and refused. |
+| Workers | Whether each worker is running, how much memory it uses, how often it restarted, and whether it is falling behind (events waiting or dropped). |
+| Apps | Whether each app is running, paused (and by whom: `config`, `control` or `http`) or failed; how many events and schedule runs it handled or skipped while paused; its exposed entities; how its service calls went. |
+| Failures | Each app's last failure: when, where, the reason and the message. |
 
-Worker and app numbers arrive with each ping, so they are as fresh as
-`supervision.ping_interval` (10 s by default). The counters add up across
-worker restarts for as long as the daemon runs. With pings off, an app's state
-reads `unknown`.
+The worker and app figures are refreshed every `supervision.ping_interval` (10 seconds by default), and keep adding up
+across worker restarts until Stewart itself restarts. `stewart status --json` holds every field.
 
 ## Pausing an app
 
-A paused app stays loaded, but skips its deliveries and schedule runs until it is
-resumed. A handler already running finishes. Nothing is replayed on resume.
+A paused app stays loaded, but receives nothing and skips its schedule runs until it is resumed. A handler already
+running finishes. Nothing is replayed on resume.
 
 ```bash
-stewart app:pause porch      # App porch paused.
-stewart app:resume porch     # App porch resumed.
-stewart app:reset porch      # App porch pause override removed; it is running.
+docker compose exec stewart stewart app:pause porch-light    # App porch-light paused.
+docker compose exec stewart stewart app:resume porch-light   # App porch-light resumed.
+docker compose exec stewart stewart app:reset porch-light    # Forgets the pause; stewart.yaml decides again.
 ```
 
-All three take the same `--address`, `--token` and `--timeout` as `status`.
-Repeating a command is harmless and still exits 0. An unknown app, or one
-switched off with `apps.<id>.enabled: false`, exits 1. To start an app paused,
-set `apps.<id>.paused: true`.
+Repeating a command is harmless and still succeeds. An unknown app, or one switched off with
+`apps.<id>.enabled: false`, fails. To start an app paused, set `apps.<id>.paused: true`.
 
-With `persistence.url` set, every `app:pause` and `app:resume` is stored and
-survives restarts, and it beats `apps.<id>.paused` in config. `app:reset` forgets
-the stored choice so config decides again; it also removes the choice stored for
-an app that is no longer loaded. Without a store, or while the store is down, the
-change still applies and a `Not saved:` warning on stderr says it lasts until the
-daemon restarts.
+With persistence set up, a pause or resume is stored and survives restarts, and it wins over `apps.<id>.paused`.
+`app:reset` forgets the stored choice, also for an app that no longer exists. Without a store, the change still
+applies, and a `Not saved:` warning says it lasts until Stewart restarts.
+
+All three accept the options described under [Another host](#another-host).
 
 ## Restarting a worker
 
 ```bash
-stewart worker:restart 1     # Worker 1 is restarting.
+docker compose exec stewart stewart worker:restart 0    # Worker 0 is restarting. Workers are numbered from 0.
 ```
 
-`worker:restart` takes the worker number from the Workers table and the same
-options as `status`. A running worker gets `shutdown_grace` to dispose its apps,
-then a new process starts; a quarantined worker, or one waiting out its backoff,
-starts at once. Either way it gets its full `supervision.restart_attempts` back.
-The command answers once the restart has begun; `stewart status` shows the
-`stopping` and `spawning` phases on the way. Asking again while the worker is
-still starting or stopping exits 0 and changes nothing; an unknown worker exits 1.
+The number comes from the Workers table. A running worker gets `shutdown_grace` to stop its apps, then a new one
+starts. A worker that Stewart gave up on after repeated crashes (`quarantined`), or one waiting to retry, starts at
+once, with its crash count reset. The command returns once the restart has begun; `stewart status` shows the worker
+`stopping`, then `spawning`.
 
 ## Scripting
 
 ```bash
-stewart status --json | jq '.snapshot.apps[] | {id, state, counters}'
+docker compose exec stewart stewart status --json | jq '.snapshot.apps[] | {id, state, counters}'
 ```
 
-The JSON is the snapshot exactly as it crosses the socket, and also lists every
-routed subscription. The exit status is 1 when the daemon is down or the token
-is wrong, so it works as a health check.
+The JSON holds everything the tables show, and every entity and event each app listens to. The command exits with 1
+when Stewart is down or the token is wrong, so it also works as a health check.
 
 ## Health checks
 
-For an orchestrator, the daemon can answer probes over plain HTTP, without
-starting PHP or knowing the control token. The port is off by default:
+For Docker, Kubernetes or a monitoring tool, Stewart can answer health checks over plain HTTP, without the control
+token. The port is off by default:
 
 ```yaml
 http:
-  listen: tcp://0.0.0.0:8080      # an IP, not a host name; tcp://[::]:8080 for IPv6
+  listen: tcp://0.0.0.0:8080      # an IP address, not a host name; tcp://[::]:8080 for IPv6
 ```
+
+Publish the port in your compose file (`ports: ["8080:8080"]`) to reach it from outside the container.
 
 | Path | 200 | 503 |
 |---|---|---|
-| `/healthz` | The daemon answers; nothing else is checked | never |
-| `/readyz` | Home Assistant connected, at least one worker running its apps, no worker quarantined | Still connecting or reconnecting, no worker running (starting up, or every worker restarting), or a worker quarantined |
+| `/healthz` | Stewart answers | never |
+| `/readyz` | Connected to Home Assistant, at least one worker running its apps, no worker quarantined | Still connecting or reconnecting, no worker running yet, or a worker quarantined |
 
 ```bash
 curl -s localhost:8080/readyz   # {"status":"not_ready","reasons":["Home Assistant is connecting"]}
 ```
 
-The body is `{"status":"alive|ready|not_ready","reasons":[…]}`. Only `GET` and
-`HEAD` are accepted (405 otherwise); any other path is 404, and a failure while
-building the answer is a 500 with an error in the log. The port starts with the
-control socket, after the store check, so it is closed during that first step.
-The Helm chart turns it on and probes it by default; `stewart status
---probe=liveness|readiness` gives the same verdicts over the control socket.
+The body is `{"status":"alive|ready|not_ready","reasons":[…]}`. The port opens only after Stewart has reached Valkey
+at start. The Helm chart turns it on and uses it by default; `stewart status --probe=liveness` or
+`--probe=readiness` gives the same answers through the control socket.
 
 ## Admin API
 
@@ -190,7 +185,7 @@ stewart status --address tcp://homeassistant.local:7333 --token …
 ```
 
 With both `--address` and `--token` given, no `stewart.yaml` or `.env` is read,
-so the command runs on a machine that has neither. The broker logs a warning
+so the command runs on a machine that has neither. Stewart logs a warning
 when it listens off loopback: anyone with the token reads the runtime snapshot
 and can pause apps.
 

@@ -155,7 +155,7 @@ was set on it in Home Assistant. Set `expose.prune: false` to keep every entity.
 
 ## Errors
 
-Every handle call waits for the broker and can throw `ExposureException`:
+Every handle call waits for Stewart's main process and can throw `ExposureException`:
 
 | Reason | When |
 |---|---|

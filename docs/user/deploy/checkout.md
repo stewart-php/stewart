@@ -13,7 +13,7 @@ during development. You need Git, Docker with Compose, and `make` on the server.
 ```bash
 git clone <your repository> my-home
 cd my-home
-cp .env.example .env    # then fill it in, as on your machine
+cp .env.example .env    # fill it in as on your machine; STEWART_CONTROL__TOKEN=$(openssl rand -hex 16)
 make up
 ```
 

@@ -12,7 +12,8 @@ its example app.
 
 - **Docker with Compose.** PHP, Composer and everything else run inside containers, so you install nothing else.
   The images run on amd64 and arm64, so a Raspberry Pi 4 or 5 works too.
-- **A Home Assistant you can reach over the network** from the machine running Docker.
+- **A Home Assistant you can reach over the network** from the machine running Docker. Stewart is not a Home
+  Assistant add-on: it runs in its own container, on the same machine or another one.
 - **A long-lived access token from an administrator user.** The next section shows how to make one.
 
 ## 1. Create a Home Assistant user for Stewart
@@ -70,8 +71,8 @@ STEWART_HOME_ASSISTANT__TOKEN=paste-the-token-here
 
 - The URL is the address you open Home Assistant at. `http://` and `https://` work as well as `ws://` and `wss://`.
 - Stewart runs in a container, so `localhost` means the container, not your machine. Use the host name or IP
-  address of Home Assistant. If Home Assistant runs on the same machine, `host.docker.internal` reaches it during
-  development.
+  address of Home Assistant. If Home Assistant runs on the same machine, `host.docker.internal` reaches it with
+  `make run`; on a server, use the machine's IP address.
 - `.env` holds secrets. Git already ignores it, so keep it that way.
 
 Now let Stewart read your entities and services:
@@ -90,7 +91,9 @@ make run
 ```
 
 Stewart connects, starts the example app `apps/HelloApp.php`, and logs `Hello from Stewart` with the number of
-entities it found. After that, the app logs every change of `sun.sun`.
+entities it found. After that, the app logs every change of `sun.sun`. It also logs
+`The hello entities are not exposed`: that is expected until you install the optional
+[Stewart integration](../guides/exposed-entities.md#setting-it-up).
 
 In a second terminal, ask the running Stewart how it is doing:
 

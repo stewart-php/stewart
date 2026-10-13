@@ -24,7 +24,7 @@ cannot tell `-` from `_`, so `battery-alert` and `battery_alert` count as the sa
 
 ## Starting and stopping
 
-`initialize()` runs once, when the app starts. Use it to subscribe to streams and add schedules, then return.
+`initialize()` runs once, when the app starts. Use it to start watching entities or events and to add schedules, then return.
 Stewart delivers nothing to the app until `initialize()` returns, so do not wait for anything in it.
 
 `dispose()` runs when the app stops. Subscriptions and schedules end on their own, so most apps leave it empty. Use it
@@ -66,7 +66,7 @@ apps:
 - Each key under `options` is the name of a constructor parameter, and its value replaces that parameter's default.
 - A parameter without a default must be set, or the app does not start.
 - An option that matches no parameter is an error that names the app and the class.
-- Options can also come from the environment: `STEWART_APPS__BATTERY_ALERT__OPTIONS__THRESHOLD=15`. See
+- Options can also come from the environment: `STEWART_APPS__BATTERY_ALERT__OPTIONS__THRESHOLD=15` (this needs the app's entry in `stewart.yaml`, as above). See
   [Configuration](configuration.md).
 
 Next to `options`, an app's entry takes three more settings:
@@ -81,10 +81,11 @@ apps:
 
 If an entry names an ID that no app has, Stewart logs a warning at start, so a typo does not go unnoticed.
 
-## Your own services
+## Your own classes (services.php)
 
-Code that several apps share, or that holds a connection to something, belongs in a service. `QuietHours` from the
-example is one:
+Code that several apps share, or that holds a connection to something, goes in a class of its own, called a
+**service**. `services.php` is not related to Home Assistant services; it tells Stewart which of your classes it may
+pass to apps. `QuietHours` from the example is one:
 
 ```php file=../../examples/apps/Support/QuietHours.php
 ```

@@ -116,8 +116,8 @@ off, for example) is `mixed` until you generate again.
 check the committed classes against a committed snapshot:
 
 ```bash
-make generate ARGS=--snapshot-out=var/snapshot.json
-stewart generate --check --snapshot-in=var/snapshot.json
+make generate ARGS=--snapshot-out=var/snapshot.json                     # on your machine; commit the file
+make generate ARGS="--check --snapshot-in=var/snapshot.json"           # in CI
 ```
 
 Generating from the same snapshot always gives the same files. A snapshot is a copy of your home's state, with

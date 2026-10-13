@@ -61,7 +61,7 @@ STEWART_APPS__PORCH_LIGHT__OPTIONS__LIGHTS='[light.porch, light.garden]'
 STEWART_CODEGEN__INCLUDE='[light.*, switch.*]'
 ```
 
-A variable cannot reach inside an option, so set the option as a whole.
+An environment variable always replaces an option's whole value; it cannot change one key inside a list or map.
 
 ## Secrets in files
 
@@ -90,8 +90,8 @@ A variable that is not set and has no fallback stops Stewart with the setting's 
 ## Values
 
 - **Durations** are a number and a unit: `500ms`, `5s`, `2m`, `1h`. A bare number is refused, because its unit
-  would be a guess. Delays and windows are at least `1ms`, a `max_delay` is at least its `initial_delay`, and
-  `supervision.restart_window` must outlast the backoff of `restart_attempts` restarts.
+  would be a guess. Delays and windows are at least `1ms`; `make config-reference` lists the limits of
+  each setting.
 - **`off`** switches off a timer, a listener, the control socket, `persistence.url` or `mqtt.url`, for example
   `supervision.ping_interval: off`. `make config-reference` says which settings accept it.
 - **App options** from the environment take inline YAML. A value that is not valid inline YAML stays text, so a

@@ -1,8 +1,9 @@
 ---
-title: Stewart
+title: Home Assistant automations in PHP
 description: Write Home Assistant automations in PHP.
 template: splash
 hero:
+  title: Stewart
   tagline: Write your Home Assistant automations as plain PHP classes. Test them like any other code, and run them in Docker next to Home Assistant.
   actions:
     - text: Get started
@@ -15,7 +16,7 @@ hero:
       variant: minimal
 ---
 
-Stewart connects to your Home Assistant and runs automations you write in PHP. Each automation is a small class:
+Stewart connects to your Home Assistant and runs automations you write in PHP. Each automation is a small PHP class, which Stewart calls an **app**:
 it watches entities, reacts to events and schedules, and calls Home Assistant services. You keep the automations in
 your own Git repository, check them with PHPStan, and test them with PHPUnit, without a running Home Assistant.
 

@@ -67,7 +67,8 @@ handler until an entity reaches a state:
 - **Other apps keep running** while a handler waits. Later events for the *same* subscription wait their turn.
 - **Do not wait in `initialize()`.** The app receives nothing until `initialize()` returns, so the wait could only time
   out. Add a schedule or a subscription in `initialize()`, and wait in its handler.
-- **Do not use `sleep()` or `Amp\delay()`.** They hold up the worker, and tests cannot skip them. Use a schedule, a
+- **Do not use `sleep()` or any other function that pauses PHP.** It holds up every app on the worker, and tests
+  cannot skip it. Use a schedule, a
   wait, or an operator such as `whenChangedTo(…, for: …)`.
 
 For "has stayed off for 5 minutes", use `whenChangedTo('off', for: Duration::minutes(5))` from

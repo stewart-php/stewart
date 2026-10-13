@@ -47,6 +47,10 @@ docker compose -f compose.image.yaml up -d
 
 To roll back, set the image to an older tag, such as `sha-abc1234`, and run the same two commands.
 
+The server has no Makefile. Check Stewart there with
+`docker compose -f compose.image.yaml exec stewart stewart status`, and follow its log with
+`docker compose -f compose.image.yaml logs -f stewart`.
+
 ## The Dockerfile
 
 Your project's `Dockerfile` starts from the runtime image of your Stewart version, installs the dependencies without

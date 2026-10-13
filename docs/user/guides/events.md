@@ -61,8 +61,9 @@ user](../start/install.md#1-create-a-home-assistant-user-for-stewart). With a to
 everything you do counts as Stewart's.
 
 Every `callService()` returns an `EventContext`, which identifies that call. `$change->wasCausedBy($context)` is `true`
-for changes that this exact call made, also through a script or scene it started. Home Assistant often reports a
-call's first state change before the call returns, so for "did a person do this?", use `wasCausedByStewart()`.
+for changes made by that exact call, including through a script or scene it started. Home Assistant often reports
+the first change before `callService()` returns, so you may not have the context yet. To ask "did a person do
+this?", use `wasCausedByStewart()` instead.
 
 | Method | Answers |
 |---|---|

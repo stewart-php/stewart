@@ -17,6 +17,17 @@ For other monitoring, turn on the HTTP health port and point your tool at `/heal
 STEWART_HTTP__LISTEN=tcp://0.0.0.0:8080
 ```
 
+The compose files publish no ports, so add one to the `stewart` service for tools outside the container:
+
+```yaml
+services:
+  stewart:
+    ports:
+      - "8080:8080"
+```
+
+The same goes for the admin port (`http.admin.listen`) and a TCP control socket (`control.listen`).
+
 [Status and control](../guides/status.md#health-checks) describes both answers.
 
 ## Logs
@@ -58,8 +69,8 @@ make update                # the newest release of your Stewart version, such as
 make upgrade VERSION=1.3   # move to another version
 ```
 
-Read the [changelog](https://github.com/stewart-php/stewart/blob/main/CHANGELOG.md) before you upgrade, run your
-tests, commit `composer.lock` and the changed files, and deploy as usual. Dependabot in your repository proposes new
+Read the [upgrade notes](../help/upgrading.md) before you upgrade, run `make generate`, `make stan` and `make test`,
+commit `composer.lock` and the changed files, and deploy as usual. Dependabot in your repository proposes new
 releases on its own.
 
 If you use the Stewart integration in Home Assistant, update it to the same version.

@@ -12,6 +12,7 @@ sidebar:
 | **App** | One automation: a class in `apps/` with `#[Automation]` that implements `App`. |
 | **App ID** | The name in `#[Automation(id: '…')]`. It names the app in logs, settings and stored data. |
 | **Broker** | Stewart's main process. It holds the connection to Home Assistant and passes events to the workers. |
+| **Component** | The Stewart integration in Home Assistant, as `make status` and error reasons such as `ComponentMissing` call it. |
 | **Control socket** | How `stewart status` and the other commands talk to a running Stewart. It needs the control token. |
 | **Dry run** | A mode that logs service calls instead of sending them, to try apps against your real Home Assistant. |
 | **Entity filter** | A way to pick entities by area, floor, label or device. See [Areas, floors and labels](../guides/registry.md). |

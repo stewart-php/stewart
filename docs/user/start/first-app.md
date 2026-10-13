@@ -21,7 +21,7 @@ Here is what each part does:
 
 - **`#[Automation(id: 'porch-light')]`** marks the class as an app. Stewart finds every app in `apps/` by this
   attribute. The ID names the app in logs, in `stewart.yaml` and in stored data, so keep it once the app runs. It
-  uses lowercase letters, digits, `-` and `_`.
+  starts with a lowercase letter and uses only lowercase letters, digits, `-` and `_`.
 - **`implements App`** gives the app its two lifecycle methods. `initialize()` runs once, when the app starts.
   `dispose()` runs when it stops; this app has nothing to clean up.
 - **The constructor** asks for what the app needs, and Stewart passes it in:
@@ -99,7 +99,8 @@ You no longer need the example app. Delete `apps/HelloApp.php`, `tests/HelloAppT
 
 ## Common problems
 
-**The app fails to start with `SunLocationUnknown`.** Home Assistant has no location. Set one under **Settings →
+**The app logs `A sunset schedule needs a location, and Home Assistant reported none`.** Home Assistant has no
+location. Set one under **Settings →
 System → General** and restart Stewart.
 
 **`App "porch-light" sets option "…", which matches no parameter of App\PorchLight::__construct()`.** An option
@@ -111,4 +112,5 @@ the same service in Home Assistant under **Developer tools → Actions** to rule
 ## Next
 
 - [Project tour](project-tour.md) explains the other files in your project.
+- [How it works](../guides/how-it-works.md) explains the rules every app follows, such as never calling `sleep()`.
 - [State changes](../guides/state-changes.md) shows how to react when an entity changes.

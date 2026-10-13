@@ -42,11 +42,11 @@ meanwhile. A worker that keeps crashing is stopped after a few tries, and `make 
 it as often as you like.
 
 **Calling a service waits for Home Assistant.** `callService()` returns once Home Assistant has answered. Other apps
-keep running while one app waits, because each handler runs in its own fiber.
+keep running while one app waits; Stewart pauses only the function that is waiting.
 
 **Do not block the worker.** Apps in a worker share it. A `sleep()`, a slow `file_get_contents()` on a URL, or a
 long loop holds up every app on that worker. To wait, use Stewart's tools instead: a schedule, `waitForState()`,
-or a stream operator with a time window. See [Scheduling and waiting](scheduling.md#waiting-in-a-handler).
+or an option such as `whenChangedTo('off', for: …)`. See [Scheduling and waiting](scheduling.md#waiting-in-a-handler).
 
 **`initialize()` is for setting up, not for waiting.** Stewart delivers nothing to an app until its `initialize()`
 returns. Subscribe to streams and add schedules there, then react in the handlers.
