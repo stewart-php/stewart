@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Contracts\Exposure\Command;
 
+use Stewart\Contracts\Exposure\Action\ActionCall;
 use Stewart\Contracts\Exposure\ExposedPlatform;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\State\EventContext;
@@ -18,6 +19,7 @@ use Stewart\Contracts\Wire\WireVariants;
     ExposedPlatform::Time->value => TimeCommand::class,
     ExposedPlatform::Date->value => DateCommand::class,
     ExposedPlatform::DateTime->value => DateTimeCommand::class,
+    ExposedPlatform::Action->value => ActionCall::class,
 ])]
 interface ExposedCommand
 {

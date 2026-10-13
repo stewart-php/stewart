@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Ipc\Message;
 
 use Stewart\Contracts\Exception\ExposureException;
-use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
+use Stewart\Contracts\Exposure\ExposureConfig;
 use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
 use Throwable;
@@ -18,7 +18,7 @@ final readonly class ReconfigureExposedEntityRequest implements WorkerMessage, H
         public CorrelationId $correlationId,
         public ResourceScope $scope,
         public ExposedEntityKey $key,
-        public ExposedEntityConfig $config,
+        public ExposureConfig $config,
     ) {}
 
     public function createUnreachableFailure(string $detail, ?Throwable $previous = null): ExposureException

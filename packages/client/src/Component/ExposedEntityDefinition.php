@@ -60,6 +60,11 @@ final readonly class ExposedEntityDefinition
         return new self($other->platform, $other->config, $this->device);
     }
 
+    public function isAction(): bool
+    {
+        return $this->platform === ExposedPlatform::Action;
+    }
+
     /** @return array<string, mixed> */
     public function toMessageFields(): array
     {

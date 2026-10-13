@@ -9,6 +9,10 @@ use DateTimeZone;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Stewart\Contracts\Exposure\Action\ActionCall;
+use Stewart\Contracts\Exposure\Action\ActionConfig;
+use Stewart\Contracts\Exposure\Action\ActionField;
+use Stewart\Contracts\Exposure\Action\ActionFieldType;
 use Stewart\Contracts\Exposure\BinarySensorConfig;
 use Stewart\Contracts\Exposure\BinarySensorDeviceClass;
 use Stewart\Contracts\Exposure\ButtonConfig;
@@ -26,8 +30,8 @@ use Stewart\Contracts\Exposure\Command\TimeCommand;
 use Stewart\Contracts\Exposure\DateConfig;
 use Stewart\Contracts\Exposure\DateTimeConfig;
 use Stewart\Contracts\Exposure\EntityCategory;
-use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
+use Stewart\Contracts\Exposure\ExposureConfig;
 use Stewart\Contracts\Exposure\NumberConfig;
 use Stewart\Contracts\Exposure\NumberDeviceClass;
 use Stewart\Contracts\Exposure\NumberMode;
@@ -65,7 +69,7 @@ final class ExposureWireTest extends TestCase
         $this->mapper = IpcCodec::createIpcWireMapper();
     }
 
-    /** @return iterable<string, array{ExposedEntityConfig}> */
+    /** @return iterable<string, array{ExposureConfig}> */
     public static function provideConfigs(): iterable
     {
         yield 'sensor' => [new SensorConfig(SensorDeviceClass::Enum, options: ['low', 'high'])];
@@ -78,10 +82,14 @@ final class ExposureWireTest extends TestCase
         yield 'time' => [new TimeConfig('Alarm')];
         yield 'date' => [new DateConfig(icon: 'mdi:mower')];
         yield 'datetime' => [new DateTimeConfig(enabledByDefault: false)];
+        yield 'action' => [new ActionConfig('Boost', 'Heats a room.', [
+            new ActionField('room', ActionFieldType::Select, required: true, options: ['office', 'hall']),
+            new ActionField('minutes', ActionFieldType::Number, description: 'How long.'),
+        ])];
     }
 
     #[DataProvider('provideConfigs')]
-    public function testEveryConfigSurvivesTheWire(ExposedEntityConfig $config): void
+    public function testEveryConfigSurvivesTheWire(ExposureConfig $config): void
     {
         $sent = new ReconfigureExposedEntityRequest(new CorrelationId('w0:1'), ResourceScope::shared(), new ExposedEntityKey('key'), $config);
 
@@ -101,6 +109,7 @@ final class ExposureWireTest extends TestCase
         yield 'time' => [new TimeCommand(TimeOfDay::fromHourMinuteSecond(7, 0), $context)];
         yield 'date' => [new DateCommand(new DateTimeImmutable('2026-10-15', new DateTimeZone('UTC')), $context)];
         yield 'datetime' => [new DateTimeCommand(new DateTimeImmutable('2026-10-09T18:30:00+02:00'), $context)];
+        yield 'action' => [new ActionCall(['room' => 'office', 'minutes' => 45.5, 'quiet' => true], $context)];
     }
 
     #[DataProvider('provideCommands')]

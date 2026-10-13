@@ -6,6 +6,8 @@ namespace Stewart\Runtime\Worker;
 
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\ExposureException;
+use Stewart\Contracts\Exposure\Action\ActionConfig;
+use Stewart\Contracts\Exposure\Action\ExposedAction;
 use Stewart\Contracts\Exposure\BinarySensorConfig;
 use Stewart\Contracts\Exposure\ButtonConfig;
 use Stewart\Contracts\Exposure\DateConfig;
@@ -16,7 +18,6 @@ use Stewart\Contracts\Exposure\ExposedBinarySensor;
 use Stewart\Contracts\Exposure\ExposedButton;
 use Stewart\Contracts\Exposure\ExposedDate;
 use Stewart\Contracts\Exposure\ExposedDateTime;
-use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedNumber;
 use Stewart\Contracts\Exposure\ExposedSelect;
@@ -25,6 +26,7 @@ use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\ExposedSwitch;
 use Stewart\Contracts\Exposure\ExposedText;
 use Stewart\Contracts\Exposure\ExposedTime;
+use Stewart\Contracts\Exposure\ExposureConfig;
 use Stewart\Contracts\Exposure\NumberConfig;
 use Stewart\Contracts\Exposure\SelectConfig;
 use Stewart\Contracts\Exposure\SensorConfig;
@@ -33,17 +35,18 @@ use Stewart\Contracts\Exposure\TextConfig;
 use Stewart\Contracts\Exposure\TimeConfig;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Worker\Exposure\ExposureChannel;
+use Stewart\Runtime\Worker\Exposure\WorkerExposedAction;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedBinarySensor;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedButton;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedDate;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedDateTime;
-use Stewart\Runtime\Worker\Exposure\WorkerExposedEntity;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedNumber;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedSelect;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedSensor;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedSwitch;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedText;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedTime;
+use Stewart\Runtime\Worker\Exposure\WorkerExposure;
 
 final readonly class WorkerEntityExposure implements EntityExposure
 {
@@ -110,6 +113,11 @@ final readonly class WorkerEntityExposure implements EntityExposure
         return $this->exposeHandle(new WorkerExposedDateTime($this->channel, $this->resourceScope, $this->claimKey($key), $config), $config, $device);
     }
 
+    public function exposeAction(ExposedEntityKey|string $key, ActionConfig $config = new ActionConfig()): ExposedAction
+    {
+        return $this->exposeHandle(new WorkerExposedAction($this->channel, $this->resourceScope, $this->claimKey($key), $config), $config, null);
+    }
+
     /** @throws ExposureException */
     private function claimKey(ExposedEntityKey|string $key): ExposedEntityKey
     {
@@ -124,13 +132,13 @@ final readonly class WorkerEntityExposure implements EntityExposure
     }
 
     /**
-     * @template THandle of WorkerExposedEntity<covariant ExposedEntityConfig>
+     * @template THandle of WorkerExposure<covariant ExposureConfig>
      *
      * @param THandle $handle
      * @return THandle
      * @throws ExposureException
      */
-    private function exposeHandle(WorkerExposedEntity $handle, ExposedEntityConfig $config, ?DeviceInfo $device): WorkerExposedEntity
+    private function exposeHandle(WorkerExposure $handle, ExposureConfig $config, ?DeviceInfo $device): WorkerExposure
     {
         // Recorded before the broker answers, so a second exposure of the same key fails while the first is in flight.
         $this->channel->handles->recordHandle($this->resourceScope, $handle->getKey(), $handle);

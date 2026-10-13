@@ -7,6 +7,8 @@ namespace Stewart\Testing\Exposure;
 use LogicException;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\ExposureException;
+use Stewart\Contracts\Exposure\Action\ActionConfig;
+use Stewart\Contracts\Exposure\Action\ExposedAction;
 use Stewart\Contracts\Exposure\BinarySensorConfig;
 use Stewart\Contracts\Exposure\ButtonConfig;
 use Stewart\Contracts\Exposure\DateConfig;
@@ -17,7 +19,6 @@ use Stewart\Contracts\Exposure\ExposedBinarySensor;
 use Stewart\Contracts\Exposure\ExposedButton;
 use Stewart\Contracts\Exposure\ExposedDate;
 use Stewart\Contracts\Exposure\ExposedDateTime;
-use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedNumber;
@@ -26,6 +27,7 @@ use Stewart\Contracts\Exposure\ExposedSensor;
 use Stewart\Contracts\Exposure\ExposedSwitch;
 use Stewart\Contracts\Exposure\ExposedText;
 use Stewart\Contracts\Exposure\ExposedTime;
+use Stewart\Contracts\Exposure\ExposureConfig;
 use Stewart\Contracts\Exposure\NumberConfig;
 use Stewart\Contracts\Exposure\SelectConfig;
 use Stewart\Contracts\Exposure\SensorConfig;
@@ -39,7 +41,7 @@ final class RecordingEntityExposure implements EntityExposure
 {
     public private(set) RecordedExposureCollection $exposures;
 
-    /** @var array<string, RecordingExposedEntity<covariant ExposedEntityConfig>> */
+    /** @var array<string, RecordingExposure<covariant ExposureConfig>> */
     private array $handlesByKey = [];
 
     /** @var array<string, ExposedEntitySnapshot> */
@@ -125,6 +127,11 @@ final class RecordingEntityExposure implements EntityExposure
         return $this->trackHandle(new RecordingExposedDateTime($this->claimKey($key, $config, $device), $config, $this->timers));
     }
 
+    public function exposeAction(ExposedEntityKey|string $key, ActionConfig $config = new ActionConfig()): ExposedAction
+    {
+        return $this->trackHandle(new RecordingExposedAction($this->claimKey($key, $config, null), $config, $this->timers));
+    }
+
     public function requireSensor(ExposedEntityKey|string $key): RecordingExposedSensor
     {
         return $this->requireHandle($key, RecordingExposedSensor::class, 'sensor');
@@ -175,8 +182,13 @@ final class RecordingEntityExposure implements EntityExposure
         return $this->requireHandle($key, RecordingExposedDateTime::class, 'datetime');
     }
 
+    public function requireAction(ExposedEntityKey|string $key): RecordingExposedAction
+    {
+        return $this->requireHandle($key, RecordingExposedAction::class, 'action');
+    }
+
     /** @throws ExposureException */
-    private function claimKey(ExposedEntityKey|string $key, ExposedEntityConfig $config, ?DeviceInfo $device): ExposedEntityKey
+    private function claimKey(ExposedEntityKey|string $key, ExposureConfig $config, ?DeviceInfo $device): ExposedEntityKey
     {
         $key = ExposedEntityKey::fromKeyOrString($key);
 
@@ -194,16 +206,16 @@ final class RecordingEntityExposure implements EntityExposure
     }
 
     /**
-     * @template THandle of RecordingExposedEntity<covariant ExposedEntityConfig>
+     * @template THandle of RecordingExposure<covariant ExposureConfig>
      *
      * @param THandle $handle
      * @return THandle
      */
-    private function trackHandle(RecordingExposedEntity $handle): RecordingExposedEntity
+    private function trackHandle(RecordingExposure $handle): RecordingExposure
     {
         $seeded = $this->seededByKey[$handle->getKey()->value] ?? null;
 
-        if ($seeded !== null) {
+        if ($seeded !== null && $handle instanceof RecordingExposedEntity) {
             $handle->applySnapshot($seeded);
         }
 
@@ -211,20 +223,20 @@ final class RecordingEntityExposure implements EntityExposure
     }
 
     /**
-     * @template THandle of RecordingExposedEntity<covariant ExposedEntityConfig>
+     * @template THandle of RecordingExposure<covariant ExposureConfig>
      *
      * @param class-string<THandle> $class
      * @return THandle
      */
-    private function requireHandle(ExposedEntityKey|string $key, string $class, string $kind): RecordingExposedEntity
+    private function requireHandle(ExposedEntityKey|string $key, string $class, string $kind): RecordingExposure
     {
         $handle = $this->findHandle($key);
 
         return $handle instanceof $class ? $handle : throw new LogicException(\sprintf('No %s was exposed as "%s".', $kind, $key));
     }
 
-    /** @return RecordingExposedEntity<covariant ExposedEntityConfig>|null */
-    private function findHandle(ExposedEntityKey|string $key): ?RecordingExposedEntity
+    /** @return RecordingExposure<covariant ExposureConfig>|null */
+    private function findHandle(ExposedEntityKey|string $key): ?RecordingExposure
     {
         return $this->handlesByKey[(string) $key] ?? null;
     }

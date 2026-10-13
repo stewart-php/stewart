@@ -6,9 +6,9 @@ namespace Stewart\Runtime\Ipc\Message;
 
 use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exposure\DeviceInfo;
-use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedStateChange;
+use Stewart\Contracts\Exposure\ExposureConfig;
 use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
 use Throwable;
@@ -20,7 +20,7 @@ final readonly class ExposeEntityRequest implements WorkerMessage, HaCallRequest
         public CorrelationId $correlationId,
         public ResourceScope $scope,
         public ExposedEntityKey $key,
-        public ExposedEntityConfig $config,
+        public ExposureConfig $config,
         public ?DeviceInfo $device,
         public ExposedStateChange $change,
     ) {}

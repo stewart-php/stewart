@@ -12,6 +12,8 @@ use Stewart\Contracts\Exception\CommandError;
 use Stewart\Contracts\Exception\CommandException;
 use Stewart\Contracts\Exception\ExposureError;
 use Stewart\Contracts\Exception\ExposureException;
+use Stewart\Contracts\Exposure\Action\ActionCall;
+use Stewart\Contracts\Exposure\Action\ActionConfig;
 use Stewart\Contracts\Exposure\Command\DateCommand;
 use Stewart\Contracts\Exposure\Command\NumberCommand;
 use Stewart\Contracts\Exposure\Command\SelectCommand;
@@ -28,6 +30,7 @@ use Stewart\Contracts\Schedule\TimeOfDay;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Exposure\RecordingEntityExposure;
+use Stewart\Testing\Exposure\RecordingExposedAction;
 use Stewart\Testing\Exposure\RecordingExposedBinarySensor;
 use Stewart\Testing\Exposure\RecordingExposedButton;
 use Stewart\Testing\Exposure\RecordingExposedDate;
@@ -39,9 +42,12 @@ use Stewart\Testing\Exposure\RecordingExposedSensor;
 use Stewart\Testing\Exposure\RecordingExposedSwitch;
 use Stewart\Testing\Exposure\RecordingExposedText;
 use Stewart\Testing\Exposure\RecordingExposedTime;
+use Stewart\Testing\Exposure\RecordingExposure;
 
 #[CoversClass(RecordingEntityExposure::class)]
+#[CoversClass(RecordingExposure::class)]
 #[CoversClass(RecordingExposedEntity::class)]
+#[CoversClass(RecordingExposedAction::class)]
 #[CoversClass(RecordingExposedSensor::class)]
 #[CoversClass(RecordingExposedBinarySensor::class)]
 #[CoversClass(RecordingExposedSwitch::class)]
@@ -199,6 +205,33 @@ final class RecordingEntityExposureTest extends TestCase
         $exposure->exposeButton('boost')->markUnavailable();
 
         self::assertFalse($exposure->requireButton('boost')->isAvailable());
+    }
+
+    public function testPushedCallReachesTheAction(): void
+    {
+        $exposure = new RecordingEntityExposure();
+        $exposure->exposeAction('boost', new ActionConfig('Boost'));
+        $boost = $exposure->requireAction('boost');
+        $received = [];
+        $boost->watchCalls()->subscribe(static function (ActionCall $call) use (&$received): void {
+            $received[] = $call->findString('room');
+        });
+
+        $boost->pushCall(['room' => 'office']);
+
+        self::assertSame(['office'], $received);
+        self::assertInstanceOf(ActionConfig::class, $exposure->exposures->getFirst()?->config);
+    }
+
+    public function testRejectedCallReachesTheTest(): void
+    {
+        $exposure = new RecordingEntityExposure();
+        $boost = $exposure->exposeAction('boost');
+        $boost->watchCalls()->subscribe(static function (): void {
+            throw CommandException::rejected('The boiler is off.');
+        });
+
+        $this->assertThrowsReason(CommandError::Rejected, static fn() => $exposure->requireAction('boost')->pushCall([]));
     }
 
     public function testSameKeyTwiceIsTaken(): void

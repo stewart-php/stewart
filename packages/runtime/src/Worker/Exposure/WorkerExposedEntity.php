@@ -5,23 +5,20 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Worker\Exposure;
 
 use Stewart\Contracts\Entity\EntityId;
-use Stewart\Contracts\EventStream;
 use Stewart\Contracts\Exception\ExposureException;
-use Stewart\Contracts\Exposure\Command\ExposedCommand;
 use Stewart\Contracts\Exposure\ExposedEntity;
 use Stewart\Contracts\Exposure\ExposedEntityConfig;
-use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
-use Stewart\Runtime\Model\ResourceScope;
 
 /**
  * @phpstan-import-type ExposedAttributes from ExposedEntity
  *
  * @template TConfig of ExposedEntityConfig
+ * @extends WorkerExposure<TConfig>
  */
-abstract class WorkerExposedEntity implements ExposedEntity, ExposedHandle
+abstract class WorkerExposedEntity extends WorkerExposure implements ExposedEntity
 {
     private ?EntityId $entityId = null;
 
@@ -31,21 +28,6 @@ abstract class WorkerExposedEntity implements ExposedEntity, ExposedHandle
     private array $attributes = [];
 
     private bool $available = true;
-
-    private bool $released = false;
-
-    /** @param TConfig $config */
-    public function __construct(
-        private readonly ExposureChannel $channel,
-        private readonly ResourceScope $scope,
-        private readonly ExposedEntityKey $key,
-        private ExposedEntityConfig $config,
-    ) {}
-
-    public function getKey(): ExposedEntityKey
-    {
-        return $this->key;
-    }
 
     public function getEntityId(): ?EntityId
     {
@@ -77,14 +59,6 @@ abstract class WorkerExposedEntity implements ExposedEntity, ExposedHandle
         $this->sendChange(new ExposedStateChange(available: false));
     }
 
-    public function remove(): void
-    {
-        $this->assertNotReleased();
-        $this->channel->requester->requestRemoval($this->scope, $this->key);
-        $this->channel->handles->forgetHandle($this->scope, $this->key);
-        $this->released = true;
-    }
-
     public function applySnapshot(ExposedEntitySnapshot $snapshot): void
     {
         $this->entityId = $snapshot->entityId;
@@ -98,43 +72,10 @@ abstract class WorkerExposedEntity implements ExposedEntity, ExposedHandle
         $this->state = $state;
     }
 
-    public function markReleased(): void
-    {
-        $this->released = true;
-    }
-
-    /** @return EventStream<ExposedCommand> */
-    protected function watchOwnCommands(): EventStream
-    {
-        return $this->channel->commandStreams->watchCommands($this->scope, $this->key);
-    }
-
-    /** @return TConfig */
-    protected function findConfig(): ExposedEntityConfig
-    {
-        return $this->config;
-    }
-
-    /**
-     * @param TConfig $config
-     * @throws ExposureException
-     */
-    protected function sendReconfiguration(ExposedEntityConfig $config): void
-    {
-        $this->assertNotReleased();
-        $snapshot = $this->channel->requester->requestReconfiguration($this->scope, $this->key, $config);
-        $this->config = $config;
-
-        if ($snapshot !== null) {
-            $this->applySnapshot($snapshot);
-        }
-    }
-
     /** @throws ExposureException */
     protected function sendChange(ExposedStateChange $change): void
     {
-        $this->assertNotReleased();
-        $this->channel->requester->requestUpdate($this->scope, $this->key, $change);
+        $this->sendUpdate($change);
 
         $this->state = $change->state ?? $this->state;
         $this->attributes = $change->attributes ?? $this->attributes;
@@ -144,13 +85,5 @@ abstract class WorkerExposedEntity implements ExposedEntity, ExposedHandle
     protected function findStateValue(): int|float|string|bool|null
     {
         return $this->state?->value;
-    }
-
-    /** @throws ExposureException */
-    private function assertNotReleased(): void
-    {
-        if ($this->released) {
-            throw ExposureException::removed($this->key);
-        }
     }
 }
