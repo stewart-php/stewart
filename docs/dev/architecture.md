@@ -89,7 +89,7 @@ rather than an await.
 | `store-redis` | `contracts`, `store`, `support` |
 | `runtime` | `contracts`, `client`, `store`, `sun`, `support` |
 | `mqtt` | `contracts`, `runtime`, `support` |
-| `codegen` (development only) | `contracts`, `client`, `runtime`, `support` |
+| `codegen` (optional) | `contracts`, `client`, `runtime`, `support` |
 | `testing` (development only) | `contracts`, `store`, `support` |
 
 **`stewart-php/contracts`** is the sink of the dependency graph, holds only the
@@ -160,8 +160,9 @@ store, without a runtime.
 
 **`stewart-php/codegen`** turns `get_states` and `get_services` into the classes
 under `App\Generated`. It depends on `contracts`, `client` and
-`nette/php-generator`, and it is a **development dependency**: a `--no-dev`
-image has neither the package nor the `generate` command. Only its
+`nette/php-generator`, and it is **optional**: the skeleton requires it so the
+`generate` command exists on a server (`STEWART_BOOT_GENERATE`), but a project
+without it runs unchanged, and the generated classes need `contracts` alone. Only its
 `Console` namespace reaches the runtime, for configuration; the runtime never
 names codegen; the console profile imports the package's `config/services.php`
 when Composer reports it installed.
@@ -358,7 +359,7 @@ handled. An `await` inserted into that block reopens all of them.
 
 **The broker subscribes before it seeds.** Calling `get_states` first loses
 every change between its response and the subscription ack, permanently — the
-cache stays wrong until that entity moves again. `establish()` buffers by
+cache stays wrong until that entity moves again. `connectSubscribeAndSeed()` buffers by
 entity id in between and drains after the seed.
 
 **A dead worker's subscriptions are deregistered synchronously, before any
@@ -381,12 +382,6 @@ lookup.** Correlation ids also restart per process, so resolving through the
 worker map would let a dead worker's `0:7` complete a new worker's unrelated
 `0:7`. `HaCallSlots` counts in-flight calls per handle for the same
 reason, and never routes by them.
-
-**The routing memo must be invalidated when entities appear or disappear.**
-`SubscriptionRegistry` answers "which subscriptions match this entity ID" from
-a cache, which is what lets a `sensor.*_battery` subscription pick up a sensor
-added next month. A new or removed entity changes what a pattern matches, so
-every memoised answer is stale at that moment.
 
 **`WorkerHandle`'s `ProcessContext` generics stay `object`.** `Channel`'s send
 type is invariant, so narrowing them to the message interfaces would stop the

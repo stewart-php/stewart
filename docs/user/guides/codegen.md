@@ -126,8 +126,10 @@ locations, IP addresses and access tokens of cameras, so keep it out of public r
 
 ## In production
 
-`stewart-php/codegen` is a development dependency, so a production install has no `generate` command. The generated
-classes need only `stewart-php/contracts`, which every project has.
+Projects from the skeleton require `stewart-php/codegen` like any other package, so `stewart generate` also exists on a
+server. That is what `STEWART_BOOT_GENERATE=1` (or the Helm chart's `code.generateOnStart`) uses to regenerate the
+classes on every start. The generated classes themselves need only `stewart-php/contracts`; a project that always
+commits them can move `stewart-php/codegen` to `require-dev`.
 
 ## Common problems
 

@@ -72,7 +72,7 @@ These variables are read by the container's start-up script, not by Stewart:
 | `STEWART_BOOT_GIT_TOKEN_FILE` | A file holding an HTTPS token, for a private repository |
 | `STEWART_BOOT_GIT_SSH_KEY_FILE` | A file holding an SSH deploy key, for `git@` URLs |
 | `STEWART_BOOT_COMPOSER` | `auto` installs dependencies when `composer.lock` changed, `always`, or `never` |
-| `STEWART_BOOT_GENERATE` | `1` tries to regenerate the typed classes on start. A server installs without development packages, which include the generator, so this usually keeps the committed classes |
+| `STEWART_BOOT_GENERATE` | `1` regenerates the typed classes from Home Assistant on every start; a failure keeps the committed ones |
 
 `STEWART_DEPLOY__GIT__POLL` sets how often to look for commits (`1m`); `off` deploys only when the container starts.
 

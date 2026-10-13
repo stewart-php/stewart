@@ -70,6 +70,11 @@ make cs-fix                         # fix code style
 `make help` lists every target. To try a change against Home Assistant, `make demo` runs a project made from
 `skeleton/` against this checkout. [Contributing](https://stewart-php.github.io/docs-dev/contributing/) has the rest.
 
+## AI assistance
+
+Stewart is developed with AI assistance. The architecture and design decisions are my own. Part of the code, tests
+and documentation was written with AI coding tools.
+
 ## License
 
 MIT; see [LICENSE](LICENSE). The skeleton is [MIT-0](skeleton/LICENSE), so projects made from it owe no

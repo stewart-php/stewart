@@ -53,7 +53,7 @@ package "stewart-php/sun" as sun #FFF4E5 {
     class LocatedSunCalendar
 }
 
-package "stewart-php/codegen\n(dev only)" as codegen #F3E8FD {
+package "stewart-php/codegen\n(optional)" as codegen #F3E8FD {
     class Generator
     class Snapshot
 }
@@ -104,9 +104,9 @@ note bottom of contracts
 end note
 
 note bottom of codegen
-  A **development** dependency. A --no-dev image has
-  neither the package nor the //generate// command; the
-  console profile loads its services only when it is installed.
+  **Optional.** The skeleton requires it, so //generate//
+  runs on a server too; the console profile loads its
+  services only when it is installed.
 end note
 
 note bottom of generated

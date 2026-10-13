@@ -9,13 +9,13 @@ participant "Worker 1" as w1 $worker
 participant "App B\n(worker 1)" as bb $usercode
 
 == subscribe, at boot ==
-bb -> w1 : topic('house.*')->subscribe(...)
+bb -> w1 : watchTopic('house.*')->subscribe(...)
 w1 -> b : **Subscribe** { kind: Topic, glob selector }
 
 == publish, at runtime ==
 a -> w0 : publish('house.away', [...])
 w0 -> b : **Publish** { topic, payload }
-b -> b : registry.route(Topic, 'house.away')
+b -> b : registry.findRoutes(Topic, 'house.away')
 b -> w1 : **TopicMessage** { event, deliverTo }
 w1 -> bb : handler(TopicEvent)  <<own fiber>>
 

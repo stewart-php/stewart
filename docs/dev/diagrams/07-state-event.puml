@@ -9,34 +9,28 @@ participant "Worker 1" as w1 $worker
 participant "App\n(in worker 0)" as app $usercode
 
 ha -> b : event state_changed\n{ entity_id, old_state, new_state }
-b -> b : StateCache.apply()
-
-alt entity is new or removed
-    b -> b : invalidate routing cache
-    note right : a pattern's matches can change
-end
-
-b -> b : registry.route(entity_id)\n**memoised** per entity id
+b -> b : StateCache.applyChange()
 
 par fan-out to every worker
-    b -> w0 : **StateChanged** { change, deliverTo: [sub-3] }
-    b -> w1 : **StateChanged** { change, deliverTo: [] }
+    b -> w0 : **StateChangeBatch** { changes }
+    b -> w1 : **StateChangeBatch** { changes }
 end
 
-w0 -> w0 : stateCache.apply()
-w1 -> w1 : stateCache.apply()
+w0 -> w0 : stateCache.applyChange()
+w1 -> w1 : stateCache.applyChange()
+w0 -> w0 : match subscriptions\n**memoised** per entity id
 note over w1
   Worker 1 still updates its state cache even
   though nothing there subscribed. A full
   state cache can only stay fresh if it sees
-  **every** change — routing decides who
+  **every** change — matching decides who
   gets //told//, never who gets //updated//.
 end note
 
 w0 -> app : handler(StateChange)  <<own fiber>>
 note right of app
-  Each handler runs in its own fiber, so a
-  handler that awaits a service call cannot
-  stall the events queued behind it.
+  Each subscription drains its queue in its
+  own fiber, so a handler that awaits a service
+  call holds back only its own subscription.
 end note
 @enduml

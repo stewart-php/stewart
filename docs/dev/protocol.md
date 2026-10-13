@@ -195,8 +195,8 @@ stay dormant until that app's own `initialize()` returns; events matched in the
 meantime are buffered under `subscription_buffer` and delivered in order once it
 does.
 
-The broker does not fan out events until every worker reports `WorkerReady`, so
-no app misses an event that arrived while a neighbor was still booting.
+The broker does not wait for `WorkerReady`: a worker gets every state change
+from the moment it spawns, and `WorkerReady` only cancels its ready deadline.
 
 Two `amphp/parallel` details that bite:
 
@@ -331,7 +331,7 @@ removed; the connection itself carries on.
 
 ![Shutdown](diagrams/10-shutdown.svg)
 
-SIGTERM or SIGINT → stop accepting events → `Shutdown` to each worker →
+SIGTERM or SIGINT → stop probing and restarting workers → `Shutdown` to each worker →
 `dispose()` → the worker **returns** → `join()` with a grace period →
 `close()` only as the force-kill, because `ProcessContext::close()` sends a kill
 signal outright.

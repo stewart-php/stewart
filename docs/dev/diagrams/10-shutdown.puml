@@ -9,9 +9,9 @@ participant "App" as app $usercode
 participant "Home Assistant" as ha $ha
 
 sig -> b : signal (needs ext-pcntl)
-b -> b : stop accepting events
+b -> b : stop probing and restarting workers
 
-b -> w : **Shutdown** { reason, graceSeconds }
+b -> w : **Shutdown** { reason, grace }
 w -> app : dispose()
 app --> w
 w -> w : fail all pending\nservice-call futures
@@ -28,7 +28,7 @@ note right of w
   ContextException in the broker.
 end note
 
-b -> w : join(TimeoutCancellation(grace))
+b -> w : join() until grace + 1 s
 alt returned in time
     w --> b : summary string
 else grace expired

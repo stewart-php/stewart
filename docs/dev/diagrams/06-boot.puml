@@ -12,11 +12,13 @@ b -> ha : WebSocket connect
 ha --> b : auth_required
 b -> ha : auth { access_token }
 ha --> b : auth_ok { ha_version }
-b -> ha : get_states
-ha --> b : all entity states
-b -> b : seed StateCache,\ncache the JSON encoding
+b -> ha : subscribe_events
+note right of b : changes buffered until the seed
 b -> ha : get_config
 ha --> b : time_zone
+b -> ha : get_states
+ha --> b : all entity states
+b -> b : seed StateCache,\nreplay buffered changes
 
 == spawn ==
 b -> w ** : ProcessContextFactory::start(worker.php)
@@ -28,12 +30,12 @@ note right of b
   worker's whole life — its destructor
   kills the process.
 end note
-b -> w : pipe stdout/stderr
+b -> w : drain stdout/stderr
 b -> w : **Bootstrap** { workerId, apps[], timeZone }
-w -> app ** : new App($context, ...options)
+w -> app ** : constructApps()  <<from the app container>>
 note right of w
   Constructed but **not** initialized:
-  the state cache does not exist yet.
+  the state cache is not seeded yet.
 end note
 
 b -> w : **StateSnapshot** { pre-encoded json }
@@ -41,17 +43,15 @@ w -> w : load state cache **in place**\n(contexts already hold the object)
 
 == initialize ==
 w -> app : initialize()
-app -> w : stateChanges('sensor.*')->subscribe(...)
+app -> w : watchEvents('call_service')->subscribe(...)
 w -> b : **Subscribe** { selector, kind }
 b -> b : register + invalidate match cache
 b -> w : **SubscriptionAck**
-app -> w : reads state()  <<local hash lookup>>
-w --> b : **WorkerReady** { appIds, pid }
-
-== running ==
-b -> ha : subscribe_events(state_changed)
+app -> w : getState()  <<local hash lookup>>
+w --> b : **WorkerReady** { appIds, failedAppIds, memoryBytes }
 note over b
-  The broker waits for every worker to
-  report ready before fanning out events.
+  The broker does not wait for ready: a worker
+  gets every state change from spawn on.
+  WorkerReady cancels its ready deadline.
 end note
 @enduml
