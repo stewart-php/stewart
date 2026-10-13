@@ -5,13 +5,27 @@ sidebar:
   order: 15
 ---
 
-Apps create their own Home Assistant entities and keep them up to date. It needs
-the `stewart` integration in Home Assistant (HACS, `stewart-php/hass-stewart`)
-and an administrator token; `stewart status` shows whether the integration is
-there on its `component` row.
+An app can create its own entities in Home Assistant: a sensor with a computed value, a switch that turns an
+automation on and off, a number to tune it. This app publishes the average of two temperature sensors:
 
 ```php file=../../examples/apps/AverageTemperature.php
 ```
+
+## Setting it up
+
+Exposed entities need the **Stewart integration** in Home Assistant, of the same version as Stewart:
+
+1. In HACS, open the menu, choose **Custom repositories**, and add `https://github.com/stewart-php/hass-stewart` with
+   the category **Integration**. Download **Stewart**. Without HACS, unpack `stewart.zip` from the
+   [release](https://github.com/stewart-php/hass-stewart/releases) that matches your Stewart version into
+   `config/custom_components/stewart/`.
+2. Restart Home Assistant.
+3. Open **Settings → Devices & services → Add integration**, pick **Stewart** and confirm.
+
+Stewart finds the integration each time it connects; `make status` shows it on the `component` row. The integration
+needs Home Assistant 2026.4 or newer, and Stewart's token must belong to an administrator.
+
+## How an entity is identified
 
 - The key (`average_temperature`) is the entity's identity: its unique ID is
   `stewart-<expose.instance>-<app id>-<key>`. Renaming the app or the key makes a
@@ -27,22 +41,13 @@ there on its `component` row.
 
 ## Switches and buttons
 
-A switch or a button sends commands back when someone uses it in Home Assistant.
-Watch them with `watchCommands()`; the service call in Home Assistant waits for
-your handler:
+A switch or a button sends commands back when someone uses it in Home Assistant. Watch them with `watchCommands()`;
+Home Assistant waits for your handler's answer. This switch refuses to turn the heater on while the window is open:
 
-```php
-$heater = $this->entities->exposeSwitch('heater', new SwitchConfig(SwitchDeviceClass::Outlet, name: 'Heater'));
-$heater->watchCommands()->subscribe(function (SwitchCommand $command): void {
-    if ($command->isTurnOn() && $this->ha->getState('binary_sensor.window')?->state === 'on') {
-        throw CommandException::rejected('Close the window first.');
-    }
-
-    $this->ha->callService('switch', $command->isTurnOn() ? 'turn_on' : 'turn_off', target: $this->ha->getEntity('switch.heater_plug'));
-});
-
-$this->entities->exposeButton('boost')->watchCommands()->subscribe(fn(ButtonPress $press) => $this->boost());
+```php file=../../examples/apps/HeaterSwitch.php
 ```
+
+A button works the same way: `exposeButton('boost')->watchCommands()` receives a `ButtonPress` for each press.
 
 - When the handler returns, the command is accepted: the switch takes the
   requested state and `getValue()` returns it.
@@ -90,22 +95,10 @@ match.
 
 ## Actions
 
-An action is a Home Assistant service your app answers, for scripts,
-automations and the action picker. It has no entity and no state:
+An action is a service your app answers, for scripts, automations and the action picker in Home Assistant. It has no
+entity and no state:
 
-```php
-$boost = $this->entities->exposeAction('boost', new ActionConfig(
-    name: 'Boost',
-    description: 'Heats a room at full power for a while.',
-    fields: [
-        new ActionField('room', ActionFieldType::Entity, required: true),
-        new ActionField('minutes', ActionFieldType::Number, description: '30 when left out.'),
-    ],
-));
-$boost->watchCalls()->subscribe(fn(ActionCall $call) => $this->boost(
-    $call->findEntityId('room'),
-    (int) ($call->findNumber('minutes') ?? 30),
-));
+```php file=../../examples/apps/BoostAction.php
 ```
 
 - Home Assistant registers it as `stewart.<app>_<key>`, with `-` in the app ID
@@ -166,11 +159,13 @@ Every handle call waits for the broker and can throw `ExposureException`:
 
 | Reason | When |
 |---|---|
-| `ComponentMissing`, `ProtocolMismatch`, `ComponentRefused` | The integration is not installed, speaks another protocol, or refused the session |
+| `ComponentMissing`, `ProtocolMismatch`, `ComponentRefused` | The integration is not installed, has another version, or refused the session |
 | `ConfigInvalid` | Home Assistant rejects the configuration, for example a unit that does not fit the device class |
 | `StateInvalid` | Home Assistant rejects the value |
+| `KeyInvalid` | The key is not lowercase letters, digits and `_`, starting with a letter |
 | `KeyTaken` | The app already exposes that key |
 | `Removed` | The handle was removed or its app stopped |
+| `Unreachable`, `TimedOut` | Stewart is not connected, or Home Assistant did not answer in time |
 
 `stewart_app_exposed_commands_total{app,outcome}` counts commands per app as
 `accepted`, `rejected` (by the app), `refused` (paused or not running) and `lost`
@@ -178,30 +173,21 @@ Every handle call waits for the broker and can throw `ExposureException`:
 
 ## Testing
 
-`Stewart\Testing\Exposure\RecordingEntityExposure` stands in for the real thing:
+`$harness->entities` records what the app exposes. `requireSwitch('heater')`, `requireSensor()`, `requireNumber()`,
+`requireAction()` and the others return the recorded handle. `pushCommand()` and `pushCall()` run your handlers as
+Home Assistant would; a rejection is thrown into the test:
 
-```php
-$entities = new RecordingEntityExposure();
-$app = new AverageTemperature($ha, $entities);
-$app->initialize();
-$ha->pushState('sensor.kitchen_temperature', '21.0');
-$ha->pushState('sensor.hall_temperature', '23.0');
-
-self::assertSame(22.0, $entities->requireSensor('average_temperature')->getValue());
+```php file=../../examples/tests/HeaterSwitchTest.php
 ```
 
-`requireNumber()`, `requireSelect()`, `requireAction()` and the others return the recorded handle
-of each platform; `updateConfig()` on it replaces `$config`. [`AppHarness`](testing.md) gives an app
-one as `$harness->entities`.
+`seedSnapshot()` sets what Home Assistant would have restored, and `refuseExposures()` makes `expose*()` throw.
 
-`seedSnapshot()` sets what Home Assistant would have restored, and
-`refuseExposures()` makes `expose*()` throw. `pushCommand()` on a recorded
-handle that takes commands runs your handlers like Home Assistant would; a rejection is
-thrown into the test:
+## Common problems
 
-```php
-$this->expectException(CommandException::class);
-$entities->requireSwitch('heater')->pushCommand(new SwitchCommand(SwitchAction::TurnOn, new EventContext('test')));
-```
+**`ComponentMissing`.** The Stewart integration is not installed, or Home Assistant was not restarted after installing
+it. The app keeps running without its entities.
 
-`pushCall(['minutes' => 45])` on a recorded action does the same for a call.
+**`ProtocolMismatch`.** The integration and Stewart have different versions. Update the one that is behind.
+
+**Entities appear twice, or keep turning unavailable.** Two Stewart installations use the same `expose.instance`. Give
+each its own.

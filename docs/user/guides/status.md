@@ -1,21 +1,24 @@
 ---
-title: Checking the daemon
-description: What stewart status shows, how to pause an app, how to script it, HTTP health checks, and how to reach a daemon on another host.
+title: Status and control
+description: See how Stewart and its apps are doing, pause an app, restart a worker, and add health checks and metrics.
 sidebar:
   order: 17
 ---
 
-Stewart serves a small control socket, and `stewart status` reads it:
+A running Stewart answers questions about itself over a small control socket. `make status` asks it:
 
 ```bash
-make status      # daemon, workers and apps as tables, then exit
+make status      # Stewart, its workers and its apps, as tables
 ```
 
-It needs the token from `.env`:
+It needs the control token from `.env`, which `make setup` creates:
 
 ```bash
-STEWART_CONTROL__TOKEN=…      # openssl rand -hex 16 makes a good one
+STEWART_CONTROL__TOKEN=…      # openssl rand -hex 16 makes a new one
 ```
+
+The other commands on this page run inside the Stewart container. With `make up`, that is
+`docker compose exec stewart stewart …`; on Kubernetes, `kubectl exec deployment/<release>-stewart -- stewart …`.
 
 The daemon refuses to start while the socket is on and no token is set. To run
 without the socket, set `STEWART_CONTROL__LISTEN=off` (the word, not an empty
@@ -41,10 +44,9 @@ A paused app stays loaded, but skips its deliveries and schedule runs until it i
 resumed. A handler already running finishes. Nothing is replayed on resume.
 
 ```bash
-vendor/bin/stewart app:pause porch      # App porch paused.
-vendor/bin/stewart app:resume porch     # App porch resumed.
-vendor/bin/stewart app:reset porch      # App porch pause override removed; it is running.
-kubectl exec deployment/home-stewart -- stewart app:pause porch
+stewart app:pause porch      # App porch paused.
+stewart app:resume porch     # App porch resumed.
+stewart app:reset porch      # App porch pause override removed; it is running.
 ```
 
 All three take the same `--address`, `--token` and `--timeout` as `status`.
@@ -62,7 +64,7 @@ daemon restarts.
 ## Restarting a worker
 
 ```bash
-vendor/bin/stewart worker:restart 1     # Worker 1 is restarting.
+stewart worker:restart 1     # Worker 1 is restarting.
 ```
 
 `worker:restart` takes the worker number from the Workers table and the same
@@ -76,7 +78,7 @@ still starting or stopping exits 0 and changes nothing; an unknown worker exits 
 ## Scripting
 
 ```bash
-vendor/bin/stewart status --json | jq '.snapshot.apps[] | {id, state, counters}'
+stewart status --json | jq '.snapshot.apps[] | {id, state, counters}'
 ```
 
 The JSON is the snapshot exactly as it crosses the socket, and also lists every
@@ -183,7 +185,7 @@ control:
 ```
 
 ```bash
-vendor/bin/stewart status --address tcp://homeassistant.local:7333 --token …
+stewart status --address tcp://homeassistant.local:7333 --token …
 ```
 
 With both `--address` and `--token` given, no `stewart.yaml` or `.env` is read,
@@ -193,14 +195,3 @@ and can pause apps.
 
 Docker Desktop on macOS or Windows cannot share a unix socket through a bind
 mount, so `make status` from the host needs `tcp://` there too.
-
-## Wire
-
-One JSON object per line. A client sends `hello`, waits for `welcome`, then
-sends one request; the broker answers it and sends `bye`, then closes. Instants are ISO-8601 text in
-UTC and durations are whole microseconds under a `_us` key. Without PHP:
-
-```bash
-printf '{"type":"hello","token":"%s","client":"socat","protocol":18}\n{"type":"snapshot_request"}\n' "$STEWART_CONTROL__TOKEN" \
-  | socat - UNIX-CONNECT:var/run/stewart.sock
-```

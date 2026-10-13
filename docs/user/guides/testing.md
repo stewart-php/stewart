@@ -5,11 +5,20 @@ sidebar:
   order: 16
 ---
 
-`stewart-php/testing` runs an app in a PHPUnit test. Nothing connects to Home Assistant, and time only moves when
-the test moves it. A new project already has it in `require-dev`, and `tests/HelloAppTest.php` shows the pattern.
+A test runs your app against fake versions of Home Assistant, the clock and everything else Stewart passes in.
+Nothing connects to Home Assistant, and time moves only when the test moves it, so a test of "after five minutes"
+takes milliseconds. This test checks the [door alarm](#the-app-under-test):
 
 ```php file=../../examples/tests/DoorAlarmTest.php
 ```
+
+Put tests in `tests/` and run them:
+
+```bash
+make test
+```
+
+The harness comes from `stewart-php/testing`, which every project from the skeleton has.
 
 ## Starting the app
 
@@ -60,11 +69,12 @@ at its own time. A handler that a timer resumes runs before the next timer is du
 same advance when it falls inside it.
 
 ```php
-$harness->startApp(HallLight::class, ['offAfterMinutes' => 2]);
+$harness->startApp(HallMotionLight::class, ['offAfterMinutes' => 2]);
 $harness->ha->pushState('binary_sensor.hall_motion', 'on');
+$harness->ha->pushState('binary_sensor.hall_motion', 'off');
 
 $harness->advanceTime(Duration::seconds(119)); // the light is still on
-$harness->advanceTime(Duration::seconds(1));   // runAfter() fired: light.turn_off
+$harness->advanceTime(Duration::seconds(1));   // the 2 minutes are over: light.turn_off
 ```
 
 Schedules follow the [Scheduler](scheduling.md#how-schedules-treat-time) rules with two differences: there is no pause, and an
@@ -86,3 +96,19 @@ already in, or by its timeout, as it would in production.
 - Pausing an app.
 - Queue limits: no event is dropped, however many a test pushes.
 - Home Assistant itself: a service call is recorded, and no state changes unless the test pushes it.
+
+## The app under test
+
+```php file=../../examples/apps/DoorAlarm.php
+```
+
+## Common problems
+
+**`whenChangedTo()` does not fire in a test.** Seed the entity's state before `startApp()`. A first state is not a
+change.
+
+**`HarnessException` naming a parameter.** The harness cannot fill it: pass it as an option, or give it to
+`provideService()` before `startApp()`.
+
+**A wait in the app always ends at its timeout.** Nothing pushed the state the app waits for. Push it after the app
+starts waiting.

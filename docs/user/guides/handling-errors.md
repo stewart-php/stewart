@@ -1,96 +1,77 @@
 ---
 title: Handling errors
-description: What an automation can catch, how reasons identify a failure, and where the details show up in the logs.
+description: What happens when an app throws, which exceptions Stewart raises, and how to tell them apart by reason.
 sidebar:
   order: 18
 ---
 
-Everything Stewart throws is a `Stewart\Contracts\Exception\StewartException`.
-One catch sees every error the framework raises:
+When something fails, Stewart throws an exception. You can let it go, or catch it where your app can do something
+better. This app counts doorbell rings, and starts again when the stored count is not a number:
 
-```php
-use Stewart\Contracts\Exception\StewartException;
-
-try {
-    $this->ha->callService('light', 'turn_on', target: ServiceTarget::entity('light.hall'));
-} catch (StewartException $e) {
-    $this->logger->warning('Could not turn the hall light on', ['exception' => $e]);
-}
+```php file=../../examples/apps/VisitCounter.php
 ```
 
-## Narrowing by area, then by reason
+## When you do not catch it
 
-Each kind of failure has its own class, and the class tells you which part of
-Stewart failed. An automation usually meets these ones:
+- **In a handler**, Stewart logs `App failed` with the exception, counts the failure in `make status`, and the app
+  keeps running. The next event runs the handler again.
+- **In `initialize()`**, the app does not start. Other apps keep running.
+
+So catch an exception only when the app can do something useful, such as trying another way, sending a notification,
+or skipping one item.
+
+## Which exception, and why
+
+Every exception Stewart throws extends `Stewart\Contracts\Exception\StewartException`. Each part of Stewart has its
+own class:
 
 | Class | Thrown by |
 |---|---|
-| `ServiceCallException` | `callService()` and the generated service methods |
+| `ServiceCallException` | `callService()`, `callServiceForResponse()` and the generated service methods |
 | `HistoryException` | `getHistory()` |
 | `EventFireException` | `fireEvent()` |
-| `StateException` | `requireState()`, and selectors that cannot match anything |
+| `StateException` | `requireState()` for an entity that does not exist, and invalid operator settings |
 | `StoreException` | `Store` and `ReadableStore` |
-| `ScheduleException`, `TimeException` | the `Scheduler`, `TimeOfDay` and `Duration` |
-| `TopicException` | `publish()` with a payload that cannot be carried |
-| `WaitException` | `waitForState()` and `waitForNext()`, when the stream completes or the app stops first |
+| `ScheduleException`, `TimeException` | The `Scheduler`, and invalid times or durations |
+| `WaitException` | `waitForState()` and `waitForNext()`, when the stream ends or the app stops first |
+| `ExposureException`, `CommandException` | [Exposed entities](exposed-entities.md) |
+| `RegistryEditException` | `RegistryEditor` |
+| `IdentifierException` | An invalid entity ID, or one the [typed classes](codegen.md) do not know |
+| `TopicException`, `MqttException`, `TriggerException`, `SunException` | Messages between apps, MQTT, triggers, the sun |
 
-Inside a class, `$e->reason` says which failure it was. Each class has a
-reason enum beside it in the same namespace, named after it: `StoreException`
-has `StoreError`, `StateException` has `StateError`, and so on:
+`$e->reason` says what exactly failed. It is an enum named after the class: `StoreException` has `StoreError`,
+`ServiceCallException` has `ServiceCallError`, and so on. Compare the reason, as the example does, not the message:
+messages are written for people and may change, reasons do not.
 
-```php
-use Stewart\Contracts\Exception\StoreError;
-use Stewart\Contracts\Exception\StoreException;
-
-try {
-    $visits = $this->store->increment('visits');
-} catch (StoreException $e) {
-    if ($e->reason !== StoreError::NotIncrementable) {
-        throw $e;
-    }
-
-    $this->store->set('visits', 1);
-}
-```
-
-A failed service call's reason is a `ServiceCallError`: rejected,
-unreachable, timed out or overloaded. A failed history query's reason is a
-`HistoryError`: the same, plus `RecorderUnavailable`.
-
-Branch on the reason, not on the message. Messages are written for people and
-may be reworded. Reasons only change when a failure is split or merged.
-`getCode()` is always `0`.
-
-## Context
-
-`$e->context` holds what the error is about, such as the key, the entity or the
-service, as a map of scalars:
-
-```php
-StoreException::typeMismatch('mode', 'an integer', 'a string')->context;
-// ['key' => 'mode', 'expected' => 'an integer', 'actual' => 'a string']
-```
+`$e->context` holds what the error is about as an array, for example `['domain' => 'light', 'service' =>
+'turn_on', 'detail' => '…']`.
 
 ## In the logs
 
-Log a `StewartException` under the `exception` key and the daemon adds its
-reason and context to the record:
+Log the exception under the `exception` key, as the example does. Stewart then adds its class, reason and context to
+the log line. With `log_format: json`, that is the `extra.error` field:
 
 ```json
 {
-  "message": "Could not turn the hall light on",
-  "context": {"app": "hall-light", "worker": 0, "exception": "…"},
+  "message": "App failed",
+  "context": {"app": "hall-light", "exception": "…"},
   "extra": {
     "error": {
       "class": "Stewart\\Contracts\\Exception\\ServiceCallException",
       "reason": "rejected",
-      "context": {"domain": "light", "service": "turn_on", "detail": "Entity not found", "errorCode": "not_found"}
+      "context": {"domain": "light", "service": "turn_on", "detail": "Entity not found"}
     }
   }
 }
 ```
 
-An exception that escapes a handler or `initialize()` is logged as `App failed`
-with the same `extra.error`, and `stewart status` shows the reason next to the
-app's last failure. The factory that raised it is the one named after the
-reason case, `rejected()` for `Rejected`.
+`make status` shows each app's last failure with its reason.
+
+## Testing
+
+A test sees an exception from a handler directly: the harness throws it out of the `pushState()`, `pushEvent()` or
+`advanceTime()` that ran the handler. To test a failing service, use `stubServiceFailure()`; see
+[Calling services](calling-services.md#testing).
+
+```php file=../../examples/tests/VisitCounterTest.php
+```
