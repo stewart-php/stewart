@@ -53,7 +53,15 @@ export function selectSite() {
         throw new Error(`Unknown DOCS_SITE ${JSON.stringify(name)}; expected one of ${Object.keys(SITES).join(', ')}.`);
     }
 
-    return site;
+    if (process.env.DOCS_PREVIEW !== '1') {
+        return site;
+    }
+
+    if (name !== 'user') {
+        throw new Error('DOCS_PREVIEW builds only the user site.');
+    }
+
+    return { ...site, base: `${site.base}/next`, preview: true };
 }
 
 export function listOtherTrees(site) {
