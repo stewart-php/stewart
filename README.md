@@ -27,7 +27,8 @@ entrypoint; the framework version comes from the project's `composer.lock`.
 
 ## Configuration
 
-A project's `stewart.yaml` holds only what differs from the defaults. `vendor/bin/stewart config:reference` prints
+A project's `stewart.yaml` holds only what differs from the defaults, and is optional: without one and without
+`--config`, the environment alone configures Stewart. `vendor/bin/stewart config:reference` prints
 every setting with its default; `vendor/bin/stewart config:dump` prints what is in effect, secrets masked.
 `vendor/bin/stewart check` fails when the configuration or any file in `apps/` does not load, for CI or before a deploy.
 
@@ -46,7 +47,12 @@ Every setting can also come from the environment: the `STEWART_` prefix, then th
 - Durations take a unit: `500ms`, `5s`, `2m`, `1h`. A bare number is refused. Delays and windows are at least `1ms`,
   a `max_delay` is at least its `initial_delay`, and `supervision.restart_window` must outlast the backoff of
   `restart_attempts` restarts.
-- The word `off` switches off a timer or the control socket. An empty variable means unset, so the default applies.
+- A setting ending in `_FILE` is read from that file, which fits Docker and Kubernetes secrets:
+  `STEWART_HOME_ASSISTANT__TOKEN_FILE=/run/secrets/ha`. This works for app options too:
+  `STEWART_APPS__WEATHER__OPTIONS__API_KEY_FILE` fills `apiKey`, unless `stewart.yaml` itself names an option
+  `api_key_file`.
+- The word `off` switches off a timer, a listener, the control socket, `persistence.url` or `mqtt.url`. An empty
+  variable means unset, so the default applies.
 - A list setting or an app option takes inline YAML: `STEWART_CODEGEN__INCLUDE='[light.*, switch.*]'`. An app option
   that is not valid inline YAML stays text, so a template or a regex passes through.
 - A string in `stewart.yaml` can read a variable, with a fallback: `token: ${HA_TOKEN}`, `${LOG_LEVEL:-info}`. A value
