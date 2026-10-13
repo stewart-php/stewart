@@ -59,7 +59,7 @@ final readonly class AppActivityRecorder implements DispatchListener, ScheduleLi
             return;
         }
 
-        $this->logger->forScope($subscription->scope)->warning('Handler is falling behind; dropping its oldest events', [
+        $this->logger->forScope($subscription->scope)->warning('Handler is falling behind; dropping queued events', [
             'subscription' => $subscription->id->value,
             'selector' => $subscription->describeMatch(),
             'dropped' => $droppedSoFar,

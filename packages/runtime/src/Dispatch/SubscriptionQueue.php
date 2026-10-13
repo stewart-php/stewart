@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Dispatch;
 
 use Closure;
 use SplQueue;
+use Stewart\Contracts\State\StateChange;
 use Stewart\Runtime\Scope\ScopeState;
 use Throwable;
 
@@ -50,7 +51,7 @@ final class SubscriptionQueue
         }
 
         if ($this->pendingEvents >= $this->limit) {
-            $this->dropOldestEvent();
+            $event = $this->dropOnOverflow($event);
         }
 
         ++$this->pendingEvents;
@@ -119,6 +120,73 @@ final class SubscriptionQueue
         }
     }
 
+    private function dropOnOverflow(object $incoming): object
+    {
+        if ($incoming instanceof StateChange) {
+            $superseded = $this->findOldestSupersededIndex($incoming);
+
+            if ($superseded !== null) {
+                return $this->dropSupersededStateChange($superseded, $incoming);
+            }
+        }
+
+        $this->dropOldestEvent();
+
+        return $incoming;
+    }
+
+    private function findOldestSupersededIndex(StateChange $incoming): ?int
+    {
+        $firstIndexByEntity = [];
+        $supersededIndexes = [];
+
+        foreach ($this->pending as $index => $work) {
+            if (!$work->event instanceof StateChange) {
+                continue;
+            }
+
+            $entityId = $work->event->entityId->value;
+
+            if (isset($firstIndexByEntity[$entityId])) {
+                $supersededIndexes[] = $firstIndexByEntity[$entityId];
+
+                continue;
+            }
+
+            $firstIndexByEntity[$entityId] = $index;
+        }
+
+        if (isset($firstIndexByEntity[$incoming->entityId->value])) {
+            $supersededIndexes[] = $firstIndexByEntity[$incoming->entityId->value];
+        }
+
+        return $supersededIndexes === [] ? null : min($supersededIndexes);
+    }
+
+    private function dropSupersededStateChange(int $index, StateChange $incoming): StateChange
+    {
+        $superseded = $this->pending->offsetGet($index);
+        \assert($superseded->event instanceof StateChange);
+
+        $this->pending->offsetUnset($index);
+        $this->recordOverflowDrop($superseded);
+
+        $entityId = $superseded->event->entityId->value;
+        $from = $superseded->event->from;
+
+        for ($next = $index; $next < $this->pending->count(); ++$next) {
+            $work = $this->pending->offsetGet($next);
+
+            if ($work->event instanceof StateChange && $work->event->entityId->value === $entityId) {
+                $this->pending->offsetSet($next, $work->withEvent($work->event->withFrom($from)));
+
+                return $incoming;
+            }
+        }
+
+        return $incoming->withFrom($from);
+    }
+
     private function dropOldestEvent(): void
     {
         foreach ($this->pending as $index => $work) {
@@ -127,14 +195,19 @@ final class SubscriptionQueue
             }
 
             $this->pending->offsetUnset($index);
-            --$this->pendingEvents;
-            ++$this->dropped;
-
-            $this->listener->eventDropped($this->subscription, $this->dropped);
-            $work->discard(QueueDiscardReason::Overflow);
+            $this->recordOverflowDrop($work);
 
             return;
         }
+    }
+
+    private function recordOverflowDrop(QueuedWork $work): void
+    {
+        --$this->pendingEvents;
+        ++$this->dropped;
+
+        $this->listener->eventDropped($this->subscription, $this->dropped);
+        $work->discard(QueueDiscardReason::Overflow);
     }
 
     private function enqueue(QueuedWork $work): void

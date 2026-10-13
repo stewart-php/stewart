@@ -33,6 +33,11 @@ final readonly class QueuedWork
         return new self(null, $emission);
     }
 
+    public function withEvent(object $event): self
+    {
+        return new self($event, $this->handler, $this->onDiscarded);
+    }
+
     public function isDroppable(): bool
     {
         return $this->event !== null;

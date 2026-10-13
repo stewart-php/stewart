@@ -35,7 +35,7 @@ worker_event_buffer:  1000
 # State changes sent to a worker in one message at most.
 worker_state_batch:   256
 
-# Events queued per subscription while its handler is busy, before the oldest are dropped.
+# Events queued per subscription while its handler is busy, before queued events are dropped, superseded state changes first.
 subscription_buffer:  100
 
 # The instance to connect to. `run` and `generate` need it. The token is a secret: set it from the environment.
