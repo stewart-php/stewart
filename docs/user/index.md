@@ -46,6 +46,7 @@ or hangs cannot take the others down. [How it works](guides/how-it-works.md) exp
 | **[Install Stewart](start/install.md)** | Create a project, connect it to Home Assistant, and run it. About 15 minutes. |
 | **[Your first app](start/first-app.md)** | Build, test and run the porch light above, step by step. |
 | **[Project tour](start/project-tour.md)** | What each file in your project is for. |
+| **[Recipes](recipes/index.md)** | Complete automations to copy: motion light, heating by presence, door reminders and more. |
 | **[Guides](guides/state-changes.md)** | State changes, events, schedules, service calls, storage and more. |
 | **[Deploying](deploy/index.md)** | Running Stewart on a server, from Git, from an image, or on Kubernetes. |
 

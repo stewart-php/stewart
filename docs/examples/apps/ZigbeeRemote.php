@@ -1,0 +1,42 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App;
+
+use Stewart\Contracts\App;
+use Stewart\Contracts\Automation;
+use Stewart\Contracts\HaContext;
+use Stewart\Contracts\Mqtt\Mqtt;
+use Stewart\Contracts\Mqtt\MqttMessage;
+use Stewart\Contracts\Service\ServiceTarget;
+
+#[Automation(id: 'zigbee-remote')]
+final readonly class ZigbeeRemote implements App
+{
+    public function __construct(
+        private HaContext $ha,
+        private Mqtt $mqtt,
+        private string $remote = 'living_room_remote',
+        private string $light = 'light.living_room',
+    ) {}
+
+    public function initialize(): void
+    {
+        $this->mqtt->watchMessages("zigbee2mqtt/{$this->remote}/action")->subscribe(function (MqttMessage $message): void {
+            [$service, $data] = match ($message->payload) {
+                'on' => ['turn_on', []],
+                'off' => ['turn_off', []],
+                'brightness_up' => ['turn_on', ['brightness_step_pct' => 10]],
+                'brightness_down' => ['turn_on', ['brightness_step_pct' => -10]],
+                default => [null, []],
+            };
+
+            if ($service !== null) {
+                $this->ha->callService('light', $service, $data, ServiceTarget::forEntities($this->light));
+            }
+        });
+    }
+
+    public function dispose(): void {}
+}

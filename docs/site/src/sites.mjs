@@ -16,6 +16,7 @@ export const SITES = {
         sidebar: (site) => [
             { label: 'Get started', items: directoryItems(site, 'start') },
             { label: 'Guides', items: directoryItems(site, 'guides') },
+            { label: 'Recipes', items: directoryItems(site, 'recipes') },
             { label: 'Deploy', items: directoryItems(site, 'deploy') },
             { label: 'Reference', items: directoryItems(site, 'reference') },
         ],
