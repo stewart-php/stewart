@@ -77,9 +77,10 @@ jobs:
         if: matrix.target == 'runtime'
         run: >
           docker run --rm -e TRIVY_USERNAME -e TRIVY_PASSWORD aquasec/trivy:0.75.0
-          image --exit-code 1 --severity CRITICAL --ignore-unfixed "$IMAGE@$DIGEST"
+          image --exit-code 1 --severity CRITICAL --ignore-unfixed --platform "$PLATFORM" "$IMAGE@$DIGEST"
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
+          PLATFORM: ${{ matrix.platform }}
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ github.token }}
       - name: Record the digest
