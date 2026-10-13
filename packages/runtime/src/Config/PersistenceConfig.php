@@ -14,28 +14,27 @@ final readonly class PersistenceConfig
     private const int SHORTEST_STORE_TIMING_MILLISECONDS = 100;
 
     public function __construct(
-        public StoreDsn $url,
+        public ?StoreDsn $url,
         public StorePrefix $prefix,
         public Duration $timeout,
         public Duration $recoveryInterval,
     ) {}
 
     /** @throws ConfigurationException */
-    public static function fromSection(ConfigSection $persistence): ?self
+    public static function fromSection(ConfigSection $persistence): self
     {
-        $url = $persistence->findString('url');
-
-        if ($url === null || $url === '') {
-            return null;
-        }
-
         $shortest = Duration::milliseconds(self::SHORTEST_STORE_TIMING_MILLISECONDS);
 
         return new self(
-            url: $persistence->readParsedValue('url', StoreDsn::parse(...)),
+            url: $persistence->findSwitchableValue('url', StoreDsn::parse(...)),
             prefix: $persistence->readParsedValue('prefix', static fn(string $prefix): StorePrefix => new StorePrefix($prefix)),
             timeout: $persistence->readDuration('timeout', $shortest),
             recoveryInterval: $persistence->readDuration('recovery_interval', $shortest),
         );
+    }
+
+    public function isStoreConfigured(): bool
+    {
+        return $this->url !== null;
     }
 }

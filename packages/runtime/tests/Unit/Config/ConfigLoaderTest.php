@@ -301,8 +301,9 @@ final class ConfigLoaderTest extends TestCase
 
     public function testWithoutAUrlThereIsNoPersistence(): void
     {
-        self::assertNull($this->loadConfig(self::CONNECTION)->persistence);
-        self::assertNull($this->loadConfig(self::CONNECTION . "\npersistence:\n  url: ''\n")->persistence);
+        self::assertFalse($this->loadConfig(self::CONNECTION)->persistence->isStoreConfigured());
+        self::assertFalse($this->loadConfig(self::CONNECTION . "\npersistence:\n  url: ''\n")->persistence->isStoreConfigured());
+        self::assertNull($this->loadConfig(self::CONNECTION . "\npersistence:\n  url: 'off'\n")->persistence->url);
     }
 
     public function testStorageUrlIsParsedIntoATypedSetting(): void
@@ -315,7 +316,7 @@ final class ConfigLoaderTest extends TestCase
               timeout: 500ms
             YAML)->persistence;
 
-        self::assertNotNull($persistence);
+        self::assertNotNull($persistence->url);
         self::assertSame('redis', $persistence->url->scheme);
         self::assertSame('redis://valkey:6379/3', $persistence->url->reveal());
         self::assertSame('upstairs', $persistence->prefix->value);
@@ -327,8 +328,7 @@ final class ConfigLoaderTest extends TestCase
     {
         $persistence = $this->loadConfig(self::CONNECTION, ['STEWART_PERSISTENCE__URL' => 'redis://elsewhere:6379'])->persistence;
 
-        self::assertNotNull($persistence);
-        self::assertSame('redis://elsewhere:6379', $persistence->url->reveal());
+        self::assertSame('redis://elsewhere:6379', $persistence->url?->reveal());
     }
 
     public function testInvalidUrlIsNotEchoed(): void

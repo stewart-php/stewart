@@ -41,6 +41,7 @@ use Stewart\Runtime\Model\SubscriptionId;
 use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
+use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Runtime\Tests\Fixtures\Control\BrokerStateFixture;
 use Stewart\Testing\Time\VirtualClock;
 
@@ -128,7 +129,7 @@ final class SnapshotAssemblerTest extends TestCase
             brokerStats: new BrokerStatsBuilder($broker->pools->slots, $broker->callSlots, $broker->registry),
             workerStatuses: new WorkerStatusBuilder($broker->pools->slots, $broker->pools->watchdog, $broker->pools->restartPolicy, $broker->callSlots),
             registrationInfos: new RegistrationInfoBuilder($broker->registry),
-            storeHealth: new StoreHealthBuilder($broker->pools->slots, storeConfigured: false),
+            storeHealth: new StoreHealthBuilder($broker->pools->slots, ConfigFixture::createPersistenceConfig()),
             appStatuses: new AppStatusBuilder($broker->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock())), FakeHomeAssistant::createUnreachable()->exposures),
             deployStatus: new DeployStatusBuilder(new DeployState()),
             componentStatus: new ComponentStatusBuilder(new ComponentTracker($broker->timers->clock), new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10))),

@@ -15,6 +15,7 @@ use Stewart\Runtime\Config\ControlConfig;
 use Stewart\Runtime\Config\ExposeConfig;
 use Stewart\Runtime\Config\GitDeployConfig;
 use Stewart\Runtime\Config\HttpConfig;
+use Stewart\Runtime\Config\PersistenceConfig;
 use Stewart\Runtime\Config\ProjectRoot;
 use Stewart\Runtime\Config\ServiceCallPolicy;
 use Stewart\Runtime\Config\StewartConfig;
@@ -55,6 +56,7 @@ final readonly class BrokerKernel
             ->withService(ServiceCallPolicy::class, $config->serviceCalls)
             ->withService(ControlConfig::class, $config->control)
             ->withService(HttpConfig::class, $config->http)
+            ->withService(PersistenceConfig::class, $config->persistence)
             ->withService(ProjectRoot::class, $this->projectRoot)
             ->withService(CodegenConfig::class, $config->codegen)
             ->withService(GitDeployConfig::class, $config->gitDeploy)
@@ -73,9 +75,6 @@ final readonly class BrokerKernel
             ->withArgument('brokerShutdownGrace', $config->shutdownGrace)
             ->withArgument('requestedRestartGrace', $config->shutdownGrace)
             ->withArgument('poolWorkerCount', $config->workers)
-            ->withArgument('persistenceConfig', $config->persistence)
-            ->withArgument('storeConfigured', $config->persistence !== null)
-            ->withArgument('appPauseOverridePrefix', $config->persistence?->prefix)
             ->withArgument('workerRestartAttempts', $config->supervision->restartAttempts)
             ->withArgument('workerRestartWindow', $config->supervision->restartWindow)
             ->withArgument('releaseCheckConfigFile', $configFileOption);

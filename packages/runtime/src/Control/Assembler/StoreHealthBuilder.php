@@ -5,18 +5,19 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Control\Assembler;
 
 use Stewart\Runtime\Broker\WorkerSlotRegistry;
+use Stewart\Runtime\Config\PersistenceConfig;
 use Stewart\Store\StoreHealth;
 
 final readonly class StoreHealthBuilder
 {
     public function __construct(
         private WorkerSlotRegistry $slots,
-        private bool $storeConfigured,
+        private PersistenceConfig $persistenceConfig,
     ) {}
 
     public function buildStoreHealth(): ?StoreHealth
     {
-        if (!$this->storeConfigured) {
+        if (!$this->persistenceConfig->isStoreConfigured()) {
             return null;
         }
 

@@ -30,6 +30,7 @@ use Stewart\Runtime\Health\ProbeStatus;
 use Stewart\Runtime\Health\ReadinessCheck;
 use Stewart\Runtime\Health\SnapshotProbeReporter;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
+use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Runtime\Tests\Fixtures\Control\BrokerStateFixture;
 
 #[CoversClass(SnapshotProbeReporter::class)]
@@ -91,7 +92,7 @@ final class SnapshotProbeReporterTest extends TestCase
             brokerStats: new BrokerStatsBuilder($broker->pools->slots, $broker->callSlots, $broker->registry),
             workerStatuses: new WorkerStatusBuilder($broker->pools->slots, $broker->pools->watchdog, $broker->pools->restartPolicy, $broker->callSlots),
             registrationInfos: new RegistrationInfoBuilder($broker->registry),
-            storeHealth: new StoreHealthBuilder($broker->pools->slots, storeConfigured: false),
+            storeHealth: new StoreHealthBuilder($broker->pools->slots, ConfigFixture::createPersistenceConfig()),
             appStatuses: new AppStatusBuilder($broker->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), $startTime), FakeHomeAssistant::createUnreachable()->exposures),
             deployStatus: new DeployStatusBuilder(new DeployState()),
             componentStatus: new ComponentStatusBuilder(new ComponentTracker($broker->timers->clock), new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10))),

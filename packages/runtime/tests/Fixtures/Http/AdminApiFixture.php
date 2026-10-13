@@ -47,6 +47,7 @@ use Stewart\Runtime\Metrics\Source\WorkerMetricSource;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
+use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Runtime\Tests\Fixtures\Control\BrokerStateFixture;
 use Stewart\Testing\Time\VirtualClock;
 
@@ -82,7 +83,7 @@ final readonly class AdminApiFixture
         $this->pauses = new AppPauseService(
             $catalog,
             $this->registry,
-            new AppPauseOverrideStore(new AppPauseOverrideCodec(AppPauseOverrideCodec::createOverrideWireMapper()), new NullLogger()),
+            new AppPauseOverrideStore(new AppPauseOverrideCodec(AppPauseOverrideCodec::createOverrideWireMapper()), new NullLogger(), ConfigFixture::createPersistenceConfig()),
             new WorkerSlotRegistry(),
             $this->clock,
             new NullLogger(),
@@ -113,7 +114,7 @@ final readonly class AdminApiFixture
             brokerStats: new BrokerStatsBuilder($broker->pools->slots, $broker->callSlots, $broker->registry),
             workerStatuses: new WorkerStatusBuilder($broker->pools->slots, $broker->pools->watchdog, $broker->pools->restartPolicy, $broker->callSlots),
             registrationInfos: new RegistrationInfoBuilder($broker->registry),
-            storeHealth: new StoreHealthBuilder($broker->pools->slots, storeConfigured: false),
+            storeHealth: new StoreHealthBuilder($broker->pools->slots, ConfigFixture::createPersistenceConfig()),
             appStatuses: new AppStatusBuilder($metrics, $this->registry, FakeHomeAssistant::createUnreachable()->exposures),
             deployStatus: new DeployStatusBuilder(new DeployState()),
             componentStatus: new ComponentStatusBuilder(new ComponentTracker($this->clock), new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10))),

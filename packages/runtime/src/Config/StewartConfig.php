@@ -29,7 +29,7 @@ final readonly class StewartConfig
         public BackoffPolicy $reconnectBackoff,
         public SupervisionConfig $supervision,
         public ServiceCallPolicy $serviceCalls,
-        public ?PersistenceConfig $persistence,
+        public PersistenceConfig $persistence,
         public ?MqttConfig $mqtt,
         public ControlConfig $control,
         public HttpConfig $http,
