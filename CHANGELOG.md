@@ -37,6 +37,8 @@ minor release may break; its "Upgrading" section says what to change.
 
 ### Fixed
 
+- A subscription no longer loses part of a resync, or of a batch of state changes, that is larger than
+  `subscription_buffer`: the burst is queued whole and older queued events make room
 - History queries and exposure requests count as in-flight calls to Home Assistant, and an exposure request that
   fails unexpectedly is answered at once instead of timing out in the worker
 - Reloading the `stewart` integration, or enabling or disabling one of its entities, no longer leaves exposed entities

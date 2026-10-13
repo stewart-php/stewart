@@ -92,7 +92,7 @@ final class StewartConfigSchema implements ConfigurationInterface
                     ->defaultValue(256)
                 ->end()
                 ->integerNode('subscription_buffer')
-                    ->info('Events queued per subscription while its handler is busy, before queued events are dropped, superseded state changes first.')
+                    ->info('Events queued per subscription while its handler is busy, before queued events are dropped, superseded state changes first. A burst of state changes from Home Assistant is always queued whole.')
                     ->min(1)
                     ->defaultValue(100)
                 ->end()

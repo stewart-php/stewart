@@ -150,9 +150,7 @@ final class LocalDispatcher
         }
 
         foreach ($changesByQueue as $subscriptionId => $queueChanges) {
-            foreach ($queueChanges as $change) {
-                $this->queues[$subscriptionId]->push($change);
-            }
+            $this->queues[$subscriptionId]->pushBurst($queueChanges);
         }
     }
 
