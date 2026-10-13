@@ -1,5 +1,7 @@
-from typing import Protocol
+from collections.abc import Mapping
+from typing import ClassVar, Protocol, Self
 
+from homeassistant.const import Platform
 from homeassistant.core import Context, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -20,8 +22,13 @@ class PlatformConfig(Protocol):
     @property
     def entity(self) -> EntityConfig: ...
 
+    @classmethod
+    def read_from(cls, raw: Mapping[str, JsonValue]) -> Self: ...
+
 
 class StewartEntity[ConfigT: PlatformConfig, NativeT](RestoreEntity):
+    domain: ClassVar[Platform]
+    config_type: ClassVar[type[PlatformConfig]]
     _attr_has_entity_name = True
     _attr_should_poll = False
 

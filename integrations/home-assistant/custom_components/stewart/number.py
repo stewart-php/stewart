@@ -1,21 +1,16 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Final, Self
+from typing import Self
 
 from homeassistant.components.number import DEVICE_CLASS_UNITS, NumberDeviceClass, NumberEntity, NumberMode
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback, async_get_current_platform
 
 from .change import EntityChange, JsonValue
 from .command import CommandAction
 from .config import ConfigReader, EntityConfig
 from .entity import StewartEntity
 from .errors import InvalidStateError
-from .identity import EntityAddress
-from .runtime import StewartConfigEntry
-from .session import SessionRegistry
+from .platforms import attach
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -60,6 +55,9 @@ class NumberConfig:
 
 
 class StewartNumber(StewartEntity[NumberConfig, float | None], NumberEntity):
+    domain = Platform.NUMBER
+    config_type = NumberConfig
+
     async def async_set_native_value(self, value: float) -> None:
         await self.run_command(CommandAction.SET_VALUE, {"value": value})
         self.apply_change(EntityChange(state=value))
@@ -87,21 +85,4 @@ class StewartNumber(StewartEntity[NumberConfig, float | None], NumberEntity):
         self._attr_native_value = native
 
 
-class NumberExposure:
-    domain: Final = Platform.NUMBER
-
-    def read_config(self, raw: Mapping[str, JsonValue]) -> NumberConfig:
-        return NumberConfig.read_from(raw)
-
-    def create_entity(
-        self, *, address: EntityAddress, config: NumberConfig, sessions: SessionRegistry, device_info: DeviceInfo
-    ) -> StewartNumber:
-        return StewartNumber(address=address, config=config, sessions=sessions, device_info=device_info)
-
-
-async def async_setup_entry(
-    hass: HomeAssistant,  # noqa: ARG001
-    entry: StewartConfigEntry,
-    async_add_entities: AddConfigEntryEntitiesCallback,  # noqa: ARG001
-) -> None:
-    entry.runtime_data.entities.attach_platform(NumberExposure(), async_get_current_platform())
+async_setup_entry = attach(StewartNumber)

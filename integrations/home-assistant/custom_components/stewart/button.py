@@ -1,21 +1,16 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Final, Self
+from typing import Self
 
 from homeassistant.components.button import ButtonDeviceClass, ButtonEntity
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback, async_get_current_platform
 
 from .change import ABSENT, EntityChange, JsonValue
 from .command import CommandAction
 from .config import ConfigReader, EntityConfig
 from .entity import StewartEntity
 from .errors import InvalidStateError
-from .identity import EntityAddress
-from .runtime import StewartConfigEntry
-from .session import SessionRegistry
+from .platforms import attach
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -36,6 +31,9 @@ class ButtonConfig:
 
 # Home Assistant owns a button's state, the time of its last press.
 class StewartButton(StewartEntity[ButtonConfig, None], ButtonEntity):
+    domain = Platform.BUTTON
+    config_type = ButtonConfig
+
     async def async_press(self) -> None:
         await self.run_command(CommandAction.PRESS)
 
@@ -55,21 +53,4 @@ class StewartButton(StewartEntity[ButtonConfig, None], ButtonEntity):
         return
 
 
-class ButtonExposure:
-    domain: Final = Platform.BUTTON
-
-    def read_config(self, raw: Mapping[str, JsonValue]) -> ButtonConfig:
-        return ButtonConfig.read_from(raw)
-
-    def create_entity(
-        self, *, address: EntityAddress, config: ButtonConfig, sessions: SessionRegistry, device_info: DeviceInfo
-    ) -> StewartButton:
-        return StewartButton(address=address, config=config, sessions=sessions, device_info=device_info)
-
-
-async def async_setup_entry(
-    hass: HomeAssistant,  # noqa: ARG001
-    entry: StewartConfigEntry,
-    async_add_entities: AddConfigEntryEntitiesCallback,  # noqa: ARG001
-) -> None:
-    entry.runtime_data.entities.attach_platform(ButtonExposure(), async_get_current_platform())
+async_setup_entry = attach(StewartButton)

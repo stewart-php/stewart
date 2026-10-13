@@ -1,23 +1,18 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Final, Self
+from typing import Self
 
 from homeassistant.components.datetime import DateTimeEntity
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback, async_get_current_platform
 
 from .change import EntityChange, JsonValue
 from .command import CommandAction
 from .config import ConfigReader, EntityConfig
 from .entity import StewartEntity
 from .errors import InvalidStateError
-from .identity import EntityAddress
 from .moments import read_moment
-from .runtime import StewartConfigEntry
-from .session import SessionRegistry
+from .platforms import attach
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -33,6 +28,9 @@ class DateTimeConfig:
 
 
 class StewartDateTime(StewartEntity[DateTimeConfig, datetime | None], DateTimeEntity):
+    domain = Platform.DATETIME
+    config_type = DateTimeConfig
+
     async def async_set_value(self, value: datetime) -> None:
         wire_value = value.isoformat()
         await self.run_command(CommandAction.SET_VALUE, {"value": wire_value})
@@ -50,21 +48,4 @@ class StewartDateTime(StewartEntity[DateTimeConfig, datetime | None], DateTimeEn
         self._attr_native_value = native
 
 
-class DateTimeExposure:
-    domain: Final = Platform.DATETIME
-
-    def read_config(self, raw: Mapping[str, JsonValue]) -> DateTimeConfig:
-        return DateTimeConfig.read_from(raw)
-
-    def create_entity(
-        self, *, address: EntityAddress, config: DateTimeConfig, sessions: SessionRegistry, device_info: DeviceInfo
-    ) -> StewartDateTime:
-        return StewartDateTime(address=address, config=config, sessions=sessions, device_info=device_info)
-
-
-async def async_setup_entry(
-    hass: HomeAssistant,  # noqa: ARG001
-    entry: StewartConfigEntry,
-    async_add_entities: AddConfigEntryEntitiesCallback,  # noqa: ARG001
-) -> None:
-    entry.runtime_data.entities.attach_platform(DateTimeExposure(), async_get_current_platform())
+async_setup_entry = attach(StewartDateTime)

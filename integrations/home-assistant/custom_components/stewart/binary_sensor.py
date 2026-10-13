@@ -1,20 +1,15 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Final, Self
+from typing import Self
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass, BinarySensorEntity
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback, async_get_current_platform
 
 from .change import JsonValue
 from .config import ConfigReader, EntityConfig
 from .entity import StewartEntity
 from .errors import InvalidStateError
-from .identity import EntityAddress
-from .runtime import StewartConfigEntry
-from .session import SessionRegistry
+from .platforms import attach
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -34,6 +29,9 @@ class BinarySensorConfig:
 
 
 class StewartBinarySensor(StewartEntity[BinarySensorConfig, bool | None], BinarySensorEntity):
+    domain = Platform.BINARY_SENSOR
+    config_type = BinarySensorConfig
+
     def _show_config(self, config: BinarySensorConfig) -> None:
         super()._show_config(config)
         self._attr_device_class = config.device_class
@@ -47,21 +45,4 @@ class StewartBinarySensor(StewartEntity[BinarySensorConfig, bool | None], Binary
         self._attr_is_on = native
 
 
-class BinarySensorExposure:
-    domain: Final = Platform.BINARY_SENSOR
-
-    def read_config(self, raw: Mapping[str, JsonValue]) -> BinarySensorConfig:
-        return BinarySensorConfig.read_from(raw)
-
-    def create_entity(
-        self, *, address: EntityAddress, config: BinarySensorConfig, sessions: SessionRegistry, device_info: DeviceInfo
-    ) -> StewartBinarySensor:
-        return StewartBinarySensor(address=address, config=config, sessions=sessions, device_info=device_info)
-
-
-async def async_setup_entry(
-    hass: HomeAssistant,  # noqa: ARG001
-    entry: StewartConfigEntry,
-    async_add_entities: AddConfigEntryEntitiesCallback,  # noqa: ARG001
-) -> None:
-    entry.runtime_data.entities.attach_platform(BinarySensorExposure(), async_get_current_platform())
+async_setup_entry = attach(StewartBinarySensor)

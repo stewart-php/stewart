@@ -12,18 +12,13 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.const import MAX_LENGTH_STATE_STATE, Platform
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback, async_get_current_platform
 
 from .change import JsonValue
 from .config import ConfigReader, EntityConfig
 from .entity import StewartEntity
 from .errors import InvalidStateError
-from .identity import EntityAddress
 from .moments import read_day, read_moment
-from .runtime import StewartConfigEntry
-from .session import SessionRegistry
+from .platforms import attach
 
 # Strings, so classes newer than the oldest supported Home Assistant (uptime) need no import.
 DATETIME_DEVICE_CLASSES: Final = frozenset({"timestamp", "uptime"})
@@ -128,6 +123,9 @@ def _convert_plain(config: SensorConfig, state: JsonValue) -> str | int | float:
 
 
 class StewartSensor(StewartEntity[SensorConfig, SensorValue], SensorEntity):
+    domain = Platform.SENSOR
+    config_type = SensorConfig
+
     def _show_config(self, config: SensorConfig) -> None:
         super()._show_config(config)
         self._attr_device_class = config.device_class
@@ -143,21 +141,4 @@ class StewartSensor(StewartEntity[SensorConfig, SensorValue], SensorEntity):
         self._attr_native_value = native
 
 
-class SensorExposure:
-    domain: Final = Platform.SENSOR
-
-    def read_config(self, raw: Mapping[str, JsonValue]) -> SensorConfig:
-        return SensorConfig.read_from(raw)
-
-    def create_entity(
-        self, *, address: EntityAddress, config: SensorConfig, sessions: SessionRegistry, device_info: DeviceInfo
-    ) -> StewartSensor:
-        return StewartSensor(address=address, config=config, sessions=sessions, device_info=device_info)
-
-
-async def async_setup_entry(
-    hass: HomeAssistant,  # noqa: ARG001
-    entry: StewartConfigEntry,
-    async_add_entities: AddConfigEntryEntitiesCallback,  # noqa: ARG001
-) -> None:
-    entry.runtime_data.entities.attach_platform(SensorExposure(), async_get_current_platform())
+async_setup_entry = attach(StewartSensor)
