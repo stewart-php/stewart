@@ -4,6 +4,7 @@ set -eu
 
 version="${1:-}"
 minor=$(printf '%s' "$version" | sed -nE 's/^([0-9]+\.[0-9]+)(\.[0-9]+)?$/\1/p')
+major="${minor%%.*}"
 
 if [ -z "$minor" ]; then
     echo "usage: make upgrade VERSION=X.Y (a patch such as X.Y.Z is reduced to its minor)" >&2
@@ -32,11 +33,11 @@ if [ -n "$dev_packages" ]; then
     composer require --dev --no-update --no-interaction $dev_packages
 fi
 
-# An exact tag such as 0.1.5 becomes the minor's rolling tag; a -dev suffix stays.
+# Any tag such as 1.2 or 1.2.5 becomes the major's rolling tag; a -dev suffix stays.
 for file in Dockerfile compose*.yaml deploy/*.yaml; do
     if [ -f "$file" ]; then
-        sed -i -E "s#(stewart-php/runtime:)[0-9]+(\.[0-9]+){1,2}#\1$minor#g" "$file"
+        sed -i -E "s#(stewart-php/runtime:)[0-9]+(\.[0-9]+){0,2}#\1$major#g" "$file"
     fi
 done
 
-echo "Requirements and images now on $minor."
+echo "Requirements now on $minor, images on $major."

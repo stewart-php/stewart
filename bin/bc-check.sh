@@ -8,7 +8,7 @@ shift
 packages="${*:-$(ls packages)}"
 format="${BC_FORMAT:-console}"
 root=$(pwd)
-export COMPOSER_ROOT_VERSION=0.x-dev
+export COMPOSER_ROOT_VERSION=1.x-dev
 
 versions=""
 for manifest in packages/*/composer.json; do

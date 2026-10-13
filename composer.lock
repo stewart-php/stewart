@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3052086a2ebf1f0d117d934ba374c3fe",
+    "content-hash": "66acc66d5829ca98fb05f5a772e2533b",
     "packages": [
         {
             "name": "amphp/amp",
@@ -2223,11 +2223,11 @@
         },
         {
             "name": "stewart-php/client",
-            "version": "0.x-dev",
+            "version": "1.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/client",
-                "reference": "d1b60b726aaf47bec3365176c84328d61d573653"
+                "reference": "746f4d0ea0925e20eef50ec20e072a07a6ee4778"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2259,7 +2259,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "0.x-dev"
+                    "dev-main": "1.x-dev"
                 }
             },
             "autoload": {
@@ -2276,6 +2276,12 @@
                 "MIT"
             ],
             "description": "Home Assistant WebSocket client. Usable on its own",
+            "homepage": "https://github.com/stewart-php/stewart",
+            "support": {
+                "issues": "https://github.com/stewart-php/stewart/issues",
+                "source": "https://github.com/stewart-php/stewart",
+                "docs": "https://stewart-php.github.io/docs/"
+            },
             "transport-options": {
                 "symlink": true,
                 "relative": true
@@ -2283,11 +2289,11 @@
         },
         {
             "name": "stewart-php/contracts",
-            "version": "0.x-dev",
+            "version": "1.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/contracts",
-                "reference": "db133f9082109aefa54697b924696bdfc01e5497"
+                "reference": "22726d6df853aaee6f18b9bfb3048dc5b1ec9ddf"
             },
             "require": {
                 "ext-filter": "*",
@@ -2301,7 +2307,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "0.x-dev"
+                    "dev-main": "1.x-dev"
                 }
             },
             "autoload": {
@@ -2318,6 +2324,12 @@
                 "MIT"
             ],
             "description": "Stewart core abstractions. Pure PHP",
+            "homepage": "https://github.com/stewart-php/stewart",
+            "support": {
+                "issues": "https://github.com/stewart-php/stewart/issues",
+                "source": "https://github.com/stewart-php/stewart",
+                "docs": "https://stewart-php.github.io/docs/"
+            },
             "transport-options": {
                 "symlink": true,
                 "relative": true
@@ -2325,11 +2337,11 @@
         },
         {
             "name": "stewart-php/mqtt",
-            "version": "0.x-dev",
+            "version": "1.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/mqtt",
-                "reference": "882a1b90d559917ae641786f263c8539b91a4031"
+                "reference": "d6c238b4c2ad2808d3771d2d72ff9c2ecb0a3802"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2349,7 +2361,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "0.x-dev"
+                    "dev-main": "1.x-dev"
                 }
             },
             "autoload": {
@@ -2366,6 +2378,12 @@
                 "MIT"
             ],
             "description": "MQTT 3.1.1 client that connects Stewart apps to an MQTT server. Non-blocking, over amphp",
+            "homepage": "https://github.com/stewart-php/stewart",
+            "support": {
+                "issues": "https://github.com/stewart-php/stewart/issues",
+                "source": "https://github.com/stewart-php/stewart",
+                "docs": "https://stewart-php.github.io/docs/"
+            },
             "transport-options": {
                 "symlink": true,
                 "relative": true
@@ -2373,11 +2391,11 @@
         },
         {
             "name": "stewart-php/runtime",
-            "version": "0.x-dev",
+            "version": "1.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/runtime",
-                "reference": "4a5e675286fc8ff0a94063276c43c1bfd7c5d256"
+                "reference": "1667f2cae3d56067bd418497c54a3ea532c34623"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2427,7 +2445,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "0.x-dev"
+                    "dev-main": "1.x-dev"
                 }
             },
             "autoload": {
@@ -2444,6 +2462,12 @@
                 "MIT"
             ],
             "description": "Stewart broker, workers and the channel protocol between them.",
+            "homepage": "https://github.com/stewart-php/stewart",
+            "support": {
+                "issues": "https://github.com/stewart-php/stewart/issues",
+                "source": "https://github.com/stewart-php/stewart",
+                "docs": "https://stewart-php.github.io/docs/"
+            },
             "transport-options": {
                 "symlink": true,
                 "relative": true
@@ -2451,11 +2475,11 @@
         },
         {
             "name": "stewart-php/store",
-            "version": "0.x-dev",
+            "version": "1.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/store",
-                "reference": "0e100e5ff7c0ed1cda2f5ea9101281fa6bdd9ea5"
+                "reference": "e5df1dbecb117519d7b356838981128b0f898254"
             },
             "require": {
                 "ext-json": "*",
@@ -2473,7 +2497,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "0.x-dev"
+                    "dev-main": "1.x-dev"
                 }
             },
             "autoload": {
@@ -2490,6 +2514,12 @@
                 "MIT"
             ],
             "description": "Scoping, encoding and hydration for Stewart's key-value storage. Backend-agnostic",
+            "homepage": "https://github.com/stewart-php/stewart",
+            "support": {
+                "issues": "https://github.com/stewart-php/stewart/issues",
+                "source": "https://github.com/stewart-php/stewart",
+                "docs": "https://stewart-php.github.io/docs/"
+            },
             "transport-options": {
                 "symlink": true,
                 "relative": true
@@ -2497,11 +2527,11 @@
         },
         {
             "name": "stewart-php/store-redis",
-            "version": "0.x-dev",
+            "version": "1.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/store-redis",
-                "reference": "25b7d4e7e783b1ed1ef2de24d5ee07e717fa53ea"
+                "reference": "3b1efdf527a7f7a4df5f53f1270a616cefa4c6a4"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2525,7 +2555,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "0.x-dev"
+                    "dev-main": "1.x-dev"
                 }
             },
             "autoload": {
@@ -2542,6 +2572,12 @@
                 "MIT"
             ],
             "description": "Redis backend for Stewart's key-value storage. Non-blocking, over amphp",
+            "homepage": "https://github.com/stewart-php/stewart",
+            "support": {
+                "issues": "https://github.com/stewart-php/stewart/issues",
+                "source": "https://github.com/stewart-php/stewart",
+                "docs": "https://stewart-php.github.io/docs/"
+            },
             "transport-options": {
                 "symlink": true,
                 "relative": true
@@ -2549,11 +2585,11 @@
         },
         {
             "name": "stewart-php/sun",
-            "version": "0.x-dev",
+            "version": "1.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/sun",
-                "reference": "9a671a009ac090b727bdaeabf8704f808f5de067"
+                "reference": "c4e1440a50da4f30c0e7488e59e4e4cf4bc7a413"
             },
             "require": {
                 "php": ">=8.5",
@@ -2566,7 +2602,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "0.x-dev"
+                    "dev-main": "1.x-dev"
                 }
             },
             "autoload": {
@@ -2583,6 +2619,12 @@
                 "MIT"
             ],
             "description": "Sunrise, sunset, twilight, golden hour and sun position for a location, computed locally",
+            "homepage": "https://github.com/stewart-php/stewart",
+            "support": {
+                "issues": "https://github.com/stewart-php/stewart/issues",
+                "source": "https://github.com/stewart-php/stewart",
+                "docs": "https://stewart-php.github.io/docs/"
+            },
             "transport-options": {
                 "symlink": true,
                 "relative": true
@@ -2590,11 +2632,11 @@
         },
         {
             "name": "stewart-php/support",
-            "version": "0.x-dev",
+            "version": "1.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/support",
-                "reference": "d3baa4ad811588070a541ecfb5982b840b33d400"
+                "reference": "ca74db881038e6db9b88794e3094bc1bf00e9496"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2611,7 +2653,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "0.x-dev"
+                    "dev-main": "1.x-dev"
                 }
             },
             "autoload": {
@@ -2628,6 +2670,12 @@
                 "MIT"
             ],
             "description": "Framework-internal helpers shared by the Stewart packages. Not part of the app-facing API",
+            "homepage": "https://github.com/stewart-php/stewart",
+            "support": {
+                "issues": "https://github.com/stewart-php/stewart/issues",
+                "source": "https://github.com/stewart-php/stewart",
+                "docs": "https://stewart-php.github.io/docs/"
+            },
             "transport-options": {
                 "symlink": true,
                 "relative": true
@@ -7743,11 +7791,11 @@
         },
         {
             "name": "stewart-php/codegen",
-            "version": "0.x-dev",
+            "version": "1.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/codegen",
-                "reference": "9021ee412b6edf680900f2cae8960bce262b3703"
+                "reference": "0227d8d578fccd25e54dfd263635cc8c11e0319f"
             },
             "require": {
                 "ext-ctype": "*",
@@ -7770,7 +7818,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "0.x-dev"
+                    "dev-main": "1.x-dev"
                 }
             },
             "autoload": {
@@ -7787,6 +7835,12 @@
                 "MIT"
             ],
             "description": "Generates typed entity and service classes from a Home Assistant instance",
+            "homepage": "https://github.com/stewart-php/stewart",
+            "support": {
+                "issues": "https://github.com/stewart-php/stewart/issues",
+                "source": "https://github.com/stewart-php/stewart",
+                "docs": "https://stewart-php.github.io/docs/"
+            },
             "transport-options": {
                 "symlink": true,
                 "relative": true
@@ -7794,11 +7848,11 @@
         },
         {
             "name": "stewart-php/testing",
-            "version": "0.x-dev",
+            "version": "1.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/testing",
-                "reference": "5a325cae836e8b3f371c6dba8d2c90d87f3d5655"
+                "reference": "8f17c2acf3be3afd4a2a0fb1ad10bdee4d6a153e"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -7822,7 +7876,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "0.x-dev"
+                    "dev-main": "1.x-dev"
                 }
             },
             "autoload": {
@@ -7839,6 +7893,12 @@
                 "MIT"
             ],
             "description": "Test Stewart apps without Home Assistant: an app harness, recording fakes and virtual time",
+            "homepage": "https://github.com/stewart-php/stewart",
+            "support": {
+                "issues": "https://github.com/stewart-php/stewart/issues",
+                "source": "https://github.com/stewart-php/stewart",
+                "docs": "https://stewart-php.github.io/docs/"
+            },
             "transport-options": {
                 "symlink": true,
                 "relative": true

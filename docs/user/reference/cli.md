@@ -20,7 +20,7 @@ Your project runs these commands with `make`. The `stewart` commands below run i
 | `make env` | Create .env from .env.example with a fresh control token, unless it exists |
 | `make install` | composer install |
 | `make update` | composer update |
-| `make upgrade` | Move to another Stewart release line, then pull its images and install it [VERSION=0.11] |
+| `make upgrade` | Move to another Stewart release line, then pull its images and install it [VERSION=2.0] |
 | `make sh` | Shell in the development container |
 | `make doctor` | Check the container can run Stewart |
 | `make generate` | Write typed entity and service classes from Home Assistant into generated/ [ARGS=--allow-shrink] |

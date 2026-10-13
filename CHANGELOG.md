@@ -1,10 +1,33 @@
 # Changelog
 
 Every package, the `ghcr.io/stewart-php/runtime` image, the Helm chart, the skeleton and the Home Assistant
-integration share one version. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). On 0.x, a
-minor release may break; its "Upgrading" section says what to change.
+integration share one version. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and from
+1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
+release could break; a release's "Upgrading" section says what to change.
 
-## [Unreleased]
+## [1.0.0] - 2026-10-13
+
+The first stable release. From here on, `stewart-php/contracts`, the generated classes, configuration keys,
+environment variables, console commands and the image entrypoint settings change only in a major release. The code is
+the same as 0.11.1.
+
+### Added
+
+- Documentation at [stewart-php.github.io/docs](https://stewart-php.github.io/docs/), and for contributors at
+  [stewart-php.github.io/docs-dev](https://stewart-php.github.io/docs-dev/)
+- The runtime image is also tagged with its major, `1` and `1-dev`, rebuilt every week
+
+### Changed
+
+- The skeleton uses the `runtime:1` image tag, and `make upgrade` writes the major for image tags
+
+### Upgrading
+
+1. Run `make upgrade VERSION=1.0`. Protocols are unchanged, so a 0.11 daemon, `stewart` CLI and Home Assistant
+   integration work with 1.0.
+2. Change the image tag in `Dockerfile` and the compose files from `runtime:1.0` to `runtime:1` (`1-dev` in
+   `compose.dev.yaml`), so the image keeps getting PHP and Alpine fixes after 1.1. Copy `bin/upgrade-stewart.sh` from
+   [the skeleton](https://github.com/stewart-php/skeleton) so later upgrades do the same.
 
 ## [0.11.1] - 2026-10-13
 

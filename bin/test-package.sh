@@ -20,7 +20,7 @@ for entry in src tests config bin composer.json phpunit.xml.dist; do
 done
 
 cd "$target"
-export COMPOSER_ROOT_VERSION=0.x-dev
+export COMPOSER_ROOT_VERSION=1.x-dev
 
 # Pinned versions, so a detached or shallow checkout resolves the siblings without guessing from git.
 versions=""
