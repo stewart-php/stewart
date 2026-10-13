@@ -17,18 +17,14 @@ use Stewart\Contracts\Time\Timers;
 use Stewart\Mqtt\Exception\MqttClientError;
 use Stewart\Mqtt\Exception\MqttClientException;
 use Stewart\Mqtt\Packet\ConnAckPacket;
-use Stewart\Mqtt\Packet\DisconnectPacket;
 use Stewart\Mqtt\Packet\InboundPacketHandler;
-use Stewart\Mqtt\Packet\OutboundPacket;
+use Stewart\Mqtt\Packet\PacketEncoder;
 use Stewart\Mqtt\Packet\PacketReader;
-use Stewart\Mqtt\Packet\PingReqPacket;
 use Stewart\Mqtt\Packet\PingRespPacket;
 use Stewart\Mqtt\Packet\PubAckPacket;
 use Stewart\Mqtt\Packet\PublishPacket;
 use Stewart\Mqtt\Packet\SubAckPacket;
-use Stewart\Mqtt\Packet\SubscribePacket;
 use Stewart\Mqtt\Packet\UnsubAckPacket;
-use Stewart\Mqtt\Packet\UnsubscribePacket;
 use Throwable;
 
 use function Amp\async;
@@ -59,6 +55,7 @@ final class MqttConnection implements InboundPacketHandler
         private readonly Socket $socket,
         private readonly BufferedReader $bufferedReader,
         private readonly PacketReader $packetReader,
+        private readonly PacketEncoder $encoder,
         private readonly Timers $timers,
         private readonly Duration $keepalive,
         private readonly Closure $onMessage,
@@ -79,14 +76,14 @@ final class MqttConnection implements InboundPacketHandler
     public function publishMessage(MqttMessage $message): Future
     {
         if ($message->qos === MqttQos::AtMostOnce) {
-            $this->writePacket(new PublishPacket($message));
+            $this->writePacket($this->encoder->encodePublish($message));
 
             return Future::complete();
         }
 
         $packetId = $this->allocatePacketId();
         $this->pendingAcks[$packetId] = new DeferredFuture();
-        $this->writePacket(new PublishPacket($message, $packetId));
+        $this->writePacket($this->encoder->encodePublish($message, $packetId));
 
         return $this->pendingAcks[$packetId]->getFuture();
     }
@@ -99,7 +96,7 @@ final class MqttConnection implements InboundPacketHandler
     {
         $packetId = $this->allocatePacketId();
         $this->pendingSubAcks[$packetId] = new DeferredFuture();
-        $this->writePacket(new SubscribePacket($packetId, $topicFilter, self::SUBSCRIPTION_QOS));
+        $this->writePacket($this->encoder->encodeSubscribe($packetId, $topicFilter, self::SUBSCRIPTION_QOS));
 
         return $this->pendingSubAcks[$packetId]->getFuture();
     }
@@ -112,7 +109,7 @@ final class MqttConnection implements InboundPacketHandler
     {
         $packetId = $this->allocatePacketId();
         $this->pendingAcks[$packetId] = new DeferredFuture();
-        $this->writePacket(new UnsubscribePacket($packetId, $topicFilter));
+        $this->writePacket($this->encoder->encodeUnsubscribe($packetId, $topicFilter));
 
         return $this->pendingAcks[$packetId]->getFuture();
     }
@@ -124,7 +121,7 @@ final class MqttConnection implements InboundPacketHandler
         }
 
         try {
-            $this->socket->write(new DisconnectPacket()->encodePacket());
+            $this->socket->write($this->encoder->encodeDisconnect());
         } catch (Throwable) {
             // The socket is closing either way; the server then treats the client as gone.
         }
@@ -145,7 +142,7 @@ final class MqttConnection implements InboundPacketHandler
     public function handlePublish(PublishPacket $packet): void
     {
         if ($packet->packetId !== null) {
-            $this->writePacket(new PubAckPacket($packet->packetId));
+            $this->writePacket($this->encoder->encodePubAck($packet->packetId));
         }
 
         ($this->onMessage)($packet->message);
@@ -200,7 +197,7 @@ final class MqttConnection implements InboundPacketHandler
             $this->awaitingPingResponse = true;
             async(function (): void {
                 try {
-                    $this->writePacket(new PingReqPacket());
+                    $this->writePacket($this->encoder->encodePingRequest());
                 } catch (MqttClientException) {
                 }
             });
@@ -209,14 +206,14 @@ final class MqttConnection implements InboundPacketHandler
     }
 
     /** @throws MqttClientException */
-    private function writePacket(OutboundPacket $packet): void
+    private function writePacket(string $bytes): void
     {
         if ($this->closed->isComplete()) {
             throw MqttClientException::createForReason(MqttClientError::ConnectionClosed);
         }
 
         try {
-            $this->socket->write($packet->encodePacket());
+            $this->socket->write($bytes);
         } catch (Throwable $e) {
             $lost = MqttClientException::createForReason(MqttClientError::ConnectionLost, $e);
             $this->finishClosing($lost);
