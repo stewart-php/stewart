@@ -97,7 +97,7 @@ final class WorkerHaContextTest extends TestCase
         $scope = ResourceScope::forApp(new AppId('demo'));
         $scopes = new ScopeLifecycle();
         $scopes->activateScope($scope);
-        $dispatcher = RecordingDispatchListener::createDispatcher('w0', 10, scopes: $scopes);
+        $dispatcher = RecordingDispatchListener::createDispatcher(10, scopes: $scopes);
         $ha = WorkerHaContextFixture::createWorkerHaContext(new NullTransport(), $scope, dispatcher: $dispatcher);
         $outcome = async(static fn(): ?EntityState => $ha->waitForState('lock.front', 'locked', Duration::seconds(10)));
         EventLoopTicks::settle();

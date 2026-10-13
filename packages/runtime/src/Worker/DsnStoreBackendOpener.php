@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Worker;
 
-use Stewart\Runtime\Ipc\StoreSettings;
+use Stewart\Runtime\Ipc\Message\Bootstrap;
 use Stewart\Store\GuardedStoreBackend;
 use Stewart\Store\StoreBackendConnector;
 use Stewart\Store\StoreDsn;
@@ -14,15 +14,17 @@ final readonly class DsnStoreBackendOpener implements StoreBackendOpener
 {
     public function __construct(private StoreBackendConnector $storeBackendConnector) {}
 
-    public function openForStoreSettings(?StoreSettings $workerStoreSettings): ?GuardedStoreBackend
+    public function openForBootstrap(Bootstrap $bootstrap): ?GuardedStoreBackend
     {
-        if ($workerStoreSettings === null) {
+        $storeSettings = $bootstrap->store;
+
+        if ($storeSettings === null) {
             return null;
         }
 
         return $this->storeBackendConnector->connectToBackend(
-            StoreDsn::parse($workerStoreSettings->dsn),
-            new StoreTiming($workerStoreSettings->timeout, $workerStoreSettings->recoveryInterval),
+            StoreDsn::parse($storeSettings->dsn),
+            new StoreTiming($storeSettings->timeout, $storeSettings->recoveryInterval),
         );
     }
 }

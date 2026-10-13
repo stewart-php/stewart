@@ -17,10 +17,12 @@ use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Subscription;
 use Stewart\Contracts\Topic\TopicEvent;
 use Stewart\Contracts\Trigger\TriggerEvent;
+use Stewart\Runtime\Ipc\WorkerSettings;
 use Stewart\Runtime\Model\Collection\SubscriptionIdCollection;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionId;
 use Stewart\Runtime\Model\SubscriptionKind;
+use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\Scope\ScopeLifecycle;
 use Stewart\Support\Stream\SubscriptionScope;
@@ -34,18 +36,24 @@ final class LocalDispatcher
 
     private int $counter = 0;
 
+    private readonly string $subscriptionIdPrefix;
+
+    private readonly int $subscriptionQueueLimit;
+
     private readonly SelectorIndex $stateIndex;
 
     private readonly EntityFilterIndex $stateFilterIndex;
 
     public function __construct(
-        private readonly string $subscriptionIdPrefix,
-        private readonly int $subscriptionQueueLimit,
+        WorkerId $workerId,
+        WorkerSettings $workerSettings,
         private readonly DispatchListener $listener,
         private readonly SubscriptionListener $subscriptions,
         private readonly ScopeLifecycle $scopes,
         RegistryCache $registry,
     ) {
+        $this->subscriptionIdPrefix = $workerId->toProcessIdPrefix();
+        $this->subscriptionQueueLimit = $workerSettings->subscriptionBuffer;
         $this->stateIndex = new SelectorIndex();
         $this->stateFilterIndex = new EntityFilterIndex($registry);
     }

@@ -13,7 +13,6 @@ use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedStateChange;
-use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\ExposeEntityRequest;
@@ -24,6 +23,7 @@ use Stewart\Runtime\Ipc\Message\RemoveExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\UpdateExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\WorkerMessage;
 use Stewart\Runtime\Ipc\Transport;
+use Stewart\Runtime\Ipc\WorkerSettings;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Worker\PendingRequest;
 use Stewart\Runtime\Worker\PendingRequests;
@@ -35,7 +35,7 @@ final readonly class ExposureRequester
         private Transport $transport,
         private PendingRequests $pending,
         private Deadlines $deadlines,
-        private Duration $exposureRequestTimeout,
+        private WorkerSettings $workerSettings,
     ) {}
 
     /** @throws ExposureException */
@@ -91,13 +91,13 @@ final readonly class ExposureRequester
         try {
             $this->transport->send($request);
 
-            return $pending->getFuture()->await($this->deadlines->timeout($this->exposureRequestTimeout));
+            return $pending->getFuture()->await($this->deadlines->timeout($this->workerSettings->callTimeout));
         } catch (TransportException $e) {
             throw $e->reason === TransportError::Unencodable
                 ? ExposureException::stateInvalid($e->getMessage())
                 : ExposureException::unreachable($key, 'the broker is gone: ' . $e->getMessage(), $e);
         } catch (CancelledException) {
-            throw ExposureException::createForReason(ExposureError::TimedOut, key: $key->value, timeout: (string) $this->exposureRequestTimeout);
+            throw ExposureException::createForReason(ExposureError::TimedOut, key: $key->value, timeout: (string) $this->workerSettings->callTimeout);
         } finally {
             $this->pending->forget($pending->correlationId);
         }

@@ -8,8 +8,10 @@ use Stewart\Runtime\Dispatch\DispatchListener;
 use Stewart\Runtime\Dispatch\LocalDispatcher;
 use Stewart\Runtime\Dispatch\RegisteredSubscription;
 use Stewart\Runtime\Dispatch\SubscriptionListener;
+use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\Scope\ScopeLifecycle;
+use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Throwable;
 
 final class RecordingDispatchListener implements DispatchListener, SubscriptionListener
@@ -32,11 +34,11 @@ final class RecordingDispatchListener implements DispatchListener, SubscriptionL
     /** @var list<string> */
     public array $suppressed = [];
 
-    public static function createDispatcher(string $processId, int $queueLimit, RegistryCache $registry = new RegistryCache(), ScopeLifecycle $scopes = new ScopeLifecycle()): LocalDispatcher
+    public static function createDispatcher(int $queueLimit, RegistryCache $registry = new RegistryCache(), ScopeLifecycle $scopes = new ScopeLifecycle()): LocalDispatcher
     {
         $listener = new self();
 
-        return new LocalDispatcher($processId, $queueLimit, $listener, $listener, $scopes, $registry);
+        return new LocalDispatcher(new WorkerId(0), TestBootstrap::createWorkerSettings(subscriptionBuffer: $queueLimit), $listener, $listener, $scopes, $registry);
     }
 
     public function subscriptionRegistered(RegisteredSubscription $subscription): void

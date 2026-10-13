@@ -11,6 +11,7 @@ use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\StateCache;
+use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Stewart\Runtime\Worker\AppActivityCounters;
 use Stewart\Runtime\Worker\ConnectionStatus;
 use Stewart\Runtime\Worker\Context\DispatchStreams;
@@ -45,10 +46,10 @@ final class WorkerHaContextFixture
             $stateCache,
             $registry,
             $connection,
-            new ServiceCaller($transport, $pending, $connection, $timers, $callTimeout ?? Duration::seconds(1)),
-            new HistoryReader($transport, $pending, $connection, $timers, $timers->clock, $callTimeout ?? Duration::seconds(1)),
-            new EventFirer($transport, $pending, $connection, $timers, $callTimeout ?? Duration::seconds(1)),
-            new DispatchStreams($dispatcher ?? RecordingDispatchListener::createDispatcher('w0', 10, $registry), $timers, $stateCache, $registry),
+            new ServiceCaller($transport, $pending, $connection, $timers, TestBootstrap::createWorkerSettings(callTimeout: $callTimeout ?? Duration::seconds(1))),
+            new HistoryReader($transport, $pending, $connection, $timers, $timers->clock, TestBootstrap::createWorkerSettings(callTimeout: $callTimeout ?? Duration::seconds(1))),
+            new EventFirer($transport, $pending, $connection, $timers, TestBootstrap::createWorkerSettings(callTimeout: $callTimeout ?? Duration::seconds(1))),
+            new DispatchStreams($dispatcher ?? RecordingDispatchListener::createDispatcher(10, $registry), $timers, $stateCache, $registry),
             new TopicPublisher($transport, $timers->clock, $activityCounters),
             $identity,
             $scope,

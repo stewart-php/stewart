@@ -24,6 +24,7 @@ use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Ipc\FailingTransport;
 use Stewart\Runtime\Tests\Fixtures\Ipc\NullTransport;
+use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Stewart\Runtime\Worker\ConnectionStatus;
 use Stewart\Runtime\Worker\Context\HistoryReader;
 use Stewart\Runtime\Worker\CorrelationIdSequence;
@@ -120,6 +121,6 @@ final class HistoryReaderTest extends TestCase
 
     private function createReader(Transport $transport): HistoryReader
     {
-        return new HistoryReader($transport, $this->pending, $this->connection, $this->timers, $this->timers->clock, Duration::seconds(1));
+        return new HistoryReader($transport, $this->pending, $this->connection, $this->timers, $this->timers->clock, TestBootstrap::createWorkerSettings(callTimeout: Duration::seconds(1)));
     }
 }

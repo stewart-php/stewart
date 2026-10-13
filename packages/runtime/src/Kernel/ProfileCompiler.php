@@ -17,7 +17,7 @@ final readonly class ProfileCompiler
 
     private const string PACKAGE_CONFIG = '/config/services.php';
 
-    public function compileProfileContainer(ContainerProfile $profile, SyntheticServices $services, NamedArguments $arguments): TypedContainer
+    public function compileProfileContainer(ContainerProfile $profile, SyntheticServices $services, NamedArguments $arguments = new NamedArguments()): TypedContainer
     {
         $builder = new ContainerBuilder();
         $loader = new PhpFileLoader($builder, new FileLocator(self::CONFIG_DIRECTORY));

@@ -7,11 +7,11 @@ namespace Stewart\Runtime\Worker\Context;
 use Amp\CancelledException;
 use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\State\EventContext;
-use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\EventFireRequest;
 use Stewart\Runtime\Ipc\Transport;
+use Stewart\Runtime\Ipc\WorkerSettings;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Worker\ConnectionStatus;
 use Stewart\Runtime\Worker\PendingRequests;
@@ -26,7 +26,7 @@ final readonly class EventFirer
         private PendingRequests $pending,
         private ConnectionStatus $connection,
         private Deadlines $deadlines,
-        private Duration $eventFireTimeout,
+        private WorkerSettings $workerSettings,
     ) {}
 
     /** @throws EventFireException */
@@ -45,9 +45,9 @@ final readonly class EventFirer
         try {
             $this->sendRequest(new EventFireRequest($fire->correlationId, $scope, $payload->eventType, $payload->data));
 
-            return $fire->getFuture()->await($this->deadlines->timeout($this->eventFireTimeout));
+            return $fire->getFuture()->await($this->deadlines->timeout($this->workerSettings->callTimeout));
         } catch (CancelledException $e) {
-            throw EventFireException::timedOut($payload->eventType, \sprintf('no answer from the broker within %s', $this->eventFireTimeout), $e);
+            throw EventFireException::timedOut($payload->eventType, \sprintf('no answer from the broker within %s', $this->workerSettings->callTimeout), $e);
         } finally {
             $this->pending->forget($fire->correlationId);
         }

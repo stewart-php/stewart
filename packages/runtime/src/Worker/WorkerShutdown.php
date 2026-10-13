@@ -11,6 +11,7 @@ use Amp\DeferredFuture;
 use Amp\Future;
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Runtime\Ipc\WorkerSettings;
 use Stewart\Support\Time\Deadlines;
 use Throwable;
 
@@ -34,7 +35,7 @@ final class WorkerShutdown
         private readonly PendingRequests $pending,
         private readonly Deadlines $deadlines,
         private readonly LoggerInterface $logger,
-        private readonly Duration $workerShutdownGrace,
+        private readonly WorkerSettings $workerSettings,
     ) {
         $this->stopped = new DeferredFuture();
         $this->halt = new DeferredCancellation();
@@ -63,7 +64,7 @@ final class WorkerShutdown
 
     public function stopWithConfiguredGrace(string $reason): void
     {
-        $this->stop($reason, $this->workerShutdownGrace);
+        $this->stop($reason, $this->workerSettings->shutdownGrace);
     }
 
     public function stopAfterBrokerLoss(string $reason): void

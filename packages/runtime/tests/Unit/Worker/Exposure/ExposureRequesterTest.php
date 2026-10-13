@@ -29,6 +29,7 @@ use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Ipc\FailingTransport;
 use Stewart\Runtime\Tests\Fixtures\Ipc\NullTransport;
+use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\Exposure\ExposureRequester;
 use Stewart\Runtime\Worker\PendingRequests;
@@ -123,6 +124,6 @@ final class ExposureRequesterTest extends TestCase
 
     private function createRequester(Transport $transport): ExposureRequester
     {
-        return new ExposureRequester($transport, $this->pending, $this->timers, Duration::seconds(1));
+        return new ExposureRequester($transport, $this->pending, $this->timers, TestBootstrap::createWorkerSettings(callTimeout: Duration::seconds(1)));
     }
 }

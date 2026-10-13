@@ -42,7 +42,7 @@ final class TestBootstrap
             timeZone: $timeZone,
             location: $location,
             apps: WorkerAppsFragment::fromCollection(WorkerAppCollection::fromList($apps)),
-            settings: self::createSettings($callTimeout ?? Duration::seconds(30), $initializeTimeout, $servicesFile, $mqttEnabled),
+            settings: self::createWorkerSettings(callTimeout: $callTimeout ?? Duration::seconds(30), initializeTimeout: $initializeTimeout, servicesFile: $servicesFile, mqttEnabled: $mqttEnabled),
             store: $store,
             knownAppIds: AppIdsFragment::fromCollection(AppIdCollection::fromList(array_map(static fn(WorkerApp $app): AppId => $app->id, $apps))),
             pausedAppIds: AppIdsFragment::fromCollection($pausedAppIds ?? AppIdCollection::empty()),
@@ -50,13 +50,20 @@ final class TestBootstrap
         );
     }
 
-    private static function createSettings(Duration $callTimeout, ?Duration $initializeTimeout, ?string $servicesFile, bool $mqttEnabled): WorkerSettings
-    {
+    public static function createWorkerSettings(
+        LogLevel $logLevel = LogLevel::Debug,
+        ?Duration $callTimeout = null,
+        ?Duration $shutdownGrace = null,
+        int $subscriptionBuffer = 100,
+        ?Duration $initializeTimeout = null,
+        ?string $servicesFile = null,
+        bool $mqttEnabled = false,
+    ): WorkerSettings {
         return new WorkerSettings(
-            logLevel: LogLevel::Debug,
-            callTimeout: $callTimeout,
-            shutdownGrace: Duration::seconds(5),
-            subscriptionBuffer: 100,
+            logLevel: $logLevel,
+            callTimeout: $callTimeout ?? Duration::seconds(30),
+            shutdownGrace: $shutdownGrace ?? Duration::seconds(5),
+            subscriptionBuffer: $subscriptionBuffer,
             initializeTimeout: $initializeTimeout,
             servicesFile: $servicesFile,
             generatedNamespace: 'Stewart\\Generated',

@@ -19,6 +19,7 @@ use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Schedule\ScheduleOrigin;
 use Stewart\Runtime\Scope\ScopeLifecycle;
 use Stewart\Runtime\Tests\Fixtures\Ipc\NullTransport;
+use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Stewart\Runtime\Worker\AppActivityCounters;
 use Stewart\Runtime\Worker\AppActivityRecorder;
 use Stewart\Runtime\Worker\AppFailureReporter;
@@ -45,7 +46,7 @@ final class AppActivityRecorderTest extends TestCase
         $this->recorder = new AppActivityRecorder(
             new AppFailureReporter($this->transport, new StderrFallback(new WorkerId(0)), $counters, new HandlerFailureSampler()),
             $counters,
-            new WorkerLogger($this->transport, new StderrFallback(new WorkerId(0)), ResourceScope::shared()),
+            new WorkerLogger($this->transport, new StderrFallback(new WorkerId(0)), ResourceScope::shared(), TestBootstrap::createWorkerSettings()),
             $this->scopes,
         );
     }

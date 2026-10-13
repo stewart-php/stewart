@@ -11,11 +11,11 @@ use Stewart\Contracts\History\Collection\HistoricalStateCollection;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryQuery;
 use Stewart\Contracts\Time\Clock;
-use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\HistoryRequest;
 use Stewart\Runtime\Ipc\Transport;
+use Stewart\Runtime\Ipc\WorkerSettings;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Worker\ConnectionStatus;
 use Stewart\Runtime\Worker\PendingRequests;
@@ -30,7 +30,7 @@ final readonly class HistoryReader
         private ConnectionStatus $connection,
         private Deadlines $deadlines,
         private Clock $clock,
-        private Duration $historyQueryTimeout,
+        private WorkerSettings $workerSettings,
     ) {}
 
     /** @throws HistoryException */
@@ -50,9 +50,9 @@ final readonly class HistoryReader
         try {
             $this->sendRequest(new HistoryRequest($pending->correlationId, $scope, $entityId, $window, $query->detail));
 
-            return new EntityStateHistory($entityId, $window, $pending->getFuture()->await($this->deadlines->timeout($this->historyQueryTimeout)));
+            return new EntityStateHistory($entityId, $window, $pending->getFuture()->await($this->deadlines->timeout($this->workerSettings->callTimeout)));
         } catch (CancelledException $e) {
-            throw HistoryException::timedOut($entityId, \sprintf('no answer from the broker within %s', $this->historyQueryTimeout), $e);
+            throw HistoryException::timedOut($entityId, \sprintf('no answer from the broker within %s', $this->workerSettings->callTimeout), $e);
         } finally {
             $this->pending->forget($pending->correlationId);
         }

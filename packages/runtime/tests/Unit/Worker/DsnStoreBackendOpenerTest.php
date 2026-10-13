@@ -7,7 +7,9 @@ namespace Stewart\Runtime\Tests\Unit\Worker;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Runtime\Ipc\Message\Bootstrap;
 use Stewart\Runtime\Ipc\StoreSettings;
+use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Stewart\Runtime\Tests\Fixtures\Store\InMemoryStoreBackendFactory;
 use Stewart\Runtime\Time\SystemClock;
 use Stewart\Runtime\Worker\DsnStoreBackendOpener;
@@ -26,7 +28,7 @@ final class DsnStoreBackendOpenerTest extends TestCase
     {
         $factory = new InMemoryStoreBackendFactory();
 
-        $backend = $this->createOpener($factory)->openForStoreSettings($this->createStoreSettings('memory://local'));
+        $backend = $this->createOpener($factory)->openForBootstrap($this->createBootstrap('memory://local'));
 
         self::assertInstanceOf(GuardedStoreBackend::class, $backend);
         self::assertSame(1, $factory->opened);
@@ -34,12 +36,12 @@ final class DsnStoreBackendOpenerTest extends TestCase
 
     public function testSchemeWithoutBackendIsRefused(): void
     {
-        $this->assertThrowsReason(StoreSetupError::SchemeUnsupported, fn() => $this->createOpener(new InMemoryStoreBackendFactory())->openForStoreSettings($this->createStoreSettings('redis://valkey:6379/0')));
+        $this->assertThrowsReason(StoreSetupError::SchemeUnsupported, fn() => $this->createOpener(new InMemoryStoreBackendFactory())->openForBootstrap($this->createBootstrap('redis://valkey:6379/0')));
     }
 
     public function testNoStoreSettingsOpenNothing(): void
     {
-        self::assertNull($this->createOpener(new InMemoryStoreBackendFactory())->openForStoreSettings(null));
+        self::assertNull($this->createOpener(new InMemoryStoreBackendFactory())->openForBootstrap(TestBootstrap::createForApps([])));
     }
 
     private function createOpener(InMemoryStoreBackendFactory $factory): DsnStoreBackendOpener
@@ -47,8 +49,8 @@ final class DsnStoreBackendOpenerTest extends TestCase
         return new DsnStoreBackendOpener(new StoreBackendConnector(new StoreBackendRegistry([$factory]), SystemClock::inUtc()));
     }
 
-    private function createStoreSettings(string $dsn): StoreSettings
+    private function createBootstrap(string $dsn): Bootstrap
     {
-        return new StoreSettings($dsn, 'stewart', Duration::seconds(1), Duration::seconds(1));
+        return TestBootstrap::createForApps([], store: new StoreSettings($dsn, 'stewart', Duration::seconds(1), Duration::seconds(1)));
     }
 }

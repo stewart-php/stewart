@@ -49,8 +49,10 @@ use Stewart\Runtime\Model\Collection\SubscriptionIdCollection;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionId;
 use Stewart\Runtime\Model\SubscriptionKind;
+use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\Scope\ScopeLifecycle;
+use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Stewart\Runtime\Tests\Fixtures\Worker\RecordingDispatchListener;
 use Stewart\Support\State\IndexedRegistry;
 use Stewart\Support\Stream\SubscriptionScope;
@@ -89,7 +91,7 @@ final class LocalDispatcherTest extends TestCase
 
             public function subscriptionCancelled(RegisteredSubscription $subscription): void {}
         };
-        $dispatcher = new LocalDispatcher('w0', 100, $this->listener, $refusing, $this->scopes, $this->registry);
+        $dispatcher = new LocalDispatcher(new WorkerId(0), TestBootstrap::createWorkerSettings(subscriptionBuffer: 100), $this->listener, $refusing, $this->scopes, $this->registry);
         $scope = new SubscriptionScope();
 
         try {
@@ -784,7 +786,7 @@ final class LocalDispatcherTest extends TestCase
 
     private function createDispatcher(int $queueLimit = 100): LocalDispatcher
     {
-        return new LocalDispatcher('w0', $queueLimit, $this->listener, $this->listener, $this->scopes, $this->registry);
+        return new LocalDispatcher(new WorkerId(0), TestBootstrap::createWorkerSettings(subscriptionBuffer: $queueLimit), $this->listener, $this->listener, $this->scopes, $this->registry);
     }
 
     private function pause(LocalDispatcher $dispatcher, string $appId): void

@@ -24,7 +24,7 @@ final class SubscriptionAckHandlerTest extends TestCase
 {
     public function testRejectionDeactivatesSubscription(): void
     {
-        $dispatcher = RecordingDispatchListener::createDispatcher('w0', 10);
+        $dispatcher = RecordingDispatchListener::createDispatcher(10);
         $subscription = self::registerTopicSubscription($dispatcher);
 
         new SubscriptionAckHandler(new NullLogger(), $dispatcher)->handle(
@@ -36,7 +36,7 @@ final class SubscriptionAckHandlerTest extends TestCase
 
     public function testAcceptanceKeepsSubscription(): void
     {
-        $dispatcher = RecordingDispatchListener::createDispatcher('w0', 10);
+        $dispatcher = RecordingDispatchListener::createDispatcher(10);
         $subscription = self::registerTopicSubscription($dispatcher);
 
         new SubscriptionAckHandler(new NullLogger(), $dispatcher)->handle(

@@ -24,6 +24,7 @@ use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Ipc\FailingTransport;
 use Stewart\Runtime\Tests\Fixtures\Ipc\NullTransport;
+use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Stewart\Runtime\Worker\ConnectionStatus;
 use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\PendingRequests;
@@ -146,7 +147,7 @@ final class RegistryEditRequesterTest extends TestCase
     private function createEditor(Transport $transport): WorkerRegistryEditor
     {
         return new WorkerRegistryEditor(
-            new RegistryEditRequester($transport, $this->pending, $this->connection, $this->timers, Duration::seconds(1)),
+            new RegistryEditRequester($transport, $this->pending, $this->connection, $this->timers, TestBootstrap::createWorkerSettings(callTimeout: Duration::seconds(1))),
             ResourceScope::shared(),
         );
     }
