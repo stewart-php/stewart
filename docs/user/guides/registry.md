@@ -2,7 +2,7 @@
 title: Areas, floors and labels
 description: Pick entities by where they are and how they are labelled, using Home Assistant's own registries.
 sidebar:
-  order: 6
+  order: 16
 ---
 
 Entity IDs say what a thing is; Home Assistant's registries say where it is.

@@ -2,7 +2,7 @@
 title: The sun
 description: Run at sunrise, sunset, dusk or golden hour, and ask where the sun is, at Home Assistant's location.
 sidebar:
-  order: 8
+  order: 18
 ---
 
 Stewart knows the sun from the latitude, longitude and elevation configured in Home Assistant. Times are computed in

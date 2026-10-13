@@ -2,7 +2,7 @@
 title: Typed entities and services
 description: Generate PHP classes over your own Home Assistant, so an entity ID is written once and checked forever.
 sidebar:
-  order: 10
+  order: 20
 ---
 
 `stewart generate` connects to your instance once and writes a class per domain,

@@ -111,4 +111,4 @@ the same service in Home Assistant under **Developer tools → Actions** to rule
 ## Next
 
 - [Project tour](project-tour.md) explains the other files in your project.
-- [Writing apps](../guides/writing-apps.md) shows how to react to state changes and events.
+- [State changes](../guides/state-changes.md) shows how to react when an entity changes.

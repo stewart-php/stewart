@@ -46,7 +46,7 @@ or hangs cannot take the others down. [How it works](guides/how-it-works.md) exp
 | **[Install Stewart](start/install.md)** | Create a project, connect it to Home Assistant, and run it. About 15 minutes. |
 | **[Your first app](start/first-app.md)** | Build, test and run the porch light above, step by step. |
 | **[Project tour](start/project-tour.md)** | What each file in your project is for. |
-| **[Writing apps](guides/writing-apps.md)** | Reacting to state changes, events, schedules and waits. |
+| **[Guides](guides/state-changes.md)** | State changes, events, schedules, service calls, storage and more. |
 | **[Deploying](https://github.com/stewart-php/skeleton#deploying)** | Running Stewart on a server, from Git, from an image, or on Kubernetes. |
 
 Curious how Stewart is built? The [developer documentation](https://stewart-php.github.io/docs-dev/) covers its

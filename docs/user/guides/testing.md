@@ -2,7 +2,7 @@
 title: Testing apps
 description: Run an app against fakes on virtual time, without Home Assistant.
 sidebar:
-  order: 11.5
+  order: 21.5
 ---
 
 `stewart-php/testing` runs an app in a PHPUnit test. Nothing connects to Home Assistant, and time only moves when
@@ -67,7 +67,7 @@ $harness->advanceTime(Duration::seconds(119)); // the light is still on
 $harness->advanceTime(Duration::seconds(1));   // runAfter() fired: light.turn_off
 ```
 
-Schedules follow the [Scheduler](writing-apps.md#schedules) rules with two differences: there is no pause, and an
+Schedules follow the [Scheduler](scheduling.md#how-schedules-treat-time) rules with two differences: there is no pause, and an
 occurrence is never late or skipped, since virtual time waits for the handler.
 
 ## Waits and handlers

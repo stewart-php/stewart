@@ -7,7 +7,7 @@ sidebar:
 
 For developers working on Stewart, or deciding whether its shape suits them.
 It covers structure and the invariants that hold it together, not the API —
-that is in the [guide](https://stewart-php.github.io/docs/guides/writing-apps/).
+that is in the [guide](https://stewart-php.github.io/docs/guides/apps/).
 
 ---
 

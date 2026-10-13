@@ -2,7 +2,7 @@
 title: MQTT
 description: Publish to and watch topics on an MQTT server from an automation.
 sidebar:
-  order: 9
+  order: 19
 ---
 
 Apps exchange messages with outside systems over MQTT 3.1.1. The broker keeps

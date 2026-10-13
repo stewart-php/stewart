@@ -2,7 +2,7 @@
 title: How it works
 description: The main process, the workers that run your apps, and what that means when you write one.
 sidebar:
-  order: 2
+  order: 1
 ---
 
 Stewart runs as one main process and a few worker processes. Knowing this split explains a few rules you meet when
@@ -46,7 +46,7 @@ keep running while one app waits, because each handler runs in its own fiber.
 
 **Do not block the worker.** Apps in a worker share it. A `sleep()`, a slow `file_get_contents()` on a URL, or a
 long loop holds up every app on that worker. To wait, use Stewart's tools instead: a schedule, `waitForState()`,
-or a stream operator with a time window. See [Writing apps](writing-apps.md#waiting).
+or a stream operator with a time window. See [Scheduling and waiting](scheduling.md#waiting-in-a-handler).
 
 **`initialize()` is for setting up, not for waiting.** Stewart delivers nothing to an app until its `initialize()`
 returns. Subscribe to streams and add schedules there, then react in the handlers.

@@ -2,7 +2,7 @@
 title: State history
 description: Ask Home Assistant what an entity did over the last minutes or hours.
 sidebar:
-  order: 5
+  order: 15
 ---
 
 `getState()` tells you where an entity is now. `getHistory()` asks Home

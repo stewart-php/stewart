@@ -2,7 +2,7 @@
 title: Persistence
 description: Keep what an automation must remember across restarts, in its own scope or a shared one.
 sidebar:
-  order: 4
+  order: 14
 ---
 
 An automation's properties live in a worker process, and a worker restarts — on

@@ -2,7 +2,7 @@
 title: Exposed entities
 description: Create and drive your own sensor, switch, number, select and other entities in Home Assistant.
 sidebar:
-  order: 9.5
+  order: 19.5
 ---
 
 Apps create their own Home Assistant entities and keep them up to date. It needs

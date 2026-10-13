@@ -2,7 +2,7 @@
 title: Triggers
 description: React to sunset, a time of day, a template turning true or a person leaving a zone, using Home Assistant's own triggers.
 sidebar:
-  order: 7
+  order: 17
 ---
 
 Some moments are not a state change and not an event: sunset, 07:30, the moment
