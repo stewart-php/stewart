@@ -23,7 +23,7 @@ final readonly class AppFailureReporter
     public function report(ResourceScope $scope, AppFailurePhase $phase, Throwable $error, ?string $origin = null): void
     {
         $this->activityCounters->findOrCreateActivityForScope($scope)->recordFailure();
-        $occurrence = $this->sampler->recordFailure($scope, $phase, $origin);
+        $occurrence = $this->sampler->recordFailure($scope, $phase, $error);
 
         if (!$this->sampler->isSampled($occurrence)) {
             return;

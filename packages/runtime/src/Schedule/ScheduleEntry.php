@@ -11,6 +11,7 @@ use Stewart\Contracts\Schedule\ScheduledTask;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Time\TimerHandle;
+use Stewart\Runtime\Scope\ScopeState;
 use Throwable;
 
 final class ScheduleEntry
@@ -19,9 +20,7 @@ final class ScheduleEntry
 
     public private(set) bool $active = true;
 
-    public private(set) bool $live = false;
-
-    public private(set) bool $paused = false;
+    public private(set) bool $started = false;
 
     private bool $running = false;
 
@@ -29,6 +28,8 @@ final class ScheduleEntry
     private ?Closure $handler;
 
     private ?TimerHandle $timer = null;
+
+    private ?Instant $heldOccurrence = null;
 
     private int $overlapSkips = 0;
 
@@ -41,6 +42,7 @@ final class ScheduleEntry
         private readonly Trigger $trigger,
         private readonly LoggerInterface $logger,
         private readonly ScheduleContext $context,
+        private readonly ScopeState $scopeState,
         Closure $handler,
         private readonly Closure $onCancel,
     ) {
@@ -60,31 +62,21 @@ final class ScheduleEntry
     }
 
     /** @throws Throwable */
-    public function activate(): bool
+    public function start(): bool
     {
         if (!$this->trigger->start()) {
             return false;
         }
 
-        $this->live = true;
+        $this->started = true;
         $this->armTimerForNextOccurrence();
 
         return true;
     }
 
-    public function pause(): void
-    {
-        $this->paused = true;
-    }
-
-    public function resume(): void
-    {
-        $this->paused = false;
-    }
-
     public function getNextRunAt(): ?Instant
     {
-        return $this->active ? $this->trigger->dueAt() : null;
+        return $this->active ? $this->trigger->dueAt() ?? $this->heldOccurrence : null;
     }
 
     public function cancel(): void
@@ -133,6 +125,24 @@ final class ScheduleEntry
         $this->armTimerForNextOccurrence();
     }
 
+    public function runHeldOccurrence(): void
+    {
+        $handler = $this->handler;
+        $scheduledFor = $this->heldOccurrence;
+
+        if ($handler === null || $scheduledFor === null) {
+            return;
+        }
+
+        $this->heldOccurrence = null;
+        $this->logger->info('A one-shot schedule held by a pause ran late', [
+            'schedule' => $this->origin->description,
+            'due' => $scheduledFor->toIso8601(),
+        ]);
+        $this->startHandlerRun($handler, $scheduledFor, 0);
+        $this->cancel();
+    }
+
     // An advance() failure propagates to onTimerFired(), which reports it and cancels before any handler runs.
     private function runDueOccurrence(): void
     {
@@ -140,12 +150,19 @@ final class ScheduleEntry
         $handler = $this->handler;
         $scheduledFor = $this->trigger->dueAt();
         $missed = $this->trigger->advance();
+        $occursAgain = $this->trigger->dueAt() !== null;
+
+        if (!$occursAgain && !$this->trigger->isRecurring() && $this->scopeState->isPaused() && $scheduledFor !== null) {
+            $this->holdUntilResumed($scheduledFor);
+
+            return;
+        }
 
         if ($handler !== null && $scheduledFor !== null) {
             $this->startHandlerRun($handler, $scheduledFor, $missed);
         }
 
-        if ($this->trigger->dueAt() !== null) {
+        if ($occursAgain) {
             return;
         }
 
@@ -158,12 +175,22 @@ final class ScheduleEntry
         $this->cancel();
     }
 
+    // A recurring schedule simply runs again later; a one-shot would be lost.
+    private function holdUntilResumed(Instant $scheduledFor): void
+    {
+        $this->heldOccurrence = $scheduledFor;
+        $this->logger->debug('A one-shot schedule came due while its app is paused; it runs on resume', [
+            'schedule' => $this->origin->description,
+            'due' => $scheduledFor->toIso8601(),
+        ]);
+    }
+
     /** @param Closure(ScheduledRun): void $handler */
     private function startHandlerRun(Closure $handler, Instant $scheduledFor, int $missed): void
     {
         $run = new ScheduledRun($this->task, $scheduledFor, $this->context->clock->getNow(), $missed);
 
-        if ($this->paused) {
+        if ($this->scopeState->isPaused()) {
             $this->context->listener->scheduledRunSuppressed($this->origin, $run);
 
             return;

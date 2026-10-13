@@ -93,6 +93,6 @@ final readonly class AppActivityRecorder implements DispatchListener, ScheduleLi
     // Stopping an app abandons its pending waits; that is part of the stop, not a handler failure.
     private function isWaitAbandonedByStop(ResourceScope $scope, Throwable $error): bool
     {
-        return $error instanceof WaitException && $error->reason === WaitError::Abandoned && $this->scopes->isClosed($scope);
+        return $error instanceof WaitException && $error->reason === WaitError::Abandoned && $this->scopes->findOrCreateStateOf($scope)->isClosed();
     }
 }

@@ -25,35 +25,33 @@ final readonly class AppResources
     {
         $this->scopes->activateScope($scope);
 
-        if (!$this->scopes->isLive($scope)) {
+        if (!$this->scopes->findOrCreateStateOf($scope)->isLive()) {
             return;
         }
 
-        $this->dispatcher->activateQueuesOf($scope);
+        $this->dispatcher->startDrainingQueuesOf($scope);
         $this->schedules->startEntriesOf($scope);
     }
 
     public function pauseScope(ResourceScope $scope): void
     {
-        if ($this->scopes->isClosed($scope)) {
+        if ($this->scopes->findOrCreateStateOf($scope)->isClosed()) {
             return;
         }
 
         $this->scopes->pauseScope($scope);
-        $this->dispatcher->pauseQueuesOf($scope);
-        $this->schedules->pauseEntriesOf($scope);
+        $this->dispatcher->discardPendingWorkOf($scope);
     }
 
     public function resumeScope(ResourceScope $scope): void
     {
-        if ($this->scopes->isClosed($scope)) {
+        if ($this->scopes->findOrCreateStateOf($scope)->isClosed()) {
             return;
         }
 
         $this->scopes->resumeScope($scope);
-        $this->dispatcher->resumeQueuesOf($scope);
-        $this->schedules->resumeEntriesOf($scope);
         $this->entityTimes->refreshTasksOf($scope);
+        $this->schedules->runHeldOccurrencesOf($scope);
     }
 
     public function releaseScope(ResourceScope $scope): void

@@ -10,6 +10,7 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Stewart\Contracts\Mqtt\MqttMessage;
 use Stewart\Contracts\Mqtt\MqttQos;
+use Stewart\Contracts\Time\Clock;
 use Stewart\Mqtt\Connection\MqttConnection;
 use Stewart\Mqtt\Connection\MqttConnector;
 use Stewart\Mqtt\Exception\MqttClientException;
@@ -37,6 +38,7 @@ final class ReconnectingMqttLink implements MqttLink
         private readonly MqttConnector $connector,
         private readonly OutboundMqttQueue $outbound,
         private readonly Deadlines $deadlines,
+        private readonly Clock $clock,
         private readonly LoggerInterface $logger,
     ) {
         $this->stop = new DeferredCancellation();
@@ -112,9 +114,13 @@ final class ReconnectingMqttLink implements MqttLink
                 continue;
             }
 
-            $failures = 0;
+            $sessionStartedAt = $this->clock->getMonotonicTime();
             $this->runSession($connection);
-            $this->waitBeforeReconnecting(1);
+
+            // A server that drops every session at once, over a poison message or a duplicate client_id, still backs off.
+            $sessionLength = $this->clock->getMonotonicTime()->elapsedSince($sessionStartedAt);
+            $failures = $this->config->keepalive->isLongerThan($sessionLength) ? $failures + 1 : 0;
+            $this->waitBeforeReconnecting(max($failures, 1));
         }
     }
 
@@ -152,9 +158,14 @@ final class ReconnectingMqttLink implements MqttLink
             $this->subscribeOn($connection, (string) $topicFilter);
         }
 
-        $this->outbound->replayPendingMessages(function (int $sequence, MqttMessage $message) use ($connection): void {
-            $this->sendAtLeastOnce($connection, $sequence, $message);
-        });
+        $this->outbound->replayPendingMessages(
+            function (int $sequence, MqttMessage $message) use ($connection): void {
+                $this->sendAtLeastOnce($connection, $sequence, $message);
+            },
+            function (MqttMessage $message, int $sendAttempts): void {
+                $this->logger->error('MQTT message dropped; the server never acknowledged it', ['topic' => $message->topic, 'attempts' => $sendAttempts]);
+            },
+        );
 
         $lostBecause = $connection->awaitClosed();
         $this->connection = null;
@@ -180,10 +191,14 @@ final class ReconnectingMqttLink implements MqttLink
     private function sendAtLeastOnce(MqttConnection $connection, int $sequence, MqttMessage $message): void
     {
         try {
-            $connection->publishMessage($message)->map(fn() => $this->outbound->acknowledgeMessage($sequence))->ignore();
+            $acknowledged = $connection->publishMessage($message);
         } catch (MqttClientException) {
             // Still buffered; the next connection sends it again.
+            return;
         }
+
+        $this->outbound->recordSendAttempt($sequence);
+        $acknowledged->map(fn() => $this->outbound->acknowledgeMessage($sequence))->ignore();
     }
 
     private function subscribeOn(MqttConnection $connection, string $topicFilter): void

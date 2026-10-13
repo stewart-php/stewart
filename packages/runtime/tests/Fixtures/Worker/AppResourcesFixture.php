@@ -53,7 +53,7 @@ final readonly class AppResourcesFixture
             new TriggerFactory($timers->clock),
             $this->scopes,
         );
-        $this->entityTimes = new EntityTimeScheduler($this->schedules, $this->states, new DispatchStreams($this->dispatcher, $timers, $this->states, $registry), $timers->clock);
+        $this->entityTimes = new EntityTimeScheduler($this->schedules, $this->scopes, $this->states, new DispatchStreams($this->dispatcher, $timers, $this->states, $registry), $timers->clock);
         $this->transport = new NullTransport();
         $this->exposedHandles = new ExposedHandleRegistry($this->transport, new NullLogger());
         $this->resources = new AppResources($this->scopes, $this->dispatcher, $this->schedules, $this->entityTimes, $this->exposedHandles);

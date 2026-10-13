@@ -46,6 +46,8 @@ final class FakeMqttServer
 
     public bool $answersPings = true;
 
+    public bool $dropsAfterConnAck = false;
+
     /** @var Future<null>|null */
     public ?Future $connAckGate = null;
 
@@ -176,7 +178,7 @@ final class FakeMqttServer
         $this->connAckGate?->await();
         $client->write(PacketBytes::assemblePacket(PacketType::ConnAck, 0, "\x00" . \chr($this->connectAnswer->value)));
 
-        if ($this->connectAnswer !== ConnectReturnCode::Accepted) {
+        if ($this->connectAnswer !== ConnectReturnCode::Accepted || $this->dropsAfterConnAck) {
             $client->close();
         }
     }

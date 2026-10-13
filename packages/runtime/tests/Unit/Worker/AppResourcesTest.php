@@ -86,7 +86,7 @@ final class AppResourcesTest extends TestCase
         $this->resources->activateScope(ResourceScope::forApp(new AppId('demo')));
         $this->fixture->timers->delay(Duration::seconds(10));
 
-        self::assertFalse($this->fixture->scopes->isLive(ResourceScope::forApp(new AppId('demo'))));
+        self::assertFalse($this->fixture->scopes->findOrCreateStateOf(ResourceScope::forApp(new AppId('demo')))->isLive());
         self::assertFalse($subscription->isActive());
         self::assertSame(0, $this->runs);
     }
@@ -102,7 +102,7 @@ final class AppResourcesTest extends TestCase
         $this->fixture->timers->delay(Duration::seconds(10));
 
         self::assertSame(1, $this->runs);
-        self::assertTrue($this->fixture->scopes->isPaused(ResourceScope::forApp(new AppId('demo'))));
+        self::assertTrue($this->fixture->scopes->findOrCreateStateOf(ResourceScope::forApp(new AppId('demo')))->isPaused());
 
         $this->resources->resumeScope(ResourceScope::forApp(new AppId('demo')));
         $this->fixture->timers->delay(Duration::seconds(10));
@@ -116,7 +116,7 @@ final class AppResourcesTest extends TestCase
 
         $this->resources->pauseScope(ResourceScope::forApp(new AppId('demo')));
 
-        self::assertFalse($this->fixture->scopes->isPaused(ResourceScope::forApp(new AppId('demo'))));
+        self::assertFalse($this->fixture->scopes->findOrCreateStateOf(ResourceScope::forApp(new AppId('demo')))->isPaused());
     }
 
     private function subscribe(string $appId): Subscription

@@ -46,6 +46,7 @@ final class MqttMessageTest extends TestCase
         yield 'single level wildcard' => ['home/+'];
         yield 'multi level wildcard' => ['home/#'];
         yield 'nul character' => ["home\0"];
+        yield 'invalid utf-8' => ["home/\xC3\x28"];
     }
 
     public function testUnencodablePayloadIsRejected(): void

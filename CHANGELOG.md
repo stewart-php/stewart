@@ -48,6 +48,20 @@ minor release may break; its "Upgrading" section says what to change.
   broken bootstrap until the crash budget runs out; a worker that fails while others start still retries
 - `/readyz` and `stewart status --probe=readiness` report "no worker is running" while no worker has its apps
   running, such as during startup or while every worker restarts, not only once a worker is quarantined
+- A handler that keeps failing from timers or one-shot schedules is reported in full only on its first and every
+  hundredth failure, like a failing subscription; repeated failures are now grouped by the app line that failed,
+  and the worker no longer keeps a counter per timer
+- Publishing to an MQTT topic that is not valid UTF-8 fails with `mqtt_topic_invalid` instead of making the server
+  drop the connection, which for QoS 1 repeated on every reconnect
+- A QoS 1 MQTT message the server has not acknowledged after 5 sends is dropped with an error naming its topic,
+  instead of being sent again on every reconnect
+- An MQTT connection that the server drops within one `mqtt.keepalive` keeps the reconnect delay growing, so a
+  duplicate `client_id` or a rejected message no longer reconnects at the shortest delay forever
+- A one-shot timer (`runAfter()`, `runAt()`, `Timers::startTimer()`, a moment from `runAtEntityTime()`) that comes
+  due while its app is paused runs once when the app resumes, with its original `scheduledFor`, instead of being
+  lost; recurring schedules still skip the runs a pause covers
+- `runAtEntityTime()` called after its app stopped, such as from an `initialize()` that outlived its timeout, is
+  ignored like other late schedules instead of keeping a task in the worker forever
 
 ### Changed
 

@@ -12,6 +12,7 @@ use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\Schedule\EntityTimeScheduler;
 use Stewart\Runtime\Schedule\ScheduleRegistry;
 use Stewart\Runtime\Schedule\WorkerScheduler;
+use Stewart\Runtime\Scope\ScopeLifecycle;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Tests\Fixtures\Worker\RecordingDispatchListener;
 use Stewart\Runtime\Worker\Context\DispatchStreams;
@@ -33,7 +34,7 @@ final class WorkerSchedulerFixture
     ): WorkerScheduler {
         $registryCache = new RegistryCache();
         $streams = new DispatchStreams($dispatcher ?? RecordingDispatchListener::createDispatcher('w0', 10, $registryCache), $timers, $states, $registryCache);
-        $entityTimes ??= new EntityTimeScheduler($registry, $states, $streams, $timers->clock);
+        $entityTimes ??= new EntityTimeScheduler($registry, new ScopeLifecycle(), $states, $streams, $timers->clock);
 
         return new WorkerScheduler($registry, $sunCalendar, $entityTimes, $logger, $scope);
     }
