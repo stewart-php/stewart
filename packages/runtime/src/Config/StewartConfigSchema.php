@@ -29,6 +29,11 @@ final class StewartConfigSchema implements ConfigurationInterface
 
     private const string DOMAIN_KEY = '/\A[a-z0-9_]+\z/';
 
+    public static function isOff(string $value): bool
+    {
+        return strcasecmp(trim($value), self::OFF) === 0;
+    }
+
     public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder(self::ROOT);

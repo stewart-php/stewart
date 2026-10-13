@@ -18,12 +18,9 @@ final readonly class HttpAdminConfig
     /** @throws ConfigurationException */
     public static function fromSection(#[SensitiveParameter] ConfigSection $admin): self
     {
-        $listen = $admin->findString('listen');
-        $token = $admin->findString('token');
-
         return new self(
-            listen: $listen === null || strcasecmp(trim($listen), StewartConfigSchema::OFF) === 0 ? null : $admin->readParsedValue('listen', HttpListenAddress::parse(...)),
-            token: $token === '' ? null : $token,
+            listen: $admin->findSwitchableValue('listen', HttpListenAddress::parse(...)),
+            token: $admin->findSwitchableValue('token', strval(...)),
         );
     }
 }
