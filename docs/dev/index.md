@@ -36,7 +36,7 @@ of its own, so PlantUML warning about that is expected.
 | `02-processes` | Broker and workers, and what each owns |
 | `03-packages` | Package dependencies and the rule about `contracts` |
 | `04-contracts` | The public API surface |
-| `05-protocol` | The twenty channel messages |
+| `05-protocol` | The core channel messages |
 | `06-boot` | Startup through `WorkerReady` |
 | `07-state-event` | A state change reaching an app |
 | `08-service-call` | The correlated call and its fiber suspension |

@@ -29,20 +29,21 @@ message class that has no tag. `ProcessContext` still wraps each frame string in
 
 State is encoded once for every worker.
 `StateSnapshot`, `StateResynced` and `StateChangeBatch` hold `EntityStatesFragment` and
-`StateChangeList` fragments, which cache their JSON on the broker. The frame
+`StateChangesFragment` fragments, which cache their JSON on the broker. The frame
 splices that JSON in unescaped. On the worker, the same classes hold the decoded
 lists.
 
 The vocabulary belongs to the wire. A message may use only contracts, the
 `Runtime\Model` enums and DTOs, and `Ipc` types such as `WorkerApp`,
-`WorkerSettings`, `StoreSettings` and `WorkerLogLevel`. A phpat rule enforces
+`WorkerSettings` and `StoreSettings`. A phpat rule enforces
 this, so changing a config value object is never a protocol change.
 
 The rules that follow:
 
 - **`Bootstrap` carries the protocol version.** A worker whose
-  `IpcProtocol::VERSION` (7) differs stops with
-  `TransportException::protocolMismatch` before it reads anything else.
+  `IpcCodec::PROTOCOL_VERSION` differs stops with `TransportError::ProtocolMismatch`
+  before it reads anything else. Any change to a message's shape bumps it; the IPC
+  goldens fail until it does.
 - **A frame that cannot be decoded is dropped.** The reader logs its tag and
   carries on. An undecodable `Bootstrap` stops the worker.
 - **Selectors are one closed type.** `Selector` is a final value object whose
@@ -72,7 +73,7 @@ backed up that worker's event loop is.
 
 ![Protocol](diagrams/05-protocol.svg)
 
-Thirty-one messages, closed on both sides by the `BrokerMessage` and
+Forty-one messages, closed by the `BrokerMessage`, `CorrelatedReply` and
 `WorkerMessage` marker interfaces and by the `IpcCodec::TAGS` tags.
 
 ### Broker → Worker
@@ -84,7 +85,7 @@ Thirty-one messages, closed on both sides by the `BrokerMessage` and
 | `StateSnapshot` | Whole-world state, **encoded once** and shared by every worker (`EntityStatesFragment`). Also means "you are new: initialize your apps". |
 | `HaConnectionLost` | Home Assistant is gone, with the moment and the reason. Service calls now fail in the worker, and apps hear `ConnectionLost`. Also sent right after `StateSnapshot` to a worker bootstrapped during an outage. |
 | `StateResynced` | The rebuilt snapshot after a reconnect. The worker diffs it against its state cache, replays the differences as reconstructed state changes, then tells apps `ConnectionRestored`. Nothing is initialized again. |
-| `StateChangeBatch` | One or more state changes, in order, each encoded once (`StateChangeList`). Sent to every live worker; each matches them against its own subscriptions. |
+| `StateChangeBatch` | One or more state changes, in order, each encoded once (`StateChangesFragment`). Sent to every live worker; each matches them against its own subscriptions. |
 | `EventFired` | Any other Home Assistant event — `zha_event`, a custom one — plus the subscription IDs that matched. Sent only to workers that asked. |
 | `ServiceCallResult` | Answer to a `ServiceCallRequest`, with the call's `EventContext` (`dry-run:…` under dry run). Always sent, success or not. |
 | `EventFireResult` | Answer to an `EventFireRequest`, with the fired event's `EventContext`. |
@@ -94,6 +95,11 @@ Thirty-one messages, closed on both sides by the `BrokerMessage` and
 | `MqttMessageDelivery` | A message from the MQTT server, with the subscription IDs whose filter matched its topic. Droppable, like `TopicMessage`. |
 | `TriggerFired` | A Home Assistant trigger fired (`TriggerEvent`), with the subscription IDs that share its spec. Droppable, like `EventFired`. |
 | `SubscriptionAck` | Confirms a registration, or says why it was refused. For a trigger, a refusal can also arrive later, when Home Assistant rejects the config. A refused subscription is cancelled in the worker. |
+| `PausedAppsChanged` | The full set of paused apps, after a pause, resume or reset. Plain delivery, so it never overtakes deliveries queued before it. `Bootstrap` carries the same set at start. |
+| `ExposedEntityCommanded` | Someone used an exposed entity in Home Assistant; the owning worker runs the app's command handlers and answers with `ExposedCommandAnswered`. |
+| `ExposedEntitySynced` | Home Assistant reported an exposed entity's registry or restored state; the owning worker updates its handle. |
+| `ExposeEntityResult`, `ExposureAcknowledged` | Answers to `ExposeEntityRequest` (with the restored snapshot) and to the other exposure requests. |
+| `RegistryEntityUpdateResult` | Answer to a `RegistryEntityUpdateRequest`: the entry Home Assistant stored. |
 | `Shutdown` | Dispose apps and return. |
 | `Ping` | Liveness and loop-lag probe. |
 
@@ -109,6 +115,10 @@ Thirty-one messages, closed on both sides by the `BrokerMessage` and
 | `HistoryRequest` | An app wants one entity's recorded states over a fixed window. |
 | `Publish` | An app-to-app message on its way to routing. |
 | `MqttPublish` | A message for the MQTT server, with the publishing app's scope. |
+| `ExposeEntityRequest`, `UpdateExposedEntityRequest`, `ReconfigureExposedEntityRequest`, `RemoveExposedEntityRequest` | An app exposes an entity, changes its state, replaces its configuration, or removes it. Correlated like a service call. |
+| `ExposuresReleased` | An app stopped; the broker marks its exposed entities unavailable. |
+| `ExposedCommandAnswered` | The app accepted or rejected a command, by its command ID. |
+| `RegistryEntityUpdateRequest` | An app edits an entity registry entry through `RegistryEditor`. |
 | `AppFailed` | An app threw, with the phase and a flattened trace. |
 | `Pong` | Answers `Ping`, carrying the worker's event-loop lag, memory, one activity report per app (state, subscription and schedule counts, and cumulative delivered, dropped, schedule-run and publish counts) and, when a store is configured, its health as the worker sees it. |
 | `LogRecord` | A log line, to be written by the broker. |
@@ -149,29 +159,16 @@ states, never payloads or options. The broker adds each report's difference from
 the previous one of the same worker, so its per-app totals keep growing across
 restarts.
 
-The control socket speaks protocol 29, one request per connection: `hello`, `welcome`, one
-request, its answer, `bye`.
+`stewart status` reads the result over the control socket, described in
+[Control protocol](control-protocol.md).
 
-| Direction | Frame | Fields |
-|---|---|---|
-| client → server | `hello` | `token`, `client`, `protocol` |
-| client → server | `snapshot_request` | |
-| client → server | `pause_app`, `resume_app`, `reset_app` | `app_id` |
-| client → server | `restart_worker` | `worker_id` |
-| server → client | `welcome` | `protocol` |
-| server → client | `snapshot` | `snapshot` |
-| server → client | `command_result` | `changed`, `message`, `warning` |
-| server → client | `request_failed` | `reason`, `message` |
-| server → client | `rejected`, `bye` | `reason` |
-
-A `hello` on another protocol, or with the wrong token, is `rejected`. A request
-the broker cannot answer (unknown frame, unknown or disabled app, unknown worker) gets
+A request the broker cannot answer (unknown frame, unknown or disabled app, unknown worker) gets
 `request_failed` with the exception's reason value. Pausing a paused app, or
 resuming a running one, answers `changed: false`; `reset_app` answers
 `changed: true` when it removed a stored override; `restart_worker` answers
 `changed: false` while the worker is already starting or stopping. `warning` is `null` unless the
 change could not be stored. An app's `pause` is `null` while it
-runs, otherwise `since` and `source` (`config` or `control`); a config pause
+runs, otherwise `since` and `source` (`config`, `control` or `http`); a config pause
 holds from daemon start. `config_pause_override` has the same shape and is set
 only while a stored resume beats a config pause. An app's
 `state` travels by value: `declared`, `constructing`, `constructed`,
@@ -255,15 +252,21 @@ that fiber suspended for the life of the process with nothing in the logs. So
 the broker answers every request including failures, and the worker wraps every
 await in a `TimeoutCancellation` as a backstop.
 
+Every write to Home Assistant counts against one in-flight budget, `HaCallSlots`,
+bounded by `service_calls.max_in_flight` and `max_in_flight_per_worker`: service
+calls, fired events, history queries and registry edits alike. A fired event is a
+write like a service call, so it shares the budget, the per-app call counts and
+dry run; a burst of one can refuse the other. On the worker side, one
+`PendingRequests` registry holds every correlated request.
+
 ## A history query
 
 The same shape as a service call: one correlation ID from the same per-worker
-sequence, one reply per request, and the same worker-side timeout. The worker
+sequence, one reply per request, the same worker-side timeout and the same
+in-flight budget. The worker
 turns `HistoryQuery::lastFor()` into a fixed window with its own clock before
 sending, so the broker never sees a relative time. The reply carries only the
 states; the worker already knows the entity and the window.
-
-There is no in-flight limit: a query is read-only and bounded by the timeout.
 
 ---
 
@@ -426,16 +429,14 @@ outage shows as one edge, because only the two ends are known.
 
 ## Testing it
 
-`tests/Unit/Protocol/WorkerProtocolTest.php` boots a worker in-process over an
-in-memory transport pair and drives the whole protocol from the test, standing
-in for the broker. Frames still go through the codecs. It runs with `make test`
-and needs neither Home Assistant nor Valkey.
+`packages/runtime/tests/Integration/Protocol/WorkerProtocolTest.php` boots a
+worker in-process over an in-memory transport pair and drives the whole protocol
+from the test, standing in for the broker. Frames still go through the codecs. It
+runs with `make test-integration` and needs neither Home Assistant nor Valkey.
 
 This is the test that earns its keep: the entrypoint contract, the
 initialize-after-snapshot ordering, selector serialization, service-call
-correlation and clean shutdown are all invisible to testing a single class. It
-caught the state-cache-identity bug described in
-[Architecture § Invariants](architecture.md#invariants).
+correlation and clean shutdown are all invisible to testing a single class.
 
-`make test-process` runs `tests/Process/WorkerProcessSmokeTest.php`: a real
+`make test-process` runs `packages/runtime/tests/Process/WorkerProcessSmokeTest.php`: a real
 worker process over a real pipe, and a store in Valkey that outlives it.

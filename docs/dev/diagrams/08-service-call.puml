@@ -4,7 +4,7 @@ title A service call, and why it reads like a local call
 
 participant "App" as app $usercode
 participant "WorkerHaContext" as ctx $worker
-participant "PendingCalls" as pc $worker
+participant "PendingRequests" as pc $worker
 participant "Broker" as b $broker
 participant "Home Assistant" as ha $ha
 
@@ -28,7 +28,7 @@ ha --> b : result { id: 42, success: true }
 b -> b : correlate id 42 → "0:17"
 b -> ctx : **ServiceCallResult** { "0:17", ok }
 ctx -> pc : resolve("0:17")
-ctx --> app : ServiceResult
+ctx --> app : EventContext
 
 note over b, ha
   The broker must answer **every** request,

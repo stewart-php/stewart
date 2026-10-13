@@ -47,7 +47,7 @@ The split buys three things:
 |---|---|
 | **Crash containment** | A worker dying takes its apps down, not the daemon. |
 | **Blocking containment** | An app that blocks stalls its own worker's loop, not every automation in the house. |
-| **Cheap restarts** | The connection and state cache live in the broker, so restarting a worker costs no reconnect and no resync. A crashed worker is respawned with backoff, and quarantined if it will not stay up. This is what will make dev-mode reload nearly invisible. |
+| **Cheap restarts** | The connection and state cache live in the broker, so restarting a worker costs no reconnect and no resync. A crashed worker is respawned with backoff, and quarantined if it will not stay up. |
 
 Apps are spread round-robin over `min(4, cpu_count)` workers by default; an app
 can pin itself to one with `worker:` in `stewart.yaml`. One process per app
@@ -70,7 +70,7 @@ must receive **every** state change, subscribed or not — a state cache can onl
 fresh if it sees everything. Broker-side routing reduces the work a worker does
 per event; it can never reduce the number of events it receives.
 
-That is the deliberate trade for `state()` being a synchronous hash lookup
+That is the deliberate trade for `getState()` being a synchronous hash lookup
 rather than an await.
 
 ---
@@ -79,13 +79,18 @@ rather than an await.
 
 ![Packages](diagrams/03-packages.svg)
 
-```
-contracts  ← client  ← runtime  ← repo root
-        ↖ store ← store-redis
-        ↖ sun ← runtime
-        ↖ codegen (development only)
-        ↖ support ← client, store, runtime
-```
+| Package | Depends on (Stewart packages only) |
+|---|---|
+| `contracts` | nothing |
+| `sun` | `contracts` |
+| `support` | `contracts` |
+| `client` | `contracts`, `support` |
+| `store` | `contracts`, `support` |
+| `store-redis` | `contracts`, `store`, `support` |
+| `runtime` | `contracts`, `client`, `store`, `sun`, `support` |
+| `mqtt` | `contracts`, `runtime`, `support` |
+| `codegen` (development only) | `contracts`, `client`, `runtime`, `support` |
+| `testing` (development only) | `contracts`, `store`, `support` |
 
 **`stewart-php/contracts`** is the sink of the dependency graph, holds only the
 API apps see, and depends on PHP alone. That is a rule, not a
@@ -136,14 +141,22 @@ in `Bootstrap`.
 
 1. Implement `Stewart\Store\StoreBackend` and a `StoreBackendFactory` with a
    no-argument constructor, in a package that requires `stewart-php/store`.
-   Throw `StoreException::timedOut` or `unreachable` when the store cannot be
-   reached, fail fast with `recentlyFailed` for the `StoreTiming`'s
-   `recoveryInterval` after that, and report it through `health()`: the rest
-   are the caller's problem.
+   Throw `StoreException` with the reason `TimedOut` or `Unreachable` when the
+   store cannot be reached, fail fast with `RecentlyFailed` for the
+   `StoreTiming`'s `recoveryInterval` after that, and report it through
+   `health()`: the rest are the caller's problem.
 2. Ship a `config/services.php` that registers the factory with the
    `stewart.store_backend` tag, and add the package to the broker profile's
    optional packages in `ContainerProfile`.
 3. `composer require` it and set `persistence.url` to `sqlite://…`.
+
+**`stewart-php/mqtt`** is an MQTT 3.1.1 client over amphp. The broker holds the
+one connection; workers reach it through the `Mqtt` contract. It plugs into the
+runtime the same way a store backend does, through its `config/services.php`.
+
+**`stewart-php/testing`** holds `AppHarness` and the recording fakes apps are
+tested with. It builds apps the way a worker does, against contracts and the
+store, without a runtime.
 
 **`stewart-php/codegen`** turns `get_states` and `get_services` into the classes
 under `App\Generated`. It depends on `contracts`, `client` and
@@ -193,8 +206,7 @@ without it. Apps are discovered by `run`, not by the loader, and
 `AppCatalog` merges them with the `apps:` overrides.
 
 Unknown keys and unusable values are errors at boot, in the file and in the
-environment alike. The alternative — the previous implementation — was silent
-fallbacks, where a typo did nothing and said nothing.
+environment alike, so a typo fails loudly instead of doing nothing.
 
 ### Traps in the config layer
 
@@ -214,15 +226,11 @@ Things that look like dead code or an oversight, and are not:
   which turns `off` into `null`.
 - The list nodes use `performNoDeepMerging()`. Without it, a list from the
   environment would be appended to the file's list instead of replacing it.
-- `SectionValues` re-checks types the schema has already proved. It is `if`, not
-  `assert`, because the production image compiles assertions out — and
-  `class-string` only survives as a static type when the check sits in the same
-  scope as the constructor call.
 - Some **absences are deliberate**. `home_assistant` is required as a whole
   rather than defaulted, so a missing section reports the missing URL. Nothing
   validates app IDs in the schema, because the schema cannot see what is on
-  disk — which IDs exist is `AppCatalog`'s question, and an entry naming none of
-  them is an error there.
+  disk — which IDs exist is `AppCatalog`'s question, and `run` logs a warning for an
+  entry that names none of them.
 - `normalizeKeys(false)` on the app node is load-bearing. Symfony rewrites `-`
   to `_` in keys by default, which would quietly turn the app `hall-light` into
   `hall_light` and orphan its logs, its state and its enabled flag.
@@ -246,8 +254,9 @@ anything `options:` supplies, and any service registered in `services.php` —
 all by type, in any order.
 
 The worker container autowires contract types only: `HaContext`,
-`LoggerInterface`, `Scheduler`, `Store`, `ReadableStore`, `Timers`, `Clock` and
-the generated roots. Everything else the runtime registers sits under an id
+`LoggerInterface`, `Scheduler`, `Timers`, `Clock`, `SunCalendar`, `Store`,
+`ReadableStore`, `Mqtt`, `EntityExposure`, `RegistryEditor` and the generated
+roots. Everything else the runtime registers sits under an id
 starting with a dot, which autowiring never matches, so the transport, the
 state cache and the dispatcher are not reachable from user wiring. A store scope
 other than the automation's own is chosen with `#[GlobalStore]` or
@@ -259,10 +268,10 @@ worker fails with Symfony's message.
 Two things about this shape are load-bearing:
 
 **Subscriptions return a stream, not a bare callback.** The operator layer
-(`filter`, `debounce`, `whenChangedTo`) slots between `stateChanges(...)` and
-`->subscribe(...)`, and landing it changed no existing call site. A
-callback-registration API would have forced either a parallel API or a migration
-of every subscription ever written.
+(`filter`, `debounce`, `whenChangedTo`) slots between `watchStateChanges(...)`
+and `->subscribe(...)`, so a new operator needs no new API. A
+callback-registration API would need a parallel API for every way of shaping
+events.
 
 **Selectors are value objects, never closures.** An event or topic selector
 crosses to the broker and routes there; every predicate and operator runs
@@ -277,7 +286,7 @@ which is one worker's problem.
 
 The things that are easy to break by accident, and what breaks when you do.
 
-**`HaContext::state()` must never suspend.** Both implementations read a local
+**`HaContext::getState()` must never suspend.** Both implementations read a local
 cache. If one starts awaiting, apps that read state in a loop change behavior,
 and code that works in a worker breaks in-process. The interface would be lying
 about itself. `getHistory()` is a request to Home Assistant, not a state read;
@@ -286,10 +295,8 @@ it suspends like `callService()`.
 **The state cache is mutated, never replaced.** A worker hands the same
 `StateCache` object to every app's context when it constructs them — which
 happens *before* the snapshot arrives. Swapping in a new instance on load
-leaves every app reading an empty world. This has already been a bug once; it
-presented as a missing entity, not as a wiring bug. Guarded by
-`StateCacheTest::testLoadingASnapshotKeepsObjectIdentity`, and at the worker
-level by `AppContainerBuilderTest`. The worker container holds exactly one
+leaves every app reading an empty world, which shows up as a missing entity, not
+as a wiring bug. Guarded at the worker level by `AppContainerBuilderTest`. The worker container holds exactly one
 `StateCache`; the app container never defines one and reaches the contexts
 through `AppRuntimeServices`, so there is no definition it could build a second
 one from.
@@ -300,7 +307,7 @@ go out of scope. This is what allows a container
 inside a process running an event loop at all. Resolving a
 service per event would void it.
 
-**App discovery is sorted by ID.** `StewartConfig::assignApps()` spreads apps
+**App discovery is sorted by ID.** `AppPlacement::planWorkerSlots()` spreads apps
 round-robin in array order, so an order left to the filesystem would move an
 automation between workers from one boot to the next.
 
@@ -394,44 +401,97 @@ not a wire change. Renaming a message property is.
 
 ## Runtime characteristics
 
-Measured on the target container (PHP 8.4.25, Alpine), 2000 synthetic entities:
+Measured on the target container (PHP 8.4, Alpine), 2000 synthetic entities:
 
 | | |
 |---|---|
-| `serialize()` the state graph | ~1.0 ms, 0.8 MB |
-| `json_encode()` the graph (cached, paid once) | ~1.7 ms, 0.6 MB |
-| Wrapping the cached JSON in a frame and `serialize()` (per worker) | ~0.1 ms |
+| `json_encode()` the state graph (cached, paid once) | ~1.7 ms, 0.6 MB |
 | Baseline worker PHP heap at boot | ~4 MB (`memory_get_usage(true)`; RSS is higher) |
 | Building a worker's container | ~76 ms fixed, plus ~0.5 ms per automation, no measurable heap |
 | A worker with no automations, `Bootstrap` to stop (runtime and app containers) | ~115 ms, 6 MB peak |
 
-The broker encodes the snapshot once and ships the string, so per-worker cost
-is ~17× lower and independent of how many workers there are. An earlier
-estimate put the raw cost at 100–300 ms and justified chunking the snapshot;
-the measurement was ~100× more forgiving, so chunking was dropped.
+The broker encodes the snapshot once and ships the string to every worker, so its
+cost does not grow with the number of workers. The snapshot travels as one
+message, which is why `home_assistant.message_size_limit` defaults to 64 MB.
 
 The container cost is loading the component, not compiling the graph, which is
 why it hardly moves between 2 and 30 automations. It is paid once per worker
-process, against a process spawn that already costs more. `make bench` re-runs it.
+process, against a process spawn that already costs more.
 
-Two numbers are still worth measuring: **events per second** against a real
-instance, because it multiplies by worker count, and **`Bootstrap`→`WorkerReady`**
-once dev-mode reload lands, because a reload pays the container cost every time.
+Worth measuring next: **events per second** against a real instance, because it
+multiplies by worker count.
 
 ---
 
 ## Extension seams
 
-Deliberately unbuilt, with the shape they will take:
+Deliberately unbuilt, with the shape they would take:
 
 | Feature | Where it goes |
 |---|---|
-| Test double | A new package implementing `HaContext` against `contracts` alone, driving the operators through a virtual `Timers`. |
-| Per-app worker restart | `WorkerPool` already respawns a whole worker; restarting one app means restarting its worker. |
-| Non-`state_changed` events | Same routing mechanism keyed on `event_type`; the message namespace has room. |
+| Restarting one app | `WorkerPool` respawns a whole worker; one app alone needs scopes that can be re-activated, which `ScopeLifecycle` does not do today. |
 | Remote workers | Behind the `Transport` interface, which is three methods wide for this reason. |
-| An HTTP health endpoint | A thin adapter over the snapshot the control socket already serves. |
-| Area, device, floor and label classes | Three more registry commands and a second naming scheme inside `codegen`; deferred. |
+| A second store backend | See [Adding a second backend](#adding-a-second-backend). |
+| Area, device, floor and label classes | More registry commands and a second naming scheme inside `codegen`. Today only their IDs are completed, through `.phpstorm.meta.php`. |
+
+---
+
+## Design decisions
+
+Why some things are the way they are. Each was a choice between workable options.
+
+### Generated entities are looked up by ID
+
+`$entities->light->getEntity('light.hall')`, not a property per entity.
+
+- An ID written in full is searchable: a search for `light.hall` finds every use.
+- An ID from an app's options is a plain string, and works the same way.
+- Only IDs the last `stewart generate` saw are accepted; others throw `IdentifierError::EntityNotGenerated`. There is
+  no static check on the ID, because a literal-union type made every string from config a PHPStan error. Completion
+  comes from `.phpstorm.meta.php` instead.
+
+### Sun times are computed locally
+
+`stewart-php/sun` implements the NOAA equations with Astral's refraction and horizon dip, so times agree with Home
+Assistant's sun integration within seconds.
+
+- Sun schedules keep running while Home Assistant is unreachable; a `sun` trigger would not.
+- `SunEventSchedule` is a wall-clock schedule, so missed runs and clock steps behave as for every other schedule.
+- The location comes from `get_config` when the broker connects and travels in `Bootstrap`; a change applies on
+  restart. Without one, workers get `UnlocatedSunCalendar`, and every query throws `SunError::LocationUnknown`.
+
+### The registry is mirrored to every worker
+
+Area, floor and label filters run on every state change, so they must not ask Home Assistant.
+
+- The broker reads the five registries on every connect, and again after a one-second quiet period following any
+  `*_registry_updated` event. A failed read keeps the previous registry.
+- A new worker gets `Bootstrap`, `RegistrySnapshot`, then `StateSnapshot`. `RegistryCache` keeps the highest
+  revision, and lookups never suspend.
+- Placement follows Home Assistant: the entity's area, else its device's; labels of the entity, device and area.
+  Moving an entity changes no state, so a running watch sees the move only on the entity's next change.
+
+### Pausing an app is a gate
+
+A paused app stays constructed and initialized. The worker drops its deliveries and skips its schedule runs, with no
+catch-up on resume; a handler already running finishes.
+
+- The runtime cannot dispose and re-initialize an app in place (`ScopeLifecycle` never re-activates a released
+  scope), so stopping it was not an option.
+- The broker's `AppPauseRegistry` is the source of truth, changed only through `AppPauseService`, which records the
+  source (`config`, `control`, `http`). The worker enforces it, because it owns schedules and queued deliveries.
+- Overrides persist under `<prefix>:runtime:app-pause:<id>` and beat `apps.<id>.paused`. A failed load at start stops
+  the daemon, so an app paused on purpose never runs by surprise.
+
+### A Git deployment switches releases by restarting in place
+
+The broker loads app classes and spawns workers from its own `vendor/`, so new code needs a new PHP process.
+
+- The entrypoint shell owns git, Composer, the release layout (`/app/releases/<sha>`, `current`, `next`) and the
+  restart loop, so credentials stay in one place. The broker owns the poll timer, validation and status.
+- A new commit must pass `stewart check` in a subprocess. A rejected commit is remembered and never tried again.
+- Switching is a graceful stop with exit code 75; the entrypoint swaps `next` over `current` and starts PHP again.
+  `tini -g` is not used: a group signal would reach the workers and skip the broker's graceful shutdown.
 
 ---
 

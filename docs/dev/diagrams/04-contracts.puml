@@ -19,8 +19,11 @@ interface HaContext {
     +watchTopic(pattern): EventStream
     +watchConnection(): EventStream
     .. actions — suspend ..
-    +callService(domain, service, data, target): void
+    +callService(domain, service, data, target): EventContext
     +callServiceForResponse(domain, service, data, target): ServiceResponse
+    +fireEvent(type, data): EventContext
+    +getHistory(id, query): EntityStateHistory
+    +waitForState(id, state, timeout): ?EntityState
     +publish(topic, payload): void
     +isConnected(): bool
 }
@@ -39,15 +42,12 @@ interface "EventStream<T>" as Stream {
 interface "StateChangeStream" as ChangeStream {
     .. Home Assistant shaped, per entity ..
     +distinctUntilChanged(): static
-    +whenChangedTo(state, for): StateTransitionStream
+    +whenChangedTo(state, for, from, fromAnyState): static
     +whenStableFor(Duration): static
+    +whenAbove(threshold, for): static
+    +whenBelow(threshold, for): static
+    +startWithCurrentState(): static
     +acrossEntities(): EventStream
-}
-
-interface "StateTransitionStream" as TransitionStream {
-    .. directly after whenChangedTo ..
-    +from(state, ...states): static
-    +fromAnyState(): static
 }
 
 interface Timers {
@@ -60,6 +60,8 @@ interface Scheduler {
     +runOnCron(expression, Closure): ScheduledTask
     +runAfter(Duration, Closure): ScheduledTask
     +runAt(DateTimeImmutable, Closure): ScheduledTask
+    +runAtSunEvent(SunEvent, Closure, SunOffset): ScheduledTask
+    +runAtEntityTime(entity, Closure): ScheduledTask
 }
 
 interface Schedule {
@@ -75,7 +77,6 @@ interface ScheduledTask {
 }
 
 Stream <|-- ChangeStream
-ChangeStream <|-- TransitionStream
 
 interface Subscription {
     +unsubscribe(): void

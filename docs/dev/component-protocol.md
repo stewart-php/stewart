@@ -52,7 +52,7 @@ HA service call ─▶ component ──event command──▶ broker ──IPC�
 ```
 
 The component gives each command an id and waits up to `command_timeout`. A handler that returns answers `ok: true`,
-and the component applies the requested state. A handler that throws `CommandRejected` answers `ok: false` with its
+and the component applies the requested state. A handler that throws `CommandException::rejected()` answers `ok: false` with its
 message, and the service call fails with that message. The broker answers for a paused app itself, with `ok: false`.
 
 ---
@@ -87,6 +87,42 @@ unavailable. `expose.prune: false` skips the call.
 | A handler is too slow | No `stewart/command/result` within `command_timeout` | The service call fails; a late answer gets `not_found` |
 | The worker dies during a command | The broker loses the owner | The broker answers `ok: false`; the app's entities become unavailable |
 | A config or state does not fit the platform | `invalid_config` or `invalid_state` | The upsert or state change is refused; the entity keeps its previous value |
+
+---
+
+## Design decisions
+
+### An integration, not MQTT discovery
+
+Core Home Assistant has no WebSocket command to create an entity. MQTT discovery can, but it needs an MQTT server in
+every installation, splits commands from the session Stewart already holds, and loses state when that server
+restarts. A small custom integration, as hass-node-red uses, adds `stewart/*` commands to the existing session.
+
+- It lives in `integrations/home-assistant/` and releases with everything else; the wire protocol is an integer of
+  its own, and the component accepts exactly one, so a version skew fails at connect, not in the middle of a session.
+- Every `stewart/*` command needs an administrator, as Stewart's token already must.
+- The unique ID is `stewart-<instance>-<app>-<key>`. `instance` and `key` allow `[a-z][a-z0-9_]*` only, so the ID
+  still parses although app IDs contain `-`. Renaming an app creates new entities.
+
+### One session subscription carries every command
+
+A subscription gives both a push channel to Stewart and a reliable signal that Stewart is gone: it ends when the
+connection does.
+
+- The newest subscribe for an instance wins, so a restarted broker never waits for Home Assistant to notice a dead
+  socket. Two Stewarts sharing an instance name steal the session from each other; the log shows each
+  `session_replaced`.
+- The component applies a command's state only after `ok`, so Home Assistant never shows a state the app refused.
+
+### Commands route through the broker
+
+- The broker refuses at once, with `ok: false`, when no running app exposes the entity, the app is paused, or its
+  worker is gone. A dying worker's pending commands are refused at once.
+- In the app, the first subscriber callback that returns accepts. A command nobody watches is accepted, so a switch
+  works as a stored toggle. A command an operator drops, or `map()`s away, is never answered and times out after
+  `expose.command_timeout`.
+- Commands for one entity run one at a time; a handler may await.
+- `stewart_app_exposed_commands_total{outcome}` counts accepted, rejected, refused and lost commands per app.
 
 ---
 

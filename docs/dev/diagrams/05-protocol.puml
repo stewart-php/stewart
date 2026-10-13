@@ -1,6 +1,6 @@
 @startuml
 !include style.puml
-title Channel protocol — the closed message set
+title Channel protocol — the core messages
 
 package "Broker → Worker" as bw #E8F0FE {
     interface BrokerMessage <<marker>>
@@ -37,11 +37,11 @@ package "Broker → Worker" as bw #E8F0FE {
     }
     class ServiceCallResult {
         correlationId
-        result: ServiceResult
+        response: ServiceResponse
     }
-    class ServiceCallError {
-        correlationId, code
-        message, context
+    class RequestFailed {
+        correlationId, message
+        details  <<class, reason, context>>
     }
     class SubscriptionAck {
         subscriptionId, accepted, reason
@@ -97,7 +97,7 @@ BrokerMessage <|.. StateResynced
 BrokerMessage <|.. EventFired
 BrokerMessage <|.. TopicMessage
 BrokerMessage <|.. ServiceCallResult
-BrokerMessage <|.. ServiceCallError
+BrokerMessage <|.. RequestFailed
 BrokerMessage <|.. SubscriptionAck
 BrokerMessage <|.. Shutdown
 BrokerMessage <|.. Ping
