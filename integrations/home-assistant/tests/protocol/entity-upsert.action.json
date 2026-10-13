@@ -1,0 +1,34 @@
+{
+    "protocol": 2,
+    "request": {
+        "type": "stewart/entity/upsert",
+        "instance": "default",
+        "app": "heating",
+        "key": "boost",
+        "platform": "action",
+        "config": {
+            "name": "Boost",
+            "description": "Heats a room at full power for a while.",
+            "fields": [
+                {
+                    "name": "room",
+                    "type": "select",
+                    "required": true,
+                    "options": [
+                        "living_room",
+                        "office"
+                    ]
+                },
+                {
+                    "name": "minutes",
+                    "type": "number",
+                    "required": false,
+                    "description": "How long to boost; 30 when left out."
+                }
+            ]
+        }
+    },
+    "result": {
+        "service": "stewart.heating_boost"
+    }
+}

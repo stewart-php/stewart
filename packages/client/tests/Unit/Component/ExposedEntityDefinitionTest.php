@@ -7,6 +7,9 @@ namespace Stewart\Client\Tests\Unit\Component;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Client\Component\ExposedEntityDefinition;
+use Stewart\Contracts\Exposure\Action\ActionConfig;
+use Stewart\Contracts\Exposure\Action\ActionField;
+use Stewart\Contracts\Exposure\Action\ActionFieldType;
 use Stewart\Contracts\Exposure\BinarySensorConfig;
 use Stewart\Contracts\Exposure\ButtonConfig;
 use Stewart\Contracts\Exposure\ButtonDeviceClass;
@@ -64,6 +67,16 @@ final class ExposedEntityDefinitionTest extends TestCase
         $definition = ExposedEntityDefinition::fromConfig(new ButtonConfig(ButtonDeviceClass::Identify), null);
 
         self::assertSame(['platform' => 'button', 'config' => ['device_class' => 'identify']], $definition->toMessageFields());
+    }
+
+    public function testActionEncodesItsFields(): void
+    {
+        $config = new ActionConfig(fields: [new ActionField('room', ActionFieldType::Entity, required: true)]);
+
+        self::assertSame(
+            ['platform' => 'action', 'config' => ['fields' => [['name' => 'room', 'type' => 'entity', 'required' => true]]]],
+            ExposedEntityDefinition::fromConfig($config, null)->toMessageFields(),
+        );
     }
 
     public function testDeviceKeepsOnlySetFields(): void

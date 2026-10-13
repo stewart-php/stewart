@@ -1,6 +1,6 @@
 from typing import ClassVar, Self
 
-from .const import ERR_INVALID_CONFIG, ERR_INVALID_STATE, ERR_NO_SESSION, ERR_NOT_FOUND
+from .const import ERR_ACTION_TAKEN, ERR_INVALID_CONFIG, ERR_INVALID_STATE, ERR_NO_SESSION, ERR_NOT_FOUND
 from .identity import EntityAddress
 
 
@@ -46,3 +46,11 @@ class InvalidConfigError(ExposureError):
 
 class InvalidStateError(ExposureError):
     code = ERR_INVALID_STATE
+
+
+class ActionTakenError(ExposureError):
+    code = ERR_ACTION_TAKEN
+
+    @classmethod
+    def for_service(cls, service: str, holder: EntityAddress) -> Self:
+        return cls(f"The action {service} already belongs to {holder} of instance {holder.instance}.")

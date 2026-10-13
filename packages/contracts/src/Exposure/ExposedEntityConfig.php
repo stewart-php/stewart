@@ -19,7 +19,7 @@ use Stewart\Contracts\Wire\WireVariants;
     ExposedPlatform::Date->value => DateConfig::class,
     ExposedPlatform::DateTime->value => DateTimeConfig::class,
 ])]
-abstract readonly class ExposedEntityConfig
+abstract readonly class ExposedEntityConfig implements ExposureConfig
 {
     private const string ICON_PATTERN = '/\Amdi:[a-z0-9-]+\z/';
 

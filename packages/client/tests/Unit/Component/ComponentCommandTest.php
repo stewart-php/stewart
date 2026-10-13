@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Stewart\Client\Component\ComponentCommand;
 use Stewart\Client\Component\ComponentCommandAction;
 use Stewart\Contracts\App\AppId;
+use Stewart\Contracts\Exposure\Action\ActionCall;
 use Stewart\Contracts\Exposure\Command\ButtonPress;
 use Stewart\Contracts\Exposure\Command\DateCommand;
 use Stewart\Contracts\Exposure\Command\DateTimeCommand;
@@ -32,6 +33,13 @@ final class ComponentCommandTest extends TestCase
         $command = self::createCommand(ComponentCommandAction::TurnOff)->readExposedCommand(ExposedPlatform::Switch);
 
         self::assertEquals(new SwitchCommand(SwitchAction::TurnOff, self::createContext()), $command);
+    }
+
+    public function testCallBecomesActionCall(): void
+    {
+        $command = self::createCommand(ComponentCommandAction::Call, ['minutes' => 45])->readExposedCommand(ExposedPlatform::Action);
+
+        self::assertEquals(new ActionCall(['minutes' => 45], self::createContext()), $command);
     }
 
     public function testPressBecomesButtonPress(): void
@@ -96,6 +104,8 @@ final class ComponentCommandTest extends TestCase
     public static function provideUnfitCommands(): iterable
     {
         yield 'press on switch' => [ComponentCommandAction::Press, [], ExposedPlatform::Switch];
+        yield 'call on switch' => [ComponentCommandAction::Call, [], ExposedPlatform::Switch];
+        yield 'press on action' => [ComponentCommandAction::Press, [], ExposedPlatform::Action];
         yield 'turn on on button' => [ComponentCommandAction::TurnOn, [], ExposedPlatform::Button];
         yield 'set value on sensor' => [ComponentCommandAction::SetValue, ['value' => 1], ExposedPlatform::Sensor];
         yield 'number without value' => [ComponentCommandAction::SetValue, [], ExposedPlatform::Number];

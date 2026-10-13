@@ -40,6 +40,10 @@ use Stewart\Client\Tests\Fixtures\Component\ComponentGolden;
 use Stewart\Client\Tests\Fixtures\FakeHaServer;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
+use Stewart\Contracts\Exposure\Action\ActionCall;
+use Stewart\Contracts\Exposure\Action\ActionConfig;
+use Stewart\Contracts\Exposure\Action\ActionField;
+use Stewart\Contracts\Exposure\Action\ActionFieldType;
 use Stewart\Contracts\Exposure\BinarySensorConfig;
 use Stewart\Contracts\Exposure\BinarySensorDeviceClass;
 use Stewart\Contracts\Exposure\ButtonConfig;
@@ -50,6 +54,7 @@ use Stewart\Contracts\Exposure\EntityCategory;
 use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
+use Stewart\Contracts\Exposure\ExposedPlatform;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\NumberConfig;
@@ -112,7 +117,7 @@ final class ComponentGoldenTest extends TestCase
 
         self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/version'));
         self::assertSame('0.9.0', $version?->componentVersion);
-        self::assertSame(1, $version->protocol);
+        self::assertSame(2, $version->protocol);
     }
 
     public function testSessionSubscribeMatchesGolden(): void
@@ -190,6 +195,17 @@ final class ComponentGoldenTest extends TestCase
         yield 'time' => ['event-command.time', ComponentCommandAction::SetValue, ['value' => '07:00:00']];
         yield 'date' => ['event-command.date', ComponentCommandAction::SetValue, ['value' => '2026-10-15']];
         yield 'datetime' => ['event-command.datetime', ComponentCommandAction::SetValue, ['value' => '2026-10-09T18:30:00+00:00']];
+    }
+
+    public function testActionCallGoldenIsDecoded(): void
+    {
+        $command = $this->receiveCommandGolden('event-command.action');
+        $call = $command->readExposedCommand(ExposedPlatform::Action);
+
+        self::assertSame(ComponentCommandAction::Call, $command->action);
+        self::assertInstanceOf(ActionCall::class, $call);
+        self::assertSame('office', $call->findString('room'));
+        self::assertSame(45.0, $call->findNumber('minutes'));
     }
 
     public function testAcceptedAnswerMatchesGolden(): void
@@ -343,6 +359,30 @@ final class ComponentGoldenTest extends TestCase
 
         self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/upsert'));
         self::assertNull($snapshot->state->value);
+    }
+
+    public function testActionUpsertMatchesGolden(): void
+    {
+        $golden = ComponentGolden::loadGolden('entity-upsert.action');
+        $this->server->replayGolden($golden);
+
+        $this->connectClient()->upsertExposedAction(self::createAddress('heating', 'boost'), ExposedEntityDefinition::fromConfig(self::createBoostConfig(), null));
+
+        self::assertSame([$golden->request], $this->listReceivedWithoutIds('stewart/entity/upsert'));
+    }
+
+    public function testActionTakenGoldenIsComponentErrorCode(): void
+    {
+        $this->server->replayGolden(ComponentGolden::loadGolden('entity-upsert.action-taken'));
+        $client = $this->connectClient();
+
+        $exception = $this->assertThrowsReason(
+            HaClientError::CommandRejected,
+            static fn() => $client->upsertExposedAction(self::createAddress('heating', 'boost'), ExposedEntityDefinition::fromConfig(new ActionConfig(), null)),
+        );
+
+        self::assertInstanceOf(HaClientException::class, $exception);
+        self::assertSame(ComponentErrorCode::ActionTaken, ComponentErrorCode::tryFromException($exception));
     }
 
     public function testDeviceOverrideUpsertMatchesGolden(): void
@@ -514,6 +554,14 @@ final class ComponentGoldenTest extends TestCase
     private static function createAddress(string $appId, string $key): ExposedEntityAddress
     {
         return new ExposedEntityAddress(ComponentInstance::parse('default'), new AppId($appId), new ExposedEntityKey($key));
+    }
+
+    private static function createBoostConfig(): ActionConfig
+    {
+        return new ActionConfig('Boost', 'Heats a room at full power for a while.', [
+            new ActionField('room', ActionFieldType::Select, required: true, options: ['living_room', 'office']),
+            new ActionField('minutes', ActionFieldType::Number, description: 'How long to boost; 30 when left out.'),
+        ]);
     }
 
     private static function createTemperatureConfig(): SensorConfig

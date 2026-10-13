@@ -1,5 +1,5 @@
 {
-    "protocol": 1,
+    "protocol": 2,
     "event": {
         "type": "command",
         "command_id": "5c8e1f3a9b2d4e70",

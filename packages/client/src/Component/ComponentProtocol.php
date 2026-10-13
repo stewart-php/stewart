@@ -6,5 +6,5 @@ namespace Stewart\Client\Component;
 
 final class ComponentProtocol
 {
-    public const int VERSION = 1;
+    public const int VERSION = 2;
 }

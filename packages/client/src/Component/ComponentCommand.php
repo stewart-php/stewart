@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Client\Component;
 
 use Stewart\Contracts\App\AppId;
+use Stewart\Contracts\Exposure\Action\ActionCall;
 use Stewart\Contracts\Exposure\CalendarStateFormat;
 use Stewart\Contracts\Exposure\Command\ButtonPress;
 use Stewart\Contracts\Exposure\Command\DateCommand;
@@ -48,6 +49,7 @@ final readonly class ComponentCommand implements ComponentSessionEvent
             ExposedPlatform::Time => $this->action === ComponentCommandAction::SetValue ? $this->readTimeCommand() : null,
             ExposedPlatform::Date => $this->action === ComponentCommandAction::SetValue ? $this->readDateCommand() : null,
             ExposedPlatform::DateTime => $this->action === ComponentCommandAction::SetValue ? $this->readDateTimeCommand() : null,
+            ExposedPlatform::Action => $this->action === ComponentCommandAction::Call ? new ActionCall($this->data, $this->context) : null,
             ExposedPlatform::Sensor, ExposedPlatform::BinarySensor => null,
         };
     }

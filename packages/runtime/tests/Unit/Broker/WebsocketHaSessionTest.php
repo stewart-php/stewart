@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Stewart\Client\Component\ComponentEventDecoder;
 use Stewart\Client\Component\ComponentInstance;
+use Stewart\Client\Component\ComponentProtocol;
 use Stewart\Client\Component\ExposedEntityDefinition;
 use Stewart\Client\Connection\ConnectionConfig;
 use Stewart\Client\Connection\HaConnection;
@@ -396,7 +397,7 @@ final class WebsocketHaSessionTest extends TestCase
             'id' => $socket->listSentOfType('stewart/version')[2]['id'] ?? null,
             'type' => 'result',
             'success' => true,
-            'result' => ['component_version' => '0.11.0', 'protocol' => 1],
+            'result' => ['component_version' => '0.11.0', 'protocol' => ComponentProtocol::VERSION],
         ]);
         EventLoopTicks::settleUntil(static fn(): bool => \count($socket->listSentOfType('stewart/entity/upsert')) === 2);
 
@@ -559,7 +560,7 @@ final class WebsocketHaSessionTest extends TestCase
         $socket->replyWhenSent('subscribe_events', ['type' => 'result', 'success' => true, 'result' => null]);
         $socket->replyWhenSent('subscribe_trigger', $triggerReply);
         $socket->replyWhenSent('stewart/version', $withComponent
-            ? ['type' => 'result', 'success' => true, 'result' => ['component_version' => '0.9.0', 'protocol' => 1]]
+            ? ['type' => 'result', 'success' => true, 'result' => ['component_version' => '0.9.0', 'protocol' => ComponentProtocol::VERSION]]
             : ['type' => 'result', 'success' => false, 'error' => ['code' => 'unknown_command', 'message' => 'Unknown command.']]);
         $socket->replyWhenSent('stewart/session/subscribe', ['type' => 'result', 'success' => true, 'result' => null]);
         $socket->replyWhenSent('stewart/entity/upsert', ['type' => 'result', 'success' => true, 'result' => [

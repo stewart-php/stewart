@@ -284,7 +284,7 @@ final class ExposureLink
     private function throwIfAppCaused(HaClientException $e): void
     {
         match (ComponentErrorCode::tryFromException($e)) {
-            ComponentErrorCode::InvalidConfig => throw ExposureException::configInvalid($e->findDetail() ?? $e->getMessage()),
+            ComponentErrorCode::InvalidConfig, ComponentErrorCode::ActionTaken => throw ExposureException::configInvalid($e->findDetail() ?? $e->getMessage()),
             ComponentErrorCode::InvalidState => throw ExposureException::stateInvalid($e->findDetail() ?? $e->getMessage()),
             default => null,
         };

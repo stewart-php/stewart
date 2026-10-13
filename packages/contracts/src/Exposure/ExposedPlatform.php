@@ -16,4 +16,5 @@ enum ExposedPlatform: string
     case Time = 'time';
     case Date = 'date';
     case DateTime = 'datetime';
+    case Action = 'action';
 }
