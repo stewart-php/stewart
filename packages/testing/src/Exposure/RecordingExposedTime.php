@@ -8,26 +8,15 @@ use Stewart\Contracts\EventStream;
 use Stewart\Contracts\Exception\CommandException;
 use Stewart\Contracts\Exposure\CalendarStateFormat;
 use Stewart\Contracts\Exposure\Command\TimeCommand;
-use Stewart\Contracts\Exposure\ExposedEntityKey;
-use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\ExposedTime;
 use Stewart\Contracts\Exposure\TimeConfig;
 use Stewart\Contracts\Schedule\TimeOfDay;
-use Stewart\Testing\Time\ManualTimers;
 
+/** @extends RecordingExposedEntity<TimeConfig> */
 final class RecordingExposedTime extends RecordingExposedEntity implements ExposedTime
 {
-    public function __construct(
-        ExposedEntityKey $key,
-        public private(set) TimeConfig $config,
-        ?ExposedEntitySnapshot $seeded,
-        ManualTimers $timers,
-    ) {
-        parent::__construct($key, $seeded, $timers);
-    }
-
     public function getConfig(): TimeConfig
     {
         return $this->config;
@@ -35,8 +24,7 @@ final class RecordingExposedTime extends RecordingExposedEntity implements Expos
 
     public function updateConfig(TimeConfig $config): void
     {
-        $this->assertNotRemoved();
-        $this->config = $config;
+        $this->recordConfig($config);
     }
 
     public function getValue(): ?TimeOfDay

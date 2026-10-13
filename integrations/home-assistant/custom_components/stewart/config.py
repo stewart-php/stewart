@@ -65,6 +65,16 @@ class ConfigReader:
                 return strings
         raise self.fail(f"{key} must be a non-empty list of strings")
 
+    def read_object_list(self, key: str) -> tuple[Mapping[str, JsonValue], ...]:
+        value = self._take(key)
+        if value is None:
+            return ()
+        if isinstance(value, list):
+            objects = tuple(item for item in value if isinstance(item, dict))
+            if len(objects) == len(value):
+                return objects
+        raise self.fail(f"{key} must be a list of objects")
+
     def finish(self) -> None:
         if unknown := sorted(set(self._raw) - self._read_keys):
             raise self.fail(f"config has unknown keys {', '.join(unknown)}")

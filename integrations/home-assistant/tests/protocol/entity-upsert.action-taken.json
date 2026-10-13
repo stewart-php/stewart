@@ -1,0 +1,17 @@
+{
+    "protocol": 2,
+    "request": {
+        "type": "stewart/entity/upsert",
+        "instance": "upstairs",
+        "app": "heating",
+        "key": "boost",
+        "platform": "action",
+        "config": {
+            "fields": []
+        }
+    },
+    "error": {
+        "code": "action_taken",
+        "message": "The action stewart.heating_boost already belongs to heating/boost of instance default."
+    }
+}

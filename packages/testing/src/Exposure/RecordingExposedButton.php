@@ -9,21 +9,10 @@ use Stewart\Contracts\Exception\CommandException;
 use Stewart\Contracts\Exposure\ButtonConfig;
 use Stewart\Contracts\Exposure\Command\ButtonPress;
 use Stewart\Contracts\Exposure\ExposedButton;
-use Stewart\Contracts\Exposure\ExposedEntityKey;
-use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
-use Stewart\Testing\Time\ManualTimers;
 
+/** @extends RecordingExposedEntity<ButtonConfig> */
 final class RecordingExposedButton extends RecordingExposedEntity implements ExposedButton
 {
-    public function __construct(
-        ExposedEntityKey $key,
-        public private(set) ButtonConfig $config,
-        ?ExposedEntitySnapshot $seeded,
-        ManualTimers $timers,
-    ) {
-        parent::__construct($key, $seeded, $timers);
-    }
-
     public function getConfig(): ButtonConfig
     {
         return $this->config;
@@ -31,8 +20,7 @@ final class RecordingExposedButton extends RecordingExposedEntity implements Exp
 
     public function updateConfig(ButtonConfig $config): void
     {
-        $this->assertNotRemoved();
-        $this->config = $config;
+        $this->recordConfig($config);
     }
 
     public function watchCommands(): EventStream

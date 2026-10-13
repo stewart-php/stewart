@@ -53,6 +53,10 @@ driver await-step-icon mdi:numeric
 driver toggle
 driver await-sensor 5
 
+echo '--- an app-defined action resets the count'
+driver action hello_reset_count '{"to": 2}'
+driver await-sensor 2
+
 echo '--- the sensor turns unavailable when Stewart stops'
 e2e stop stewart
 driver await-sensor unavailable

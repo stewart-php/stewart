@@ -266,6 +266,12 @@ final class ExposureLink
     private function sendUpsert(LiveExposure $live, ExposedEntityDefinition $definition, ExposedStateChange $change): ?ExposedEntitySnapshot
     {
         try {
+            if ($definition->isAction()) {
+                $this->client->upsertExposedAction($live->address, $definition);
+
+                return null;
+            }
+
             $snapshot = $this->client->upsertExposedEntity($live->address, $definition, $change);
         } catch (HaClientException $e) {
             $this->throwIfAppCaused($e);
@@ -284,7 +290,7 @@ final class ExposureLink
     private function throwIfAppCaused(HaClientException $e): void
     {
         match (ComponentErrorCode::tryFromException($e)) {
-            ComponentErrorCode::InvalidConfig => throw ExposureException::configInvalid($e->findDetail() ?? $e->getMessage()),
+            ComponentErrorCode::InvalidConfig, ComponentErrorCode::ActionTaken => throw ExposureException::configInvalid($e->findDetail() ?? $e->getMessage()),
             ComponentErrorCode::InvalidState => throw ExposureException::stateInvalid($e->findDetail() ?? $e->getMessage()),
             default => null,
         };
@@ -338,6 +344,11 @@ final class ExposureLink
     private function sendUnavailable(array $orphaned): void
     {
         foreach ($orphaned as $live) {
+            // An action keeps its service; the broker refuses its calls while it is orphaned.
+            if ($live->definition->isAction()) {
+                continue;
+            }
+
             try {
                 $this->client->updateExposedEntityState($live->address, new ExposedStateChange(available: false));
             } catch (HaClientException $e) {

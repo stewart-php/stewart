@@ -441,6 +441,17 @@ final class HaClient
         return ExposedEntitySnapshotReader::readUpsertResult($this->connection->send(new UpsertExposedEntity($address, $definition, $change)));
     }
 
+    // An action registers a service, not an entity, so it has no snapshot to read back.
+    /** @throws HaClientException */
+    public function upsertExposedAction(ExposedEntityAddress $address, ExposedEntityDefinition $definition): void
+    {
+        $result = $this->connection->send(new UpsertExposedEntity($address, $definition, new ExposedStateChange()));
+
+        if (!\is_string($result['service'] ?? null)) {
+            throw HaClientException::protocolViolation('a stewart/entity/upsert result for an action without service');
+        }
+    }
+
     /** @throws HaClientException */
     public function updateExposedEntityState(ExposedEntityAddress $address, ExposedStateChange $change): void
     {

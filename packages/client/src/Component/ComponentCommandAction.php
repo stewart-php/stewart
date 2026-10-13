@@ -11,4 +11,5 @@ enum ComponentCommandAction: string
     case Press = 'press';
     case SetValue = 'set_value';
     case SelectOption = 'select_option';
+    case Call = 'call';
 }

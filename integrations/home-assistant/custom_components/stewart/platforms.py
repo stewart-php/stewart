@@ -1,20 +1,23 @@
-from collections.abc import Mapping
-from typing import Any, Protocol
+from collections.abc import Callable, Coroutine
+from typing import Any
 
-from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback, async_get_current_platform
 
-from .change import JsonValue
-from .entity import PlatformConfig, StewartEntity
-from .identity import EntityAddress
-from .session import SessionRegistry
+from .entity import StewartEntity
+from .runtime import StewartConfigEntry
+
+type PlatformSetup = Callable[
+    [HomeAssistant, StewartConfigEntry, AddConfigEntryEntitiesCallback], Coroutine[Any, Any, None]
+]
 
 
-class ExposurePlatform[ConfigT: PlatformConfig](Protocol):
-    @property
-    def domain(self) -> str: ...
+def attach(entity_class: type[StewartEntity[Any, Any]]) -> PlatformSetup:
+    async def async_setup_entry(
+        hass: HomeAssistant,  # noqa: ARG001
+        entry: StewartConfigEntry,
+        async_add_entities: AddConfigEntryEntitiesCallback,  # noqa: ARG001
+    ) -> None:
+        entry.runtime_data.entities.attach_platform(entity_class, async_get_current_platform())
 
-    def read_config(self, raw: Mapping[str, JsonValue]) -> ConfigT: ...
-
-    def create_entity(
-        self, *, address: EntityAddress, config: ConfigT, sessions: SessionRegistry, device_info: DeviceInfo
-    ) -> StewartEntity[ConfigT, Any]: ...
+    return async_setup_entry

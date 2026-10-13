@@ -5,25 +5,14 @@ declare(strict_types=1);
 namespace Stewart\Testing\Exposure;
 
 use DateTimeInterface;
-use Stewart\Contracts\Exposure\ExposedEntityKey;
-use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedSensor;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\SensorConfig;
-use Stewart\Testing\Time\ManualTimers;
 
+/** @extends RecordingExposedEntity<SensorConfig> */
 final class RecordingExposedSensor extends RecordingExposedEntity implements ExposedSensor
 {
-    public function __construct(
-        ExposedEntityKey $key,
-        public private(set) SensorConfig $config,
-        ?ExposedEntitySnapshot $seeded,
-        ManualTimers $timers,
-    ) {
-        parent::__construct($key, $seeded, $timers);
-    }
-
     public function getConfig(): SensorConfig
     {
         return $this->config;
@@ -31,8 +20,7 @@ final class RecordingExposedSensor extends RecordingExposedEntity implements Exp
 
     public function updateConfig(SensorConfig $config): void
     {
-        $this->assertNotRemoved();
-        $this->config = $config;
+        $this->recordConfig($config);
     }
 
     public function getValue(): int|float|string|null

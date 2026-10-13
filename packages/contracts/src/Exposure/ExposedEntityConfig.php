@@ -6,7 +6,7 @@ namespace Stewart\Contracts\Exposure;
 
 use Stewart\Contracts\Exception\ExposureException;
 
-abstract readonly class ExposedEntityConfig
+abstract readonly class ExposedEntityConfig implements ExposureConfig
 {
     private const string ICON_PATTERN = '/\Amdi:[a-z0-9-]+\z/';
 

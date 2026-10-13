@@ -12,14 +12,13 @@ from .devices import DeviceDirectory, DeviceTarget
 from .entity import PlatformConfig, StewartEntity
 from .errors import EntityNotFoundError, InvalidConfigError
 from .identity import EntityAddress, KeptEntities
-from .platforms import ExposurePlatform
 from .session import SessionRegistry
 from .snapshot import EntitySnapshot
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class AttachedPlatform:
-    exposure: ExposurePlatform[Any]
+    entity_class: type[StewartEntity[Any, Any]]
     entity_platform: EntityPlatform
 
 
@@ -39,12 +38,14 @@ class ExposedEntities:
         self._entities: dict[str, TrackedEntity] = {}
 
     @callback
-    def attach_platform(self, exposure: ExposurePlatform[Any], entity_platform: EntityPlatform) -> None:
-        self._platforms[exposure.domain] = AttachedPlatform(exposure=exposure, entity_platform=entity_platform)
+    def attach_platform(self, entity_class: type[StewartEntity[Any, Any]], entity_platform: EntityPlatform) -> None:
+        self._platforms[entity_class.domain] = AttachedPlatform(
+            entity_class=entity_class, entity_platform=entity_platform
+        )
 
     async def upsert(self, upsert: EntityUpsert) -> EntitySnapshot:
         platform = self._find_platform(upsert.platform)
-        config = platform.exposure.read_config(upsert.config)
+        config = platform.entity_class.config_type.read_from(upsert.config)
         tracked = self._entities.get(upsert.address.unique_id)
         if tracked is None or tracked.platform is not platform:
             return await self._add_entity(platform, upsert, config)
@@ -95,7 +96,7 @@ class ExposedEntities:
         self, platform: AttachedPlatform, upsert: EntityUpsert, config: PlatformConfig
     ) -> EntitySnapshot:
         address = upsert.address
-        entity = platform.exposure.create_entity(
+        entity = platform.entity_class(
             address=address, config=config, sessions=self._sessions, device_info=upsert.device.device_info
         )
         entity.seed_from_upsert(upsert.change)
@@ -123,7 +124,9 @@ class ExposedEntities:
     ) -> list[er.RegistryEntry]:
         removed: list[er.RegistryEntry] = []
         for platform in platforms:
-            entity_id = self._entity_registry.async_get_entity_id(platform.exposure.domain, DOMAIN, address.unique_id)
+            entity_id = self._entity_registry.async_get_entity_id(
+                platform.entity_class.domain, DOMAIN, address.unique_id
+            )
             if entity_id is not None and (entry := self._entity_registry.async_get(entity_id)) is not None:
                 self._entity_registry.async_remove(entity_id)
                 removed.append(entry)

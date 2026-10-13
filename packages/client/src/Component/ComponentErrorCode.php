@@ -14,6 +14,7 @@ enum ComponentErrorCode: string
     case NotFound = 'not_found';
     case InvalidConfig = 'invalid_config';
     case InvalidState = 'invalid_state';
+    case ActionTaken = 'action_taken';
 
     public static function tryFromException(HaClientException $exception): ?self
     {

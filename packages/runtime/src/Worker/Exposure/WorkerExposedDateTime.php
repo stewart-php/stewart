@@ -11,25 +11,12 @@ use Stewart\Contracts\Exposure\CalendarStateFormat;
 use Stewart\Contracts\Exposure\Command\DateTimeCommand;
 use Stewart\Contracts\Exposure\DateTimeConfig;
 use Stewart\Contracts\Exposure\ExposedDateTime;
-use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
-use Stewart\Runtime\Model\ResourceScope;
 
 /** @extends WorkerExposedEntity<DateTimeConfig> */
 final class WorkerExposedDateTime extends WorkerExposedEntity implements ExposedDateTime
 {
-    public function __construct(
-        ExposureRequester $requester,
-        ExposedHandleRegistry $handles,
-        ResourceScope $scope,
-        ExposedEntityKey $key,
-        DateTimeConfig $config,
-        private readonly ExposedCommandStreams $commandStreams,
-    ) {
-        parent::__construct($requester, $handles, $scope, $key, $config);
-    }
-
     public function getConfig(): DateTimeConfig
     {
         return $this->findConfig();
@@ -43,7 +30,7 @@ final class WorkerExposedDateTime extends WorkerExposedEntity implements Exposed
     public function watchCommands(): EventStream
     {
         /** @var EventStream<DateTimeCommand> */
-        return $this->commandStreams->watchCommands($this->scope, $this->key);
+        return $this->watchOwnCommands();
     }
 
     public function getValue(): ?DateTimeImmutable

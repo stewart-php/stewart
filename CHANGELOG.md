@@ -31,6 +31,9 @@ minor release may break; its "Upgrading" section says what to change.
 - `AppHarness` in `stewart-php/testing` builds an app with its options and recording fakes; tests push states,
   events and commands, call `advanceTime()` for timers, schedules and waits, and inspect what the app did
 - `StateChange::withFrom()` returns a copy of a state change that starts from another state
+- `EntityExposure::exposeAction()` registers a Home Assistant action, `stewart.<app>_<key>`, with typed fields that
+  Home Assistant validates and shows as a form; `watchCalls()` answers its calls like entity commands.
+  `RecordingEntityExposure` records actions, and `pushCall()` runs their handlers
 
 ### Fixed
 
@@ -88,13 +91,17 @@ minor release may break; its "Upgrading" section says what to change.
   `control.listen`; an empty `listen` used to be refused
 - History queries share the `service_calls.max_in_flight[_per_worker]` budget and fail with the new
   `HistoryError::Overloaded` when it is full; exposure requests count toward it but are never refused
-- IPC protocol 27: one `request_failed` message replaces the five per-request error messages; the broker and its
+- IPC protocol 29: one `request_failed` message replaces the five per-request error messages; the broker and its
   workers must run the same version
 - `whenChangedTo()` takes the previous state as `from:` (one state or a list) or `fromAnyState: true`, and returns
   the same stream type as the other operators; passing both fails with `StateError::TransitionRuleConflict`
 - `stewart-php/contracts` holds the app-facing API only. Stream operators, schedule implementations, the payload and
   trigger wire helpers, `IndexedRegistry`, `CurrentStateReader` and `JsonShapeException` moved to
   `stewart-php/support` as internal classes, and contracts no longer requires `dragonmantank/cron-expression`
+- Component protocol 2 for the `stewart` Home Assistant integration: the `action` platform, the `call` command and
+  the `action_taken` error
+- `RecordingExposedEntity` and its subclasses no longer take a seeded snapshot in their constructor;
+  `RecordingEntityExposure::seedSnapshot()` still seeds them
 - `RecordingHaContext::listWatchedTriggers()` returns a `WatchedTriggerCollection`; each `WatchedTrigger` holds the
   triggers and variables the app watched
 
@@ -134,6 +141,9 @@ minor release may break; its "Upgrading" section says what to change.
     read from that file. To keep passing the path itself, name the option in `stewart.yaml` with any value; the
     variable still overrides it.
 13. Run `make generate`.
+14. Update the `stewart` Home Assistant integration together with Stewart: this release speaks component protocol 2,
+    and the integration and the daemon refuse each other's older protocol.
+15. Classes that implement `Stewart\Contracts\Exposure\EntityExposure` add `exposeAction()`.
 
 ## [0.10.0] - 2026-10-12
 

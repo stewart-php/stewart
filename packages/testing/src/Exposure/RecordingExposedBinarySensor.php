@@ -6,23 +6,12 @@ namespace Stewart\Testing\Exposure;
 
 use Stewart\Contracts\Exposure\BinarySensorConfig;
 use Stewart\Contracts\Exposure\ExposedBinarySensor;
-use Stewart\Contracts\Exposure\ExposedEntityKey;
-use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
-use Stewart\Testing\Time\ManualTimers;
 
+/** @extends RecordingExposedEntity<BinarySensorConfig> */
 final class RecordingExposedBinarySensor extends RecordingExposedEntity implements ExposedBinarySensor
 {
-    public function __construct(
-        ExposedEntityKey $key,
-        public private(set) BinarySensorConfig $config,
-        ?ExposedEntitySnapshot $seeded,
-        ManualTimers $timers,
-    ) {
-        parent::__construct($key, $seeded, $timers);
-    }
-
     public function getConfig(): BinarySensorConfig
     {
         return $this->config;
@@ -30,8 +19,7 @@ final class RecordingExposedBinarySensor extends RecordingExposedEntity implemen
 
     public function updateConfig(BinarySensorConfig $config): void
     {
-        $this->assertNotRemoved();
-        $this->config = $config;
+        $this->recordConfig($config);
     }
 
     public function getValue(): ?bool

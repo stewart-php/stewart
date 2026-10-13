@@ -10,6 +10,7 @@ use Psr\Log\NullLogger;
 use Stewart\Client\Component\ComponentCommand;
 use Stewart\Client\Component\ComponentEventDecoder;
 use Stewart\Client\Component\ComponentInstance;
+use Stewart\Client\Component\ComponentProtocol;
 use Stewart\Client\Connection\ConnectionConfig;
 use Stewart\Client\Connection\HaConnection;
 use Stewart\Client\Connection\HomeAssistantUrl;
@@ -79,7 +80,7 @@ final class ComponentLinkTest extends TestCase
 
     public function testCompatibleComponentOpensSession(): void
     {
-        $this->replyWithVersion(1);
+        $this->replyWithVersion(ComponentProtocol::VERSION);
         $this->replyToSessionSubscribe();
         $this->connectAndEstablish();
 
@@ -95,7 +96,7 @@ final class ComponentLinkTest extends TestCase
 
     public function testOtherProtocolOpensNoSession(): void
     {
-        $this->replyWithVersion(2);
+        $this->replyWithVersion(ComponentProtocol::VERSION + 1);
         $this->connectAndEstablish();
 
         self::assertSame(ComponentState::ProtocolMismatch, $this->tracker->detection->state);
@@ -104,7 +105,7 @@ final class ComponentLinkTest extends TestCase
 
     public function testRefusedSessionKeepsVersion(): void
     {
-        $this->replyWithVersion(1);
+        $this->replyWithVersion(ComponentProtocol::VERSION);
         $this->socket->replyWhenSent('stewart/session/subscribe', self::createRejection('protocol_mismatch'));
         $this->connectAndEstablish();
 
@@ -121,7 +122,7 @@ final class ComponentLinkTest extends TestCase
 
     public function testReplacedSessionIsRecorded(): void
     {
-        $this->replyWithVersion(1);
+        $this->replyWithVersion(ComponentProtocol::VERSION);
         $this->replyToSessionSubscribe();
         $this->connectAndEstablish();
 
@@ -136,7 +137,7 @@ final class ComponentLinkTest extends TestCase
         $this->link->onSessionEnded(static function () use (&$ended): void {
             ++$ended;
         });
-        $this->replyWithVersion(1);
+        $this->replyWithVersion(ComponentProtocol::VERSION);
         $this->replyToSessionSubscribe();
         $this->connectAndEstablish();
 
@@ -151,7 +152,7 @@ final class ComponentLinkTest extends TestCase
         $this->link->onSessionEnded(static function () use (&$ended): void {
             ++$ended;
         });
-        $this->replyWithVersion(1);
+        $this->replyWithVersion(ComponentProtocol::VERSION);
         $this->replyToSessionSubscribe();
         $this->connectAndEstablish();
 
@@ -163,7 +164,7 @@ final class ComponentLinkTest extends TestCase
 
     public function testEventAfterLostLinkIsIgnored(): void
     {
-        $this->replyWithVersion(1);
+        $this->replyWithVersion(ComponentProtocol::VERSION);
         $this->replyToSessionSubscribe();
         $this->connectAndEstablish();
 
@@ -178,7 +179,7 @@ final class ComponentLinkTest extends TestCase
 
     public function testCommandIsHandedOn(): void
     {
-        $this->replyWithVersion(1);
+        $this->replyWithVersion(ComponentProtocol::VERSION);
         $this->replyToSessionSubscribe();
         $this->connectAndEstablish();
 
@@ -190,7 +191,7 @@ final class ComponentLinkTest extends TestCase
 
     public function testCommandAfterLostLinkIsIgnored(): void
     {
-        $this->replyWithVersion(1);
+        $this->replyWithVersion(ComponentProtocol::VERSION);
         $this->replyToSessionSubscribe();
         $this->connectAndEstablish();
 

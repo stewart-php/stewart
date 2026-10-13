@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Stewart\Client\Component;
 
 use LogicException;
+use Stewart\Contracts\Exposure\Action\ActionConfig;
+use Stewart\Contracts\Exposure\Action\ActionField;
 use Stewart\Contracts\Exposure\BinarySensorConfig;
 use Stewart\Contracts\Exposure\ButtonConfig;
 use Stewart\Contracts\Exposure\DateConfig;
@@ -12,6 +14,7 @@ use Stewart\Contracts\Exposure\DateTimeConfig;
 use Stewart\Contracts\Exposure\DeviceInfo;
 use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedPlatform;
+use Stewart\Contracts\Exposure\ExposureConfig;
 use Stewart\Contracts\Exposure\NumberConfig;
 use Stewart\Contracts\Exposure\SelectConfig;
 use Stewart\Contracts\Exposure\SensorConfig;
@@ -31,9 +34,58 @@ final readonly class ExposedEntityDefinition
         public ?array $device = null,
     ) {}
 
-    public static function fromConfig(ExposedEntityConfig $config, ?DeviceInfo $device): self
+    public static function fromConfig(ExposureConfig $config, ?DeviceInfo $device): self
     {
-        $platformFields = match (true) {
+        $configFields = match (true) {
+            $config instanceof ExposedEntityConfig => [...self::listCommonFields($config), ...self::listPlatformFields($config)],
+            $config instanceof ActionConfig => self::listActionFields($config),
+            default => throw new LogicException(\sprintf('%s has no component encoding.', $config::class)),
+        };
+
+        return new self(
+            $config->getPlatform(),
+            self::dropNullFields($configFields),
+            $device === null ? null : self::dropNullFields([
+                'identifier' => $device->identifier,
+                'name' => $device->name,
+                'manufacturer' => $device->manufacturer,
+                'model' => $device->model,
+                'suggested_area' => $device->suggestedArea,
+            ]),
+        );
+    }
+
+    public function withConfigOf(self $other): self
+    {
+        return new self($other->platform, $other->config, $this->device);
+    }
+
+    public function isAction(): bool
+    {
+        return $this->platform === ExposedPlatform::Action;
+    }
+
+    /** @return array<string, mixed> */
+    public function toMessageFields(): array
+    {
+        return ['platform' => $this->platform->value, 'config' => $this->config, ...($this->device === null ? [] : ['device' => $this->device])];
+    }
+
+    /** @return array<string, mixed> */
+    private static function listCommonFields(ExposedEntityConfig $config): array
+    {
+        return [
+            'name' => $config->name,
+            'icon' => $config->icon,
+            'entity_category' => $config->entityCategory?->value,
+            'enabled_by_default' => $config->enabledByDefault ? null : false,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private static function listPlatformFields(ExposedEntityConfig $config): array
+    {
+        return match (true) {
             $config instanceof SensorConfig => [
                 'device_class' => $config->deviceClass?->value,
                 'unit_of_measurement' => $config->unit,
@@ -55,35 +107,22 @@ final readonly class ExposedEntityDefinition
             $config instanceof TimeConfig, $config instanceof DateConfig, $config instanceof DateTimeConfig => [],
             default => throw new LogicException(\sprintf('%s has no component encoding.', $config::class)),
         };
-        $commonFields = [
-            'name' => $config->name,
-            'icon' => $config->icon,
-            'entity_category' => $config->entityCategory?->value,
-            'enabled_by_default' => $config->enabledByDefault ? null : false,
-        ];
-
-        return new self(
-            $config->getPlatform(),
-            self::dropNullFields([...$commonFields, ...$platformFields]),
-            $device === null ? null : self::dropNullFields([
-                'identifier' => $device->identifier,
-                'name' => $device->name,
-                'manufacturer' => $device->manufacturer,
-                'model' => $device->model,
-                'suggested_area' => $device->suggestedArea,
-            ]),
-        );
-    }
-
-    public function withConfigOf(self $other): self
-    {
-        return new self($other->platform, $other->config, $this->device);
     }
 
     /** @return array<string, mixed> */
-    public function toMessageFields(): array
+    private static function listActionFields(ActionConfig $config): array
     {
-        return ['platform' => $this->platform->value, 'config' => $this->config, ...($this->device === null ? [] : ['device' => $this->device])];
+        return [
+            'name' => $config->name,
+            'description' => $config->description,
+            'fields' => array_map(static fn(ActionField $field): array => self::dropNullFields([
+                'name' => $field->name,
+                'type' => $field->type->value,
+                'required' => $field->required,
+                'description' => $field->description,
+                'options' => $field->options === [] ? null : $field->options,
+            ]), $config->fields),
+        ];
     }
 
     /**

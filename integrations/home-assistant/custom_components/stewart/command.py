@@ -17,6 +17,7 @@ class CommandAction(StrEnum):
     PRESS = "press"
     SET_VALUE = "set_value"
     SELECT_OPTION = "select_option"
+    CALL = "call"
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

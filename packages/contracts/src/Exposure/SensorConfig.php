@@ -6,6 +6,7 @@ namespace Stewart\Contracts\Exposure;
 
 use DateTimeInterface;
 use Stewart\Contracts\Exception\ExposureException;
+use Stewart\Contracts\Wire\ListOf;
 
 final readonly class SensorConfig extends ExposedEntityConfig
 {
@@ -18,6 +19,7 @@ final readonly class SensorConfig extends ExposedEntityConfig
         public ?string $unit = null,
         public ?SensorStateClass $stateClass = null,
         public ?int $displayPrecision = null,
+        #[ListOf('string')]
         public array $options = [],
         ?string $name = null,
         ?string $icon = null,

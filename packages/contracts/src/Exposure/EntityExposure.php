@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Stewart\Contracts\Exposure;
 
 use Stewart\Contracts\Exception\ExposureException;
+use Stewart\Contracts\Exposure\Action\ActionConfig;
+use Stewart\Contracts\Exposure\Action\ExposedAction;
 
 interface EntityExposure
 {
@@ -41,4 +43,8 @@ interface EntityExposure
 
     /** @throws ExposureException */
     public function exposeDateTime(ExposedEntityKey|string $key, DateTimeConfig $config = new DateTimeConfig(), ?DeviceInfo $device = null): ExposedDateTime;
+
+    // Registers the Home Assistant action stewart.<app>_<key>; calls arrive through watchCalls().
+    /** @throws ExposureException */
+    public function exposeAction(ExposedEntityKey|string $key, ActionConfig $config = new ActionConfig()): ExposedAction;
 }

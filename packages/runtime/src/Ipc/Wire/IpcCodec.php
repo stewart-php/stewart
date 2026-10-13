@@ -24,7 +24,7 @@ use Throwable;
 
 final readonly class IpcCodec
 {
-    public const int PROTOCOL_VERSION = 27;
+    public const int PROTOCOL_VERSION = 29;
 
     private const string UNKNOWN_TYPE = '?';
 
@@ -49,8 +49,8 @@ final readonly class IpcCodec
             new TriggerSpecConverter(),
             new ExceptionDetailsConverter(),
             new ExposedStateConverter(),
-            new ExposedEntityConfigConverter(),
-            new ExposedCommandConverter(),
+            new TimeOfDayConverter(),
+            new DateTimeImmutableConverter(),
             StringIdentifierConverter::createForEntityIds(),
             StringIdentifierConverter::createForAppIds(),
             StringIdentifierConverter::createForAreaIds(),

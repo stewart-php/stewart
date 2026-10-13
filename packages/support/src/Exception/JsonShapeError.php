@@ -13,6 +13,7 @@ enum JsonShapeError: string implements ExceptionReason
     case Missing = 'missing';
     case UnexpectedValue = 'unexpected_value';
     case InstantInvalid = 'instant_invalid';
+    case ObjectRefused = 'object_refused';
 
     public function messageTemplate(): string
     {
@@ -21,6 +22,7 @@ enum JsonShapeError: string implements ExceptionReason
             self::Missing => '"{key}" is missing; expected {expected}.',
             self::UnexpectedValue => '"{key}" is {value}; expected {expected}.',
             self::InstantInvalid => '"{key}" is invalid: {cause}',
+            self::ObjectRefused => '"{key}" was refused: {cause}',
         };
     }
 }

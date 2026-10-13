@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Tests\Fixtures\Protocol;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
 use Stewart\Contracts\Exception\CommandException;
+use Stewart\Contracts\Exposure\Action\ActionCall;
 use Stewart\Contracts\Exposure\Command\SwitchCommand;
 use Stewart\Contracts\Exposure\EntityExposure;
 
@@ -22,6 +23,11 @@ final readonly class HeaterSwitch implements App
         $heater = $this->entities->exposeSwitch('heater');
         $heater->watchCommands()->subscribe(static function (SwitchCommand $command): void {
             if (!$command->isTurnOn()) {
+                throw CommandException::rejected(self::REJECTION);
+            }
+        });
+        $this->entities->exposeAction('boost')->watchCalls()->subscribe(static function (ActionCall $call): void {
+            if ($call->findNumber('minutes') === null) {
                 throw CommandException::rejected(self::REJECTION);
             }
         });

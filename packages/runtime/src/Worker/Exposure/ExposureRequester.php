@@ -9,10 +9,10 @@ use Closure;
 use Stewart\Contracts\Exception\ExposureError;
 use Stewart\Contracts\Exception\ExposureException;
 use Stewart\Contracts\Exposure\DeviceInfo;
-use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedStateChange;
+use Stewart\Contracts\Exposure\ExposureConfig;
 use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\ExposeEntityRequest;
@@ -42,7 +42,7 @@ final readonly class ExposureRequester
     public function requestExposure(
         ResourceScope $scope,
         ExposedEntityKey $key,
-        ExposedEntityConfig $config,
+        ExposureConfig $config,
         ?DeviceInfo $device,
         ExposedStateChange $change,
     ): ?ExposedEntitySnapshot {
@@ -52,7 +52,7 @@ final readonly class ExposureRequester
     }
 
     /** @throws ExposureException */
-    public function requestReconfiguration(ResourceScope $scope, ExposedEntityKey $key, ExposedEntityConfig $config): ?ExposedEntitySnapshot
+    public function requestReconfiguration(ResourceScope $scope, ExposedEntityKey $key, ExposureConfig $config): ?ExposedEntitySnapshot
     {
         $pending = $this->pending->open(ExposeEntityResult::class, self::describeUnreachable($key));
 

@@ -4,7 +4,7 @@ The `stewart` Home Assistant integration adds the `stewart/*` commands below to 
 Stewart's broker uses them to create and drive its own entities and to answer commands on them. This file is the
 reference both sides implement; every exchange has a golden in [`tests/protocol/`](tests/protocol/README.md).
 
-Protocol version: **1**.
+Protocol version: **2**.
 
 ## Envelope
 
@@ -19,8 +19,7 @@ Every command requires an administrator; anyone else gets Home Assistant's `unau
 - `protocol` is an integer, separate from the Stewart and component versions.
 - The component accepts exactly one protocol. Stewart reads it with `stewart/version` and sends its own with
   `stewart/session/subscribe`, which fails with `protocol_mismatch` when they differ.
-- Version 1 stays open until the first release that ships the component. After that, any change to a message shape,
-  an error code or a platform rule bumps it.
+- Any change to a message shape, an error code or a platform rule bumps it. Version 2 added the `action` platform.
 - A new session event type is additive and does not bump it; both sides ignore event types they do not know.
 
 ## Identity
@@ -104,7 +103,8 @@ No fields. Result: `{component_version: string, protocol: int}`. Needs no sessio
 | `available` | bool? | Absent: `true` for a new entity, unchanged otherwise. |
 
 Result: `{entity_id, state, attributes, available}`, the entity as it stands after the upsert. Home Assistant picks
-`entity_id`, and newer releases put the area in it; Stewart reads it from the result rather than predicting it.
+`entity_id`, and newer releases put the area in it; Stewart reads it from the result rather than predicting it. An
+`action` upsert answers `{service}` instead; see [Actions](#actions).
 
 - A new unique_id creates the entity and its registry entry; an existing one updates it in place.
 - An existing entity under another platform is removed with its registry entry first; the new one may get another
@@ -121,7 +121,7 @@ Result: `{entity_id, state, attributes, available}`, the entity as it stands aft
 | `attributes` | object? | Absent: unchanged; present: replaces the set. |
 | `available` | bool? | Absent: unchanged. |
 
-Result: `null`. An unknown entity fails with `not_found`.
+Result: `null`. An unknown entity fails with `not_found`; an action ignores the update.
 
 ### `stewart/entity/remove`
 
@@ -136,7 +136,7 @@ Fields: `instance`, `app`, `key`. Result: `{removed: bool}`; `false` when there 
 | `keep_apps` | list of string | Apps whose entities are all left alone, such as apps that failed before exposing. |
 
 Removes every entity of the instance that neither `keep` nor `keep_apps` names, with its registry entry and any device
-left empty. Result: `{removed: [entity_id, …]}`.
+left empty, and every action the same way. Result: `{removed: [entity_id, …]}`; removed actions are not listed.
 
 ### `stewart/command/result`
 
@@ -153,7 +153,7 @@ they fail with `no_session`. `stewart/command/result` takes the instance from th
 
 ## Platforms
 
-Every platform takes these config keys:
+Every entity platform takes these config keys:
 
 | Key | Type | Notes |
 |---|---|---|
@@ -174,6 +174,7 @@ Every platform takes these config keys:
 | `time` | `HH:MM:SS` \| null | — | `set_value {value: "HH:MM:SS"}` |
 | `date` | `YYYY-MM-DD` \| null | — | `set_value {value: "YYYY-MM-DD"}` |
 | `datetime` | ISO 8601 with offset \| null | — | `set_value {value: string}` |
+| `action` | none | See [Actions](#actions). | `call {<field>: value, …}` |
 
 - `device_class`, `unit_of_measurement` and `state_class` take Home Assistant's values for the platform; the
   component validates them, the unit and `state_class` against the `device_class` too, and fails with
@@ -184,13 +185,40 @@ Every platform takes these config keys:
 - A state of the wrong type, or outside `min`/`max`/`options`/`pattern`, fails with `invalid_state`.
 - `switch` `toggle` reaches Stewart as `turn_on` or `turn_off`.
 
+## Actions
+
+An upsert with `platform: action` registers a Home Assistant service instead of an entity. It takes no `state`,
+`attributes`, `available` or `device`, and the common entity config keys do not apply.
+
+| Key | Type | Notes |
+|---|---|---|
+| `name` | string? | Shown in the action picker. Absent: the key. |
+| `description` | string? | |
+| `fields` | list of field | The service data; may be empty. |
+
+| Field key | Type | Notes |
+|---|---|---|
+| `name` | string | `[a-z][a-z0-9_]*`, at most 64 characters, unique within the action. |
+| `type` | `text` \| `number` \| `boolean` \| `select` \| `entity` | Picks the validator and the UI selector. |
+| `required` | bool? | Default `false`. |
+| `description` | string? | |
+| `options` | list of string | Required with `select`, refused otherwise. |
+
+- The service is `stewart.<app>_<key>`, with `-` in the app as `_`. Result: `{service: "stewart.<app>_<key>"}`.
+- A service that another address already holds, such as the same app and key of another instance, fails with
+  `action_taken`.
+- An entity at the same address is removed first, and an entity upsert removes an action at its address.
+- The service stays registered when the session ends; a call without a session fails at once. `entity/remove`,
+  `entity/reconcile` and unloading the integration remove it.
+- A call is validated against `fields`, then sent as a `command` event with `action: call` and the call's data.
+
 ## Commands
 
-1. A service call on a Stewart entity makes the component send a `command` event on the instance's session and wait
+1. A service call on a Stewart entity or action makes the component send a `command` event on the instance's session and wait
    up to `command_timeout`.
 2. Stewart answers with `stewart/command/result`.
 3. `ok: true`: the component applies the state the action asked for (`turn_on` → `true`, `set_value` → `value`,
-   `select_option` → `option`; `press` changes nothing) and the service call succeeds.
+   `select_option` → `option`; `press` and `call` change nothing) and the service call succeeds.
 4. `ok: false`: the service call fails with `HomeAssistantError(message)`; the state is unchanged.
 5. No answer in time, or the session ends first: the service call fails with `HomeAssistantError`; the state is
    unchanged.
@@ -209,6 +237,7 @@ refused press still shows as pressed.
 | `not_found` | `entity/state`, `command/result` | Unknown entity, or a command that is unknown, answered or timed out. |
 | `invalid_config` | `entity/upsert` | The config does not fit the platform. |
 | `invalid_state` | `entity/upsert`, `entity/state` | The state does not fit the platform or its config. |
+| `action_taken` | `entity/upsert` | Another address already holds the action's service. |
 
 ## Goldens
 

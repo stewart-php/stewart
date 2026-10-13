@@ -10,6 +10,7 @@ use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
 use Stewart\Client\Component\ComponentEventDecoder;
 use Stewart\Client\Component\ComponentInstance;
+use Stewart\Client\Component\ComponentProtocol;
 use Stewart\Client\Component\ExposedEntityDefinition;
 use Stewart\Client\Connection\ConnectionConfig;
 use Stewart\Client\Connection\HaConnection;
@@ -175,7 +176,7 @@ final class ComponentSessionTest extends TestCase
 
     private function replyToNextOpen(): void
     {
-        $this->socket->replyWhenSent('stewart/version', ['type' => 'result', 'success' => true, 'result' => ['component_version' => '0.11.0', 'protocol' => 1]]);
+        $this->socket->replyWhenSent('stewart/version', ['type' => 'result', 'success' => true, 'result' => ['component_version' => '0.11.0', 'protocol' => ComponentProtocol::VERSION]]);
         $this->socket->replyWhenSent('stewart/session/subscribe', ['type' => 'result', 'success' => true, 'result' => null]);
         $this->socket->replyWhenSent('stewart/entity/upsert', ['type' => 'result', 'success' => true, 'result' => [
             'entity_id' => 'sensor.stewart_climate_average_temperature',
@@ -194,7 +195,7 @@ final class ComponentSessionTest extends TestCase
             'attributes' => [],
             'available' => true,
         ]]);
-        $this->queueReplyTo($sentCount, ['type' => 'result', 'success' => true, 'result' => ['component_version' => '0.11.0', 'protocol' => 1]]);
+        $this->queueReplyTo($sentCount, ['type' => 'result', 'success' => true, 'result' => ['component_version' => '0.11.0', 'protocol' => ComponentProtocol::VERSION]]);
         EventLoopTicks::settleUntil(fn(): bool => $this->tracker->isActive() && \count($this->socket->listSentOfType('stewart/entity/upsert')) === 2);
     }
 

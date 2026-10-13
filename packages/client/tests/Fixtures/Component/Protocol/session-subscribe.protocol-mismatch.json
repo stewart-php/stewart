@@ -1,14 +1,14 @@
 {
-    "protocol": 1,
+    "protocol": 2,
     "request": {
         "type": "stewart/session/subscribe",
         "instance": "default",
-        "protocol": 2,
+        "protocol": 3,
         "stewart_version": "0.10.0",
         "command_timeout": 5.0
     },
     "error": {
         "code": "protocol_mismatch",
-        "message": "Stewart speaks protocol 2, but this component speaks protocol 1."
+        "message": "Stewart speaks protocol 3, but this component speaks protocol 2."
     }
 }

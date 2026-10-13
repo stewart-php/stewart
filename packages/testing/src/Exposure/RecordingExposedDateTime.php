@@ -12,23 +12,12 @@ use Stewart\Contracts\Exposure\CalendarStateFormat;
 use Stewart\Contracts\Exposure\Command\DateTimeCommand;
 use Stewart\Contracts\Exposure\DateTimeConfig;
 use Stewart\Contracts\Exposure\ExposedDateTime;
-use Stewart\Contracts\Exposure\ExposedEntityKey;
-use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
-use Stewart\Testing\Time\ManualTimers;
 
+/** @extends RecordingExposedEntity<DateTimeConfig> */
 final class RecordingExposedDateTime extends RecordingExposedEntity implements ExposedDateTime
 {
-    public function __construct(
-        ExposedEntityKey $key,
-        public private(set) DateTimeConfig $config,
-        ?ExposedEntitySnapshot $seeded,
-        ManualTimers $timers,
-    ) {
-        parent::__construct($key, $seeded, $timers);
-    }
-
     public function getConfig(): DateTimeConfig
     {
         return $this->config;
@@ -36,8 +25,7 @@ final class RecordingExposedDateTime extends RecordingExposedEntity implements E
 
     public function updateConfig(DateTimeConfig $config): void
     {
-        $this->assertNotRemoved();
-        $this->config = $config;
+        $this->recordConfig($config);
     }
 
     public function getValue(): ?DateTimeImmutable

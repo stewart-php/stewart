@@ -17,7 +17,9 @@ use Stewart\Runtime\Json\EpochInstantConverter;
 use Stewart\Runtime\Json\FieldShape;
 use Stewart\Runtime\Json\IsoInstantConverter;
 use Stewart\Runtime\Json\WireMapper;
+use Stewart\Runtime\Tests\Fixtures\Wire\Circle;
 use Stewart\Runtime\Tests\Fixtures\Wire\Color;
+use Stewart\Runtime\Tests\Fixtures\Wire\Drawing;
 use Stewart\Runtime\Tests\Fixtures\Wire\Everything;
 use Stewart\Runtime\Tests\Fixtures\Wire\HiddenConstructor;
 use Stewart\Runtime\Tests\Fixtures\Wire\HoldsInterface;
@@ -29,6 +31,7 @@ use Stewart\Runtime\Tests\Fixtures\Wire\Numbers;
 use Stewart\Runtime\Tests\Fixtures\Wire\Priority;
 use Stewart\Runtime\Tests\Fixtures\Wire\Ranked;
 use Stewart\Runtime\Tests\Fixtures\Wire\SelfReferencing;
+use Stewart\Runtime\Tests\Fixtures\Wire\Square;
 use Stewart\Runtime\Tests\Fixtures\Wire\WithFragment;
 use Stewart\Support\Exception\JsonShapeError;
 use Stewart\Support\Exception\JsonShapeException;
@@ -150,6 +153,41 @@ final class WireMapperTest extends TestCase
         self::assertEquals(new WithFragment(7, new Numbers([1, 2, 3])), $this->mapper->decodeObject(WithFragment::class, self::decodeJsonObject($json)));
     }
 
+    public function testVariantIsNamedByItsKeyAndCarriesInheritedFields(): void
+    {
+        $json = $this->mapper->encodeObject(self::createDrawing());
+
+        self::assertStringContainsString('"main":{"kind":"circle","radius":1.5,"name":"sun"}', $json);
+        self::assertStringContainsString('"outline":null', $json);
+        self::assertEquals(self::createDrawing(), $this->mapper->decodeObject(Drawing::class, self::decodeJsonObject($json)));
+    }
+
+    public function testWholeNumberStaysWholeWhereIntOrFloatIsDeclared(): void
+    {
+        $sent = new Drawing(new Circle(2, 'dot'), [], null);
+        $received = $this->mapper->decodeObject(Drawing::class, self::decodeJsonObject($this->mapper->encodeObject($sent)));
+
+        self::assertInstanceOf(Circle::class, $received->main);
+        self::assertSame(2, $received->main->radius);
+    }
+
+    public function testUnknownVariantNamesItsPath(): void
+    {
+        $data = self::decodeJsonObject('{"main":{"kind":"circle","radius":1,"name":"sun"},"layers":[{"kind":"triangle","name":"roof"}],"outline":null}');
+
+        $this->expectException(JsonShapeException::class);
+        $this->expectExceptionMessageIsOrContains('"layers.0.kind" is "triangle"; expected one of circle, square.');
+
+        $this->mapper->decodeObject(Drawing::class, $data);
+    }
+
+    public function testObjectItsConstructorRefusesNamesItsPath(): void
+    {
+        $data = self::decodeJsonObject('{"main":{"kind":"circle","radius":-1,"name":"sun"},"layers":[],"outline":null}');
+
+        $this->assertThrowsReason(JsonShapeError::ObjectRefused, fn() => $this->mapper->decodeObject(Drawing::class, $data));
+    }
+
     /** @return iterable<string, array{class-string, string}> */
     public static function provideUnmappableClasses(): iterable
     {
@@ -189,6 +227,11 @@ final class WireMapperTest extends TestCase
             seenAt: Instant::fromEpochMicroseconds(self::AT),
             lag: Duration::microseconds(1_250),
         );
+    }
+
+    private static function createDrawing(): Drawing
+    {
+        return new Drawing(new Circle(1.5, 'sun'), [new Square(2, 'house'), new Circle(0, 'dot')], null);
     }
 
     private function sendThroughTheWire(Everything $sent): Everything

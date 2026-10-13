@@ -15,6 +15,7 @@ use Stewart\Contracts\Registry\Collection\FloorIdCollection;
 use Stewart\Contracts\Registry\RegistryNames;
 use Stewart\Contracts\Trigger\TriggerJson;
 use Stewart\Contracts\Wire\ListOf;
+use Stewart\Contracts\Wire\WireVariants;
 use Stewart\Tests\Architecture\Fixtures\RepositoryFiles;
 
 #[CoversNothing]
@@ -29,6 +30,7 @@ final class InternalSurfaceTest extends TestCase
         RegistryNames::class,
         TriggerJson::class,
         ListOf::class,
+        WireVariants::class,
     ];
 
     public function testEveryClassInTheSupportPackageIsTaggedInternal(): void

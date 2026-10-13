@@ -382,6 +382,11 @@ final class FakeHomeAssistant
     {
         $app = self::readText($command, 'app');
         $key = self::readText($command, 'key');
+
+        if (self::readText($command, 'platform') === 'action') {
+            return ['type' => 'result', 'success' => true, 'result' => ['service' => \sprintf('stewart.%s_%s', str_replace('-', '_', $app), $key)]];
+        }
+
         $entityId = $this->exposedEntityIds[$app . '/' . $key] ?? \sprintf('%s.%s_%s', self::readText($command, 'platform'), $app, $key);
 
         return ['type' => 'result', 'success' => true, 'result' => [

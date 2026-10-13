@@ -7,6 +7,7 @@ from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.loader import async_get_integration
 
+from .action import ACTION_PLATFORM, ActionConfig
 from .change import EntityChange, EntityUpsert
 from .command import CommandAnswer
 from .const import (
@@ -143,7 +144,14 @@ def websocket_session_subscribe(
 @websocket_api.async_response
 @_exposure_command
 async def websocket_entity_upsert(runtime: StewartRuntime, msg: dict[str, Any]) -> dict[str, Any]:
-    return (await runtime.entities.upsert(EntityUpsert.from_message(msg))).as_result()
+    upsert = EntityUpsert.from_message(msg)
+    if upsert.platform == ACTION_PLATFORM:
+        config = ActionConfig.read_from(upsert.config)
+        runtime.entities.remove(upsert.address)
+        return {"service": runtime.actions.register(upsert.address, config)}
+    snapshot = await runtime.entities.upsert(upsert)
+    runtime.actions.remove(upsert.address)
+    return snapshot.as_result()
 
 
 @websocket_api.websocket_command(
@@ -159,7 +167,9 @@ async def websocket_entity_upsert(runtime: StewartRuntime, msg: dict[str, Any]) 
 @websocket_api.async_response
 @_exposure_command
 async def websocket_entity_state(runtime: StewartRuntime, msg: dict[str, Any]) -> None:
-    runtime.entities.update_state(EntityAddress.from_message(msg), EntityChange.from_message(msg))
+    address = EntityAddress.from_message(msg)
+    if not runtime.actions.holds(address):
+        runtime.entities.update_state(address, EntityChange.from_message(msg))
 
 
 @websocket_api.websocket_command({vol.Required("type"): "stewart/entity/remove", **ENTITY_ADDRESS_SCHEMA})
@@ -167,7 +177,8 @@ async def websocket_entity_state(runtime: StewartRuntime, msg: dict[str, Any]) -
 @websocket_api.async_response
 @_exposure_command
 async def websocket_entity_remove(runtime: StewartRuntime, msg: dict[str, Any]) -> dict[str, Any]:
-    return {"removed": runtime.entities.remove(EntityAddress.from_message(msg))}
+    address = EntityAddress.from_message(msg)
+    return {"removed": runtime.actions.remove(address) or runtime.entities.remove(address)}
 
 
 @websocket_api.websocket_command(
@@ -182,7 +193,9 @@ async def websocket_entity_remove(runtime: StewartRuntime, msg: dict[str, Any]) 
 @websocket_api.async_response
 @_exposure_command
 async def websocket_entity_reconcile(runtime: StewartRuntime, msg: dict[str, Any]) -> dict[str, Any]:
-    return {"removed": runtime.entities.reconcile(msg["instance"], KeptEntities.from_message(msg))}
+    kept = KeptEntities.from_message(msg)
+    runtime.actions.reconcile(msg["instance"], kept)
+    return {"removed": runtime.entities.reconcile(msg["instance"], kept)}
 
 
 @websocket_api.websocket_command(

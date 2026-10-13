@@ -7,25 +7,14 @@ namespace Stewart\Testing\Exposure;
 use Stewart\Contracts\EventStream;
 use Stewart\Contracts\Exception\CommandException;
 use Stewart\Contracts\Exposure\Command\TextCommand;
-use Stewart\Contracts\Exposure\ExposedEntityKey;
-use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\ExposedText;
 use Stewart\Contracts\Exposure\TextConfig;
-use Stewart\Testing\Time\ManualTimers;
 
+/** @extends RecordingExposedEntity<TextConfig> */
 final class RecordingExposedText extends RecordingExposedEntity implements ExposedText
 {
-    public function __construct(
-        ExposedEntityKey $key,
-        public private(set) TextConfig $config,
-        ?ExposedEntitySnapshot $seeded,
-        ManualTimers $timers,
-    ) {
-        parent::__construct($key, $seeded, $timers);
-    }
-
     public function getConfig(): TextConfig
     {
         return $this->config;
@@ -33,8 +22,7 @@ final class RecordingExposedText extends RecordingExposedEntity implements Expos
 
     public function updateConfig(TextConfig $config): void
     {
-        $this->assertNotRemoved();
-        $this->config = $config;
+        $this->recordConfig($config);
     }
 
     public function getValue(): ?string

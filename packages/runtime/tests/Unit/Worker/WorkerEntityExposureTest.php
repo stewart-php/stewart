@@ -14,6 +14,10 @@ use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\CommandException;
 use Stewart\Contracts\Exception\ExposureError;
 use Stewart\Contracts\Exception\ExposureException;
+use Stewart\Contracts\Exposure\Action\ActionCall;
+use Stewart\Contracts\Exposure\Action\ActionConfig;
+use Stewart\Contracts\Exposure\Action\ActionField;
+use Stewart\Contracts\Exposure\Action\ActionFieldType;
 use Stewart\Contracts\Exposure\ButtonConfig;
 use Stewart\Contracts\Exposure\Command\ButtonPress;
 use Stewart\Contracts\Exposure\Command\ExposedCommand;
@@ -50,6 +54,7 @@ use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\Exposure\ExposedCommandSettlements;
 use Stewart\Runtime\Worker\Exposure\ExposedCommandStreams;
 use Stewart\Runtime\Worker\Exposure\ExposedHandleRegistry;
+use Stewart\Runtime\Worker\Exposure\ExposureChannel;
 use Stewart\Runtime\Worker\Exposure\ExposureRequester;
 use Stewart\Runtime\Worker\Exposure\SettlingCommandStream;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedBinarySensor;
@@ -115,9 +120,11 @@ final class WorkerEntityExposureTest extends TestCase
         $commandStreams = new ExposedCommandStreams($this->dispatcher, $timers, $settlements);
         $this->commandHandler = new ExposedEntityCommandedHandler($this->handles, $commandStreams, $settlements);
         $this->shared = new WorkerEntityExposure(
-            new ExposureRequester($this->broker, $pending, $timers, TestBootstrap::createWorkerSettings(callTimeout: Duration::seconds(1))),
-            $this->handles,
-            $commandStreams,
+            new ExposureChannel(
+                new ExposureRequester($this->broker, $pending, $timers, TestBootstrap::createWorkerSettings(callTimeout: Duration::seconds(1))),
+                $this->handles,
+                $commandStreams,
+            ),
             ResourceScope::shared(),
         );
     }
@@ -301,6 +308,7 @@ final class WorkerEntityExposureTest extends TestCase
         $sensor->updateConfig(new SensorConfig(unit: '%', name: 'Tank level'));
 
         $request = $this->broker->listSentOfType(ReconfigureExposedEntityRequest::class)[0];
+        self::assertInstanceOf(SensorConfig::class, $request->config);
         self::assertSame('Tank level', $request->config->name);
         self::assertSame('Tank level', $sensor->getConfig()->name);
     }
@@ -465,6 +473,58 @@ final class WorkerEntityExposureTest extends TestCase
 
         self::assertSame('App climate was paused before it handled the command.', $this->requireOnlyAnswer()->rejection);
         self::assertNull($heater->getValue());
+    }
+
+    public function testActionIsExposedWithItsFields(): void
+    {
+        $this->createClimateExposure()->exposeAction('boost', new ActionConfig('Boost', fields: [new ActionField('minutes', ActionFieldType::Number)]));
+
+        $request = $this->broker->listSentOfType(ExposeEntityRequest::class)[0];
+        self::assertInstanceOf(ActionConfig::class, $request->config);
+        self::assertSame('minutes', $request->config->fields[0]->name);
+        self::assertNull($request->device);
+    }
+
+    public function testAcceptedCallReachesTheApp(): void
+    {
+        $boost = $this->createClimateExposure()->exposeAction('boost');
+        $received = [];
+        $boost->watchCalls()->subscribe(static function (ActionCall $call) use (&$received): void {
+            $received[] = $call->findNumber('minutes');
+        });
+
+        $this->deliverCommand('boost', new ActionCall(['minutes' => 30], new EventContext('context-1')));
+
+        self::assertSame([30], $received);
+        self::assertTrue($this->requireOnlyAnswer()->accepted);
+    }
+
+    public function testRejectedCallKeepsReason(): void
+    {
+        $boost = $this->createClimateExposure()->exposeAction('boost');
+        $boost->watchCalls()->subscribe(static function (): void {
+            throw CommandException::rejected('The boiler is off.');
+        });
+
+        $this->deliverCommand('boost', new ActionCall([], new EventContext('context-1')));
+
+        self::assertSame('The boiler is off.', $this->requireOnlyAnswer()->rejection);
+    }
+
+    public function testActionSharesKeysWithEntities(): void
+    {
+        $exposure = $this->createClimateExposure();
+        $exposure->exposeSensor('boost');
+
+        $this->assertThrowsReason(ExposureError::KeyTaken, static fn() => $exposure->exposeAction('boost'));
+    }
+
+    public function testRemovedActionRefusesReconfigure(): void
+    {
+        $boost = $this->createClimateExposure()->exposeAction('boost');
+        $boost->remove();
+
+        $this->assertThrowsReason(ExposureError::Removed, static fn() => $boost->updateConfig(new ActionConfig('Boost')));
     }
 
     public function testCommandForUnknownKeyIsRefused(): void

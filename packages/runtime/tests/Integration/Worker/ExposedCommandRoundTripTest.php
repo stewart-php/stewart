@@ -10,6 +10,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
+use Stewart\Contracts\Exposure\Action\ActionCall;
+use Stewart\Contracts\Exposure\Command\ExposedCommand;
 use Stewart\Contracts\Exposure\Command\SwitchAction;
 use Stewart\Contracts\Exposure\Command\SwitchCommand;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
@@ -78,23 +80,29 @@ final class ExposedCommandRoundTripTest extends TestCase
 
     public function testAcceptedCommandReachesHomeAssistant(): void
     {
-        self::assertTrue($this->sendCommand(SwitchAction::TurnOn)->isAccepted());
+        self::assertTrue($this->sendCommand('heater', new SwitchCommand(SwitchAction::TurnOn, new EventContext('context-1')))->isAccepted());
     }
 
     public function testRejectedCommandKeepsAppReason(): void
     {
-        self::assertSame(HeaterSwitch::REJECTION, $this->sendCommand(SwitchAction::TurnOff)->rejection);
+        self::assertSame(HeaterSwitch::REJECTION, $this->sendCommand('heater', new SwitchCommand(SwitchAction::TurnOff, new EventContext('context-1')))->rejection);
     }
 
-    private function sendCommand(SwitchAction $action): AnsweredExposedCommand
+    public function testActionCallReachesTheApp(): void
+    {
+        self::assertTrue($this->sendCommand('boost', new ActionCall(['minutes' => 30], new EventContext('context-1')))->isAccepted());
+        self::assertSame(HeaterSwitch::REJECTION, $this->sendCommand('boost', new ActionCall([], new EventContext('context-2')))->rejection);
+    }
+
+    private function sendCommand(string $key, ExposedCommand $command): AnsweredExposedCommand
     {
         $answered = $this->broker->homeAssistant->waitForNextCommandAnswer();
         $this->session->pushExposedEntityCommand(new ExposedEntityCommand(
             '3f2b9c0e8d7a4f61',
             new WorkerId(0),
             new AppId('heater'),
-            new ExposedEntityKey('heater'),
-            new SwitchCommand($action, new EventContext('context-1')),
+            new ExposedEntityKey($key),
+            $command,
         ));
 
         return $answered->await(new TimeoutCancellation(self::WAIT_SECONDS));

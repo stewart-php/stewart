@@ -8,6 +8,7 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Client\Component\ComponentInstance;
+use Stewart\Client\Component\ComponentProtocol;
 use Stewart\Client\Component\ComponentSessionRequest;
 use Stewart\Client\Connection\Command\Authenticate;
 use Stewart\Client\Connection\Command\CallService;
@@ -196,7 +197,7 @@ final class HaCommandTest extends TestCase
         $subscription = new SubscribeComponentSession(new ComponentSessionRequest(ComponentInstance::parse('default'), '0.9.0', Duration::milliseconds(2500)));
 
         self::assertSame(
-            ['type' => 'stewart/session/subscribe', 'instance' => 'default', 'protocol' => 1, 'stewart_version' => '0.9.0', 'command_timeout' => 2.5],
+            ['type' => 'stewart/session/subscribe', 'instance' => 'default', 'protocol' => ComponentProtocol::VERSION, 'stewart_version' => '0.9.0', 'command_timeout' => 2.5],
             $subscription->toMessage(),
         );
         self::assertSame('stewart/session/subscribe "default"', $subscription->describe());

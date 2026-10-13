@@ -1,21 +1,16 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any, Final, Self
+from typing import Any, Self
 
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback, async_get_current_platform
 
 from .change import EntityChange, JsonValue
 from .command import CommandAction
 from .config import ConfigReader, EntityConfig
 from .entity import StewartEntity
 from .errors import InvalidStateError
-from .identity import EntityAddress
-from .runtime import StewartConfigEntry
-from .session import SessionRegistry
+from .platforms import attach
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -35,6 +30,9 @@ class SwitchConfig:
 
 
 class StewartSwitch(StewartEntity[SwitchConfig, bool | None], SwitchEntity):
+    domain = Platform.SWITCH
+    config_type = SwitchConfig
+
     async def async_turn_on(self, **kwargs: Any) -> None:  # noqa: ANN401, ARG002
         await self.run_command(CommandAction.TURN_ON)
         self.apply_change(EntityChange(state=True))
@@ -58,21 +56,4 @@ class StewartSwitch(StewartEntity[SwitchConfig, bool | None], SwitchEntity):
         self._attr_is_on = native
 
 
-class SwitchExposure:
-    domain: Final = Platform.SWITCH
-
-    def read_config(self, raw: Mapping[str, JsonValue]) -> SwitchConfig:
-        return SwitchConfig.read_from(raw)
-
-    def create_entity(
-        self, *, address: EntityAddress, config: SwitchConfig, sessions: SessionRegistry, device_info: DeviceInfo
-    ) -> StewartSwitch:
-        return StewartSwitch(address=address, config=config, sessions=sessions, device_info=device_info)
-
-
-async def async_setup_entry(
-    hass: HomeAssistant,  # noqa: ARG001
-    entry: StewartConfigEntry,
-    async_add_entities: AddConfigEntryEntitiesCallback,  # noqa: ARG001
-) -> None:
-    entry.runtime_data.entities.attach_platform(SwitchExposure(), async_get_current_platform())
+async_setup_entry = attach(StewartSwitch)

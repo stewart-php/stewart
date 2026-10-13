@@ -1,22 +1,17 @@
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Final, Self
+from typing import Self
 
 from homeassistant.components.text import TextEntity, TextMode
 from homeassistant.const import MAX_LENGTH_STATE_STATE, Platform
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback, async_get_current_platform
 
 from .change import EntityChange, JsonValue
 from .command import CommandAction
 from .config import ConfigReader, EntityConfig
 from .entity import StewartEntity
 from .errors import InvalidStateError
-from .identity import EntityAddress
-from .runtime import StewartConfigEntry
-from .session import SessionRegistry
+from .platforms import attach
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -63,6 +58,9 @@ def _compile_pattern(reader: ConfigReader, pattern: str | None) -> re.Pattern[st
 
 
 class StewartText(StewartEntity[TextConfig, str | None], TextEntity):
+    domain = Platform.TEXT
+    config_type = TextConfig
+
     async def async_set_value(self, value: str) -> None:
         await self.run_command(CommandAction.SET_VALUE, {"value": value})
         self.apply_change(EntityChange(state=value))
@@ -90,21 +88,4 @@ class StewartText(StewartEntity[TextConfig, str | None], TextEntity):
         self._attr_native_value = native
 
 
-class TextExposure:
-    domain: Final = Platform.TEXT
-
-    def read_config(self, raw: Mapping[str, JsonValue]) -> TextConfig:
-        return TextConfig.read_from(raw)
-
-    def create_entity(
-        self, *, address: EntityAddress, config: TextConfig, sessions: SessionRegistry, device_info: DeviceInfo
-    ) -> StewartText:
-        return StewartText(address=address, config=config, sessions=sessions, device_info=device_info)
-
-
-async def async_setup_entry(
-    hass: HomeAssistant,  # noqa: ARG001
-    entry: StewartConfigEntry,
-    async_add_entities: AddConfigEntryEntitiesCallback,  # noqa: ARG001
-) -> None:
-    entry.runtime_data.entities.attach_platform(TextExposure(), async_get_current_platform())
+async_setup_entry = attach(StewartText)
