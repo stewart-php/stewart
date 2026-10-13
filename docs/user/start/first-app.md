@@ -92,7 +92,7 @@ make run ONLY=porch-light
 
 Leave out `ONLY` to run every app. To keep Stewart running in the background, use `make up`, then follow its log
 with `make logs` and stop it with `make down`. For a server, see
-[Deploying](https://github.com/stewart-php/skeleton#deploying).
+[Deploying](../deploy/index.md).
 
 You no longer need the example app. Delete `apps/HelloApp.php`, `tests/HelloAppTest.php` and its `hello:` entry in
 `stewart.yaml`.

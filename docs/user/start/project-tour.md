@@ -83,7 +83,7 @@ and Stewart's start-up script. Your code and the Stewart version come from your 
 with Xdebug, and installs dependencies only when you run `make install`.
 
 **`Dockerfile`** and **`deploy/`** are for servers. See
-[Deploying](https://github.com/stewart-php/skeleton#deploying).
+[Deploying](../deploy/index.md).
 
 **`.github/workflows/`** runs `make stan` and `make test` on every push (`ci.yml`), and builds an image of your
 project (`image.yml`). Dependabot proposes Stewart updates.
