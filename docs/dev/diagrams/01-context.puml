@@ -1,0 +1,36 @@
+@startuml
+!include style.puml
+title Stewart in context
+
+actor "PHP developer" as dev
+
+rectangle "Home Assistant" as ha $ha {
+    component "WebSocket API\n/api/websocket" as ws
+    component "Entity registry\n& state machine" as reg
+}
+
+rectangle "Stewart daemon" as stewart $broker {
+    component "Broker" as broker
+    component "Workers" as workers
+}
+
+rectangle "Your repository" as repo $usercode {
+    component "apps/*.php\nautomations" as apps
+    component "stewart.yaml\n.env" as cfg
+}
+
+dev --> apps : writes ordinary\nPHP classes
+dev --> cfg : registers apps,\nsupplies token
+
+apps ..> workers : loaded and run by
+cfg ..> broker : configures
+
+broker <-> ws : one authenticated\nWebSocket connection
+ws -- reg
+
+note bottom of stewart
+  Runs on a **separate host** from Home Assistant,
+  so it authenticates with a long-lived token over
+  the network. There is no Supervisor add-on path.
+end note
+@enduml

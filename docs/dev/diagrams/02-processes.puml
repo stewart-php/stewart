@@ -1,0 +1,46 @@
+@startuml
+!include style.puml
+title Process model
+
+rectangle "Home Assistant" as ha $ha
+
+rectangle "Broker process" as broker $broker {
+    component "HaClient\nauth, correlation" as client
+    component "StateCache\nauthoritative" as cache
+    component "SubscriptionRegistry\nrouting + memoised matches" as registry
+    component "WorkerHandle x N\nbounded outbound buffer" as handles
+    component "Log writer\nsingle ordered stream" as logs
+}
+
+rectangle "Worker 0" as w0 $worker {
+    component "State cache\n(full copy)" as m0
+    component "LocalDispatcher" as d0
+    component "Apps" as a0
+}
+
+rectangle "Worker N" as wn $worker {
+    component "State cache\n(full copy)" as mn
+    component "LocalDispatcher" as dn
+    component "Apps" as an
+}
+
+ha <--> client : WebSocket
+client --> cache
+cache --> handles : pre-encoded snapshot
+registry --> handles : who to tell
+
+handles <--> d0 : amphp/parallel channel\n(JSON frames)
+handles <--> dn : amphp/parallel channel\n(JSON frames)
+
+d0 --> m0
+d0 --> a0
+dn --> mn
+dn --> an
+
+note right of wn
+  Workers never talk to Home Assistant.
+  A worker restart costs nothing shared:
+  the socket and the state cache live in
+  the broker.
+end note
+@enduml

@@ -2,6 +2,8 @@
 
 Lets [Stewart](https://github.com/stewart-php/stewart) apps create and drive their own Home Assistant entities. Stewart
 finds the integration by itself on every connect; there is nothing to configure on either side.
+[Exposed entities](https://stewart-php.github.io/docs/guides/exposed-entities/) in the Stewart documentation shows how
+apps use it.
 
 This repository is a read-only mirror of `integrations/home-assistant` in
 [stewart-php/stewart](https://github.com/stewart-php/stewart). Report issues and send changes there.

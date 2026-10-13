@@ -1,7 +1,8 @@
 # Stewart Helm chart
 
 Runs a [Stewart](https://github.com/stewart-php/stewart) project (Home Assistant automations in PHP) on
-Kubernetes, with an optional Valkey for app state.
+Kubernetes, with an optional Valkey for app state. [Kubernetes](https://stewart-php.github.io/docs/deploy/kubernetes/)
+in the documentation walks through it; this README lists every value.
 
 ```bash
 kubectl create secret generic stewart-ha --from-literal=token=<long-lived access token>

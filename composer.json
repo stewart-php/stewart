@@ -54,6 +54,10 @@
     ],
     "autoload-dev": {
         "psr-4": {
+            "App\\": "docs/examples/apps/",
+            "App\\Generated\\": "docs/examples/generated/",
+            "App\\Tests\\": "docs/examples/tests/",
+            "Stewart\\Docs\\Generator\\": "docs/generator/",
             "Stewart\\Tests\\": "tests/",
             "Stewart\\Contracts\\Tests\\": "packages/contracts/tests/",
             "Stewart\\Support\\Tests\\": "packages/support/tests/",

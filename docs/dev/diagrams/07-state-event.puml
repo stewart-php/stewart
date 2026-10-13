@@ -1,0 +1,36 @@
+@startuml
+!include style.puml
+title A state change reaching an app
+
+participant "Home Assistant" as ha $ha
+participant "Broker" as b $broker
+participant "Worker 0" as w0 $worker
+participant "Worker 1" as w1 $worker
+participant "App\n(in worker 0)" as app $usercode
+
+ha -> b : event state_changed\n{ entity_id, old_state, new_state }
+b -> b : StateCache.applyChange()
+
+par fan-out to every worker
+    b -> w0 : **StateChangeBatch** { changes }
+    b -> w1 : **StateChangeBatch** { changes }
+end
+
+w0 -> w0 : stateCache.applyChange()
+w1 -> w1 : stateCache.applyChange()
+w0 -> w0 : match subscriptions\n**memoised** per entity id
+note over w1
+  Worker 1 still updates its state cache even
+  though nothing there subscribed. A full
+  state cache can only stay fresh if it sees
+  **every** change — matching decides who
+  gets //told//, never who gets //updated//.
+end note
+
+w0 -> app : handler(StateChange)  <<own fiber>>
+note right of app
+  Each subscription drains its queue in its
+  own fiber, so a handler that awaits a service
+  call holds back only its own subscription.
+end note
+@enduml

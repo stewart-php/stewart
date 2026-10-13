@@ -1,0 +1,23 @@
+{
+  "name": "stewart-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:user": "DOCS_SITE=user astro dev",
+    "dev:dev": "DOCS_SITE=dev astro dev",
+    "build": "node scripts/check-links.mjs && DOCS_SITE=user astro build && DOCS_SITE=dev astro build",
+    "preview:user": "DOCS_SITE=user astro preview",
+    "preview:dev": "DOCS_SITE=dev astro preview",
+    "check-links": "node scripts/check-links.mjs"
+  },
+  "dependencies": {
+    "@astrojs/markdown-satteri": "^0.4.1",
+    "@astrojs/starlight": "^0.42.1",
+    "astro": "^7.3.2",
+    "sharp": "^0.35.4",
+    "starlight-theme-rapide": "^0.6.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  }
+}

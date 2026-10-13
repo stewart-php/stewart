@@ -1,0 +1,126 @@
+@startuml
+!include style.puml
+title Channel protocol — the core messages
+
+package "Broker → Worker" as bw #E8F0FE {
+    interface BrokerMessage <<marker>>
+
+    class Bootstrap {
+        protocol, workerId, timeZone
+        apps: WorkerApp[]
+        settings: WorkerSettings
+        store: ?StoreSettings
+        knownAppIds[]
+    }
+    class StateSnapshot {
+        statesJson  <<pre-encoded>>
+        revision
+    }
+    class StateChangeBatch {
+        changesJson  <<pre-encoded>>
+        count
+    }
+    class HaConnectionLost {
+        lostAt, reason
+    }
+    class StateResynced {
+        statesJson  <<pre-encoded>>
+        revision, outage
+    }
+    class EventFired {
+        event: HaEvent
+        deliverTo[]  <<matched subs>>
+    }
+    class TopicMessage {
+        event: TopicEvent
+        deliverTo[]
+    }
+    class ServiceCallResult {
+        correlationId
+        response: ServiceResponse
+    }
+    class RequestFailed {
+        correlationId, message
+        details  <<class, reason, context>>
+    }
+    class SubscriptionAck {
+        subscriptionId, accepted, reason
+    }
+    class Shutdown {
+        reason, grace
+    }
+    class Ping {
+        nonce, sentAt
+    }
+}
+
+package "Worker → Broker" as wb #E6F4EA {
+    interface WorkerMessage <<marker>>
+
+    class Subscribe {
+        subscriptionId, appId
+        kind, selector
+    }
+    class Unsubscribe
+    class WorkerReady {
+        appIds[], failedAppIds[]
+        memoryBytes
+    }
+    class ServiceCallRequest {
+        correlationId, appId
+        domain, service, data
+        target, returnResponse
+    }
+    class Publish {
+        topic, payload
+        publisherAppId, publishedAt
+    }
+    class AppFailed {
+        appId, phase
+        flattened trace, details
+    }
+    class Pong {
+        nonce, loopLag, memoryBytes
+        apps: list<AppActivityReport>
+    }
+    class LogRecord {
+        appId, level, message
+        context, exception
+    }
+}
+
+BrokerMessage <|.. Bootstrap
+BrokerMessage <|.. StateSnapshot
+BrokerMessage <|.. StateChangeBatch
+BrokerMessage <|.. HaConnectionLost
+BrokerMessage <|.. StateResynced
+BrokerMessage <|.. EventFired
+BrokerMessage <|.. TopicMessage
+BrokerMessage <|.. ServiceCallResult
+BrokerMessage <|.. RequestFailed
+BrokerMessage <|.. SubscriptionAck
+BrokerMessage <|.. Shutdown
+BrokerMessage <|.. Ping
+
+WorkerMessage <|.. Subscribe
+WorkerMessage <|.. Unsubscribe
+WorkerMessage <|.. WorkerReady
+WorkerMessage <|.. ServiceCallRequest
+WorkerMessage <|.. Publish
+WorkerMessage <|.. AppFailed
+WorkerMessage <|.. Pong
+WorkerMessage <|.. LogRecord
+
+note as N1
+  Every message crosses as one JSON frame,
+  {"t": <MessageType tag>, "m": <body>},
+  written by its own codec in Ipc\Wire\Codec.
+  State bodies are encoded once and spliced in raw;
+  the worker decodes them into Decoded* messages.
+
+  Bootstrap carries the protocol version.
+end note
+
+N1 .. BrokerMessage
+N1 .. WorkerMessage
+@enduml

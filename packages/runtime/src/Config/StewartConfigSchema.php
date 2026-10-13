@@ -269,7 +269,7 @@ final class StewartConfigSchema implements ConfigurationInterface
         $root
             ->children()
                 ->arrayNode('control')
-                    ->info('The read-only socket `stewart status` connects to. The token is a secret: set it from the environment.')
+                    ->info('The socket `stewart status`, `app:pause` and `worker:restart` connect to. The token is a secret: set it from the environment.')
                     ->addDefaultsIfNotSet()
                     ->children()
                         ->append($this->createScalarNode('listen', 'unix://path, relative to the project root, or tcp://host:port. "off" disables the socket; an empty environment variable means unset, so use the word.', 'unix://' . ControlAddress::DEFAULT_SOCKET))

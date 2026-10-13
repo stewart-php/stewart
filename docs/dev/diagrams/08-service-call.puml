@@ -1,0 +1,41 @@
+@startuml
+!include style.puml
+title A service call, and why it reads like a local call
+
+participant "App" as app $usercode
+participant "WorkerHaContext" as ctx $worker
+participant "PendingRequests" as pc $worker
+participant "Broker" as b $broker
+participant "Home Assistant" as ha $ha
+
+app -> ctx : callService('light','turn_on', [...])
+ctx -> pc : nextId() → "0:17"
+ctx -> pc : expect("0:17") → Future
+ctx -> b : **ServiceCallRequest** { correlationId: "0:17" }
+
+ctx -> ctx : future->await(TimeoutCancellation)
+note right of ctx
+  The app's **fiber suspends here**. The worker
+  process stays free to handle other events —
+  that suspension is the entire "reads like a
+  local call" property.
+end note
+
+b -> b : record correlationId → worker
+b -> ha : call_service { id: 42 }
+ha --> b : result { id: 42, success: true }
+
+b -> b : correlate id 42 → "0:17"
+b -> ctx : **ServiceCallResult** { "0:17", ok }
+ctx -> pc : resolve("0:17")
+ctx --> app : EventContext
+
+note over b, ha
+  The broker must answer **every** request,
+  including on failure or a dropped connection.
+  A missing reply is not a lost message — it is
+  a permanently suspended fiber with nothing in
+  the logs. The worker-side timeout is the
+  backstop for exactly that.
+end note
+@enduml

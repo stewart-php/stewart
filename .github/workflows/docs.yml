@@ -1,0 +1,88 @@
+# Publishes the user and developer documentation to stewart-php.github.io/docs and /docs-dev on every release tag.
+# Run it by hand to republish a tag, or another ref, after a docs-only fix.
+# Needs the split GitHub App installed on stewart-php/stewart-php.github.io with contents write.
+name: Docs
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Tag, branch or commit to publish; the latest release tag when empty
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-publish
+  cancel-in-progress: false
+
+env:
+  DOCKERHUB_LOGIN: ${{ vars.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+
+jobs:
+  publish:
+    name: Build and publish
+    if: vars.SPLIT_APP_CLIENT_ID != ''
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check out the ref to publish
+        id: ref
+        run: |
+          ref="${INPUT_REF:-}"
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            ref="$GITHUB_REF_NAME"
+          elif [ -z "$ref" ]; then
+            ref=$(git tag --list 'v*.*.*' --sort=-version:refname | head -n 1)
+          fi
+          [ -n "$ref" ] || { echo "::error::No release tag to publish; pass a ref."; exit 1; }
+          git rev-parse --verify --quiet "$ref^{commit}" > /dev/null || { echo "::error::$ref is not a commit."; exit 1; }
+          git checkout --quiet --detach "$ref"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+        env:
+          INPUT_REF: ${{ inputs.ref }}
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        if: env.DOCKERHUB_LOGIN == 'true'
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - run: make docs-install
+      - run: make docs-build
+      - id: token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.SPLIT_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SPLIT_APP_PRIVATE_KEY }}
+          owner: stewart-php
+          permission-contents: write
+          repositories: stewart-php.github.io
+      - name: Publish to stewart-php.github.io
+        run: |
+          site="$RUNNER_TEMP/site"
+          git clone --quiet "https://x-access-token:$TOKEN@github.com/stewart-php/stewart-php.github.io.git" "$site"
+          # Frozen major versions (/docs/1.x/) and the preview (/docs/next/) are published separately and kept.
+          rsync --archive --delete --exclude '/[0-9]*.x/' --exclude '/next/' docs/site/dist/docs/ "$site/docs/"
+          rsync --archive --delete docs/site/dist/docs-dev/ "$site/docs-dev/"
+          touch "$site/.nojekyll"
+          cd "$site"
+          git add --all
+          if git diff --cached --quiet; then
+            echo "The site already holds $REF."
+            exit 0
+          fi
+          git commit --quiet --message "docs: publish $REF"
+          git push --quiet origin HEAD
+        env:
+          TOKEN: ${{ steps.token.outputs.token }}
+          REF: ${{ steps.ref.outputs.ref }}
+          GIT_AUTHOR_NAME: stewart-split[bot]
+          GIT_AUTHOR_EMAIL: stewart-split[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: stewart-split[bot]
+          GIT_COMMITTER_EMAIL: stewart-split[bot]@users.noreply.github.com

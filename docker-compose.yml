@@ -74,8 +74,6 @@ services:
     environment:
       NPM_CONFIG_CACHE: /app/var/npm
       ASTRO_TELEMETRY_DISABLED: "1"
-    ports:
-      - "127.0.0.1:4321:4321"
     init: true
 
 networks:

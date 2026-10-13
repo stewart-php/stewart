@@ -1,0 +1,117 @@
+@startuml
+!include style.puml
+title Package dependencies
+left to right direction
+
+package "stewart-php/contracts" as contracts #E6F4EA {
+    class HaContext <<interface>>
+    class App <<interface>>
+    class Selector <<interface>>
+    class EntityState
+}
+
+package "stewart-php/support" as support #F1F3F4 {
+    class JsonShape
+    class JsonEncoder
+    class UrlRedactor
+    class ClosestNameFinder
+}
+
+package "stewart-php/client" as client #E8F0FE {
+    class HaClient
+    class HaConnection
+}
+
+package "stewart-php/runtime" as runtime #FEF7E0 {
+    class BrokerLifecycle
+    class WorkerSession
+    class StateCache
+    class Transport <<interface>>
+    class StatusCommand
+}
+
+package "stewart-php/mqtt" as mqtt #E8F0FE {
+    class ReconnectingMqttLink
+}
+
+package "stewart-php/testing\n(dev only)" as testing #F3E8FD {
+    class AppHarness
+    class RecordingHaContext
+}
+
+package "stewart-php/store" as store #FCE8E6 {
+    class Stores
+    class StoreBackend <<interface>>
+}
+
+package "stewart-php/store-redis" as storeRedis #FCE8E6 {
+    class RedisStoreBackend
+}
+
+package "stewart-php/sun" as sun #FFF4E5 {
+    class NoaaSolarCalculator
+    class LocatedSunCalendar
+}
+
+package "stewart-php/codegen\n(optional)" as codegen #F3E8FD {
+    class Generator
+    class Snapshot
+}
+
+package "generated" as generated #E6F4EA {
+    class Entities
+    class Services
+    class Manifest
+}
+
+package "repo root" as root #F1F3F4 {
+    class "bin/stewart" as cli
+    class "apps/*" as apps
+}
+
+contracts <-- client
+contracts <-- support
+support <-- client
+support <-- store
+support <-- runtime
+contracts <-- runtime
+client <-- runtime
+contracts <-- store
+store <-- storeRedis
+store <-- runtime
+contracts <-- sun
+sun <-- runtime
+contracts <-- codegen
+client <-- codegen
+runtime <-- codegen
+contracts <-- mqtt
+support <-- mqtt
+runtime <-- mqtt
+contracts <-- testing
+support <-- testing
+store <-- testing
+contracts <-- generated
+codegen ..> generated : writes
+runtime <-- root
+contracts <-- root
+generated <-- root
+
+note bottom of contracts
+  Depends on **PHP alone**,
+  and must stay that way. It is what lets a test double
+  and the generated entity classes exist without
+  dragging in a transport or a process model.
+end note
+
+note bottom of codegen
+  **Optional.** The skeleton requires it, so //generate//
+  runs on a server too; the console profile loads its
+  services only when it is installed.
+end note
+
+note bottom of generated
+  Written by //stewart generate// over your own instance.
+  Leans on contracts alone, so it costs a production
+  install nothing beyond its own bytes.
+end note
+@enduml

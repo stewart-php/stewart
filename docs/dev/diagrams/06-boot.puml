@@ -1,0 +1,57 @@
+@startuml
+!include style.puml
+title Boot sequence
+
+participant "Home Assistant" as ha $ha
+participant "Broker" as b $broker
+participant "Worker k" as w $worker
+participant "App" as app $usercode
+
+== connect and seed ==
+b -> ha : WebSocket connect
+ha --> b : auth_required
+b -> ha : auth { access_token }
+ha --> b : auth_ok { ha_version }
+b -> ha : subscribe_events
+note right of b : changes buffered until the seed
+b -> ha : get_config
+ha --> b : time_zone
+b -> ha : get_states
+ha --> b : all entity states
+b -> b : seed StateCache,\nreplay buffered changes
+
+== spawn ==
+b -> w ** : ProcessContextFactory::start(worker.php)
+note right of b
+  Explicitly ProcessContextFactory.
+  DefaultContextFactory silently uses
+  **threads** when ext-parallel exists.
+  The handle must be held for the
+  worker's whole life — its destructor
+  kills the process.
+end note
+b -> w : drain stdout/stderr
+b -> w : **Bootstrap** { workerId, apps[], timeZone }
+w -> app ** : constructApps()  <<from the app container>>
+note right of w
+  Constructed but **not** initialized:
+  the state cache is not seeded yet.
+end note
+
+b -> w : **StateSnapshot** { pre-encoded json }
+w -> w : load state cache **in place**\n(contexts already hold the object)
+
+== initialize ==
+w -> app : initialize()
+app -> w : watchEvents('call_service')->subscribe(...)
+w -> b : **Subscribe** { selector, kind }
+b -> b : register + invalidate match cache
+b -> w : **SubscriptionAck**
+app -> w : getState()  <<local hash lookup>>
+w --> b : **WorkerReady** { appIds, failedAppIds, memoryBytes }
+note over b
+  The broker does not wait for ready: a worker
+  gets every state change from spawn on.
+  WorkerReady cancels its ready deadline.
+end note
+@enduml

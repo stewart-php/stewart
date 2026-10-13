@@ -1,0 +1,103 @@
+---
+title: Calling services
+description: Turn lights on, send notifications and read answers from Home Assistant services, and handle calls that fail.
+sidebar:
+  order: 6
+---
+
+Apps change things in Home Assistant by calling its **services**, also called actions: `light.turn_on`,
+`notify.notify`, `cover.close_cover`. This app reads the weather forecast every morning and warns you when it will rain:
+
+```php file=../../examples/apps/RainWarning.php
+```
+
+## Calling a service
+
+```php
+$this->ha->callService('light', 'turn_on', ['brightness_pct' => 60], ServiceTarget::forEntities('light.hall'));
+```
+
+The arguments are the domain, the service, the service data, and the target. Data and target are optional. The
+service names and their data are listed in Home Assistant under **Developer tools → Actions**.
+
+The target picks what the service acts on:
+
+| Target | Acts on |
+|---|---|
+| `ServiceTarget::forEntities('light.hall', 'light.porch')` | Those entities |
+| `ServiceTarget::forAreas('kitchen')` | Everything in the area |
+| `ServiceTarget::forFloors('upstairs')` | Everything on the floor |
+| `ServiceTarget::forLabels('night')` | Everything with the label |
+| `ServiceTarget::forDevices('a1b2c3…')` | Everything on the device |
+
+`callService()` returns when Home Assistant has answered. Other apps keep running meanwhile. It returns an
+`EventContext` that identifies the call, which [Events](events.md#your-own-changes-or-someone-elses) explains.
+
+[Typed entities](codegen.md) offer the same calls as methods, such as
+`$this->entities->light->getEntity('light.hall')->turnOn()`, with your editor completing the names.
+
+## Reading an answer
+
+Some services answer with data, such as `weather.get_forecasts` or `calendar.get_events`. Call those with
+`callServiceForResponse()`. Its `response` property holds the answer as Home Assistant sends it: an array keyed by
+entity ID. The example checks each level of that array before it reads it, because nothing guarantees its shape.
+
+## When a call fails
+
+A failed call throws `ServiceCallException`. Its `reason` says why:
+
+| Reason | Means |
+|---|---|
+| `ServiceCallError::Rejected` | Home Assistant refused the call, for example an unknown service or wrong data |
+| `ServiceCallError::Unreachable` | Stewart is not connected to Home Assistant right now. The call is not queued |
+| `ServiceCallError::TimedOut` | Home Assistant did not answer within `home_assistant.command_timeout` (30 seconds) |
+| `ServiceCallError::Overloaded` | Too many calls were waiting for an answer at once; see below |
+
+If your handler does not catch the exception, Stewart logs it as a failure of the app, and the app keeps running.
+Catch it where the app can do something useful, as the example does:
+
+```php
+try {
+    $this->ha->callService('lock', 'lock', target: ServiceTarget::forEntities('lock.front_door'));
+} catch (ServiceCallException $e) {
+    $this->logger->warning('Could not lock the door', ['reason' => $e->reason->value]);
+}
+```
+
+## Limits
+
+A worker may have 64 calls waiting for an answer at once, and all workers together 256. Further calls fail with
+`Overloaded` until answers come back. A loop that calls a service for hundreds of entities can reach this; use one
+call with a target that names all of them instead. The limits are `service_calls.max_in_flight_per_worker` and
+`service_calls.max_in_flight`.
+
+## Dry run
+
+With dry run on, Stewart logs each call instead of sending it, and answers it as if it succeeded. Use it to try an
+app against your real Home Assistant without changing anything:
+
+```bash
+make run ONLY=rain-warning DRY_RUN=1
+```
+
+The log shows `Service call not sent: service_calls.dry_run is on`, with the service, the data and the target. Dry
+run is the `service_calls.dry_run` setting.
+
+## Testing
+
+The test harness records every call. `stubServiceAnswer()` sets what a service answers, and
+`stubServiceFailure()` makes it fail:
+
+```php file=../../examples/tests/RainWarningTest.php
+```
+
+`$harness->ha->getLastCall()` returns the last call, and `$harness->ha->calls` all of them. Each has
+`getServiceName()` (`'notify.notify'`), `data`, and `listTargetedEntityIds()`.
+
+## Common problems
+
+**`was rejected by Home Assistant`.** The message carries Home Assistant's reason. Try the same call under
+**Developer tools → Actions**.
+
+**Calls fail with `could not reach Home Assistant`.** Stewart was reconnecting. Check its log for connection
+messages, and `make status`.

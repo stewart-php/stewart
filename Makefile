@@ -52,45 +52,50 @@ down: ## Stop everything
 	$(DC) down --remove-orphans
 
 DOCS_RUN := $(DC) run --rm --no-deps docs
+DOCS_USER_PORT := 4321
+DOCS_DEV_PORT := 4322
+SITE ?= user
 
 .PHONY: docs
-docs: docs-serve ## Live-preview the documentation site
+docs: docs-user ## Live-preview the user documentation
 
 .PHONY: docs-install
-docs-install: ## Install the documentation site dependencies
-	$(DOCS_RUN) npm install
+docs-install: ## Install the documentation site dependencies from the lockfile
+	$(DOCS_RUN) npm ci
 
 .PHONY: docs-diagrams
 docs-diagrams: ## Render the PlantUML sources to SVG
-	@mkdir -p docs/pages/diagrams
 	$(DOCKER) run --rm \
-		-v "$(CURDIR)/docs/diagrams:/data" \
-		-v "$(CURDIR)/docs/pages/diagrams:/out" \
+		-v "$(CURDIR)/docs/dev/diagrams:/data" \
 		-u "$(UID):$(GID)" \
-		plantuml/plantuml -tsvg -o /out "/data/*.puml"
-	@echo "Diagrams rendered to docs/pages/diagrams/*.svg"
+		plantuml/plantuml -tsvg "/data/*.puml"
+	@echo "Diagrams rendered to docs/dev/diagrams/*.svg"
 
 .PHONY: docs-clean
 docs-clean: ## Remove the documentation site build output and caches
 	@rm -rf docs/site/dist docs/site/.astro docs/site/node_modules/.astro
 	@echo "Documentation build output and caches removed"
 
-.PHONY: docs-serve
-docs-serve: docs-diagrams ## Serve the documentation site at http://localhost:4321
-	$(DC) run --rm --no-deps --service-ports docs npm run dev -- --host 0.0.0.0
+.PHONY: docs-user
+docs-user: ## Serve the user documentation at http://localhost:4321/docs/
+	$(DC) run --rm --no-deps -p 127.0.0.1:$(DOCS_USER_PORT):$(DOCS_USER_PORT) docs npm run dev:user -- --host 0.0.0.0
+
+.PHONY: docs-dev
+docs-dev: docs-diagrams ## Serve the developer documentation at http://localhost:4322/docs-dev/
+	$(DC) run --rm --no-deps -p 127.0.0.1:$(DOCS_DEV_PORT):$(DOCS_DEV_PORT) docs npm run dev:dev -- --host 0.0.0.0
 
 .PHONY: docs-build
-docs-build: docs-clean docs-diagrams ## Build the documentation site, validating every link
+docs-build: docs-clean docs-diagrams ## Build both documentation sites into docs/site/dist, validating every link
 	$(DOCS_RUN) npm run build
 
 .PHONY: docs-preview
-docs-preview: ## Serve the built documentation site
-	$(DC) run --rm --no-deps --service-ports docs npm run preview -- --host 0.0.0.0
+docs-preview: ## Serve a built documentation site [SITE=user|dev]
+	$(DC) run --rm --no-deps -p 127.0.0.1:$(if $(filter dev,$(SITE)),$(DOCS_DEV_PORT):$(DOCS_DEV_PORT),$(DOCS_USER_PORT):$(DOCS_USER_PORT)) docs npm run preview:$(SITE) -- --host 0.0.0.0
 
 # --- quality --------------------------------------------------------------
 
 .PHONY: check
-check: stan cs test test-integration test-process test-persistence test-architecture ha-check ## Run every check
+check: stan cs test test-docs test-integration test-process test-persistence test-architecture ha-check ## Run every check
 
 .PHONY: lint-ci
 lint-ci: ## Lint and security-audit the GitHub workflows, lint the Dockerfiles
@@ -117,6 +122,20 @@ cs-fix: ## Fix code style
 .PHONY: test
 test: ## Unit tests (no Home Assistant needed)
 	$(RUN) vendor/bin/phpunit --testsuite=unit --log-junit var/reports/junit/unit.xml
+
+.PHONY: test-docs
+test-docs: ## Tests of the example apps the user documentation includes, and their generated classes
+	$(RUN) packages/runtime/bin/stewart generate --config docs/examples/stewart.yaml --snapshot-in docs/examples/snapshot.json --check
+	$(RUN) php bin/docs-reference.php --check
+	$(RUN) vendor/bin/phpunit --testsuite=docs --log-junit var/reports/junit/docs.xml
+
+.PHONY: docs-reference
+docs-reference: ## Write the generated reference pages of the user documentation from the code
+	$(RUN) php bin/docs-reference.php
+
+.PHONY: docs-examples-generate
+docs-examples-generate: ## Regenerate the typed classes the documentation examples use, from docs/examples/snapshot.json
+	$(RUN) packages/runtime/bin/stewart generate --config docs/examples/stewart.yaml --snapshot-in docs/examples/snapshot.json
 
 .PHONY: test-process
 test-process: ## Worker process smoke tests against Valkey (no Home Assistant needed)
