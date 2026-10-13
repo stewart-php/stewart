@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\State\EntityState;
+use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\State\StateChangeOrigin;
 use Stewart\Contracts\Time\Duration;
@@ -94,6 +95,28 @@ final class EntityStateTest extends TestCase
         $removed = new StateChange(new EntityId('light.gone'), new EntityState(new EntityId('light.gone'), 'on'), null);
         self::assertTrue($removed->isRemoved());
         self::assertFalse($removed->isNew());
+    }
+
+    public function testWithFromReplacesOnlyTheStartingState(): void
+    {
+        $change = new StateChange(
+            new EntityId('light.hall'),
+            new EntityState(new EntityId('light.hall'), 'off'),
+            new EntityState(new EntityId('light.hall'), 'on'),
+            Instant::fromEpochMicroseconds(5),
+            new EventContext('ctx'),
+            StateChangeOrigin::Resync,
+        );
+        $earlierFrom = new EntityState(new EntityId('light.hall'), 'on');
+
+        $merged = $change->withFrom($earlierFrom);
+
+        self::assertSame($earlierFrom, $merged->from);
+        self::assertSame($change->to, $merged->to);
+        self::assertSame($change->firedAt, $merged->firedAt);
+        self::assertSame($change->context, $merged->context);
+        self::assertSame(StateChangeOrigin::Resync, $merged->origin);
+        self::assertFalse($merged->hasStateChanged());
     }
 
     public function testHasHeldForOnceLongEnoughUnchanged(): void

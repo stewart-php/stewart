@@ -30,6 +30,7 @@ minor release may break; its "Upgrading" section says what to change.
 - `STEWART_APPS__<APP>__OPTIONS__<NAME>_FILE` fills an app option from a file, such as a mounted secret
 - `AppHarness` in `stewart-php/testing` builds an app with its options and recording fakes; tests push states,
   events and commands, call `advanceTime()` for timers, schedules and waits, and inspect what the app did
+- `StateChange::withFrom()` returns a copy of a state change that starts from another state
 
 ### Fixed
 
