@@ -19,7 +19,6 @@ use Stewart\Mqtt\Exception\MqttClientError;
 use Stewart\Mqtt\Exception\MqttClientException;
 use Stewart\Mqtt\OutboundMqttQueue;
 use Stewart\Mqtt\Packet\ConnectReturnCode;
-use Stewart\Mqtt\Packet\PacketDecoder;
 use Stewart\Mqtt\Packet\PacketEncoder;
 use Stewart\Mqtt\Packet\PacketReader;
 use Stewart\Mqtt\ReconnectingMqttLink;
@@ -229,7 +228,7 @@ final class ReconnectingMqttLinkTest extends TestCase
 
         return $this->link = new ReconnectingMqttLink(
             $config,
-            new MqttConnector(new PacketReader(new PacketDecoder()), new PacketEncoder(), $timers, $timers),
+            new MqttConnector(new PacketReader(), new PacketEncoder(), $timers, $timers),
             new OutboundMqttQueue($config->outboundBuffer),
             $this->deadlines,
             SystemClock::inUtc(),

@@ -16,7 +16,6 @@ use Stewart\Mqtt\Packet\ConnAckPacket;
 use Stewart\Mqtt\Packet\ConnectReturnCode;
 use Stewart\Mqtt\Packet\PacketBodyReader;
 use Stewart\Mqtt\Packet\PacketBytes;
-use Stewart\Mqtt\Packet\PacketDecoder;
 use Stewart\Mqtt\Packet\PacketReader;
 use Stewart\Mqtt\Packet\PingRespPacket;
 use Stewart\Mqtt\Packet\PubAckPacket;
@@ -25,11 +24,10 @@ use Stewart\Mqtt\Packet\SubAckPacket;
 use Stewart\Mqtt\Packet\UnsubAckPacket;
 use Stewart\Testing\Exception\AssertsReason;
 
-#[CoversClass(PacketDecoder::class)]
 #[CoversClass(PacketReader::class)]
 #[CoversClass(PacketBodyReader::class)]
 #[CoversClass(MqttClientException::class)]
-final class PacketDecoderTest extends TestCase
+final class PacketReaderTest extends TestCase
 {
     use AssertsReason;
 
@@ -114,6 +112,6 @@ final class PacketDecoderTest extends TestCase
 
     private static function readPacket(string $hex): object
     {
-        return new PacketReader(new PacketDecoder())->readPacket(new BufferedReader(new ReadableBuffer((string) hex2bin($hex))));
+        return new PacketReader()->readPacket(new BufferedReader(new ReadableBuffer((string) hex2bin($hex))));
     }
 }
