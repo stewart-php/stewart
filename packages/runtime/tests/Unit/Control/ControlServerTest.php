@@ -26,15 +26,15 @@ use Stewart\Runtime\Control\Protocol\Frame\SnapshotFrame;
 use Stewart\Runtime\Control\Protocol\Frame\SnapshotRequest;
 use Stewart\Runtime\Control\Protocol\Frame\Welcome;
 use Stewart\Runtime\Control\Request\ControlRequestDispatcher;
-use Stewart\Runtime\Control\Request\ControlRequestHandler;
 use Stewart\Runtime\Control\Server\ClientSession;
 use Stewart\Runtime\Control\Server\ControlServer;
 use Stewart\Runtime\Control\Server\UnixSocketFile;
+use Stewart\Runtime\Control\SnapshotSource;
 use Stewart\Runtime\Exception\ControlError;
 use Stewart\Runtime\Exception\ControlException;
-use Stewart\Runtime\Tests\Fixtures\Control\FailingSnapshotRequestHandler;
-use Stewart\Runtime\Tests\Fixtures\Control\StubSnapshotRequestHandler;
+use Stewart\Runtime\Tests\Fixtures\Control\FailingSnapshotSource;
 use Stewart\Runtime\Tests\Fixtures\Control\StubSnapshotSource;
+use Stewart\Runtime\Tests\Fixtures\Http\AdminApiFixture;
 use Stewart\Support\Time\Deadlines;
 use Stewart\Support\Time\RevoltTimers;
 use Stewart\Testing\Logging\RecordingLogger;
@@ -154,7 +154,7 @@ final class ControlServerTest extends TestCase
         self::assertSame(1, $this->snapshots->taken);
     }
 
-    public function testRequestWithoutHandlerIsAnsweredAsFailed(): void
+    public function testUnexpectedFrameIsAnsweredAsFailed(): void
     {
         $this->listen();
         $socket = $this->connect();
@@ -168,9 +168,9 @@ final class ControlServerTest extends TestCase
         self::assertContains('Refused a control request', $this->logger->listMessagesAt('info'));
     }
 
-    public function testHandlerCrashIsAnsweredAsFailed(): void
+    public function testSnapshotCrashIsAnsweredAsFailed(): void
     {
-        $this->server = $this->createServer(5.0, snapshotHandler: new FailingSnapshotRequestHandler());
+        $this->server = $this->createServer(5.0, snapshots: new FailingSnapshotSource());
         $this->server->start();
         $socket = $this->connect();
         self::assertInstanceOf(Welcome::class, $this->greet($socket));
@@ -354,13 +354,12 @@ final class ControlServerTest extends TestCase
         $this->server->start();
     }
 
-    /** @param ControlRequestHandler<SnapshotRequest>|null $snapshotHandler */
-    private function createServer(float $sessionTimeout, Deadlines $deadlines = new RevoltTimers(), ?ControlRequestHandler $snapshotHandler = null): ControlServer
+    private function createServer(float $sessionTimeout, Deadlines $deadlines = new RevoltTimers(), ?SnapshotSource $snapshots = null): ControlServer
     {
         return new ControlServer(
             address: new UnixControlAddress($this->path),
             token: self::TOKEN,
-            requests: new ControlRequestDispatcher([$snapshotHandler ?? new StubSnapshotRequestHandler($this->snapshots)]),
+            requests: new ControlRequestDispatcher($snapshots ?? $this->snapshots, new AdminApiFixture()->admin),
             deadlines: $deadlines,
             codec: $this->codec,
             logger: $this->logger,

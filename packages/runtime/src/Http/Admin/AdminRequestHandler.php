@@ -15,12 +15,14 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\ExceptionReason;
 use Stewart\Contracts\Exception\IdentifierError;
 use Stewart\Contracts\Exception\StewartException;
+use Stewart\Runtime\Admin\RuntimeAdmin;
+use Stewart\Runtime\Control\Protocol\Frame\CommandResult;
+use Stewart\Runtime\Control\Protocol\Frame\RequestFailed;
 use Stewart\Runtime\Exception\AppError;
 use Stewart\Runtime\Exception\WorkerError;
 use Stewart\Runtime\Http\Admin\Response\AdminAppList;
 use Stewart\Runtime\Http\Admin\Response\AdminAppView;
-use Stewart\Runtime\Http\Admin\Response\AdminCommandResult;
-use Stewart\Runtime\Http\Admin\Response\AdminFailure;
+use Stewart\Runtime\Lifecycle\AppPauseSource;
 use Stewart\Runtime\Metrics\PrometheusTextEncoder;
 use Stewart\Runtime\Metrics\RuntimeMetricsExporter;
 use Throwable;
@@ -34,8 +36,7 @@ final readonly class AdminRequestHandler implements RequestHandler
     private const array METRICS_HEADERS = ['content-type' => PrometheusTextEncoder::CONTENT_TYPE, 'cache-control' => 'no-store'];
 
     public function __construct(
-        private AppsAdminApi $apps,
-        private WorkersAdminApi $workers,
+        private RuntimeAdmin $admin,
         private AdminApiCodec $codec,
         private RuntimeMetricsExporter $metrics,
         private LoggerInterface $logger,
@@ -46,20 +47,20 @@ final readonly class AdminRequestHandler implements RequestHandler
     public function handleRequest(Request $request): Response
     {
         if (!$this->isAuthorized($request)) {
-            return $this->respondWithFailure(HttpStatus::UNAUTHORIZED, new AdminFailure('unauthorized', 'A valid bearer token is required.'), ['www-authenticate' => 'Bearer']);
+            return $this->respondWithFailure(HttpStatus::UNAUTHORIZED, new RequestFailed('unauthorized', 'A valid bearer token is required.'), ['www-authenticate' => 'Bearer']);
         }
 
         $path = $request->getUri()->getPath();
         $route = AdminRoute::fromPath($path);
 
         if ($route === null) {
-            return $this->respondWithFailure(HttpStatus::NOT_FOUND, new AdminFailure('not_found', \sprintf('No admin endpoint at %s.', $path)));
+            return $this->respondWithFailure(HttpStatus::NOT_FOUND, new RequestFailed('not_found', \sprintf('No admin endpoint at %s.', $path)));
         }
 
         if (!$route->allowsMethod($request->getMethod())) {
             return $this->respondWithFailure(
                 HttpStatus::METHOD_NOT_ALLOWED,
-                new AdminFailure('method_not_allowed', \sprintf('%s does not accept %s.', $path, $request->getMethod())),
+                new RequestFailed('method_not_allowed', \sprintf('%s does not accept %s.', $path, $request->getMethod())),
                 ['allow' => implode(', ', $route->action->listAllowedMethods())],
             );
         }
@@ -69,24 +70,24 @@ final readonly class AdminRequestHandler implements RequestHandler
                 ? new Response(HttpStatus::OK, self::METRICS_HEADERS, $this->metrics->exportMetrics())
                 : $this->respond(HttpStatus::OK, $this->answerRoute($route));
         } catch (StewartException $e) {
-            return $this->respondWithFailure($this->selectFailureStatus($e->reason), new AdminFailure((string) $e->reason->value, $e->getMessage()));
+            return $this->respondWithFailure($this->selectFailureStatus($e->reason), new RequestFailed((string) $e->reason->value, $e->getMessage()));
         } catch (Throwable $e) {
             $this->logger->error('Could not answer the admin request', ['path' => $path, 'exception' => $e]);
 
-            return $this->respondWithFailure(HttpStatus::INTERNAL_SERVER_ERROR, new AdminFailure('internal_error', 'The admin request failed; the daemon log has the cause.'));
+            return $this->respondWithFailure(HttpStatus::INTERNAL_SERVER_ERROR, new RequestFailed('internal_error', 'The admin request failed; the daemon log has the cause.'));
         }
     }
 
     /** @throws StewartException */
-    private function answerRoute(AdminRoute $route): AdminAppList|AdminAppView|AdminCommandResult
+    private function answerRoute(AdminRoute $route): AdminAppList|AdminAppView|CommandResult
     {
         return match ($route->action) {
-            AdminAction::ListApps => $this->apps->listApps(),
-            AdminAction::ShowApp => $this->apps->showApp(new AppId((string) $route->resourceId)),
-            AdminAction::PauseApp => $this->apps->pauseApp(new AppId((string) $route->resourceId)),
-            AdminAction::ResumeApp => $this->apps->resumeApp(new AppId((string) $route->resourceId)),
-            AdminAction::ResetApp => $this->apps->resetApp(new AppId((string) $route->resourceId)),
-            AdminAction::RestartWorker => $this->workers->restartWorker((string) $route->resourceId),
+            AdminAction::ListApps => new AdminAppList(array_map(AdminAppView::fromAppStatus(...), $this->admin->listHostedAppStatuses())),
+            AdminAction::ShowApp => AdminAppView::fromAppStatus($this->admin->requireAppStatus(new AppId((string) $route->resourceId))),
+            AdminAction::PauseApp => $this->admin->pauseApp(new AppId((string) $route->resourceId), AppPauseSource::Http),
+            AdminAction::ResumeApp => $this->admin->resumeApp(new AppId((string) $route->resourceId), AppPauseSource::Http),
+            AdminAction::ResetApp => $this->admin->resetApp(new AppId((string) $route->resourceId), AppPauseSource::Http),
+            AdminAction::RestartWorker => $this->admin->restartWorker((string) $route->resourceId),
             AdminAction::ShowMetrics => throw new LogicException('Metrics are answered before the JSON routes.'),
         };
     }
@@ -110,7 +111,7 @@ final readonly class AdminRequestHandler implements RequestHandler
     }
 
     /** @param array<non-empty-string, string> $headers */
-    private function respondWithFailure(int $status, AdminFailure $failure, array $headers = []): Response
+    private function respondWithFailure(int $status, RequestFailed $failure, array $headers = []): Response
     {
         try {
             return $this->respond($status, $failure, $headers);
@@ -125,7 +126,7 @@ final readonly class AdminRequestHandler implements RequestHandler
      * @param array<non-empty-string, string> $headers
      * @throws Throwable
      */
-    private function respond(int $status, AdminAppList|AdminAppView|AdminCommandResult|AdminFailure $body, array $headers = []): Response
+    private function respond(int $status, AdminAppList|AdminAppView|CommandResult|RequestFailed $body, array $headers = []): Response
     {
         return new Response($status, [...self::JSON_HEADERS, ...$headers], $this->codec->encodeResponse($body));
     }

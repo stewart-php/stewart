@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Health;
 
-use Stewart\Runtime\Control\SnapshotAssembler;
+use Stewart\Runtime\Control\SnapshotSource;
 
 final readonly class SnapshotProbeReporter implements ProbeReporter
 {
     public function __construct(
-        private SnapshotAssembler $snapshots,
+        private SnapshotSource $snapshots,
         private ReadinessCheck $readiness,
     ) {}
 
@@ -17,7 +17,7 @@ final readonly class SnapshotProbeReporter implements ProbeReporter
     {
         return match ($kind) {
             ProbeKind::Liveness => ProbeReport::alive(),
-            ProbeKind::Readiness => ProbeReport::fromVerdict($this->readiness->assessSnapshot($this->snapshots->assembleSnapshot())),
+            ProbeKind::Readiness => ProbeReport::fromVerdict($this->readiness->assessSnapshot($this->snapshots->takeSnapshot())),
         };
     }
 }

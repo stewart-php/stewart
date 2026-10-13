@@ -6,26 +6,39 @@ namespace Stewart\Runtime\Tests\Fixtures\Control;
 
 use LogicException;
 use Psr\Log\NullLogger;
+use Stewart\Client\Component\ComponentInstance;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppMetrics;
+use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
+use Stewart\Runtime\Broker\Component\ComponentTracker;
+use Stewart\Runtime\Broker\ConnectionTracker;
+use Stewart\Runtime\Broker\DaemonStartTime;
+use Stewart\Runtime\Broker\Deploy\DeployState;
 use Stewart\Runtime\Broker\HaCallSlots;
 use Stewart\Runtime\Broker\SubscriptionRegistry;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerPool;
 use Stewart\Runtime\Broker\WorkerSlot;
+use Stewart\Runtime\Config\ExposeConfig;
+use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
+use Stewart\Runtime\Control\Assembler\StoreHealthBuilder;
+use Stewart\Runtime\Control\Assembler\WorkerStatusBuilder;
+use Stewart\Runtime\Control\SnapshotAssembler;
 use Stewart\Runtime\Ipc\Message\Pong;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
+use Stewart\Runtime\Model\StewartVersion;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
+use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerSpawner;
 use Stewart\Runtime\Tests\Fixtures\Broker\RecordingPoolListener;
 use Stewart\Runtime\Tests\Fixtures\Broker\WorkerPoolFixture;
@@ -117,6 +130,34 @@ final readonly class BrokerStateFixture
 
             return new ServiceCallResult($request->correlationId, new ServiceResponse('light', 'turn_on'));
         });
+    }
+
+    public function createSnapshotAssembler(
+        DaemonStartTime $startTime,
+        ConnectionTracker $connection,
+        ?AppStatusBuilder $appStatuses = null,
+        DeployState $deployState = new DeployState(),
+        ?ComponentTracker $componentTracker = null,
+        string $componentInstance = 'default',
+    ): SnapshotAssembler {
+        $pools = $this->pools;
+
+        return new SnapshotAssembler(
+            session: $this->session,
+            stewartVersion: new StewartVersion('0.1.0-test'),
+            startTime: $startTime,
+            connection: $connection,
+            slots: $pools->slots,
+            callSlots: $this->callSlots,
+            registry: $this->registry,
+            deployState: $deployState,
+            componentTracker: $componentTracker ?? new ComponentTracker($this->timers->clock),
+            expose: new ExposeConfig(ComponentInstance::parse($componentInstance), Duration::seconds(10)),
+            workerStatuses: new WorkerStatusBuilder($pools->slots, $pools->watchdog, $pools->restartPolicy, $this->callSlots),
+            appStatuses: $appStatuses ?? new AppStatusBuilder($this->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), $startTime), FakeHomeAssistant::createUnreachable()->exposures),
+            storeHealth: new StoreHealthBuilder($pools->slots, ConfigFixture::createPersistenceConfig()),
+            clock: $this->timers->clock,
+        );
     }
 
     public function stopEverything(): void

@@ -23,8 +23,8 @@ use Stewart\Runtime\Kernel\ConsoleKernel;
 use Stewart\Runtime\Kernel\SyntheticServices;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Tests\Fixtures\Config\ConfigLoaderFixture;
-use Stewart\Runtime\Tests\Fixtures\Control\StubSnapshotRequestHandler;
 use Stewart\Runtime\Tests\Fixtures\Control\StubSnapshotSource;
+use Stewart\Runtime\Tests\Fixtures\Http\AdminApiFixture;
 use Stewart\Support\Time\RevoltTimers;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Filesystem\Filesystem;
@@ -183,7 +183,7 @@ final class StatusCommandTest extends TestCase
         $this->server = new ControlServer(
             address: new UnixControlAddress($this->path),
             token: self::TOKEN,
-            requests: new ControlRequestDispatcher([new StubSnapshotRequestHandler($snapshots)]),
+            requests: new ControlRequestDispatcher($snapshots, new AdminApiFixture()->admin),
             deadlines: new RevoltTimers(),
             codec: new FrameCodec(FrameCodec::createControlWireMapper()),
             logger: new NullLogger(),
