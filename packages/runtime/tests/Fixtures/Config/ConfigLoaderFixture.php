@@ -6,14 +6,7 @@ namespace Stewart\Runtime\Tests\Fixtures\Config;
 
 use Stewart\Runtime\Config\ConfigFileReader;
 use Stewart\Runtime\Config\ConfigLoader;
-use Stewart\Runtime\Config\Environment\BooleanLeafParser;
-use Stewart\Runtime\Config\Environment\FloatLeafParser;
-use Stewart\Runtime\Config\Environment\InlineListLeafParser;
-use Stewart\Runtime\Config\Environment\InlineValueInference;
-use Stewart\Runtime\Config\Environment\IntegerLeafParser;
-use Stewart\Runtime\Config\Environment\LeafParserChain;
-use Stewart\Runtime\Config\Environment\ScalarLeafParser;
-use Stewart\Runtime\Config\Environment\VariableLeafParser;
+use Stewart\Runtime\Config\Environment\EnvironmentValueParser;
 use Stewart\Runtime\Config\EnvironmentOverlay;
 use Stewart\Runtime\Config\EnvironmentPlaceholders;
 use Stewart\Runtime\Config\EnvironmentVariables;
@@ -39,12 +32,12 @@ final class ConfigLoaderFixture
 
     public static function createOverlay(EnvironmentVariables $variables = new EnvironmentVariables()): EnvironmentOverlay
     {
-        return new EnvironmentOverlay($variables, self::createLeafParserChain(), new ClosestNameFinder(), new SecretFileReader());
+        return new EnvironmentOverlay($variables, new EnvironmentValueParser(), new ClosestNameFinder(), new SecretFileReader());
     }
 
     public static function createPlaceholders(EnvironmentVariables $variables = new EnvironmentVariables()): EnvironmentPlaceholders
     {
-        return new EnvironmentPlaceholders($variables, self::createLeafParserChain());
+        return new EnvironmentPlaceholders($variables, new EnvironmentValueParser());
     }
 
     public static function createConsoleConfigDump(string $projectDir, EnvironmentVariables $variables): CommandTester
@@ -52,19 +45,5 @@ final class ConfigLoaderFixture
         $kernel = new ConsoleKernel($projectDir, [], new SyntheticServices()->withService(EnvironmentVariables::class, $variables));
 
         return new CommandTester($kernel->createApplication()->find(ConfigDumpCommand::NAME));
-    }
-
-    public static function createLeafParserChain(): LeafParserChain
-    {
-        $inference = new InlineValueInference();
-
-        return new LeafParserChain([
-            new BooleanLeafParser(),
-            new IntegerLeafParser(),
-            new FloatLeafParser(),
-            new ScalarLeafParser(),
-            new VariableLeafParser($inference),
-            new InlineListLeafParser($inference),
-        ]);
     }
 }

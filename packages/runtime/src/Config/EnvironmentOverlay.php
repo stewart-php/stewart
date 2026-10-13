@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Config;
 
 use Closure;
-use Stewart\Runtime\Config\Environment\LeafParserChain;
+use Stewart\Runtime\Config\Environment\EnvironmentValueParser;
 use Stewart\Runtime\Exception\ConfigurationError;
 use Stewart\Runtime\Exception\ConfigurationException;
 use Stewart\Support\Text\ClosestNameFinder;
@@ -28,7 +28,7 @@ final readonly class EnvironmentOverlay
 
     public function __construct(
         private EnvironmentVariables $variables,
-        private LeafParserChain $leafParserChain,
+        private EnvironmentValueParser $environmentValueParser,
         private ClosestNameFinder $closestNameFinder,
         private SecretFileReader $secretFiles,
     ) {}
@@ -59,7 +59,7 @@ final readonly class EnvironmentOverlay
 
             $target = $this->resolveOverrideTarget($tree, $file, $segments, $name);
 
-            if (!$this->leafParserChain->supportsNode($target->node)) {
+            if (!$this->environmentValueParser->supportsNode($target->node)) {
                 throw ConfigurationException::createForReason(ConfigurationError::EnvironmentVariableNamesSection, variable: $name, separator: self::SEPARATOR);
             }
 
@@ -76,7 +76,7 @@ final readonly class EnvironmentOverlay
 
             $variableByPath[$valuePath] = $name;
             $value = $target->readsSecretFile ? $this->secretFiles->readSecretFile($name, $raw) : $raw;
-            $overrides = $this->withValueAtPath($overrides, $target->path, $this->leafParserChain->parseForNode($target->node, $name, $value));
+            $overrides = $this->withValueAtPath($overrides, $target->path, $this->environmentValueParser->parseForNode($target->node, $name, $value));
         }
 
         return $overrides;
@@ -177,7 +177,7 @@ final readonly class EnvironmentOverlay
 
         $secretKey = substr($key, 0, -\strlen(self::SECRET_FILE_SUFFIX));
 
-        return isset($children[$secretKey]) && $this->leafParserChain->supportsNode($children[$secretKey]) ? $secretKey : null;
+        return isset($children[$secretKey]) && $this->environmentValueParser->supportsNode($children[$secretKey]) ? $secretKey : null;
     }
 
     /** @param array<array-key, mixed> $file */

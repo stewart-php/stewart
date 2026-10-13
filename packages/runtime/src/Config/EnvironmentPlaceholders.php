@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Config;
 
-use Stewart\Runtime\Config\Environment\LeafParserChain;
+use Stewart\Runtime\Config\Environment\EnvironmentValueParser;
 use Stewart\Runtime\Exception\ConfigurationError;
 use Stewart\Runtime\Exception\ConfigurationException;
 use Symfony\Component\Config\Definition\ArrayNode;
@@ -20,7 +20,7 @@ final readonly class EnvironmentPlaceholders
 
     public function __construct(
         private EnvironmentVariables $variables,
-        private LeafParserChain $leafParserChain,
+        private EnvironmentValueParser $environmentValueParser,
     ) {}
 
     /**
@@ -74,7 +74,7 @@ final readonly class EnvironmentPlaceholders
             return $substituted;
         }
 
-        return $this->leafParserChain->parseForNode($node, \sprintf('%s (${%s})', $setting, $match[1]), $substituted);
+        return $this->environmentValueParser->parseForNode($node, \sprintf('%s (${%s})', $setting, $match[1]), $substituted);
     }
 
     /** @throws ConfigurationException */

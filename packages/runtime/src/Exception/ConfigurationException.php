@@ -54,11 +54,6 @@ final class ConfigurationException extends StewartException
         );
     }
 
-    public static function environmentValueInvalid(string $variable, string $expected, string $raw): self
-    {
-        return self::createForReason(ConfigurationError::EnvironmentValueInvalid, variable: $variable, expected: $expected, raw: $raw);
-    }
-
     private static function describeKnownApps(AppIdCollection $knownAppIds): string
     {
         return $knownAppIds->isEmpty()
