@@ -16,7 +16,7 @@ use Stewart\Runtime\Control\Assembler\StoreHealthBuilder;
 use Stewart\Runtime\Control\Assembler\WorkerStatusBuilder;
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
 
-final readonly class SnapshotAssembler
+final readonly class SnapshotAssembler implements SnapshotSource
 {
     public function __construct(
         private DaemonInfoBuilder $daemonInfo,
@@ -31,7 +31,7 @@ final readonly class SnapshotAssembler
         private Clock $clock,
     ) {}
 
-    public function assembleSnapshot(): RuntimeSnapshot
+    public function takeSnapshot(): RuntimeSnapshot
     {
         return new RuntimeSnapshot(
             takenAt: $this->clock->getNow(),

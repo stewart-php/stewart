@@ -22,6 +22,7 @@ use Stewart\Runtime\Control\Protocol\Status\RegistrationInfo;
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
 use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
 use Stewart\Runtime\Control\Protocol\Status\WorkerStatus;
+use Stewart\Runtime\Control\SnapshotSource;
 use Stewart\Runtime\Lifecycle\AppFailurePhase;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
 use Stewart\Runtime\Lifecycle\AppState;
@@ -33,7 +34,7 @@ use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Store\StoreHealth;
 
-final class StubSnapshotSource
+final class StubSnapshotSource implements SnapshotSource
 {
     public int $taken = 0;
 

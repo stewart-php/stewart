@@ -34,8 +34,8 @@ use Stewart\Runtime\Control\Server\ControlServer;
 use Stewart\Runtime\Control\Server\UnixSocketFile;
 use Stewart\Runtime\Exception\ControlError;
 use Stewart\Runtime\Exception\ControlException;
-use Stewart\Runtime\Tests\Fixtures\Control\StubSnapshotRequestHandler;
 use Stewart\Runtime\Tests\Fixtures\Control\StubSnapshotSource;
+use Stewart\Runtime\Tests\Fixtures\Http\AdminApiFixture;
 use Stewart\Support\Time\RevoltTimers;
 use Stewart\Testing\Exception\AssertsReason;
 use Symfony\Component\Filesystem\Filesystem;
@@ -214,7 +214,7 @@ final class ControlClientTest extends TestCase
         $this->server = new ControlServer(
             address: new UnixControlAddress($this->path),
             token: self::TOKEN,
-            requests: new ControlRequestDispatcher([new StubSnapshotRequestHandler($this->snapshots)]),
+            requests: new ControlRequestDispatcher($this->snapshots, new AdminApiFixture()->admin),
             deadlines: new RevoltTimers(),
             codec: new FrameCodec(FrameCodec::createControlWireMapper()),
             logger: new NullLogger(),

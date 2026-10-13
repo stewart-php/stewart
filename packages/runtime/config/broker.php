@@ -29,8 +29,8 @@ use Stewart\Runtime\Broker\SubscriptionRegistry;
 use Stewart\Runtime\Broker\WebsocketHaSession;
 use Stewart\Runtime\Broker\WorkerSpawner;
 use Stewart\Runtime\Control\ControlPlaneFactory;
-use Stewart\Runtime\Control\Request\ControlRequestDispatcher;
-use Stewart\Runtime\Control\Request\ControlRequestHandler;
+use Stewart\Runtime\Control\SnapshotAssembler;
+use Stewart\Runtime\Control\SnapshotSource;
 use Stewart\Runtime\Health\ProbeReportCodec;
 use Stewart\Runtime\Health\ProbeReporter;
 use Stewart\Runtime\Health\SnapshotProbeReporter;
@@ -54,7 +54,6 @@ return static function (ContainerConfigurator $container): void {
     $services = $container->services()->defaults()->autowire()->autoconfigure();
 
     $services->instanceof(WorkerMessageHandler::class)->tag('stewart.worker_message_handler');
-    $services->instanceof(ControlRequestHandler::class)->tag('stewart.control_request_handler');
     $services->instanceof(BrokerSubscriptionListener::class)->tag('stewart.broker_subscription_listener');
     $services->instanceof(RuntimeMetricSource::class)->tag('stewart.runtime_metric_source');
 
@@ -77,7 +76,6 @@ return static function (ContainerConfigurator $container): void {
     $services->set(WorkerSlotCollection::class)->factory([service(AppPlacement::class), 'planWorkerSlots']);
     $services->set(ManifestCheck::class)->factory([ManifestCheck::class, 'forGeneratedCode']);
     $services->set(WorkerMessageDispatcher::class)->arg('$handlers', tagged_iterator('stewart.worker_message_handler'));
-    $services->set(ControlRequestDispatcher::class)->arg('$handlers', tagged_iterator('stewart.control_request_handler'));
 
     $services->set(GuardedStoreBackend::class)->factory([service(BrokerStoreBackendOpener::class), 'openConfiguredBackend']);
     $services->alias(StoreBackend::class, GuardedStoreBackend::class);
@@ -96,6 +94,7 @@ return static function (ContainerConfigurator $container): void {
     $services->set(RuntimeMetricsCollector::class)->arg('$runtimeMetricSources', tagged_iterator('stewart.runtime_metric_source'));
     $services->set(HttpListenerCollection::class)->factory([service(HttpListenerFactory::class), 'createHttpListeners']);
     $services->alias(ProbeReporter::class, SnapshotProbeReporter::class);
+    $services->alias(SnapshotSource::class, SnapshotAssembler::class);
     $services->set(ProbeReportCodec::class)->arg('$probeReportWireMapper', inline_service(WireMapper::class)->factory([ProbeReportCodec::class, 'createProbeReportWireMapper']));
     $services->set(AdminApiCodec::class)->arg('$adminApiWireMapper', inline_service(WireMapper::class)->factory([AdminApiCodec::class, 'createAdminApiWireMapper']));
 };

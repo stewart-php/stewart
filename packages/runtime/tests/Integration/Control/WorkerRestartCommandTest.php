@@ -17,7 +17,7 @@ use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Config\ConfigLoader;
 use Stewart\Runtime\Console\WorkerRestartCommand;
-use Stewart\Runtime\Control\Request\RestartWorkerRequestHandler;
+use Stewart\Runtime\Control\Request\ControlRequestDispatcher;
 use Stewart\Runtime\Ipc\Wire\IpcCodec;
 use Stewart\Runtime\Kernel\ConsoleKernel;
 use Stewart\Runtime\Kernel\SyntheticServices;
@@ -37,7 +37,7 @@ use function Amp\async;
 use function Amp\delay;
 
 #[CoversClass(WorkerRestartCommand::class)]
-#[CoversClass(RestartWorkerRequestHandler::class)]
+#[CoversClass(ControlRequestDispatcher::class)]
 final class WorkerRestartCommandTest extends TestCase
 {
     private const string TOKEN = 'restart-test-token';

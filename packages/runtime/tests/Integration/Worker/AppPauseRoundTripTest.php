@@ -26,8 +26,7 @@ use Stewart\Runtime\Config\ProjectRoot;
 use Stewart\Runtime\Control\Client\ControlClient;
 use Stewart\Runtime\Control\Client\ControlTarget;
 use Stewart\Runtime\Control\Protocol\Codec\FrameCodec;
-use Stewart\Runtime\Control\Request\PauseAppRequestHandler;
-use Stewart\Runtime\Control\Request\ResumeAppRequestHandler;
+use Stewart\Runtime\Control\Request\ControlRequestDispatcher;
 use Stewart\Runtime\Ipc\Wire\IpcCodec;
 use Stewart\Runtime\Kernel\SyntheticServices;
 use Stewart\Runtime\Model\WorkerId;
@@ -49,8 +48,7 @@ use Stewart\Testing\Store\InMemoryStoreBackend;
 use function Amp\async;
 
 #[CoversClass(AppPauseService::class)]
-#[CoversClass(PauseAppRequestHandler::class)]
-#[CoversClass(ResumeAppRequestHandler::class)]
+#[CoversClass(ControlRequestDispatcher::class)]
 #[CoversClass(BrokerLifecycle::class)]
 final class AppPauseRoundTripTest extends TestCase
 {
