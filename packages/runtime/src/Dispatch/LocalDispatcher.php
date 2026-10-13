@@ -25,6 +25,7 @@ use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\Scope\ScopeLifecycle;
+use Stewart\Support\State\Collection\StateChangeCollection;
 use Stewart\Support\Stream\SubscriptionScope;
 use Stewart\Support\Wire\TriggerSpec;
 use Throwable;
@@ -135,8 +136,24 @@ final class LocalDispatcher
 
     public function dispatchStateChange(StateChange $change): void
     {
-        $this->deliver(SubscriptionKind::StateChange, $change, $this->stateIndex->findMatching(SubscriptionKind::StateChange, $change->entityId->value));
-        $this->deliver(SubscriptionKind::StateChange, $change, $this->stateFilterIndex->findMatching($change->entityId));
+        $this->dispatchStateChanges(StateChangeCollection::fromList([$change]));
+    }
+
+    public function dispatchStateChanges(StateChangeCollection $changes): void
+    {
+        $changesByQueue = [];
+
+        foreach ($changes as $change) {
+            foreach ($this->listStateChangeQueuesMatching($change) as $subscriptionId => $queue) {
+                $changesByQueue[$subscriptionId][] = $change;
+            }
+        }
+
+        foreach ($changesByQueue as $subscriptionId => $queueChanges) {
+            foreach ($queueChanges as $change) {
+                $this->queues[$subscriptionId]->push($change);
+            }
+        }
     }
 
     public function dispatchEvent(HaEvent $event, SubscriptionIdCollection $deliverTo): void
@@ -245,6 +262,26 @@ final class LocalDispatcher
                 $queue->push($event);
             }
         }
+    }
+
+    /** @return array<string, SubscriptionQueue> */
+    private function listStateChangeQueuesMatching(StateChange $change): array
+    {
+        $matching = [];
+        $deliverTo = [
+            ...$this->stateIndex->findMatching(SubscriptionKind::StateChange, $change->entityId->value),
+            ...$this->stateFilterIndex->findMatching($change->entityId),
+        ];
+
+        foreach ($deliverTo as $id) {
+            $queue = $this->queues[$id->value] ?? null;
+
+            if ($queue !== null && $queue->subscription->kind === SubscriptionKind::StateChange) {
+                $matching[$id->value] = $queue;
+            }
+        }
+
+        return $matching;
     }
 
     /** @return array<string, SubscriptionQueue> */
