@@ -32,9 +32,7 @@ use Stewart\Contracts\Exposure\SwitchConfig;
 use Stewart\Contracts\Exposure\TextConfig;
 use Stewart\Contracts\Exposure\TimeConfig;
 use Stewart\Runtime\Model\ResourceScope;
-use Stewart\Runtime\Worker\Exposure\ExposedCommandStreams;
-use Stewart\Runtime\Worker\Exposure\ExposedHandleRegistry;
-use Stewart\Runtime\Worker\Exposure\ExposureRequester;
+use Stewart\Runtime\Worker\Exposure\ExposureChannel;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedBinarySensor;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedButton;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedDate;
@@ -50,22 +48,18 @@ use Stewart\Runtime\Worker\Exposure\WorkerExposedTime;
 final readonly class WorkerEntityExposure implements EntityExposure
 {
     public function __construct(
-        private ExposureRequester $requester,
-        private ExposedHandleRegistry $handles,
-        private ExposedCommandStreams $commandStreams,
+        private ExposureChannel $channel,
         private ResourceScope $resourceScope,
     ) {}
 
     public function forApp(AppId $appId): self
     {
-        return new self($this->requester, $this->handles, $this->commandStreams, ResourceScope::forApp($appId));
+        return new self($this->channel, ResourceScope::forApp($appId));
     }
 
     public function exposeSensor(ExposedEntityKey|string $key, SensorConfig $config = new SensorConfig(), ?DeviceInfo $device = null): ExposedSensor
     {
-        $key = $this->claimKey($key);
-
-        return $this->exposeHandle(new WorkerExposedSensor($this->requester, $this->handles, $this->resourceScope, $key, $config), $config, $device);
+        return $this->exposeHandle(new WorkerExposedSensor($this->channel, $this->resourceScope, $this->claimKey($key), $config), $config, $device);
     }
 
     public function exposeBinarySensor(
@@ -73,65 +67,47 @@ final readonly class WorkerEntityExposure implements EntityExposure
         BinarySensorConfig $config = new BinarySensorConfig(),
         ?DeviceInfo $device = null,
     ): ExposedBinarySensor {
-        $key = $this->claimKey($key);
-
-        return $this->exposeHandle(new WorkerExposedBinarySensor($this->requester, $this->handles, $this->resourceScope, $key, $config), $config, $device);
+        return $this->exposeHandle(new WorkerExposedBinarySensor($this->channel, $this->resourceScope, $this->claimKey($key), $config), $config, $device);
     }
 
     public function exposeSwitch(ExposedEntityKey|string $key, SwitchConfig $config = new SwitchConfig(), ?DeviceInfo $device = null): ExposedSwitch
     {
-        $key = $this->claimKey($key);
-
-        return $this->exposeHandle(new WorkerExposedSwitch($this->requester, $this->handles, $this->resourceScope, $key, $config, $this->commandStreams), $config, $device);
+        return $this->exposeHandle(new WorkerExposedSwitch($this->channel, $this->resourceScope, $this->claimKey($key), $config), $config, $device);
     }
 
     public function exposeButton(ExposedEntityKey|string $key, ButtonConfig $config = new ButtonConfig(), ?DeviceInfo $device = null): ExposedButton
     {
-        $key = $this->claimKey($key);
-
-        return $this->exposeHandle(new WorkerExposedButton($this->requester, $this->handles, $this->resourceScope, $key, $config, $this->commandStreams), $config, $device);
+        return $this->exposeHandle(new WorkerExposedButton($this->channel, $this->resourceScope, $this->claimKey($key), $config), $config, $device);
     }
 
     public function exposeNumber(ExposedEntityKey|string $key, NumberConfig $config, ?DeviceInfo $device = null): ExposedNumber
     {
-        $key = $this->claimKey($key);
-
-        return $this->exposeHandle(new WorkerExposedNumber($this->requester, $this->handles, $this->resourceScope, $key, $config, $this->commandStreams), $config, $device);
+        return $this->exposeHandle(new WorkerExposedNumber($this->channel, $this->resourceScope, $this->claimKey($key), $config), $config, $device);
     }
 
     public function exposeSelect(ExposedEntityKey|string $key, SelectConfig $config, ?DeviceInfo $device = null): ExposedSelect
     {
-        $key = $this->claimKey($key);
-
-        return $this->exposeHandle(new WorkerExposedSelect($this->requester, $this->handles, $this->resourceScope, $key, $config, $this->commandStreams), $config, $device);
+        return $this->exposeHandle(new WorkerExposedSelect($this->channel, $this->resourceScope, $this->claimKey($key), $config), $config, $device);
     }
 
     public function exposeText(ExposedEntityKey|string $key, TextConfig $config = new TextConfig(), ?DeviceInfo $device = null): ExposedText
     {
-        $key = $this->claimKey($key);
-
-        return $this->exposeHandle(new WorkerExposedText($this->requester, $this->handles, $this->resourceScope, $key, $config, $this->commandStreams), $config, $device);
+        return $this->exposeHandle(new WorkerExposedText($this->channel, $this->resourceScope, $this->claimKey($key), $config), $config, $device);
     }
 
     public function exposeTime(ExposedEntityKey|string $key, TimeConfig $config = new TimeConfig(), ?DeviceInfo $device = null): ExposedTime
     {
-        $key = $this->claimKey($key);
-
-        return $this->exposeHandle(new WorkerExposedTime($this->requester, $this->handles, $this->resourceScope, $key, $config, $this->commandStreams), $config, $device);
+        return $this->exposeHandle(new WorkerExposedTime($this->channel, $this->resourceScope, $this->claimKey($key), $config), $config, $device);
     }
 
     public function exposeDate(ExposedEntityKey|string $key, DateConfig $config = new DateConfig(), ?DeviceInfo $device = null): ExposedDate
     {
-        $key = $this->claimKey($key);
-
-        return $this->exposeHandle(new WorkerExposedDate($this->requester, $this->handles, $this->resourceScope, $key, $config, $this->commandStreams), $config, $device);
+        return $this->exposeHandle(new WorkerExposedDate($this->channel, $this->resourceScope, $this->claimKey($key), $config), $config, $device);
     }
 
     public function exposeDateTime(ExposedEntityKey|string $key, DateTimeConfig $config = new DateTimeConfig(), ?DeviceInfo $device = null): ExposedDateTime
     {
-        $key = $this->claimKey($key);
-
-        return $this->exposeHandle(new WorkerExposedDateTime($this->requester, $this->handles, $this->resourceScope, $key, $config, $this->commandStreams), $config, $device);
+        return $this->exposeHandle(new WorkerExposedDateTime($this->channel, $this->resourceScope, $this->claimKey($key), $config), $config, $device);
     }
 
     /** @throws ExposureException */
@@ -140,7 +116,7 @@ final readonly class WorkerEntityExposure implements EntityExposure
         $key = ExposedEntityKey::fromKeyOrString($key);
         $appId = $this->resourceScope->appId ?? throw ExposureException::outsideApp($key);
 
-        if ($this->handles->isKeyTaken($this->resourceScope, $key)) {
+        if ($this->channel->handles->isKeyTaken($this->resourceScope, $key)) {
             throw ExposureException::keyTaken($appId, $key);
         }
 
@@ -157,12 +133,12 @@ final readonly class WorkerEntityExposure implements EntityExposure
     private function exposeHandle(WorkerExposedEntity $handle, ExposedEntityConfig $config, ?DeviceInfo $device): WorkerExposedEntity
     {
         // Recorded before the broker answers, so a second exposure of the same key fails while the first is in flight.
-        $this->handles->recordHandle($this->resourceScope, $handle->getKey(), $handle);
+        $this->channel->handles->recordHandle($this->resourceScope, $handle->getKey(), $handle);
 
         try {
-            $snapshot = $this->requester->requestExposure($this->resourceScope, $handle->getKey(), $config, $device, new ExposedStateChange());
+            $snapshot = $this->channel->requester->requestExposure($this->resourceScope, $handle->getKey(), $config, $device, new ExposedStateChange());
         } catch (ExposureException $e) {
-            $this->handles->forgetHandle($this->resourceScope, $handle->getKey());
+            $this->channel->handles->forgetHandle($this->resourceScope, $handle->getKey());
 
             throw $e;
         }

@@ -50,6 +50,7 @@ use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\Exposure\ExposedCommandSettlements;
 use Stewart\Runtime\Worker\Exposure\ExposedCommandStreams;
 use Stewart\Runtime\Worker\Exposure\ExposedHandleRegistry;
+use Stewart\Runtime\Worker\Exposure\ExposureChannel;
 use Stewart\Runtime\Worker\Exposure\ExposureRequester;
 use Stewart\Runtime\Worker\Exposure\SettlingCommandStream;
 use Stewart\Runtime\Worker\Exposure\WorkerExposedBinarySensor;
@@ -115,9 +116,11 @@ final class WorkerEntityExposureTest extends TestCase
         $commandStreams = new ExposedCommandStreams($this->dispatcher, $timers, $settlements);
         $this->commandHandler = new ExposedEntityCommandedHandler($this->handles, $commandStreams, $settlements);
         $this->shared = new WorkerEntityExposure(
-            new ExposureRequester($this->broker, $pending, $timers, TestBootstrap::createWorkerSettings(callTimeout: Duration::seconds(1))),
-            $this->handles,
-            $commandStreams,
+            new ExposureChannel(
+                new ExposureRequester($this->broker, $pending, $timers, TestBootstrap::createWorkerSettings(callTimeout: Duration::seconds(1))),
+                $this->handles,
+                $commandStreams,
+            ),
             ResourceScope::shared(),
         );
     }

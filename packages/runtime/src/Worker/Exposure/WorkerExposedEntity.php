@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Worker\Exposure;
 
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\EventStream;
 use Stewart\Contracts\Exception\ExposureException;
+use Stewart\Contracts\Exposure\Command\ExposedCommand;
 use Stewart\Contracts\Exposure\ExposedEntity;
 use Stewart\Contracts\Exposure\ExposedEntityConfig;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
@@ -34,10 +36,9 @@ abstract class WorkerExposedEntity implements ExposedEntity, ExposedHandle
 
     /** @param TConfig $config */
     public function __construct(
-        private readonly ExposureRequester $requester,
-        private readonly ExposedHandleRegistry $handles,
-        protected readonly ResourceScope $scope,
-        protected readonly ExposedEntityKey $key,
+        private readonly ExposureChannel $channel,
+        private readonly ResourceScope $scope,
+        private readonly ExposedEntityKey $key,
         private ExposedEntityConfig $config,
     ) {}
 
@@ -79,8 +80,8 @@ abstract class WorkerExposedEntity implements ExposedEntity, ExposedHandle
     public function remove(): void
     {
         $this->assertNotReleased();
-        $this->requester->requestRemoval($this->scope, $this->key);
-        $this->handles->forgetHandle($this->scope, $this->key);
+        $this->channel->requester->requestRemoval($this->scope, $this->key);
+        $this->channel->handles->forgetHandle($this->scope, $this->key);
         $this->released = true;
     }
 
@@ -102,6 +103,12 @@ abstract class WorkerExposedEntity implements ExposedEntity, ExposedHandle
         $this->released = true;
     }
 
+    /** @return EventStream<ExposedCommand> */
+    protected function watchOwnCommands(): EventStream
+    {
+        return $this->channel->commandStreams->watchCommands($this->scope, $this->key);
+    }
+
     /** @return TConfig */
     protected function findConfig(): ExposedEntityConfig
     {
@@ -115,7 +122,7 @@ abstract class WorkerExposedEntity implements ExposedEntity, ExposedHandle
     protected function sendReconfiguration(ExposedEntityConfig $config): void
     {
         $this->assertNotReleased();
-        $snapshot = $this->requester->requestReconfiguration($this->scope, $this->key, $config);
+        $snapshot = $this->channel->requester->requestReconfiguration($this->scope, $this->key, $config);
         $this->config = $config;
 
         if ($snapshot !== null) {
@@ -127,7 +134,7 @@ abstract class WorkerExposedEntity implements ExposedEntity, ExposedHandle
     protected function sendChange(ExposedStateChange $change): void
     {
         $this->assertNotReleased();
-        $this->requester->requestUpdate($this->scope, $this->key, $change);
+        $this->channel->requester->requestUpdate($this->scope, $this->key, $change);
 
         $this->state = $change->state ?? $this->state;
         $this->attributes = $change->attributes ?? $this->attributes;

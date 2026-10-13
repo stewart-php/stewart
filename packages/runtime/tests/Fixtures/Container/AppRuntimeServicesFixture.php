@@ -26,6 +26,7 @@ use Stewart\Runtime\Worker\Context\DispatchStreams;
 use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\Exposure\ExposedCommandSettlements;
 use Stewart\Runtime\Worker\Exposure\ExposedCommandStreams;
+use Stewart\Runtime\Worker\Exposure\ExposureChannel;
 use Stewart\Runtime\Worker\Exposure\ExposureRequester;
 use Stewart\Runtime\Worker\PendingRequests;
 use Stewart\Runtime\Worker\Registry\RegistryEditRequester;
@@ -85,9 +86,11 @@ final class AppRuntimeServicesFixture
                 ResourceScope::shared(),
             ),
             exposure: new WorkerEntityExposure(
-                new ExposureRequester($transport, new PendingRequests(new CorrelationIdSequence(new WorkerId(0))), $timers, TestBootstrap::createWorkerSettings(callTimeout: Duration::seconds(30))),
-                $resources->exposedHandles,
-                new ExposedCommandStreams($resources->dispatcher, $timers, new ExposedCommandSettlements($transport, new NullLogger())),
+                new ExposureChannel(
+                    new ExposureRequester($transport, new PendingRequests(new CorrelationIdSequence(new WorkerId(0))), $timers, TestBootstrap::createWorkerSettings(callTimeout: Duration::seconds(30))),
+                    $resources->exposedHandles,
+                    new ExposedCommandStreams($resources->dispatcher, $timers, new ExposedCommandSettlements($transport, new NullLogger())),
+                ),
                 ResourceScope::shared(),
             ),
             registryEditor: new WorkerRegistryEditor(
