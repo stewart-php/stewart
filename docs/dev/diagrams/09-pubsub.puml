@@ -1,0 +1,35 @@
+@startuml
+!include style.puml
+title App-to-app messaging, across processes
+
+participant "App A\n(worker 0)" as a $usercode
+participant "Worker 0" as w0 $worker
+participant "Broker" as b $broker
+participant "Worker 1" as w1 $worker
+participant "App B\n(worker 1)" as bb $usercode
+
+== subscribe, at boot ==
+bb -> w1 : topic('house.*')->subscribe(...)
+w1 -> b : **Subscribe** { kind: Topic, glob selector }
+
+== publish, at runtime ==
+a -> w0 : publish('house.away', [...])
+w0 -> b : **Publish** { topic, payload }
+b -> b : registry.route(Topic, 'house.away')
+b -> w1 : **TopicMessage** { event, deliverTo }
+w1 -> bb : handler(TopicEvent)  <<own fiber>>
+
+note over b
+  Unlike state changes, this goes **only** to
+  workers holding a matching subscription —
+  there is no state cache to keep fresh.
+end note
+
+note over a, bb
+  Fire-and-forget by design. There is no reply
+  channel: an app needing an answer models it as
+  a second topic. Request/response would need
+  correlation, timeouts, and a deadlock story
+  for two apps that ask each other.
+end note
+@enduml

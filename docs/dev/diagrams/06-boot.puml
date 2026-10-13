@@ -1,0 +1,57 @@
+@startuml
+!include style.puml
+title Boot sequence
+
+participant "Home Assistant" as ha $ha
+participant "Broker" as b $broker
+participant "Worker k" as w $worker
+participant "App" as app $usercode
+
+== connect and seed ==
+b -> ha : WebSocket connect
+ha --> b : auth_required
+b -> ha : auth { access_token }
+ha --> b : auth_ok { ha_version }
+b -> ha : get_states
+ha --> b : all entity states
+b -> b : seed StateCache,\ncache the JSON encoding
+b -> ha : get_config
+ha --> b : time_zone
+
+== spawn ==
+b -> w ** : ProcessContextFactory::start(worker.php)
+note right of b
+  Explicitly ProcessContextFactory.
+  DefaultContextFactory silently uses
+  **threads** when ext-parallel exists.
+  The handle must be held for the
+  worker's whole life — its destructor
+  kills the process.
+end note
+b -> w : pipe stdout/stderr
+b -> w : **Bootstrap** { workerId, apps[], timeZone }
+w -> app ** : new App($context, ...options)
+note right of w
+  Constructed but **not** initialized:
+  the state cache does not exist yet.
+end note
+
+b -> w : **StateSnapshot** { pre-encoded json }
+w -> w : load state cache **in place**\n(contexts already hold the object)
+
+== initialize ==
+w -> app : initialize()
+app -> w : stateChanges('sensor.*')->subscribe(...)
+w -> b : **Subscribe** { selector, kind }
+b -> b : register + invalidate match cache
+b -> w : **SubscriptionAck**
+app -> w : reads state()  <<local hash lookup>>
+w --> b : **WorkerReady** { appIds, pid }
+
+== running ==
+b -> ha : subscribe_events(state_changed)
+note over b
+  The broker waits for every worker to
+  report ready before fanning out events.
+end note
+@enduml

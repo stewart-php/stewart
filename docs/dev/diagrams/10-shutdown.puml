@@ -1,0 +1,39 @@
+@startuml
+!include style.puml
+title Graceful shutdown
+
+participant "SIGTERM\n/ SIGINT" as sig
+participant "Broker" as b $broker
+participant "Worker k" as w $worker
+participant "App" as app $usercode
+participant "Home Assistant" as ha $ha
+
+sig -> b : signal (needs ext-pcntl)
+b -> b : stop accepting events
+
+b -> w : **Shutdown** { reason, graceSeconds }
+w -> app : dispose()
+app --> w
+w -> w : fail all pending\nservice-call futures
+note right of w
+  Anything still awaiting a result would
+  otherwise hang a fiber through shutdown.
+end note
+
+w --> b : **returns** from the entrypoint callable
+note right of w
+  Returning, never exit(). The result channel is
+  written only after the callable returns, so
+  exiting turns a clean stop into a
+  ContextException in the broker.
+end note
+
+b -> w : join(TimeoutCancellation(grace))
+alt returned in time
+    w --> b : summary string
+else grace expired
+    b -> w !! : context->close()  <<kill>>
+end
+
+b -> ha : close WebSocket
+@enduml

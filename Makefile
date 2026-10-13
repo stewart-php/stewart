@@ -62,13 +62,11 @@ docs-install: ## Install the documentation site dependencies
 
 .PHONY: docs-diagrams
 docs-diagrams: ## Render the PlantUML sources to SVG
-	@mkdir -p docs/pages/diagrams
 	$(DOCKER) run --rm \
-		-v "$(CURDIR)/docs/diagrams:/data" \
-		-v "$(CURDIR)/docs/pages/diagrams:/out" \
+		-v "$(CURDIR)/docs/dev/diagrams:/data" \
 		-u "$(UID):$(GID)" \
-		plantuml/plantuml -tsvg -o /out "/data/*.puml"
-	@echo "Diagrams rendered to docs/pages/diagrams/*.svg"
+		plantuml/plantuml -tsvg "/data/*.puml"
+	@echo "Diagrams rendered to docs/dev/diagrams/*.svg"
 
 .PHONY: docs-clean
 docs-clean: ## Remove the documentation site build output and caches

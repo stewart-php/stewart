@@ -1,0 +1,62 @@
+' Shared look for every Stewart diagram.
+' An explicit light background rather than a transparent one: these render on
+' both GitHub themes, and transparent SVGs turn dark text invisible in dark mode.
+
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam ArrowColor #5F6368
+skinparam ArrowFontColor #3C4043
+
+skinparam rectangle {
+    BorderColor #5F6368
+    FontColor #202124
+    BackgroundColor #F8F9FA
+}
+skinparam component {
+    BorderColor #5F6368
+    FontColor #202124
+    BackgroundColor #F8F9FA
+}
+skinparam package {
+    BorderColor #5F6368
+    FontColor #202124
+    BackgroundColor #FFFFFF
+}
+skinparam class {
+    BorderColor #5F6368
+    FontColor #202124
+    BackgroundColor #F8F9FA
+    AttributeFontColor #3C4043
+    StereotypeFontColor #5F6368
+}
+skinparam sequence {
+    ArrowColor #5F6368
+    LifeLineBorderColor #9AA0A6
+    LifeLineBackgroundColor #F1F3F4
+    ParticipantBorderColor #5F6368
+    ParticipantBackgroundColor #F8F9FA
+    ParticipantFontColor #202124
+    GroupBackgroundColor #E8EAED
+    GroupBorderColor #5F6368
+    DividerBackgroundColor #E8EAED
+    DividerBorderColor #5F6368
+}
+skinparam note {
+    BackgroundColor #FEF7E0
+    BorderColor #B8860B
+    FontColor #3C4043
+}
+skinparam database {
+    BorderColor #5F6368
+    BackgroundColor #F8F9FA
+    FontColor #202124
+}
+
+' Role colors, used consistently across every diagram.
+!$ha      = "#FCE8E6"
+!$broker  = "#E8F0FE"
+!$worker  = "#E6F4EA"
+!$usercode = "#FEF7E0"

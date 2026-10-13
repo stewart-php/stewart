@@ -1,0 +1,160 @@
+@startuml
+!include style.puml
+title The public API surface (stewart-php/contracts)
+
+interface App {
+    +initialize(): void
+    +dispose(): void
+}
+
+interface HaContext {
+    .. reads — never suspend ..
+    +getState(id): ?EntityState
+    +getEntity(id): Entity
+    +requireState(id): EntityState
+    +listStates(selector): EntityStateCollection
+    .. streams ..
+    +watchStateChanges(selector): StateChangeStream
+    +watchEvents(eventType): EventStream
+    +watchTopic(pattern): EventStream
+    +watchConnection(): EventStream
+    .. actions — suspend ..
+    +callService(domain, service, data, target): void
+    +callServiceForResponse(domain, service, data, target): ServiceResponse
+    +publish(topic, payload): void
+    +isConnected(): bool
+}
+
+interface "EventStream<T>" as Stream {
+    +subscribe(Closure): Subscription
+    .. operators — worker-side ..
+    +filter(predicate): static
+    +map(fn): EventStream
+    +debounce(Duration, Edge): static
+    +throttle(Duration, Edge): static
+    +take(n): static
+    +takeUntil(EventStream): static
+}
+
+interface "StateChangeStream" as ChangeStream {
+    .. Home Assistant shaped, per entity ..
+    +distinctUntilChanged(): static
+    +whenChangedTo(state, for): StateTransitionStream
+    +whenStableFor(Duration): static
+    +acrossEntities(): EventStream
+}
+
+interface "StateTransitionStream" as TransitionStream {
+    .. directly after whenChangedTo ..
+    +from(state, ...states): static
+    +fromAnyState(): static
+}
+
+interface Timers {
+    +startTimer(Duration, Closure): TimerHandle
+}
+
+interface Scheduler {
+    +runEvery(Duration, Closure): ScheduledTask
+    +runDailyAt(TimeOfDay, Closure, DayOfWeek...): ScheduledTask
+    +runOnCron(expression, Closure): ScheduledTask
+    +runAfter(Duration, Closure): ScheduledTask
+    +runAt(DateTimeImmutable, Closure): ScheduledTask
+}
+
+interface Schedule {
+    +findNextOccurrenceAfter(DateTimeImmutable): ?DateTimeImmutable
+    +describe(): string
+}
+
+interface ScheduledTask {
+    +cancel(): void
+    +isActive(): bool
+    +getNextRunAt(): ?Instant
+    +getId(): string
+}
+
+Stream <|-- ChangeStream
+ChangeStream <|-- TransitionStream
+
+interface Subscription {
+    +unsubscribe(): void
+    +isActive(): bool
+    +getId(): string
+}
+
+class Selector <<final>> {
+    +getKind(): SelectorKind
+    +getPattern(): string
+    +listMembers(): SelectorCollection
+    +{static} exact(), glob(), regex(), anyOf(), any(), fromSpec()
+    +matches(candidate): bool
+    +toCanonicalKey(): string
+    +findExactPattern(): ?string
+}
+
+enum SelectorKind {
+    Exact
+    Glob
+    Regex
+    AnyOf
+}
+
+class EntityState {
+    +entityId, state
+    +attributes[]
+    +getDomain(), isUnavailable()
+    +getStateAsFloat(), get*Attribute()
+}
+class StateChange {
+    +from, to  (both nullable)
+    +hasStateChanged()
+    +changedTo(state)
+    +changedFrom(state)
+}
+
+App -right-> HaContext : constructed with
+App ..> Scheduler : constructed with
+Scheduler ..> Schedule : accepts
+Scheduler ..> ScheduledTask : returns
+HaContext --> Stream : returns
+HaContext ..> EntityState : returns
+Stream --> Subscription : returns
+Stream ..> StateChange : yields
+HaContext ..> Selector : accepts
+
+Selector --> SelectorKind
+
+note bottom of Selector
+  **Value objects**, never closures.
+  An event or topic selector crosses to the broker
+  as JSON and routes there; every predicate and
+  operator runs worker-side. A string is exact or
+  a glob; a regex is only built on request.
+end note
+
+note right of Stream
+  A stream rather than a bare callback, so the
+  operator layer landed without changing a single
+  existing call site. Each operator is a decorator;
+  nothing registers until subscribe().
+end note
+
+note right of ChangeStream
+  Every operator that keeps the element type hands
+  back a StateChangeStream, so whenChangedTo() still
+  chains after a filter(). Only map() drops out.
+end note
+
+note right of Timers
+  Timers are a port: Revolt in the runtime, a virtual
+  clock in tests. It is what lets debounce and the
+  scheduler be tested with no event loop.
+end note
+
+note right of Scheduler
+  Injected beside HaContext, not hung off it: operators
+  compose over an event source, and a schedule has none.
+  Occurrences resolve in Home Assistant's timezone.
+end note
+@enduml

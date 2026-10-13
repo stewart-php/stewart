@@ -1,0 +1,42 @@
+@startuml
+!include style.puml
+title A state change reaching an app
+
+participant "Home Assistant" as ha $ha
+participant "Broker" as b $broker
+participant "Worker 0" as w0 $worker
+participant "Worker 1" as w1 $worker
+participant "App\n(in worker 0)" as app $usercode
+
+ha -> b : event state_changed\n{ entity_id, old_state, new_state }
+b -> b : StateCache.apply()
+
+alt entity is new or removed
+    b -> b : invalidate routing cache
+    note right : a pattern's matches can change
+end
+
+b -> b : registry.route(entity_id)\n**memoised** per entity id
+
+par fan-out to every worker
+    b -> w0 : **StateChanged** { change, deliverTo: [sub-3] }
+    b -> w1 : **StateChanged** { change, deliverTo: [] }
+end
+
+w0 -> w0 : stateCache.apply()
+w1 -> w1 : stateCache.apply()
+note over w1
+  Worker 1 still updates its state cache even
+  though nothing there subscribed. A full
+  state cache can only stay fresh if it sees
+  **every** change — routing decides who
+  gets //told//, never who gets //updated//.
+end note
+
+w0 -> app : handler(StateChange)  <<own fiber>>
+note right of app
+  Each handler runs in its own fiber, so a
+  handler that awaits a service call cannot
+  stall the events queued behind it.
+end note
+@enduml

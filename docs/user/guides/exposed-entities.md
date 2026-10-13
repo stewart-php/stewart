@@ -1,0 +1,239 @@
+---
+title: Exposed entities
+description: Create and drive your own sensor, switch, number, select and other entities in Home Assistant.
+sidebar:
+  order: 9.5
+---
+
+Apps create their own Home Assistant entities and keep them up to date. It needs
+the `stewart` integration in Home Assistant (HACS, `stewart-php/hass-stewart`)
+and an administrator token; `stewart status` shows whether the integration is
+there on its `component` row.
+
+```php
+#[Automation(id: 'climate')]
+final class AverageTemperature implements App
+{
+    private const array SOURCES = ['sensor.kitchen_temperature', 'sensor.hall_temperature'];
+
+    private ExposedSensor $average;
+
+    public function __construct(
+        private readonly HaContext $ha,
+        private readonly EntityExposure $entities,
+    ) {}
+
+    public function initialize(): void
+    {
+        $this->average = $this->entities->exposeSensor('average_temperature', new SensorConfig(
+            deviceClass: SensorDeviceClass::Temperature,
+            unit: '°C',
+            stateClass: SensorStateClass::Measurement,
+            displayPrecision: 1,
+            name: 'Average temperature',
+        ));
+
+        $this->ha->watchStateChanges(Selector::anyOf(...self::SOURCES))->subscribe(function (): void {
+            $readings = array_filter(array_map(fn(string $id) => $this->ha->getState($id), self::SOURCES), static fn(?EntityState $state) => $state !== null && is_numeric($state->state));
+            $temperatures = array_map(static fn(EntityState $state) => (float) $state->state, $readings);
+
+            $this->average->setValue($temperatures === [] ? null : array_sum($temperatures) / \count($temperatures), ['sources' => self::SOURCES]);
+        });
+    }
+
+    public function dispose(): void {}
+}
+```
+
+- The key (`average_temperature`) is the entity's identity: its unique ID is
+  `stewart-<expose.instance>-<app id>-<key>`. Renaming the app or the key makes a
+  new entity. Home Assistant picks the entity ID; `getEntityId()` returns it.
+- Each app gets a device, `Stewart · <app id>`, under one hub device per daemon.
+  Pass a `DeviceInfo` to put an entity on a device of its own.
+- `exposeBinarySensor()` takes a `BinarySensorConfig`; its handle has `setOn()`
+  and `setOff()`.
+- A sensor value is a number, a string or `null` (unknown). With the `timestamp`
+  or `date` device class, pass a `DateTimeInterface`.
+- `setAttributes()`, `markAvailable()` and `markUnavailable()` change the rest of
+  the state; `remove()` deletes the entity from Home Assistant.
+
+## Switches and buttons
+
+A switch or a button sends commands back when someone uses it in Home Assistant.
+Watch them with `watchCommands()`; the service call in Home Assistant waits for
+your handler:
+
+```php
+$heater = $this->entities->exposeSwitch('heater', new SwitchConfig(SwitchDeviceClass::Outlet, name: 'Heater'));
+$heater->watchCommands()->subscribe(function (SwitchCommand $command): void {
+    if ($command->isTurnOn() && $this->ha->getState('binary_sensor.window')?->state === 'on') {
+        throw CommandException::rejected('Close the window first.');
+    }
+
+    $this->ha->callService('switch', $command->isTurnOn() ? 'turn_on' : 'turn_off', target: $this->ha->getEntity('switch.heater_plug'));
+});
+
+$this->entities->exposeButton('boost')->watchCommands()->subscribe(fn(ButtonPress $press) => $this->boost());
+```
+
+- When the handler returns, the command is accepted: the switch takes the
+  requested state and `getValue()` returns it.
+- `CommandException::rejected()` fails the service call with your message and
+  leaves the state as it was. Any other exception fails it too, with a generic
+  message, and counts as a handler failure.
+- The handler may await, for example a service call. Commands for one entity
+  run one at a time.
+- A switch nobody watches accepts every command, so it works as a stored toggle
+  your app reads with `getValue()`.
+- A command a stream operator drops (`filter()`, `debounce()`, …) or `map()`s
+  away is not answered; Home Assistant gives up after `expose.command_timeout`
+  (default `10s`, at most `300s`).
+- Commands for a paused app, or one that is not running, fail at once.
+- `SwitchCommand::getContext()` tells who used the entity, like any other
+  Home Assistant context.
+- Home Assistant records a button's press time before your handler runs, so a
+  rejected press still shows as the last press.
+
+## Numbers, selects, texts, dates and times
+
+These take a value from Home Assistant the same way a switch takes on and off:
+
+```php
+$offset = $this->entities->exposeNumber('target_offset', new NumberConfig(min: -3, max: 3, step: 0.5, unit: '°C', name: 'Target offset'));
+$offset->watchCommands()->subscribe(fn(NumberCommand $command) => $this->shiftTarget($command->value));
+
+$mode = $this->entities->exposeSelect('mode', new SelectConfig(['eco', 'comfort', 'away'], name: 'Mode'));
+$mode->watchCommands()->subscribe(fn(SelectCommand $command) => $this->applyMode($command->option));
+```
+
+| Method | Config | Value | Command |
+|---|---|---|---|
+| `exposeNumber()` | `NumberConfig` (`min`, `max` required; `step`, `mode`, `deviceClass`, `unit`) | `int\|float` | `NumberCommand` |
+| `exposeSelect()` | `SelectConfig` (`options` required) | `getOption()`, `setOption()` | `SelectCommand` |
+| `exposeText()` | `TextConfig` (`min`, `max` up to 255, `pattern`, `mode`) | `string` | `TextCommand` |
+| `exposeTime()` | `TimeConfig` | `TimeOfDay` | `TimeCommand` |
+| `exposeDate()` | `DateConfig` | `DateTimeImmutable`, midnight UTC | `DateCommand` |
+| `exposeDateTime()` | `DateTimeConfig` | `DateTimeImmutable` with its offset | `DateTimeCommand` |
+
+Home Assistant checks values against the range, options and pattern, and
+throws `StateInvalid` for one that does not fit. A text `pattern` is a Python
+regular expression matched from the start; anchor it with `^…$` for a full
+match.
+
+## Actions
+
+An action is a Home Assistant service your app answers, for scripts,
+automations and the action picker. It has no entity and no state:
+
+```php
+$boost = $this->entities->exposeAction('boost', new ActionConfig(
+    name: 'Boost',
+    description: 'Heats a room at full power for a while.',
+    fields: [
+        new ActionField('room', ActionFieldType::Entity, required: true),
+        new ActionField('minutes', ActionFieldType::Number, description: '30 when left out.'),
+    ],
+));
+$boost->watchCalls()->subscribe(fn(ActionCall $call) => $this->boost(
+    $call->findEntityId('room'),
+    (int) ($call->findNumber('minutes') ?? 30),
+));
+```
+
+- Home Assistant registers it as `stewart.<app>_<key>`, with `-` in the app ID
+  as `_`: `stewart.heating_boost` above.
+- Field types are `Text`, `Number`, `Boolean`, `Select` (with `options`) and
+  `Entity`. Home Assistant validates a call against them and shows a form in
+  the UI; read the values with `findString()`, `findNumber()`, `findBool()` and
+  `findEntityId()`.
+- A call is answered like a switch command: returning accepts it,
+  `CommandException::rejected()` fails it with your message, and a call to a
+  paused or stopped app fails at once.
+- Actions return no response data.
+- The service stays registered while Stewart is away, and calls fail until it
+  is back. `remove()`, pruning and unloading the integration remove it.
+- An action shares its key space with the app's entities. Two Stewart
+  instances cannot hold the same action; the second gets `ConfigInvalid`.
+
+## Changing the configuration
+
+`updateConfig()` replaces an entity's configuration in place: its name, icon,
+options, limits and the rest; its device and entity ID stay. `getConfig()`
+returns the current one.
+
+```php
+$mode->updateConfig(new SelectConfig(['eco', 'comfort'], name: 'Mode'));
+```
+
+When the current value no longer fits, for example an option you removed,
+Home Assistant shows it as unknown and `getValue()` (`getOption()`) returns
+`null`. A configuration Home Assistant refuses throws `ConfigInvalid` and leaves
+the previous one in place.
+
+## Restarts and outages
+
+Exposing a key does not set a state, so the handle starts with what Home
+Assistant restored: `getValue()` survives a restart of either side. While Home
+Assistant is unreachable, `expose*()` still returns a handle, and its entity ID
+is `null` until the next connect. Stewart keeps the last state of every exposed
+entity and sends them all again after each reconnect.
+
+When an app fails or stops, or its worker dies, its entities stay in Home
+Assistant with their last state but turn unavailable. They become available
+again when the app exposes them after its restart. Calling `expose*()` makes an
+entity available, even if the app marked it unavailable before.
+
+## Pruning
+
+About 30 seconds after every worker is ready, Stewart removes the entities of
+this daemon that no running app exposed, with their registry entries and any
+device left empty. Entities of apps that failed or did not start stay,
+unavailable. Expose entities in `initialize()`: an entity exposed later, for
+example from a schedule, is removed at startup and created again, losing what
+was set on it in Home Assistant. Set `expose.prune: false` to keep every entity.
+
+## Errors
+
+Every handle call waits for the broker and can throw `ExposureException`:
+
+| Reason | When |
+|---|---|
+| `ComponentMissing`, `ProtocolMismatch`, `ComponentRefused` | The integration is not installed, speaks another protocol, or refused the session |
+| `ConfigInvalid` | Home Assistant rejects the configuration, for example a unit that does not fit the device class |
+| `StateInvalid` | Home Assistant rejects the value |
+| `KeyTaken` | The app already exposes that key |
+| `Removed` | The handle was removed or its app stopped |
+
+`stewart_app_exposed_commands_total{app,outcome}` counts commands per app as
+`accepted`, `rejected` (by the app), `refused` (paused or not running) and `lost`
+(the worker died while handling it).
+
+## Testing
+
+`Stewart\Testing\Exposure\RecordingEntityExposure` stands in for the real thing:
+
+```php
+$entities = new RecordingEntityExposure();
+$app = new AverageTemperature($ha, $entities);
+$app->initialize();
+$ha->pushState('sensor.kitchen_temperature', '21.0');
+$ha->pushState('sensor.hall_temperature', '23.0');
+
+self::assertSame(22.0, $entities->requireSensor('average_temperature')->getValue());
+```
+
+`requireNumber()`, `requireSelect()`, `requireAction()` and the others return the recorded handle
+of each platform; `updateConfig()` on it replaces `$config`. [`AppHarness`](testing.md) gives an app
+one as `$harness->entities`.
+
+`seedSnapshot()` sets what Home Assistant would have restored, and
+`refuseExposures()` makes `expose*()` throw. `pushCommand()` on a recorded
+handle that takes commands runs your handlers like Home Assistant would; a rejection is
+thrown into the test:
+
+```php
+$this->expectException(CommandException::class);
+$entities->requireSwitch('heater')->pushCommand(new SwitchCommand(SwitchAction::TurnOn, new EventContext('test')));
+```
+
+`pushCall(['minutes' => 45])` on a recorded action does the same for a call.
