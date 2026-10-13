@@ -30,6 +30,7 @@ minor release may break; its "Upgrading" section says what to change.
 - `STEWART_APPS__<APP>__OPTIONS__<NAME>_FILE` fills an app option from a file, such as a mounted secret
 - `AppHarness` in `stewart-php/testing` builds an app with its options and recording fakes; tests push states,
   events and commands, call `advanceTime()` for timers, schedules and waits, and inspect what the app did
+- `StateChange::withFrom()` returns a copy of a state change that starts from another state
 
 ### Fixed
 
@@ -69,6 +70,9 @@ minor release may break; its "Upgrading" section says what to change.
 ### Changed
 
 - Generated code format 6; regenerate after upgrading
+- A full state-change subscription queue first drops a change that a newer change of the same entity supersedes,
+  starting the newer one from the dropped one's state, so every entity's latest change still reaches the handler.
+  Only when no entity has two queued changes is the oldest dropped
 - `stewart-php/testing` is public, for testing apps, and its API is covered by the backward-compatibility check
 - The `stewart-php/testing` fakes run each handler in its own fiber, so a handler that waits suspends only itself;
   `ManualTimers::delay()` lets resumed handlers run before the next timer is due, and the recording exposures share

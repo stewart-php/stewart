@@ -23,6 +23,11 @@ final readonly class StateChange
         return new self($state->entityId, $state, $state, origin: StateChangeOrigin::Initial);
     }
 
+    public function withFrom(?EntityState $from): self
+    {
+        return new self($this->entityId, $from, $this->to, $this->firedAt, $this->context, $this->origin);
+    }
+
     public function isReconstructed(): bool
     {
         return $this->origin === StateChangeOrigin::Resync;

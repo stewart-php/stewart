@@ -503,6 +503,55 @@ final class LocalDispatcherTest extends TestCase
         self::assertSame([3, 4], $handled);
     }
 
+    public function testFullStateChangeQueueDropsASupersededChangeBeforeAnotherEntitysOnlyOne(): void
+    {
+        $delivered = $this->deliverToDormantStateChangeQueue(3, [
+            self::createTransition('light.hall', 'off', 'on'),
+            self::createTransition('light.porch', 'off', 'on'),
+            self::createTransition('light.porch', 'on', 'off'),
+            self::createTransition('light.porch', 'off', 'on'),
+        ]);
+
+        self::assertSame(['light.hall off→on', 'light.porch off→off', 'light.porch off→on'], $delivered);
+        self::assertSame([1], $this->listener->dropReports);
+    }
+
+    public function testFullStateChangeQueueDropsTheOldestSupersededChangeFirst(): void
+    {
+        $delivered = $this->deliverToDormantStateChangeQueue(3, [
+            self::createTransition('light.hall', 'off', 'on'),
+            self::createTransition('light.hall', 'on', 'off'),
+            self::createTransition('light.porch', 'off', 'on'),
+            self::createTransition('light.attic', 'off', 'on'),
+        ]);
+
+        self::assertSame(['light.hall off→off', 'light.porch off→on', 'light.attic off→on'], $delivered);
+    }
+
+    public function testIncomingStateChangeTakesOverTheStartOfTheChangeItSupersedes(): void
+    {
+        $delivered = $this->deliverToDormantStateChangeQueue(3, [
+            self::createTransition('light.hall', 'off', 'on'),
+            self::createTransition('light.porch', 'off', 'on'),
+            self::createTransition('light.attic', 'off', 'on'),
+            self::createTransition('light.hall', 'on', 'off'),
+        ]);
+
+        self::assertSame(['light.porch off→on', 'light.attic off→on', 'light.hall off→off'], $delivered);
+    }
+
+    public function testFullStateChangeQueueOfDistinctEntitiesDropsTheOldest(): void
+    {
+        $delivered = $this->deliverToDormantStateChangeQueue(2, [
+            self::createTransition('light.hall', 'off', 'on'),
+            self::createTransition('light.porch', 'off', 'on'),
+            self::createTransition('light.attic', 'off', 'on'),
+        ]);
+
+        self::assertSame(['light.porch off→on', 'light.attic off→on'], $delivered);
+        self::assertSame([1], $this->listener->dropReports);
+    }
+
     public function testOperatorEmissionIsNotEvictedByABusyQueue(): void
     {
         $dispatcher = $this->createDispatcher(queueLimit: 1);
@@ -827,6 +876,36 @@ final class LocalDispatcherTest extends TestCase
             DeviceCollection::empty(),
             RegisteredEntityCollection::keyedByEntityId([new RegisteredEntity(new EntityId('light.hall'), areaId: new AreaId($areaId))]),
         );
+    }
+
+    /**
+     * @param list<StateChange> $changes
+     * @return list<string>
+     */
+    private function deliverToDormantStateChangeQueue(int $queueLimit, array $changes): array
+    {
+        $dispatcher = $this->createDispatcher($queueLimit);
+        $delivered = [];
+
+        $this->register($dispatcher, 'app', SubscriptionKind::StateChange, Selector::any(), static function (StateChange $change) use (&$delivered): void {
+            $delivered[] = \sprintf('%s %s→%s', $change->entityId->value, $change->from?->state, $change->to?->state);
+        }, activate: false);
+
+        foreach ($changes as $change) {
+            $dispatcher->dispatchStateChange($change);
+        }
+
+        $this->goLive($dispatcher, 'app');
+        EventLoopTicks::settleUntil(static function () use (&$delivered, $queueLimit): bool {
+            return \count($delivered) === $queueLimit;
+        });
+
+        return $delivered;
+    }
+
+    private static function createTransition(string $entityId, string $from, string $to): StateChange
+    {
+        return new StateChange(new EntityId($entityId), new EntityState(new EntityId($entityId), $from), new EntityState(new EntityId($entityId), $to));
     }
 
     private static function createChange(string $entityId): StateChange

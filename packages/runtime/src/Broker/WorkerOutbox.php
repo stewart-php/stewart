@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Broker;
 
-use Stewart\Contracts\State\StateChange;
 use Stewart\Runtime\Control\Protocol\Status\OutboxStatus;
 use Stewart\Runtime\Ipc\Message\BrokerMessage;
 use Stewart\Runtime\Ipc\Message\OutboxDelivery;
@@ -75,14 +74,7 @@ final class WorkerOutbox
         // Re-appended at the end, so the merged change never overtakes a later event.
         unset($this->queue[$lastSequence]);
 
-        $this->lastStateChanges[$entityId] = $this->appendToQueue(new EncodedStateChange(new StateChange(
-            entityId: $change->change->entityId,
-            from: $last->change->from,
-            to: $change->change->to,
-            firedAt: $change->change->firedAt,
-            context: $change->change->context,
-            origin: $change->change->origin,
-        )));
+        $this->lastStateChanges[$entityId] = $this->appendToQueue(new EncodedStateChange($change->change->withFrom($last->change->from)));
 
         ++$this->coalescedStateChanges;
     }

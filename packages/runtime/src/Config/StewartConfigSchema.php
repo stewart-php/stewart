@@ -92,7 +92,7 @@ final class StewartConfigSchema implements ConfigurationInterface
                     ->defaultValue(256)
                 ->end()
                 ->integerNode('subscription_buffer')
-                    ->info('Events queued per subscription while its handler is busy, before the oldest are dropped.')
+                    ->info('Events queued per subscription while its handler is busy, before queued events are dropped, superseded state changes first.')
                     ->min(1)
                     ->defaultValue(100)
                 ->end()
