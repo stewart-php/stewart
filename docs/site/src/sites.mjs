@@ -13,7 +13,10 @@ export const SITES = {
         port: 4321,
         title: 'Stewart',
         description: 'Write Home Assistant automations in PHP.',
-        sidebar: (site) => [{ label: 'Guides', items: directoryItems(site, 'guides') }],
+        sidebar: (site) => [
+            { label: 'Get started', items: directoryItems(site, 'start') },
+            { label: 'Guides', items: directoryItems(site, 'guides') },
+        ],
     },
     dev: {
         tree: 'dev',

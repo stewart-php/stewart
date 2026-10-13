@@ -1,0 +1,40 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App;
+
+use Psr\Log\LoggerInterface;
+use Stewart\Contracts\App;
+use Stewart\Contracts\Automation;
+use Stewart\Contracts\HaContext;
+use Stewart\Contracts\Schedule\Scheduler;
+use Stewart\Contracts\Service\ServiceTarget;
+use Stewart\Contracts\Sun\SunEvent;
+
+#[Automation(id: 'porch-light')]
+final readonly class PorchLight implements App
+{
+    public function __construct(
+        private HaContext $ha,
+        private Scheduler $scheduler,
+        private LoggerInterface $logger,
+        private string $light = 'light.porch',
+        private string $offAt = '23:00',
+    ) {}
+
+    public function initialize(): void
+    {
+        $this->scheduler->runAtSunEvent(SunEvent::Sunset, function (): void {
+            $this->logger->info('Sunset, turning the porch light on');
+            $this->ha->callService('light', 'turn_on', target: ServiceTarget::forEntities($this->light));
+        });
+
+        $this->scheduler->runDailyAt($this->offAt, function (): void {
+            $this->logger->info('Bedtime, turning the porch light off');
+            $this->ha->callService('light', 'turn_off', target: ServiceTarget::forEntities($this->light));
+        });
+    }
+
+    public function dispose(): void {}
+}

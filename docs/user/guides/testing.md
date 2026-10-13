@@ -67,7 +67,7 @@ $harness->advanceTime(Duration::seconds(119)); // the light is still on
 $harness->advanceTime(Duration::seconds(1));   // runAfter() fired: light.turn_off
 ```
 
-Schedules follow the [Scheduler](quickstart.md#schedules) rules with two differences: there is no pause, and an
+Schedules follow the [Scheduler](writing-apps.md#schedules) rules with two differences: there is no pause, and an
 occurrence is never late or skipped, since virtual time waits for the handler.
 
 ## Waits and handlers

@@ -1,17 +1,9 @@
 ---
-title: Quickstart
-description: Install Stewart, configure it, and write your first automation.
+title: Writing apps
+description: Configuration, the app API, streams, events, schedules and waits.
 sidebar:
   order: 1
 ---
-
-Its easy to get started, you just need docker, nothing else everything runs in the container.
-
-```bash
-cp .env.example .env      # Detailed under Configuration, below
-make setup                # Build container, install dependencies, checks.
-make run                  # Run the application
-```
 
 ## Configuration
 
