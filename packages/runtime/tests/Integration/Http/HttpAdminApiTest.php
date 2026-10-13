@@ -8,10 +8,10 @@ use Amp\Socket\InternetAddress;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\App\AppId;
+use Stewart\Runtime\Admin\RuntimeAdmin;
 use Stewart\Runtime\Config\HttpListenAddress;
 use Stewart\Runtime\Http\Admin\AdminApiCodec;
 use Stewart\Runtime\Http\Admin\AdminRequestHandler;
-use Stewart\Runtime\Http\Admin\AppsAdminApi;
 use Stewart\Runtime\Http\Admin\Response\AdminAppView;
 use Stewart\Runtime\Http\AmpHttpListener;
 use Stewart\Runtime\Http\HttpListenerRole;
@@ -25,7 +25,7 @@ use function Amp\Socket\connect;
 use function Amp\Socket\listen;
 
 #[CoversClass(AdminRequestHandler::class)]
-#[CoversClass(AppsAdminApi::class)]
+#[CoversClass(RuntimeAdmin::class)]
 #[CoversClass(AdminApiCodec::class)]
 #[CoversClass(AdminAppView::class)]
 #[CoversClass(RuntimeMetricsExporter::class)]
@@ -54,7 +54,7 @@ final class HttpAdminApiTest extends TestCase
         $this->port = self::findFreePort();
         $this->server = new AmpHttpListener(
             new HttpListenAddress('127.0.0.1', $this->port),
-            new AdminRequestHandler($fixture->api, $fixture->workers, $fixture->codec, $fixture->metricsExporter, $logger, self::TOKEN),
+            new AdminRequestHandler($fixture->admin, $fixture->codec, $fixture->metricsExporter, $logger, self::TOKEN),
             HttpListenerRole::Admin,
             $logger,
         );

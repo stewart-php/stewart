@@ -5,25 +5,25 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Control\Request;
 
 use Stewart\Contracts\App\AppId;
-use Stewart\Runtime\App\AppPauseOutcome;
+use Stewart\Runtime\Admin\RuntimeAdmin;
+use Stewart\Runtime\Control\Protocol\Frame\ClientFrame;
 use Stewart\Runtime\Control\Protocol\Frame\ResumeAppRequest;
+use Stewart\Runtime\Control\Protocol\Frame\ServerFrame;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
 
-/** @extends AppPauseChangeHandler<ResumeAppRequest> */
-final readonly class ResumeAppRequestHandler extends AppPauseChangeHandler
+/** @implements ControlRequestHandler<ResumeAppRequest> */
+final readonly class ResumeAppRequestHandler implements ControlRequestHandler
 {
+    public function __construct(private RuntimeAdmin $admin) {}
+
     public function handledMessageClass(): string
     {
         return ResumeAppRequest::class;
     }
 
-    protected function changePause(AppId $appId): AppPauseOutcome
+    /** @param ResumeAppRequest $request */
+    public function answerRequest(ClientFrame $request): ServerFrame
     {
-        return $this->pauses->resumeApp($appId, AppPauseSource::Control);
-    }
-
-    protected function describeOutcome(AppId $appId, AppPauseOutcome $outcome): string
-    {
-        return $this->messages->describeResumeOutcome($appId, $outcome);
+        return $this->admin->resumeApp(new AppId($request->appId), AppPauseSource::Control);
     }
 }

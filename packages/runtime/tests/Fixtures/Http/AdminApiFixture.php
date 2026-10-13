@@ -9,11 +9,11 @@ use Stewart\Client\Component\ComponentInstance;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Runtime\Admin\RuntimeAdmin;
 use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppMetrics;
-use Stewart\Runtime\Broker\AppPauseOutcomeMessages;
 use Stewart\Runtime\Broker\AppPauseOverrideCodec;
 use Stewart\Runtime\Broker\AppPauseOverrideStore;
 use Stewart\Runtime\Broker\AppPauseRegistry;
@@ -36,8 +36,6 @@ use Stewart\Runtime\Control\Assembler\StoreHealthBuilder;
 use Stewart\Runtime\Control\Assembler\WorkerStatusBuilder;
 use Stewart\Runtime\Control\SnapshotAssembler;
 use Stewart\Runtime\Http\Admin\AdminApiCodec;
-use Stewart\Runtime\Http\Admin\AppsAdminApi;
-use Stewart\Runtime\Http\Admin\WorkersAdminApi;
 use Stewart\Runtime\Metrics\PrometheusTextEncoder;
 use Stewart\Runtime\Metrics\RuntimeMetricsCollector;
 use Stewart\Runtime\Metrics\RuntimeMetricsExporter;
@@ -50,6 +48,7 @@ use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
 use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Runtime\Tests\Fixtures\Control\BrokerStateFixture;
+use Stewart\Testing\Store\InMemoryStoreBackend;
 use Stewart\Testing\Time\VirtualClock;
 
 final readonly class AdminApiFixture
@@ -60,9 +59,9 @@ final readonly class AdminApiFixture
 
     public AppPauseService $pauses;
 
-    public AppsAdminApi $api;
+    public AppPauseOverrideStore $overrides;
 
-    public WorkersAdminApi $workers;
+    public RuntimeAdmin $admin;
 
     public AdminApiCodec $codec;
 
@@ -70,7 +69,7 @@ final readonly class AdminApiFixture
 
     private BrokerStateFixture $broker;
 
-    public function __construct()
+    public function __construct(?InMemoryStoreBackend $overrideBackend = null)
     {
         $this->clock = new VirtualClock();
         $apps = AppDefinitionCollection::keyedByAppId([
@@ -81,19 +80,24 @@ final readonly class AdminApiFixture
         $startTime = new DaemonStartTime($this->clock);
         $startTime->recordStart();
         $this->registry = new AppPauseRegistry($apps, $startTime);
+        $this->overrides = $this->createOverrideStore($overrideBackend);
         $this->pauses = new AppPauseService(
             $catalog,
             $this->registry,
-            new AppPauseOverrideStore(new AppPauseOverrideCodec(AppPauseOverrideCodec::createOverrideWireMapper()), new NullLogger(), ConfigFixture::createPersistenceConfig()),
+            $this->overrides,
             new WorkerSlotRegistry(),
             $this->clock,
             new NullLogger(),
         );
         $metrics = new AppMetrics(WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), $apps)]), $this->clock);
-        $this->api = new AppsAdminApi(new AppStatusBuilder($metrics, $this->registry, FakeHomeAssistant::createUnreachable()->exposures), $this->pauses, new AppPauseOutcomeMessages());
         $this->codec = new AdminApiCodec(AdminApiCodec::createAdminApiWireMapper());
         $this->broker = new BrokerStateFixture();
-        $this->workers = new WorkersAdminApi(WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), $apps)]), $this->broker->pools->pool);
+        $this->admin = new RuntimeAdmin(
+            $this->pauses,
+            new AppStatusBuilder($metrics, $this->registry, FakeHomeAssistant::createUnreachable()->exposures),
+            WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), $apps)]),
+            $this->broker->pools->pool,
+        );
         $this->metricsExporter = $this->createMetricsExporter($startTime, $metrics);
     }
 
@@ -105,6 +109,15 @@ final readonly class AdminApiFixture
     public function stopEverything(): void
     {
         $this->broker->stopEverything();
+    }
+
+    private function createOverrideStore(?InMemoryStoreBackend $backend): AppPauseOverrideStore
+    {
+        $codec = new AppPauseOverrideCodec(AppPauseOverrideCodec::createOverrideWireMapper());
+
+        return $backend === null
+            ? new AppPauseOverrideStore($codec, new NullLogger(), ConfigFixture::createPersistenceConfig())
+            : new AppPauseOverrideStore($codec, new NullLogger(), ConfigFixture::createPersistenceConfig(['prefix' => 'stewart']), $backend);
     }
 
     private function createMetricsExporter(DaemonStartTime $startTime, AppMetrics $metrics): RuntimeMetricsExporter

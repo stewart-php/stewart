@@ -58,6 +58,7 @@ return static function (ContainerConfigurator $container): void {
     $services->instanceof(BrokerSubscriptionListener::class)->tag('stewart.broker_subscription_listener');
     $services->instanceof(RuntimeMetricSource::class)->tag('stewart.runtime_metric_source');
 
+    $services->load('Stewart\\Runtime\\Admin\\', '../src/Admin/');
     $services->load('Stewart\\Runtime\\Broker\\', '../src/Broker/');
     $services->set(StateCache::class);
     $services->set(RegistryCache::class);

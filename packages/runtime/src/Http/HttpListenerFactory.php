@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Http;
 
 use Psr\Log\LoggerInterface;
+use Stewart\Runtime\Admin\RuntimeAdmin;
 use Stewart\Runtime\Broker\Http\Collection\HttpListenerCollection;
 use Stewart\Runtime\Config\HttpConfig;
 use Stewart\Runtime\Exception\ConfigurationError;
 use Stewart\Runtime\Exception\ConfigurationException;
 use Stewart\Runtime\Http\Admin\AdminApiCodec;
 use Stewart\Runtime\Http\Admin\AdminRequestHandler;
-use Stewart\Runtime\Http\Admin\AppsAdminApi;
-use Stewart\Runtime\Http\Admin\WorkersAdminApi;
 use Stewart\Runtime\Metrics\RuntimeMetricsExporter;
 
 final readonly class HttpListenerFactory
@@ -20,8 +19,7 @@ final readonly class HttpListenerFactory
     public function __construct(
         private HttpConfig $http,
         private ProbeRequestHandler $probeRequests,
-        private AppsAdminApi $adminApps,
-        private WorkersAdminApi $adminWorkers,
+        private RuntimeAdmin $admin,
         private AdminApiCodec $adminCodec,
         private RuntimeMetricsExporter $metricsExporter,
         private LoggerInterface $logger,
@@ -40,7 +38,7 @@ final readonly class HttpListenerFactory
 
         if ($admin->listen !== null) {
             $token = $admin->token ?? throw ConfigurationException::createForReason(ConfigurationError::AdminTokenMissing);
-            $requests = new AdminRequestHandler($this->adminApps, $this->adminWorkers, $this->adminCodec, $this->metricsExporter, $this->logger, $token);
+            $requests = new AdminRequestHandler($this->admin, $this->adminCodec, $this->metricsExporter, $this->logger, $token);
             $listeners[] = new AmpHttpListener($admin->listen, $requests, HttpListenerRole::Admin, $this->logger);
         }
 
