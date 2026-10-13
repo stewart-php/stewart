@@ -8,6 +8,10 @@ use Psr\Log\LoggerInterface;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
 use Stewart\Contracts\Exception\ExposureException;
+use Stewart\Contracts\Exposure\Action\ActionCall;
+use Stewart\Contracts\Exposure\Action\ActionConfig;
+use Stewart\Contracts\Exposure\Action\ActionField;
+use Stewart\Contracts\Exposure\Action\ActionFieldType;
 use Stewart\Contracts\Exposure\Command\NumberCommand;
 use Stewart\Contracts\Exposure\Command\SwitchCommand;
 use Stewart\Contracts\Exposure\EntityExposure;
@@ -49,6 +53,7 @@ final class HelloApp implements App
             $this->changesSeen->setValue($this->changeCount);
             $this->counting = $this->exposeCountingSwitch();
             $this->step = $this->exposeCountStep(paused: $this->counting->getValue() === false);
+            $this->exposeResetAction();
         } catch (ExposureException $e) {
             $this->stopExposing($e);
         }
@@ -95,6 +100,18 @@ final class HelloApp implements App
         });
 
         return $step;
+    }
+
+    private function exposeResetAction(): void
+    {
+        $config = new ActionConfig('Reset count', 'Sets the changes seen back to a number.', [
+            new ActionField('to', ActionFieldType::Number, description: 'The count to start from; 0 when left out.'),
+        ]);
+
+        $this->entities->exposeAction('reset_count', $config)->watchCalls()->subscribe(function (ActionCall $call): void {
+            $this->changeCount = (int) ($call->findNumber('to') ?? 0);
+            $this->changesSeen?->setValue($this->changeCount);
+        });
     }
 
     private static function createStepConfig(bool $paused): NumberConfig

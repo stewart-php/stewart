@@ -169,6 +169,10 @@ def await_step_icon(ha: HomeAssistant, expected: str) -> None:
         time.sleep(POLL_SECONDS)
 
 
+def call_action(ha: HomeAssistant, service: str, data: dict[str, Json]) -> None:
+    ha.post_json(f"/api/services/stewart/{service}", data)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Drives the real Home Assistant of the e2e smoke test.")
     parser.add_argument("--token-file", type=Path, required=True)
@@ -179,6 +183,9 @@ def main() -> int:
     steps.add_parser("switch").add_argument("state", choices=("on", "off"))
     steps.add_parser("step").add_argument("value", type=float)
     steps.add_parser("await-step-icon").add_argument("icon")
+    action = steps.add_parser("action")
+    action.add_argument("service")
+    action.add_argument("data", type=json.loads)
     arguments = parser.parse_args()
     token_file: Path = arguments.token_file
 
@@ -195,6 +202,8 @@ def main() -> int:
                 set_step(ha, arguments.value)
             elif arguments.step == "await-step-icon":
                 await_step_icon(ha, arguments.icon)
+            elif arguments.step == "action":
+                call_action(ha, arguments.service, arguments.data)
             else:
                 toggle_watched_entity(ha)
     except SmokeError as failure:

@@ -49,4 +49,13 @@ final class HelloAppTest extends TestCase
         self::assertSame(0, $this->harness->entities->requireSensor('changes_seen')->getValue());
         self::assertSame('mdi:pause-circle', $this->harness->entities->requireNumber('step')->config->icon);
     }
+
+    public function testResetActionSetsTheCount(): void
+    {
+        $this->harness->ha->pushState('sun.sun', 'below_horizon');
+
+        $this->harness->entities->requireAction('reset_count')->pushCall(['to' => 10]);
+
+        self::assertSame(10, $this->harness->entities->requireSensor('changes_seen')->getValue());
+    }
 }
