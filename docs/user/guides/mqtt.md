@@ -18,28 +18,7 @@ mqtt:
   will: { topic: stewart/status, payload: offline, qos: 1, retain: true }
 ```
 
-```php
-#[Automation(id: 'thermostat-bridge')]
-final readonly class ThermostatBridge implements App
-{
-    public function __construct(
-        private HaContext $ha,
-        private Mqtt $mqtt,
-    ) {}
-
-    public function initialize(): void
-    {
-        $this->mqtt->watchMessages('zigbee2mqtt/+/temperature')->subscribe(function (MqttMessage $message): void {
-            $this->ha->callService('input_number', 'set_value', ['value' => (float) $message->payload]);
-        });
-
-        $this->ha->watchStateChanges('climate.living_room')->subscribe(function (StateChange $change): void {
-            $this->mqtt->publish('home/living_room/climate', ['state' => $change->to?->state], MqttQos::AtLeastOnce, retain: true);
-        });
-    }
-
-    public function dispose(): void {}
-}
+```php file=../../examples/apps/ThermostatBridge.php
 ```
 
 - Filters use MQTT syntax: `+` is one level, `#` is the rest. A filter starting

@@ -2,6 +2,7 @@ import { defineConfig } from 'astro/config';
 import { satteri } from '@astrojs/markdown-satteri';
 import starlight from '@astrojs/starlight';
 import starlightThemeRapide from 'starlight-theme-rapide';
+import mdastIncludeCode from './src/plugins/mdast-include-code.mjs';
 import mdastRelativeDocLinks from './src/plugins/mdast-relative-doc-links.mjs';
 import { EDIT_BASE, SITE_URL, listOtherTrees, selectSite } from './src/sites.mjs';
 
@@ -15,7 +16,7 @@ export default defineConfig({
     cacheDir: `./node_modules/.astro/${site.tree}`,
     server: { port: site.port },
     markdown: {
-        processor: satteri({ mdastPlugins: [mdastRelativeDocLinks(site, listOtherTrees(site))] }),
+        processor: satteri({ mdastPlugins: [mdastIncludeCode(), mdastRelativeDocLinks(site, listOtherTrees(site))] }),
     },
     integrations: [
         starlight({

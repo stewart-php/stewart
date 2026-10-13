@@ -37,6 +37,7 @@ parameters:
         - bin/annotate-metric-violations.php
         - bin/quality-summary.php
         - tests
+        - docs/examples
     tmpDir: var/phpstan
     treatPhpDocTypesAsCertain: false
     checkExplicitMixed: true

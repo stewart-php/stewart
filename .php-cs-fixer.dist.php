@@ -5,7 +5,7 @@ use PhpCsFixer\Config;
 use PhpCsFixer\Finder;
 
 $finder = Finder::create()
-    ->in([__DIR__ . '/packages', __DIR__ . '/tests', __DIR__ . '/skeleton'])
+    ->in([__DIR__ . '/packages', __DIR__ . '/tests', __DIR__ . '/skeleton', __DIR__ . '/docs/examples'])
     // Generated code follows the generator's formatting, not this one's.
     ->notPath(['codegen/tests/Fixtures/Expected', 'runtime/tests/Fixtures/Generated/Code'])
     ->append([__DIR__ . '/packages/runtime/bin/stewart', __DIR__ . '/bin/annotate-metric-violations.php', __DIR__ . '/bin/quality-summary.php', __DIR__ . '/composer-dependency-analyser.php', __FILE__]);

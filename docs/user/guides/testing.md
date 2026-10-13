@@ -8,24 +8,7 @@ sidebar:
 `stewart-php/testing` runs an app in a PHPUnit test. Nothing connects to Home Assistant, and time only moves when
 the test moves it. A new project already has it in `require-dev`, and `tests/HelloAppTest.php` shows the pattern.
 
-```php
-use Stewart\Contracts\Time\Duration;
-use Stewart\Testing\App\AppHarness;
-
-final class DoorAlarmTest extends TestCase
-{
-    public function testOpenDoorIsReportedAfterFiveMinutes(): void
-    {
-        $harness = new AppHarness();
-        $harness->ha->seedState('binary_sensor.front_door', 'off');
-        $harness->startApp(DoorAlarm::class, ['door' => 'binary_sensor.front_door']);
-
-        $harness->ha->pushState('binary_sensor.front_door', 'on');
-        $harness->advanceTime(Duration::minutes(5));
-
-        self::assertSame('notify.notify', $harness->ha->getLastCall()->getServiceName());
-    }
-}
+```php file=../../examples/tests/DoorAlarmTest.php
 ```
 
 ## Starting the app

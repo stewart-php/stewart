@@ -10,39 +10,7 @@ the `stewart` integration in Home Assistant (HACS, `stewart-php/hass-stewart`)
 and an administrator token; `stewart status` shows whether the integration is
 there on its `component` row.
 
-```php
-#[Automation(id: 'climate')]
-final class AverageTemperature implements App
-{
-    private const array SOURCES = ['sensor.kitchen_temperature', 'sensor.hall_temperature'];
-
-    private ExposedSensor $average;
-
-    public function __construct(
-        private readonly HaContext $ha,
-        private readonly EntityExposure $entities,
-    ) {}
-
-    public function initialize(): void
-    {
-        $this->average = $this->entities->exposeSensor('average_temperature', new SensorConfig(
-            deviceClass: SensorDeviceClass::Temperature,
-            unit: '°C',
-            stateClass: SensorStateClass::Measurement,
-            displayPrecision: 1,
-            name: 'Average temperature',
-        ));
-
-        $this->ha->watchStateChanges(Selector::anyOf(...self::SOURCES))->subscribe(function (): void {
-            $readings = array_filter(array_map(fn(string $id) => $this->ha->getState($id), self::SOURCES), static fn(?EntityState $state) => $state !== null && is_numeric($state->state));
-            $temperatures = array_map(static fn(EntityState $state) => (float) $state->state, $readings);
-
-            $this->average->setValue($temperatures === [] ? null : array_sum($temperatures) / \count($temperatures), ['sources' => self::SOURCES]);
-        });
-    }
-
-    public function dispose(): void {}
-}
+```php file=../../examples/apps/AverageTemperature.php
 ```
 
 - The key (`average_temperature`) is the entity's identity: its unique ID is

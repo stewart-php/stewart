@@ -9,22 +9,7 @@ An automation's properties live in a worker process, and a worker restarts — o
 a crash, on a reload, on a deploy. Anything that has to outlive that goes in a
 store.
 
-```php
-#[Automation(id: 'heating')]
-final class HeatingApp implements App
-{
-    public function __construct(
-        private readonly HaContext $ha,
-        private readonly Store $store,
-    ) {}
-
-    public function initialize(): void
-    {
-        $this->ha->stateChanges('binary_sensor.front_door')->subscribe(function (): void {
-            $this->store->increment('opens');
-        });
-    }
-}
+```php file=../../examples/apps/HeatingApp.php
 ```
 
 A parameter typed `Store` gets that automation's own scope, keyed by the ID in
@@ -104,24 +89,12 @@ and `:` is free for sub-namespacing (`rooms:hall:brightness`).
 
 Anything with structure is a value object that says how it is stored:
 
+```php file=../../examples/apps/Thermostat.php
+```
+
 ```php
-final readonly class Thermostat implements Storable
-{
-    public function __construct(public float $target, public string $mode) {}
-
-    public function toStorage(): array
-    {
-        return ['target' => $this->target, 'mode' => $this->mode];
-    }
-
-    public static function fromStorage(array $data): static
-    {
-        return new self((float) $data['target'], (string) $data['mode']);
-    }
-}
-
 $this->store->set('thermostat', new Thermostat(21.5, 'heat'));
-$thermostat = $this->store->object('thermostat', Thermostat::class);
+$thermostat = $this->store->getObject('thermostat', Thermostat::class);
 ```
 
 The reader names the class, and nothing about it is stored — so renaming or

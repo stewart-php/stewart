@@ -95,7 +95,7 @@ docs-preview: ## Serve a built documentation site [SITE=user|dev]
 # --- quality --------------------------------------------------------------
 
 .PHONY: check
-check: stan cs test test-integration test-process test-persistence test-architecture ha-check ## Run every check
+check: stan cs test test-docs test-integration test-process test-persistence test-architecture ha-check ## Run every check
 
 .PHONY: lint-ci
 lint-ci: ## Lint and security-audit the GitHub workflows, lint the Dockerfiles
@@ -122,6 +122,10 @@ cs-fix: ## Fix code style
 .PHONY: test
 test: ## Unit tests (no Home Assistant needed)
 	$(RUN) vendor/bin/phpunit --testsuite=unit --log-junit var/reports/junit/unit.xml
+
+.PHONY: test-docs
+test-docs: ## Tests of the example apps the user documentation includes
+	$(RUN) vendor/bin/phpunit --testsuite=docs --log-junit var/reports/junit/docs.xml
 
 .PHONY: test-process
 test-process: ## Worker process smoke tests against Valkey (no Home Assistant needed)
