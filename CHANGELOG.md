@@ -6,6 +6,14 @@ minor release may break; its "Upgrading" section says what to change.
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-10-13
+
+Publishes the runtime image, Helm chart and GitHub release that 0.11.0 did not.
+
+### Fixed
+
+- The release scans each runtime image for its own platform, so the arm64 build no longer fails it
+
 ## [0.11.0] - 2026-10-13
 
 Handlers can wait for states and events, apps can define their own Home Assistant actions, and `AppHarness` makes
