@@ -9,28 +9,33 @@ use Closure;
 final readonly class QueuedWork
 {
     /**
-     * @param Closure(): void $run
+     * @param Closure(object): void|Closure(): void $handler
      * @param ?Closure(QueueDiscardReason): void $onDiscarded
      */
     private function __construct(
-        public bool $droppable,
-        private Closure $run,
+        public ?object $event,
+        private Closure $handler,
         private ?Closure $onDiscarded = null,
     ) {}
 
     /**
-     * @param Closure(): void $run
+     * @param Closure(object): void $handler
      * @param ?Closure(QueueDiscardReason): void $onDiscarded
      */
-    public static function forDroppableEvent(Closure $run, ?Closure $onDiscarded = null): self
+    public static function forDroppableEvent(object $event, Closure $handler, ?Closure $onDiscarded = null): self
     {
-        return new self(true, $run, $onDiscarded);
+        return new self($event, $handler, $onDiscarded);
     }
 
-    /** @param Closure(): void $run */
-    public static function forStreamEmission(Closure $run): self
+    /** @param Closure(): void $emission */
+    public static function forStreamEmission(Closure $emission): self
     {
-        return new self(false, $run);
+        return new self(null, $emission);
+    }
+
+    public function isDroppable(): bool
+    {
+        return $this->event !== null;
     }
 
     public function discard(QueueDiscardReason $reason): void
@@ -42,6 +47,12 @@ final readonly class QueuedWork
 
     public function __invoke(): void
     {
-        ($this->run)();
+        if ($this->event === null) {
+            ($this->handler)();
+
+            return;
+        }
+
+        ($this->handler)($this->event);
     }
 }

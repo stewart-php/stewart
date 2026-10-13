@@ -53,13 +53,9 @@ final class SubscriptionQueue
             $this->dropOldestEvent();
         }
 
-        $handler = $this->subscription->handler;
-
         ++$this->pendingEvents;
 
-        $this->enqueue(QueuedWork::forDroppableEvent(static function () use ($handler, $event): void {
-            $handler($event);
-        }, $onDiscarded));
+        $this->enqueue(QueuedWork::forDroppableEvent($event, $this->subscription->handler, $onDiscarded));
     }
 
     /** @param Closure(): void $emission */
@@ -126,7 +122,7 @@ final class SubscriptionQueue
     private function dropOldestEvent(): void
     {
         foreach ($this->pending as $index => $work) {
-            if (!$work->droppable) {
+            if (!$work->isDroppable()) {
                 continue;
             }
 
@@ -167,7 +163,7 @@ final class SubscriptionQueue
             while (!$this->cancelled && !$this->scopeState->isPaused() && !$this->pending->isEmpty()) {
                 $work = $this->pending->dequeue();
 
-                if ($work->droppable) {
+                if ($work->isDroppable()) {
                     --$this->pendingEvents;
                 }
 
@@ -188,7 +184,7 @@ final class SubscriptionQueue
             return;
         }
 
-        if ($work->droppable) {
+        if ($work->isDroppable()) {
             $this->listener->eventDelivered($this->subscription);
         }
     }
