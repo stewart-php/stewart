@@ -64,7 +64,7 @@ Every setting can also come from the environment: the `STEWART_` prefix, then th
 
 The repository is a monorepo; each package under `packages/` is installable on its own and is mirrored to a
 read-only `stewart-php/<name>` repository for Packagist. All of them, the runtime image, the Helm chart (`charts/`)
-and the skeleton (`skeleton/`) share one version; see [RELEASING.md](RELEASING.md).
+and the skeleton (`skeleton/`) share one version; see [releasing](docs/dev/releasing.md).
 
 | Package | Purpose |
 |---|---|

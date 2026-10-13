@@ -30,8 +30,12 @@ export const SITES = {
         description: 'How Stewart is built: architecture, code walkthrough and protocols.',
         sidebar: () => [
             {
+                label: 'Contributing',
+                items: ['contributing', 'conventions', 'testing', 'releasing'],
+            },
+            {
                 label: 'Internals',
-                items: ['architecture', 'walkthrough', 'protocol', 'component-protocol'],
+                items: ['architecture', 'walkthrough', 'protocol', 'control-protocol', 'component-protocol'],
             },
         ],
     },
