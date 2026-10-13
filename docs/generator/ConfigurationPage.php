@@ -14,7 +14,7 @@ final readonly class ConfigurationPage implements ReferencePage
 
     public function getFileName(): string
     {
-        return 'configuration.md';
+        return 'reference/configuration.md';
     }
 
     public function renderMarkdown(): string

@@ -12,7 +12,7 @@ final readonly class AdminApiPage implements ReferencePage
 {
     public function getFileName(): string
     {
-        return 'admin-api.md';
+        return 'reference/admin-api.md';
     }
 
     public function renderMarkdown(): string

@@ -19,7 +19,7 @@ final readonly class MetricsPage implements ReferencePage
 
     public function getFileName(): string
     {
-        return 'metrics.md';
+        return 'reference/metrics.md';
     }
 
     public function renderMarkdown(): string

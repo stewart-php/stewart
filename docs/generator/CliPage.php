@@ -22,7 +22,7 @@ final readonly class CliPage implements ReferencePage
 
     public function getFileName(): string
     {
-        return 'cli.md';
+        return 'reference/cli.md';
     }
 
     public function renderMarkdown(): string

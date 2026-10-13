@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// Writes the generated reference pages of the user documentation; --check only reports the ones that are out of date.
+// Writes the generated pages of the user documentation; --check only reports the ones that are out of date.
 
 use Composer\Autoload\ClassLoader;
 use Stewart\Docs\Generator\AdminApiPage;
@@ -12,6 +12,7 @@ use Stewart\Docs\Generator\ErrorsPage;
 use Stewart\Docs\Generator\MetricsPage;
 use Stewart\Docs\Generator\ReasonEnumFinder;
 use Stewart\Docs\Generator\ReferenceWriter;
+use Stewart\Docs\Generator\UpgradingPage;
 use Stewart\Runtime\Kernel\ConsoleKernel;
 use Stewart\Runtime\Metrics\RuntimeMetricSource;
 use Stewart\Runtime\Tests\Fixtures\Control\StubSnapshotSource;
@@ -42,8 +43,9 @@ $pages = [
     new ErrorsPage(new ReasonEnumFinder()->findReasonEnums($root . '/packages'), $advice),
     new MetricsPage($sources, new StubSnapshotSource()->takeSnapshot()),
     new AdminApiPage(),
+    new UpgradingPage($root . '/CHANGELOG.md'),
 ];
-$writer = new ReferenceWriter($root . '/docs/user/reference');
+$writer = new ReferenceWriter($root . '/docs/user');
 
 /** @var list<string> $argv */
 if (!in_array('--check', $argv, true)) {

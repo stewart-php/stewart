@@ -30,12 +30,14 @@ final readonly class ReferenceWriter
     /** @param list<ReferencePage> $pages */
     public function writePages(array $pages): void
     {
-        if (!is_dir($this->directory)) {
-            mkdir($this->directory, 0o777, true);
-        }
-
         foreach ($pages as $page) {
-            file_put_contents($this->directory . '/' . $page->getFileName(), $page->renderMarkdown());
+            $path = $this->directory . '/' . $page->getFileName();
+
+            if (!is_dir(\dirname($path))) {
+                mkdir(\dirname($path), 0o777, true);
+            }
+
+            file_put_contents($path, $page->renderMarkdown());
         }
     }
 }

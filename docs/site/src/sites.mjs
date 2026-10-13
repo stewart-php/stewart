@@ -19,6 +19,7 @@ export const SITES = {
             { label: 'Recipes', items: directoryItems(site, 'recipes') },
             { label: 'Deploy', items: directoryItems(site, 'deploy') },
             { label: 'Reference', items: directoryItems(site, 'reference') },
+            { label: 'Help', items: directoryItems(site, 'help') },
         ],
     },
     dev: {

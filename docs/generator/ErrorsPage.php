@@ -20,7 +20,7 @@ final readonly class ErrorsPage implements ReferencePage
 
     public function getFileName(): string
     {
-        return 'errors.md';
+        return 'reference/errors.md';
     }
 
     public function renderMarkdown(): string
