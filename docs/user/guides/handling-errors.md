@@ -41,7 +41,8 @@ own class:
 
 `$e->reason` says what exactly failed. It is an enum named after the class: `StoreException` has `StoreError`,
 `ServiceCallException` has `ServiceCallError`, and so on. Compare the reason, as the example does, not the message:
-messages are written for people and may change, reasons do not.
+messages are written for people and may change, reasons do not. The [error reference](../reference/errors.md) lists
+every reason.
 
 `$e->context` holds what the error is about as an array, for example `['domain' => 'light', 'service' =>
 'turn_on', 'detail' => '…']`.

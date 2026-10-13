@@ -38,6 +38,8 @@ parameters:
         - bin/quality-summary.php
         - tests
         - docs/examples
+        - docs/generator
+        - bin/docs-reference.php
     tmpDir: var/phpstan
     treatPhpDocTypesAsCertain: false
     checkExplicitMixed: true

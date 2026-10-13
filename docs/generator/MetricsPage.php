@@ -1,0 +1,65 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Stewart\Docs\Generator;
+
+use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
+use Stewart\Runtime\Metrics\Exposition\MetricFamily;
+use Stewart\Runtime\Metrics\Exposition\MetricSample;
+use Stewart\Runtime\Metrics\RuntimeMetricSource;
+
+final readonly class MetricsPage implements ReferencePage
+{
+    /** @param list<RuntimeMetricSource> $sources */
+    public function __construct(
+        private array $sources,
+        private RuntimeSnapshot $snapshot,
+    ) {}
+
+    public function getFileName(): string
+    {
+        return 'metrics.md';
+    }
+
+    public function renderMarkdown(): string
+    {
+        $families = [];
+
+        foreach ($this->sources as $source) {
+            array_push($families, ...$source->collectMetrics($this->snapshot));
+        }
+
+        usort($families, static fn(MetricFamily $a, MetricFamily $b): int => $a->name <=> $b->name);
+        $rows = array_map(
+            fn(MetricFamily $family): array => [MarkdownTable::formatCode($family->name), $family->type->value, $this->formatLabels($family), $family->help],
+            $families,
+        );
+
+        return new MarkdownPage(
+            'Metrics reference',
+            'Every Prometheus metric Stewart serves on the admin port.',
+            4,
+            implode("\n", [
+                'Stewart serves these metrics at `GET /metrics` on the admin port, in the Prometheus text format, under the admin',
+                'token. [Status and control](../guides/status.md#metrics) explains how to turn the port on and scrape it.',
+                '',
+                MarkdownTable::formatTable(['Metric', 'Type', 'Labels', 'Meaning'], $rows),
+            ]),
+        )->renderMarkdown();
+    }
+
+    private function formatLabels(MetricFamily $family): string
+    {
+        $names = [];
+
+        foreach ($family->listSamples() as $sample) {
+            \assert($sample instanceof MetricSample);
+            $names += array_fill_keys(array_keys($sample->labels->listValuesByName()), true);
+        }
+
+        unset($names['le']);
+
+        return implode(', ', array_map(MarkdownTable::formatCode(...), array_map(strval(...), array_keys($names))));
+    }
+}

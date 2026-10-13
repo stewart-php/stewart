@@ -90,7 +90,8 @@ project (`image.yml`). Dependabot proposes Stewart updates.
 
 ## make commands
 
-`make help` lists them all. These are the ones you use most:
+`make help` lists them all, and the [command reference](../reference/cli.md) describes each with the `stewart`
+commands. These are the ones you use most:
 
 | Command | What it does |
 |---|---|

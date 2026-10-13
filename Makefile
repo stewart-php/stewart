@@ -126,7 +126,12 @@ test: ## Unit tests (no Home Assistant needed)
 .PHONY: test-docs
 test-docs: ## Tests of the example apps the user documentation includes, and their generated classes
 	$(RUN) packages/runtime/bin/stewart generate --config docs/examples/stewart.yaml --snapshot-in docs/examples/snapshot.json --check
+	$(RUN) php bin/docs-reference.php --check
 	$(RUN) vendor/bin/phpunit --testsuite=docs --log-junit var/reports/junit/docs.xml
+
+.PHONY: docs-reference
+docs-reference: ## Write the generated reference pages of the user documentation from the code
+	$(RUN) php bin/docs-reference.php
 
 .PHONY: docs-examples-generate
 docs-examples-generate: ## Regenerate the typed classes the documentation examples use, from docs/examples/snapshot.json

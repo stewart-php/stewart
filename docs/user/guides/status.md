@@ -155,7 +155,8 @@ rest_command:
 
 ### Metrics
 
-`GET /metrics` on the same port answers the Prometheus text format, built from
+`GET /metrics` on the same port answers the Prometheus text format (every series is in the
+[metrics reference](../reference/metrics.md)), built from
 the same snapshot as `stewart status`, under the same token. Series are named
 `stewart_*`. Per-app series have `app` and `worker` labels, per-worker series
 have `worker`, and service-call latency is the histogram

@@ -11,7 +11,8 @@ Stewart reads its settings from three places. A later one wins over an earlier o
 2. **Environment variables**, usually from `.env`. Secrets go here.
 3. **Command-line options** of `stewart run`: `--config`, `--log-level` and `--json-logs`.
 
-Every setting has a default, so you only write down what differs. Two commands show the settings:
+Every setting has a default, so you only write down what differs. The [configuration reference](../reference/configuration.md)
+lists them all, and two commands show them too:
 
 ```bash
 make config-reference   # every setting, with its default and a short explanation
