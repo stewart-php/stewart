@@ -1,178 +1,101 @@
 ---
-title: Typed entities and services
-description: Generate PHP classes over your own Home Assistant, so an entity ID is written once and checked forever.
+title: Typed entities
+description: Generate PHP classes from your own Home Assistant, so your editor completes entity IDs, attributes and service fields.
 sidebar:
-  order: 20
+  order: 9
 ---
 
-`stewart generate` connects to your instance once and writes a class per domain,
-per entity and per service. After that an automation reads like this:
+`make generate` reads your Home Assistant once and writes a PHP class for every domain, entity and service into
+`generated/`. Your editor then completes entity IDs, attributes and service fields, and PHPStan checks them:
 
-```php
-public function __construct(
-    private readonly Entities $entities,
-    private readonly Services $services,
-) {}
-
-public function initialize(): void
-{
-    $this->entities->binarySensor->getEntity('binary_sensor.hall_motion')->watchStateChanges()
-        ->whenChangedTo('on', from: 'off')
-        ->subscribe(fn() => $this->entities->light->getEntity('light.hall')->turnOn(brightnessPct: 70));
-
-    $this->services->notify->mobileAppPhone(message: 'Hall light on');
-}
+```php file=../../examples/apps/TypedHallLight.php
 ```
 
-Both roots are ordinary constructor arguments. They are bound to the asking
-automation's own context, so a call through them carries its ID into the logs
-exactly as `HaContext` does.
+- `Entities` has one property per domain: `$this->entities->light`, `$this->entities->binarySensor`.
+- `getEntity('light.hall')` returns a typed handle. Its methods are that domain's services: `turnOn()` takes the
+  light's real fields, such as `brightnessPct` and `colorTempKelvin`.
+- `Services` has one property per domain, with every service of it: `$this->services->notify->mobileAppPhone()`.
+- `LightState::fromNullableState($change->to)` turns a state into a typed one, with `isOn()` and an accessor per
+  attribute, such as `getBrightness()`.
 
-## Looking up an entity
+Both classes are ordinary constructor parameters, and calls through them appear in the log under the app's ID, like
+calls through `HaContext`.
 
-An entity is reached by its ID, written in full, so searching the project for
-`light.hall` finds every place it is used. `getEntity()` takes a string or an
-`EntityId`, which makes an ID from the app's `options` as good as a literal:
+## Generating
+
+```bash
+make generate
+```
+
+Run it again after you add devices, and commit `generated/`. A build or a server then never needs Home Assistant to
+create the classes.
+
+If Stewart notices at start that Home Assistant has entities the classes do not, it logs one warning:
+
+```
+Generated entity classes no longer match Home Assistant; run stewart generate {"added":["light.landing"],"removed":[]}
+```
+
+`make generate ARGS=--check` reports what would change without writing anything, and fails if something would. When
+more than half of the files would be deleted, `make generate` stops, in case it reached the wrong Home Assistant;
+`ARGS=--allow-shrink` lets it go ahead.
+
+## Entity IDs from options
+
+`getEntity()` takes a string, so an ID from the app's options works like one written in the code:
+
+```php file=../../examples/apps/LightsOut.php
+```
 
 ```yaml
 apps:
-  porch:
+  lights-out:
     options:
-      lights: [light.porch, light.porch_2]
+      lights: [light.hall, light.porch]
 ```
 
-```php
-/** @param list<string> $lights */
-public function __construct(
-    private readonly Entities $entities,
-    private readonly array $lights,
-) {}
+`getEntity()` accepts only IDs of its domain that the last `make generate` saw. Any other throws `IdentifierException`
+with the reason `EntityNotGenerated`. Until you generate again, a new entity is still reachable through
+`$this->ha->getEntity('light.new')`.
 
-public function initialize(): void
-{
-    foreach ($this->lights as $id) {
-        $this->entities->light->getEntity($id)->turnOff();
-    }
-}
-```
+Because IDs are written in full, searching your project for `light.hall` finds every place that uses it.
 
-`getEntity()` accepts only the IDs of its own domain that the last
-`stewart generate` saw; any other throws `IdentifierError::EntityNotGenerated`.
-Inside a handler that is reported like any handler failure and the app keeps
-running; inside `initialize()` it fails that app alone. An entity added since
-the last generate is reachable untyped through `HaContext::getEntity()` until
-you regenerate.
+## What gets generated
 
-The generator also writes `.phpstorm.meta.php` next to the classes, so PhpStorm
-completes the IDs inside `getEntity('…')`, and area, floor and label IDs inside
-`EntityFilter`, the `Registry` lookups and `ServiceTarget::forAreas()` and its
-siblings.
+| Class | Holds |
+|---|---|
+| `Entities` | One property per domain with entities |
+| `LightEntities` | `getEntity('light.…')` for the domain |
+| `LightEntity` | One entity: `getState()`, `requireState()`, `watchStateChanges()`, `waitForState()`, `getHistory()`, and the domain's services as methods |
+| `LightState` | A typed state: `isOn()`, `isOff()`, `isUnavailable()`, `getFriendlyName()`, one accessor per attribute, and `raw` for the plain `EntityState` |
+| `Services` | One property per domain with services |
+| `LightServices` | Every service of the domain |
+| `Manifest` | What Home Assistant looked like, so Stewart can notice changes |
+| `.phpstorm.meta.php` | Completion of entity, area, floor and label IDs in PhpStorm |
 
-## Running it
+A few naming rules:
 
-```
-make generate          write the classes
-make generate-check    fail if they no longer match Home Assistant
-```
+- Domains become camelCase properties: `binary_sensor` is `$entities->binarySensor`.
+- A service field with a fixed list of values accepts only those, so PHPStan rejects a value Home Assistant would.
+- A service named like an existing method gets a `Service` suffix, and an attribute named like an existing accessor
+  gets an `Attribute` suffix.
 
-The first run needs Composer to know where the classes go. If it does not, the
-command prints the snippet to paste and stops without writing anything.
+## Choosing what to generate
 
-```json
-"autoload": {
-    "psr-4": {
-        "App\\Generated\\": "generated/"
-    }
-}
-```
-
-Then `make install`, and `make generate` again.
-
-## Configuration
-
-Everything is optional; these are the defaults.
+Everything is optional; these are the defaults:
 
 ```yaml
 codegen:
-  # Namespace of the generated classes. Composer must map it to output_dir.
   namespace: App\Generated
-
-  # Written relative to the project root.
   output_dir: generated
-
-  # Entity selectors: exact IDs or globs. Exclude wins over include.
-  include:
-    - '*'
-  exclude:
-    - light.debug_*
+  include: ['*']
+  exclude: []
 ```
 
-An excluded entity is *remembered* rather than forgotten: it goes into the
-manifest's ignored list, so the daemon does not report it as having appeared.
+`include` and `exclude` take entity IDs and patterns, such as `light.debug_*`. Exclude wins.
 
-## What you get
-
-| Class | What it is |
-|---|---|
-| `Entities` | One property per domain that has entities: `$entities->light` |
-| `LightEntities` | `getEntity('light.hall')`, for the domain's generated IDs |
-| `LightEntity` | One entity, a `TypedEntity`: `id`, `getState()`, `requireState()`, `watchStateChanges()`, `listAttributes()`, `getEntity()`, and the domain's own entity-targeted services as methods |
-| `LightState` | That domain's state: `value`, `raw`, `isOn()`, `isOff()`, `getFriendlyName()`, `isUnavailable()`, and a typed accessor per attribute |
-| `Services` | One property per domain that has services: `$services->notify` |
-| `LightServices` | Every service of the domain, taking `ServiceTarget|Entity` first where the service is targetable |
-| `Manifest` | What the instance looked like, which is how the daemon notices drift |
-
-A state change hands you a `StateChange`, not a typed view. Wrap it where you
-want one:
-
-```php
-$this->entities->light->getEntity('light.hall')->watchStateChanges()->subscribe(function (StateChange $change): void {
-    $to = LightState::fromNullableState($change->to);
-
-    if ($to?->isOn() === true) {
-        $this->log->info('on at', ['brightness' => $to->getBrightness()]);
-    }
-});
-```
-
-`requireState()` throws `StateError::EntityNotFound` where `getState()` returns `null`, so use
-it when the entity not existing is a bug rather than a state.
-
-A service field with a fixed list of options is documented as a literal union,
-so PHPStan rejects a value Home Assistant would:
-`@param 'long'|'short'|null $flash`. A select that accepts custom values stays
-`string`.
-
-## Naming
-
-Entity IDs are never turned into names; only domains, services and attributes
-are. Domains become camelCase properties: `binary_sensor` is
-`$entities->binarySensor`. Two rules cover the rest.
-
-- A service whose name is already a member of the handle gains a `Service`
-  suffix: a service called `get_state` is `$hall->getStateService()`, and stays
-  `getState()` on `$services->light`.
-- An attribute whose accessor is already a member of the state view gains an
-  `Attribute` suffix: an attribute called `state_as_float` reads as
-  `getStateAsFloatAttribute()`.
-
-Class names carry their own suffix — `LightEntities`, `LightEntity`,
-`LightState`, `LightServices` — so a domain named after a PHP keyword, like
-`switch`, is safe.
-
-## Attribute types
-
-A domain's state view gets a typed accessor for an attribute key only when
-Home Assistant defines the key for the platform, such as `brightness` on a
-light or `unit_of_measurement` anywhere, or when you include it. Everything
-else is still there through `listAttributes()` and `raw`.
-
-- A key matching `exclude` never gets one, known or included.
-- A key matching `include` gets one when some entity reports it.
-- `friendly_name` and keys that do not start with a letter, such as
-  `06-19 13:01`, never get one.
-- Two keys that reduce to the same name are numbered: `localTime`,
-  `localTime2`.
+An attribute gets an accessor when Home Assistant defines it for the domain (such as `brightness` on a light), or
+when you include it:
 
 ```yaml
 codegen:
@@ -180,73 +103,41 @@ codegen:
     sensor:
       exclude: ['moon_*']
     vacuum:
-      include: [mop_pad, 'mop_*']
+      include: [mop_pad]
 ```
 
-Patterns are entity-selector patterns: an exact key, or a glob with `*` and `?`. An exact include that no entity of its domain
-reports is printed as a warning, since it is most likely a typo.
+Accessors are nullable, because Home Assistant drops an attribute when it stops applying. Numbers are always `?float`,
+since `21` today can be `21.5` tomorrow. An attribute that was `null` on every entity when you generated (every light
+off, for example) is `mixed` until you generate again.
 
-The keys that remain are widened to a type every entity can answer with:
+## Snapshots for CI
 
-| Seen | Accessor |
-|---|---|
-| any number | `?float` |
-| anything in conflict | `mixed` |
-| an array | `array<array-key, mixed>\|null` |
+`--snapshot-out` saves what `generate` read, and `--snapshot-in` generates from that file without connecting. In CI,
+check the committed classes against a committed snapshot:
 
-Whole numbers get `?float` too: an attribute that reads `21` today can read `21.5` tomorrow.
-
-Every accessor is nullable, because Home Assistant drops an attribute the moment
-it stops applying. `unavailable` and `unknown` entities contribute nothing.
-`isOn()` / `isOff()` and `getStateAsFloat()` come from a fixed list of domains rather
-than from the snapshot, so a house whose lights are all off still gets `isOn()`.
-
-The flip side of reading types off live state: an attribute that was `null` on
-every entity of its domain — every light off, say — is generated as `mixed`, and
-becomes typed the next time one of them is on.
-
-## Snapshots, and CI
-
-```
-stewart generate --snapshot-out=var/snapshot.json    write down what was read
-stewart generate --snapshot-in=var/snapshot.json     generate from it, no connection
-stewart generate --check                             report what would change, exit 1
-```
-
-Rendering from a given snapshot is byte-for-byte deterministic: everything is
-sorted and nothing carries a timestamp. Rendering from a *live* instance is not
-quite, for the attribute reason above, so `--check` in CI belongs against a
-committed snapshot:
-
-```
+```bash
+make generate ARGS=--snapshot-out=var/snapshot.json
 stewart generate --check --snapshot-in=var/snapshot.json
 ```
 
-A snapshot is a copy of your instance's live state: every attribute value,
-including camera and image `access_token`s, tracker and zone coordinates, IP and
-MAC addresses, and the user ids in each state's context. It also holds the
-entity registry and your areas, floors and labels. Keep it out of public
-repositories.
-
-The config still needs `home_assistant.url` and `token` even with
-`--snapshot-in`; nothing connects, but the schema is one schema.
-
-## Drift
-
-After its first snapshot the daemon compares Home Assistant's entity list with
-the manifest and logs one warning if they have parted ways:
-
-```
-WARNING Generated entity classes no longer match Home Assistant; run stewart generate
-        {"added":["light.landing"],"removed":[]}
-```
-
-Services are not checked at boot — the daemon never calls `get_services` —
-so `stewart generate --check` is what catches a service that moved.
+Generating from the same snapshot always gives the same files. A snapshot is a copy of your home's state, with
+locations, IP addresses and access tokens of cameras, so keep it out of public repositories. The same goes for
+`generated/`, which names your entities.
 
 ## In production
 
-`stewart-php/codegen` is a development dependency. A `--no-dev` image has
-neither the package nor the `generate` command, and the daemon does not notice.
-The generated classes themselves depend on `contracts` alone, so they cost a
-production install nothing beyond their own bytes.
+`stewart-php/codegen` is a development dependency, so a production install has no `generate` command. The generated
+classes need only `stewart-php/contracts`, which every project has.
+
+## Common problems
+
+**`Entity ID "…" is not a generated … entity`.** The ID has a typo, belongs to another domain, or was added after the last
+`make generate`.
+
+**The first `make generate` stops and prints a `composer.json` snippet.** Composer does not know where the classes
+go. Add the snippet under `autoload`, run `make install`, then `make generate` again. Projects from the skeleton
+already have it.
+
+**`Class "Stewart\Contracts\App\Generated\…" not found`.** An app imports `Stewart\Contracts\App`, so inside the app,
+`App\Generated\Entities` means `Stewart\Contracts\App\Generated\Entities`. Import the generated classes with
+`use App\Generated\Entities;` instead.

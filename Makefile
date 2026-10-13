@@ -124,8 +124,13 @@ test: ## Unit tests (no Home Assistant needed)
 	$(RUN) vendor/bin/phpunit --testsuite=unit --log-junit var/reports/junit/unit.xml
 
 .PHONY: test-docs
-test-docs: ## Tests of the example apps the user documentation includes
+test-docs: ## Tests of the example apps the user documentation includes, and their generated classes
+	$(RUN) packages/runtime/bin/stewart generate --config docs/examples/stewart.yaml --snapshot-in docs/examples/snapshot.json --check
 	$(RUN) vendor/bin/phpunit --testsuite=docs --log-junit var/reports/junit/docs.xml
+
+.PHONY: docs-examples-generate
+docs-examples-generate: ## Regenerate the typed classes the documentation examples use, from docs/examples/snapshot.json
+	$(RUN) packages/runtime/bin/stewart generate --config docs/examples/stewart.yaml --snapshot-in docs/examples/snapshot.json
 
 .PHONY: test-process
 test-process: ## Worker process smoke tests against Valkey (no Home Assistant needed)

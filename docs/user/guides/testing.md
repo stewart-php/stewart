@@ -2,7 +2,7 @@
 title: Testing apps
 description: Run an app against fakes on virtual time, without Home Assistant.
 sidebar:
-  order: 21.5
+  order: 16
 ---
 
 `stewart-php/testing` runs an app in a PHPUnit test. Nothing connects to Home Assistant, and time only moves when

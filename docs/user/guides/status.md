@@ -2,7 +2,7 @@
 title: Checking the daemon
 description: What stewart status shows, how to pause an app, how to script it, HTTP health checks, and how to reach a daemon on another host.
 sidebar:
-  order: 21
+  order: 17
 ---
 
 Stewart serves a small control socket, and `stewart status` reads it:

@@ -9,8 +9,8 @@ use Stewart\Contracts\Automation;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\Store\Store;
 
-#[Automation(id: 'heating')]
-final class HeatingApp implements App
+#[Automation(id: 'door-counter')]
+final class DoorCounter implements App
 {
     public function __construct(
         private readonly HaContext $ha,

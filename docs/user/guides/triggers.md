@@ -1,76 +1,53 @@
 ---
 title: Triggers
-description: React to sunset, a time of day, a template turning true or a person leaving a zone, using Home Assistant's own triggers.
+description: Use Home Assistant's own triggers, such as zones, templates, time patterns and calendars, from an app.
 sidebar:
-  order: 17
+  order: 12
 ---
 
-Some moments are not a state change and not an event: sunset, 07:30, the moment
-a template turns true, a person leaving home. Home Assistant already knows how to
-detect them; it calls them triggers. `watchTrigger()` hands one to Home Assistant
-and streams every time it fires:
+Some moments are neither a state change nor an event: a person entering a zone, a template turning true, a calendar
+event starting. Home Assistant detects these with **triggers**, and `watchTrigger()` lets an app use them. This app
+turns the hall light on when Anna comes home and the ground floor off when she leaves:
 
-```php
-use Stewart\Contracts\Time\Duration;
-use Stewart\Contracts\Time\SunOffset;
-use Stewart\Contracts\Trigger\HaTrigger;
-use Stewart\Contracts\Trigger\TriggerEvent;
-
-$this->ha->watchTrigger(HaTrigger::onSunset(SunOffset::before(Duration::minutes(30))))
-    ->subscribe(fn(TriggerEvent $event) => $this->ha->callService('light', 'turn_on', target: $this->ha->getEntity('light.porch')));
+```php file=../../examples/apps/WelcomeHome.php
 ```
 
-The stream is an ordinary `EventStream<TriggerEvent>`: `filter()`, `debounce()`,
-`take()` and the rest work on it.
+`watchTrigger()` returns a stream of `TriggerEvent`s, with the usual operators (`filter`, `debounce`, `take`, …).
 
-For a sun moment as a `ScheduledTask` that keeps running while Home Assistant is
-unreachable, use `runAtSunEvent(SunEvent::Sunset, ...)` instead; see [The sun](sun.md).
-
-## Building a trigger
+## Built-in triggers
 
 | Builder | Fires |
 |---|---|
-| `HaTrigger::onSunrise(?SunOffset)` / `onSunset(?SunOffset)` | at sunrise or sunset; `SunOffset::before(...)` / `after(...)` moves it |
-| `HaTrigger::atTime('07:30')` | every day at that time (`HH:MM` or `HH:MM:SS`) |
-| `HaTrigger::atTime('input_datetime.wake_up')` | at the time an `input_datetime` or a timestamp `sensor` holds, following its changes; `Scheduler::runAtEntityTime()` does the same without a Home Assistant subscription |
-| `HaTrigger::onTimePattern(minutes: '/5')` | on a clock pattern: `hours`, `minutes`, `seconds`, each `'/n'`, `'*'` or a number |
-| `HaTrigger::whenTemplateTrue('{{ ... }}', for: Duration::minutes(2))` | when the template turns true, optionally after it stayed true that long |
-| `HaTrigger::onZoneTransition('person.anna', 'zone.home', ZoneTransition::Leave)` | when the person or device tracker enters or leaves the zone |
+| `HaTrigger::onZoneTransition('person.anna', 'zone.home', ZoneTransition::Enter)` | When a person or device tracker enters or leaves a zone |
+| `HaTrigger::whenTemplateTrue('{{ … }}', for: Duration::minutes(2))` | When a template turns true, optionally after it stayed true that long |
+| `HaTrigger::onTimePattern(minutes: '/5')` | On a clock pattern; `hours`, `minutes` and `seconds` each take `'/n'`, `'*'` or a number |
+| `HaTrigger::atTime('07:30')` | Every day at that time |
+| `HaTrigger::atTime('input_datetime.wake_up')` | At the time an `input_datetime` or timestamp sensor holds |
+| `HaTrigger::onSunrise()` / `onSunset(SunOffset::before(…))` | At sunrise or sunset |
 
-Every builder takes an optional `id:`; it comes back as `$event->getTriggerId()`,
-so a handler can tell which trigger of a list fired.
+Each builder takes an optional `id:`, which comes back as `$event->getTriggerId()`.
 
-Anything else Home Assistant supports — `calendar`, `device`, `conversation`,
-`numeric_state` and the rest — goes in as the array you would write in YAML:
+**Prefer Stewart's own tools where they exist.** For times and the sun, a [schedule](scheduling.md) keeps working
+while Home Assistant is unreachable; a trigger does not. For state changes, `watchStateChanges()` runs inside Stewart
+and needs no subscription in Home Assistant.
+
+## Any other trigger
+
+Every other trigger Home Assistant has (`calendar`, `numeric_state`, `conversation`, `device`, …) goes in as the array
+you would write in YAML:
 
 ```php
 $this->ha->watchTrigger(['trigger' => 'calendar', 'event' => 'start', 'entity_id' => 'calendar.bins']);
 ```
 
-`HaTrigger::fromArray()` does the same and checks the map has a `trigger` (or the
-older `platform`) key. For state changes, prefer `watchStateChanges()`: it runs in
-the worker and reads the local state cache.
+## Several triggers
 
-## Several triggers at once
-
-A list fires when any of its triggers does. It is one Home Assistant
-subscription, and the trigger id tells them apart:
-
-```php
-use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
-
-$this->ha->watchTrigger(HaTriggerCollection::fromTriggers([
-    HaTrigger::onSunrise(id: 'morning'),
-    HaTrigger::atTime('07:00', id: 'morning'),
-    HaTrigger::onSunset(id: 'evening'),
-]))->subscribe(fn(TriggerEvent $event) => $this->applyScene($event->getTriggerId()));
-```
-
-A plain list of arrays works the same way.
+A `HaTriggerCollection`, as in the example, fires when any of its triggers fires. It is one subscription in Home
+Assistant; the `id:` tells the triggers apart. A plain list of arrays works the same way.
 
 ## Variables
 
-Template triggers can read values you pass in:
+Template triggers can read values you pass:
 
 ```php
 $this->ha->watchTrigger(
@@ -79,48 +56,38 @@ $this->ha->watchTrigger(
 );
 ```
 
-## What a TriggerEvent carries
+## What a TriggerEvent holds
 
-| | |
+| Method | Returns |
 |---|---|
-| `$event->getPlatform()` | `sun`, `time`, `template`, ... |
-| `$event->getTriggerId()` | your `id:`, or the trigger's position in the list as a string |
-| `$event->getTriggerData()` / `$event->getValue($key)` | Home Assistant's `trigger` variables, such as `event`, `entity_id`, `from_state` |
-| `$event->context` | the id, parent and user behind it |
-| `$event->firedAt` | when the broker received it |
+| `getTriggerId()` | Your `id:`, or the trigger's position in the list |
+| `getPlatform()` | `zone`, `template`, `time`, … |
+| `getValue('to_state')`, `getTriggerData()` | Home Assistant's `trigger` variables |
+| `$event->context` | Who caused it |
+| `$event->firedAt` | When Stewart received it |
 
-## How it behaves
+## How triggers behave
 
-- **Shared.** Apps that watch the same trigger (same config, same variables)
-  share one Home Assistant subscription. It ends when the last of them stops.
-- **Across outages.** After Home Assistant comes back, every trigger is
-  subscribed again. A trigger that would have fired during the outage is lost;
-  Home Assistant does not replay it.
-- **Rejected triggers.** Home Assistant checks the config when Stewart subscribes.
-  If it refuses, the error is logged with Home Assistant's reason and the
-  subscription ends: `$subscription->isActive()` turns false. The builders and
-  `fromArray()` catch shape mistakes earlier, with a `TriggerException`.
-- **Version.** The builders use the `trigger:` key, which needs Home Assistant
-  2024.10 or newer. On older versions, pass arrays with `platform:`.
-- **Delivery.** Fired triggers queue like events: a worker that falls behind
-  drops its oldest queued ones, with a warning.
+- **Shared.** Apps that watch the same trigger with the same variables share one subscription in Home Assistant.
+- **Outages.** After Stewart reconnects, every trigger is subscribed again. A trigger that would have fired while the
+  connection was down is lost.
+- **Rejected triggers.** Home Assistant checks a trigger when Stewart subscribes. If it refuses, Stewart logs Home
+  Assistant's reason and the subscription ends. The builders catch most mistakes earlier, with a
+  `TriggerException`.
+- **Home Assistant version.** The builders need Home Assistant 2024.10 or newer. On older versions, pass arrays with
+  `platform:` instead of `trigger:`.
 
 ## Testing
 
-`RecordingHaContext` records what an app watches and lets a test fire it:
+The harness records what an app watches. `pushTrigger()` fires every watcher of an equal trigger:
 
-```php
-$ha = new RecordingHaContext();
-$app = new PorchLight($ha);
-$app->initialize();
-
-$ha->pushTrigger(HaTrigger::onSunset(SunOffset::before(Duration::minutes(30))), new TriggerEvent(['platform' => 'sun']));
-
-self::assertSame('turn_on', $ha->getLastCall()->service);
-self::assertCount(1, $ha->listWatchedTriggers());
-self::assertSame([], $ha->listWatchedTriggers()->getFirst()?->variables);
+```php file=../../examples/tests/WelcomeHomeTest.php
 ```
 
-`pushTrigger()` reaches every watcher whose triggers are equal, whatever its
-variables. A watch is recorded when `watchTrigger()` is called, before anything
-subscribes. [`AppHarness`](testing.md) gives an app the same fake as `$harness->ha`.
+## Common problems
+
+**The trigger never fires, and the log shows Home Assistant's error.** Home Assistant rejected the trigger. Try the
+same trigger in a Home Assistant automation to see the problem.
+
+**It missed a moment.** The connection was down at that moment; triggers are not replayed. Use a schedule for times
+of day.

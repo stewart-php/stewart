@@ -2,7 +2,7 @@
 title: Handling errors
 description: What an automation can catch, how reasons identify a failure, and where the details show up in the logs.
 sidebar:
-  order: 22
+  order: 18
 ---
 
 Everything Stewart throws is a `Stewart\Contracts\Exception\StewartException`.

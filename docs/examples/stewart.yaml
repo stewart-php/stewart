@@ -1,0 +1,7 @@
+# Generates docs/examples/generated from snapshot.json (make docs-examples-generate); nothing connects.
+home_assistant:
+  url: ws://homeassistant.invalid:8123/api/websocket
+  token: not-used
+
+codegen:
+  output_dir: docs/examples/generated

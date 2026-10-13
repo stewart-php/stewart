@@ -1,68 +1,64 @@
 ---
-title: The sun
-description: Run at sunrise, sunset, dusk or golden hour, and ask where the sun is, at Home Assistant's location.
+title: Sun
+description: Run code at sunrise, sunset, dusk or golden hour, and ask where the sun stands, at Home Assistant's location.
 sidebar:
-  order: 18
+  order: 13
 ---
 
-Stewart knows the sun from the latitude, longitude and elevation configured in Home Assistant. Times are computed in
-the worker, so they keep coming while Home Assistant is unreachable, and agree with Home Assistant's sun integration
-within seconds.
+Stewart computes the sun's times and position from the location set in Home Assistant (**Settings → System →
+General**). The results agree with Home Assistant's own sun integration within seconds, and keep coming while Home
+Assistant is unreachable. This app closes the south-facing blinds while the sun shines on them:
 
-## Scheduling
+```php file=../../examples/apps/SouthBlinds.php
+```
+
+## Running code at a sun event
 
 ```php
-use Stewart\Contracts\Sun\SunEvent;
-use Stewart\Contracts\Time\Duration;
-use Stewart\Contracts\Time\SunOffset;
-
 $this->scheduler->runAtSunEvent(SunEvent::Sunrise, $this->openBlinds(...));
 $this->scheduler->runAtSunEvent(SunEvent::Sunset, $this->lightsOn(...), SunOffset::before(Duration::minutes(30)));
 $this->scheduler->runAtSunEvent(SunEvent::GoldenHourEveningStart, $this->warmLights(...));
 ```
 
-These are ordinary `ScheduledTask`s: `getNextRunAt()`, `cancel()`, missed runs after a suspend, torn down with your
-app. On a day the event does not happen, such as sunset during the midnight sun, the schedule waits for the next day
-it does.
+These are ordinary schedules; see [Scheduling and waiting](scheduling.md). On a day an event does not happen, such as
+sunset during the midnight sun, the schedule waits for the next day it does.
 
-## Asking
-
-Inject `Stewart\Contracts\Sun\SunCalendar`:
-
-```php
-$this->sun->isSunUp();
-$this->sun->findNextEvent(SunEvent::CivilDusk);
-$this->sun->findNextEvent(SunEvent::Sunrise, SunOffset::after(Duration::minutes(20)));
-$this->sun->getDayOn(new DateTimeImmutable('tomorrow'))->findEventTime(SunEvent::Sunset);
-$this->sun->getCurrentPosition()->azimuthDegrees;
-```
-
-| `SunEvent` | Sun's apparent elevation |
+| `SunEvent` | The sun's height |
 |---|---|
 | `AstronomicalDawn` / `AstronomicalDusk` | −18° |
 | `NauticalDawn` / `NauticalDusk` | −12° |
-| `CivilDawn` / `CivilDusk`, `BlueHourMorningStart` / `BlueHourEveningEnd` | −6° |
+| `CivilDawn` / `CivilDusk` | −6° |
+| `BlueHourMorningStart` / `BlueHourEveningEnd` | −6° |
 | `BlueHourMorningEnd` / `BlueHourEveningStart` | −4° |
-| `Sunrise` / `Sunset` | upper edge on the horizon |
+| `Sunrise` / `Sunset` | Top edge on the horizon |
 | `GoldenHourMorningEnd` / `GoldenHourEveningStart` | +6° |
-| `SolarNoon` | highest point |
+| `SolarNoon` | Highest point of the day |
 
 Golden hour runs from −4° to +6°, blue hour from −6° to −4°.
 
-`SunPosition` elevation includes atmospheric refraction, like the `elevation` attribute of `sun.sun`. For shading,
-ask whether the sun stands in front of a facade and high enough to matter; the sector may wrap past north:
+## Asking about the sun
 
-```php
-$position = $this->sun->getCurrentPosition();
+Ask for `SunCalendar` in the constructor:
 
-if ($position->isWithinAzimuth(135.0, 225.0) && $position->isHigherThan(15.0)) {
-    $this->closeSouthBlinds();
-}
-```
+| Method | Returns |
+|---|---|
+| `isSunUp()` | Whether the sun is up now |
+| `findNextEvent(SunEvent::CivilDusk)` | When the event next happens, as an `Instant` |
+| `findNextEvent(SunEvent::Sunrise, SunOffset::after(Duration::minutes(20)))` | The same, shifted |
+| `getDayOn(new DateTimeImmutable('tomorrow'))->findEventTime(SunEvent::Sunset)` | An event on a given day |
+| `getCurrentPosition()` | Where the sun stands now |
+| `getPositionAt($instant)` | Where it stands at another moment |
 
-Whether the sun is up is `isSunUp()`, which accounts for the observer's elevation exactly as sunrise and sunset do.
+A `SunPosition` has `azimuthDegrees` (0° is north, 90° east) and `elevationDegrees` (above the horizon, including
+refraction, like the `elevation` attribute of `sun.sun`). `isWithinAzimuth(135.0, 225.0)` checks a compass sector,
+also one that wraps past north, and `isHigherThan(15.0)` the height.
 
-Without a location in Home Assistant, every `SunCalendar` query throws `SunException` and `runAtSunEvent()` throws
-`ScheduleException`. A location changed in Home Assistant is picked up on the next restart.
+## Testing
 
-For Home Assistant's own sun trigger, use [`watchTrigger(HaTrigger::onSunset())`](triggers.md).
+The test harness's sun rises at 06:00, stands in the south at 45° all day, and sets at 18:00.
+`$harness->sunCalendar->stubEventTime(SunEvent::Sunset, '16:30')` moves an event.
+
+## Common problems
+
+**`A sunset schedule needs a location`, or a `SunException`.** Home Assistant has no location. Set it under **Settings
+→ System → General** and restart Stewart. Stewart also picks up a changed location only at restart.

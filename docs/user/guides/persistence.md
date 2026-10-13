@@ -1,93 +1,66 @@
 ---
 title: Persistence
-description: Keep what an automation must remember across restarts, in its own scope or a shared one.
+description: Keep what an app must remember across restarts, in its own storage or in storage all apps share.
 sidebar:
-  order: 14
+  order: 8
 ---
 
-An automation's properties live in a worker process, and a worker restarts — on
-a crash, on a reload, on a deploy. Anything that has to outlive that goes in a
-store.
+An app's properties live in a worker process, and workers restart: after a crash, a deploy, or a change to
+`stewart.yaml`. Anything an app must remember longer goes into a **store**. This app counts how often the front door
+opens, and the count survives restarts:
 
-```php file=../../examples/apps/HeatingApp.php
+```php file=../../examples/apps/DoorCounter.php
 ```
 
-A parameter typed `Store` gets that automation's own scope, keyed by the ID in
-its `#[Automation]` attribute. Nothing has to be configured for that, and no
-other automation can read or write those keys.
+A `Store` parameter gives the app its own storage, filed under its ID. No other app can read or change it.
 
 ## Setting it up
 
-Storage is off until a URL is set. Point it at the `valkey` service that ships
-in `docker-compose.yml`, or at any Redis-compatible server:
+A new project already has it: `compose.yaml` runs a [Valkey](https://valkey.io) server, and `.env` points Stewart at it:
 
 ```bash
 STEWART_PERSISTENCE__URL=redis://valkey:6379/0
 ```
 
-A password and a database index belong in the URL —
-`redis://:secret@valkey:6379/3`. Only the password form of `AUTH` is spoken, so
-a Redis ACL *username* is ignored. `rediss://` is not supported yet.
+Any Redis-compatible server works. A password and a database number go in the URL:
+`redis://:secret@my-redis:6379/3`. `unix:///path/to/redis.sock` connects over a socket. TLS (`rediss://`) is not
+supported.
 
-The rest is in `stewart.yaml`:
+Without a URL, Stewart runs, but an app that asks for a `Store` does not start; the log names the setting to fill in.
+With a URL, Stewart checks the server once at start and refuses to start if it cannot reach it.
 
-```yaml
-persistence:
-  prefix: stewart   # what every key is filed under, so two installations can share a server
-  timeout: 2s       # how long one operation may take
-  recovery_interval: 5s  # after a failure, how long store calls fail at once before one is tried again
-```
-
-With no URL set, Stewart runs exactly as before, and an automation that asks for
-a `Store` is not started — it is reported at startup, naming the setting to
-write, while the other automations run. With a URL set, the daemon reaches the
-store once before it connects to Home Assistant and refuses to start if it
-cannot: a store that is not there at boot is a mistake in the config, not an
-outage.
-
-Give Stewart a database index of its own (`/0`, `/3`, …) rather than sharing one
-with something else. Listing an automation's keys scans the keyspace, which is
-cheap when the keyspace is yours.
+Give Stewart a database number of its own rather than sharing one.
 
 ## Reading and writing
 
-Each type has its own accessor, and a key that was never written — or has
-expired — reads as `null`:
+A key that was never written, or that has expired, reads as `null`:
 
 ```php
-$count  = $this->store->int('opens') ?? 0;
-$mode   = $this->store->string('mode');
-$target = $this->store->float('target');
-$armed  = $this->store->bool('armed');
-
-if (!$this->store->has('mode')) { … }
+$opens = $this->store->getInt('opens') ?? 0;
+$mode = $this->store->getString('mode');
+$target = $this->store->getFloat('target');
+$armed = $this->store->getBool('armed');
 ```
 
-Asking for a type the key does not hold throws `StoreError::TypeMismatch` rather than
-returning `null`, because it means something other than this reader wrote it.
+| Method | Does |
+|---|---|
+| `set('mode', 'away')` | Store a string, number, boolean or object |
+| `set('seen', true, Duration::minutes(10))` | The same, forgotten after 10 minutes |
+| `increment('opens')` / `increment('budget', -5)` | Add to a whole number; a missing key counts as 0 |
+| `has('mode')` | Whether the key exists |
+| `delete('mode')` | Remove one key |
+| `clear()` | Remove every key of this app |
+| `listKeys()` | All keys of this app, sorted |
 
-```php
-$this->store->set('mode', 'away');
-$this->store->set('seen', true, Duration::minutes(10));   // forgotten after ten minutes
-$this->store->delete('mode');
-$this->store->clear();                                     // this scope only
-$this->store->keys();                                      // sorted, without the prefix
-```
-
-`set()` without a TTL clears an expiry the key had. `increment()` adds to a
-whole number, treats a missing key as `0`, and keeps any expiry:
-
-```php
-$opens = $this->store->increment('opens');       // 1, then 2, …
-$this->store->increment('budget', -5);
-```
-
-Keys match `[A-Za-z0-9][A-Za-z0-9._:-]{0,127}`, so an entity ID is a valid key
-and `:` is free for sub-namespacing (`rooms:hall:brightness`).
+- Reading a key as the wrong type, such as `getInt()` on text, throws `StoreException` with the reason
+  `TypeMismatch`. It means something else wrote that key.
+- `set()` without a time limit removes the limit the key had. `increment()` keeps it.
+- A key is a letter or digit, then up to 127 letters, digits, `.`, `_`, `:` or `-`. Entity IDs are valid keys, and
+  `:` is handy for grouping: `rooms:hall:brightness`.
 
 ## Storing objects
 
-Anything with structure is a value object that says how it is stored:
+A value with structure is a small class that implements `Storable` and says how it is stored:
 
 ```php file=../../examples/apps/Thermostat.php
 ```
@@ -97,90 +70,76 @@ $this->store->set('thermostat', new Thermostat(21.5, 'heat'));
 $thermostat = $this->store->getObject('thermostat', Thermostat::class);
 ```
 
-The reader names the class, and nothing about it is stored — so renaming or
-moving the class costs nothing. What *is* stored is whatever `toStorage()`
-returned, which makes the shape the class's own to look after: when it changes,
-`fromStorage()` is where an older shape is absorbed. If it cannot, it throws,
-and the read fails with `StoreError::ValueRejected` naming the key and the class.
+- Only what `toStorage()` returns is stored, as JSON. The class name is not, so you can rename or move the class.
+- `toStorage()` returns named fields, not a list. Text must be UTF-8 and numbers finite.
+- When you change the fields, make `fromStorage()` accept the old shape too. If it throws, reading fails with the
+  reason `ValueRejected`, which names the key and the class.
 
-`toStorage()` must return a map of named fields; a list is refused. Strings must
-be UTF-8 and floats finite, because the stored form is JSON. Arrays are not
-storable on their own, and neither is `null` — a missing key already reads as
-that.
+## Storage all apps share
 
-## The shared bucket, and reading another automation
+An attribute on the constructor parameter picks other storage:
 
-An automation gets its own scope by default. An attribute on the constructor
-parameter chooses another:
-
-```php
-use Stewart\Contracts\Store\GlobalStore;
-use Stewart\Contracts\Store\PeerStore;
-use Stewart\Contracts\Store\ReadableStore;
-use Stewart\Contracts\Store\Store;
-
-public function __construct(
-    private readonly Store $store,                               // this automation's own
-    #[GlobalStore] private readonly Store $houseMode,            // the one bucket everything shares
-    #[PeerStore('boiler')] private readonly ReadableStore $boiler, // another automation's keys, read-only
-) {}
+```php file=../../examples/apps/AwayMode.php
 ```
 
-`#[GlobalStore]` is shared: every automation reads and writes it, so use it for
-facts about the house rather than for one automation's bookkeeping. On a
-`ReadableStore` parameter it arrives read-only. `#[PeerStore]` must be typed
-`ReadableStore`, which is what keeps a key to a single writer — the automation
-whose scope it is; typed `Store`, it fails that automation as it is built. A
-peer naming an automation that does not exist fails the same way, and suggests
-the closest ID.
+| Parameter | Gets |
+|---|---|
+| `Store $store` | This app's own storage |
+| `ReadableStore $store` | This app's own storage, read-only |
+| `#[GlobalStore] Store $house` | Storage every app shares; use it for facts about the house |
+| `#[GlobalStore] ReadableStore $house` | The shared storage, read-only |
+| `#[PeerStore('away-mode')] ReadableStore $away` | Another app's storage, read-only |
 
-A plain `ReadableStore` parameter is the automation's own scope, read-only.
-The attributes live in contracts, so an automation needs nothing from the
-runtime to pick a scope, and `services.php` needs nothing from it either.
+`#[PeerStore]` must be typed `ReadableStore`, so each key has a single writer: the app it belongs to. A peer ID that
+does not exist stops the app at start, and the error suggests the closest ID.
 
-An automation is never defined in `services.php`; a scalar it needs comes from
-`options:` in `stewart.yaml`.
+A service from `services.php` that asks for a `Store` gets the shared storage, because a service belongs to no app.
 
-A service of your own that asks for a `Store` gets the shared bucket, because a
-service is not an automation and has no scope of its own. A `ReadableStore`
-gets it read-only, and `#[PeerStore]` works there too.
+## When the server is down
 
-## When the store is not there
+A failed store call throws `StoreException`, with the reason `Unreachable`, `Refused`, `TimedOut` or
+`RecentlyFailed`. In a handler, Stewart logs it as a failure and the app keeps running. In `initialize()`, the app
+does not start.
 
-An operation that fails throws a `StoreException` coded `UNREACHABLE`, `REFUSED`,
-`TIMED_OUT` or `RECENTLY_FAILED`. Inside a handler that is
-reported like any other handler failure — the subscription stays armed — and
-inside `initialize()` it stops that one automation.
+After a timeout or a lost connection, a worker fails every store call at once for `persistence.recovery_interval`
+(5 seconds) with `RecentlyFailed`, so an outage costs one timeout, not one per handler. `make status` shows the store
+as down meanwhile.
 
-After a timeout or a lost connection, a worker stops trying for
-`persistence.recovery_interval`: every store call in that worker fails at once
-with `RECENTLY_FAILED`, naming the reason, so an outage costs one timeout rather
-than one per handler. The next call after that goes to the store again. Each
-worker finds this out for itself; a worker that never touches the store never
-waits on it. A refusal, such as incrementing a key that holds text, is the
-caller's problem and never shuts the store off.
+Two things to know before relying on a write:
 
-`stewart status` shows the store as down while any worker is holding off, and
-the most recent failure any worker saw. Workers report it with their ping
-answers, so it lags by up to one `ping_interval`.
+- `increment()` is safe against other writers, but a dropped connection is retried, so it can count twice. Use it
+  for counting, not for billing.
+- A write that throws may still have been saved.
 
-Two things are worth knowing before counting on a write:
+## Looking at the data
 
-- `increment()` is atomic against other writers, but a dropped connection is
-  retried, so it can apply twice. Count with it; do not bill with it.
-- A write that throws one of those may still have been applied.
-
-## What it looks like on the server
-
-Values are stored as themselves, with nothing wrapped around them:
+Values are stored as plain text and JSON, so you can read them with `valkey-cli`:
 
 ```
-stewart:app:heating:opens       ->  42
-stewart:app:heating:mode        ->  "away"
+stewart:app:door-counter:opens  ->  42
 stewart:app:heating:thermostat  ->  {"target":21.5,"mode":"heat"}
-stewart:global:house_mode       ->  "night"
+stewart:global:mode             ->  "away"
 ```
 
-So `valkey-cli --scan --pattern 'stewart:*'` is a readable answer to "what does
-this automation think it knows", and the counter really is the server's own
-`INCRBY`.
+```bash
+docker compose exec valkey valkey-cli --scan --pattern 'stewart:*'
+```
+
+`stewart` is `persistence.prefix`. Change it when two Stewart installations share one server.
+
+## Testing
+
+The test harness gives apps an in-memory store. `$harness->stores->openAppStore(new AppId('…'))` and
+`openGlobalStore()` read and seed it:
+
+```php file=../../examples/tests/AwayModeTest.php
+```
+
+## Common problems
+
+**`Persistence is not configured`.** Set `STEWART_PERSISTENCE__URL` in `.env`.
+
+**Stewart does not start: the store is unreachable.** Check that the `valkey` container runs (`docker compose ps`) and
+that the URL names it.
+
+**`Key "…" holds …, not …`.** Two apps, or two versions of one app, wrote different types under the same key.
