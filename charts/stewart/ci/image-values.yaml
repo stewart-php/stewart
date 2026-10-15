@@ -12,6 +12,7 @@ config:
       options:
         watch: sun.sun
 workers: 2
+revisionHistoryLimit: 1
 adminApi:
   enabled: true
   host: 0.0.0.0

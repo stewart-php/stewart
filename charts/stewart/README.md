@@ -70,6 +70,7 @@ classes are rewritten inside the image.
 | `resources` | 50m / 128Mi request, 512Mi limit | |
 | `podSecurityContext`, `securityContext` | non-root, read-only root, no capabilities | |
 | `terminationGracePeriodSeconds` | `30` | Must exceed `shutdown_grace` (5s) plus a second |
+| `revisionHistoryLimit` | `3` | Old ReplicaSets kept for `kubectl rollout undo`; `0` keeps none. `helm rollback` uses Helm's release history (`--history-max`) instead |
 | `probes.mode` | `http` | `http` probes the daemon's port; `exec` runs `stewart status --probe` |
 | `probes.host` | `0.0.0.0` | IP the probe listener binds; `::` on an IPv6-only cluster |
 | `probes.port` | `8080` | Container port of the probe listener (`http.listen`), never exposed by a Service |

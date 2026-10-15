@@ -29,6 +29,7 @@ spec:
   replicas: 1
   strategy:
     type: Recreate
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   selector:
     matchLabels:
       {{- include "stewart.selectorLabels" . | nindent 6 }}

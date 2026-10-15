@@ -112,6 +112,9 @@ securityContext:
 # Above the daemon's shutdown_grace (5s by default) plus a second, so workers can dispose their apps.
 terminationGracePeriodSeconds: 30
 
+# Old ReplicaSets kept for `kubectl rollout undo`; Helm's own release history is `helm upgrade --history-max`.
+revisionHistoryLimit: 3
+
 probes:
   # http: the kubelet calls /healthz and /readyz on probes.port. exec: runs `stewart status --probe` in the pod.
   mode: http
