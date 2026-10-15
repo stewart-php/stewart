@@ -75,4 +75,48 @@ final class SelectorIndexTest extends TestCase
         self::assertSame(1, $stats->cachedKeys);
         self::assertSame(1, $stats->patterns);
     }
+
+    public function testExactChangesEvictOnlyTheirOwnKey(): void
+    {
+        $index = new SelectorIndex();
+        $index->add(new SubscriptionId('p'), SubscriptionKind::StateChange, Selector::fromSpec('light.*'));
+        $index->add(new SubscriptionId('h'), SubscriptionKind::StateChange, Selector::fromSpec('light.hall'));
+        $index->findMatching(SubscriptionKind::StateChange, 'light.hall');
+        $index->findMatching(SubscriptionKind::StateChange, 'light.porch');
+        $index->findMatching(SubscriptionKind::Event, 'light.porch');
+
+        $index->add(new SubscriptionId('b'), SubscriptionKind::StateChange, Selector::fromSpec('light.porch'));
+
+        self::assertSame(2, $index->getRoutingStats()->cachedKeys);
+        self::assertSame(['h', 'p'], $index->findMatching(SubscriptionKind::StateChange, 'light.hall')->toStrings());
+        self::assertSame(['b', 'p'], $index->findMatching(SubscriptionKind::StateChange, 'light.porch')->toStrings());
+        self::assertSame([], $index->findMatching(SubscriptionKind::Event, 'light.porch')->toStrings());
+
+        $index->remove(new SubscriptionId('b'));
+
+        self::assertSame(['p'], $index->findMatching(SubscriptionKind::StateChange, 'light.porch')->toStrings());
+        self::assertSame(['h', 'p'], $index->findMatching(SubscriptionKind::StateChange, 'light.hall')->toStrings());
+
+        $stats = $index->getRoutingStats();
+        self::assertSame(3, $stats->cacheHits);
+        self::assertSame(5, $stats->cacheMisses);
+        self::assertSame(3, $stats->cachedKeys);
+    }
+
+    public function testPatternChangesFlushTheCache(): void
+    {
+        $index = new SelectorIndex();
+        $index->add(new SubscriptionId('h'), SubscriptionKind::StateChange, Selector::fromSpec('light.hall'));
+        $index->findMatching(SubscriptionKind::StateChange, 'light.hall');
+
+        $index->add(new SubscriptionId('g'), SubscriptionKind::StateChange, Selector::fromSpec('light.*'));
+
+        self::assertSame(0, $index->getRoutingStats()->cachedKeys);
+        self::assertSame(['h', 'g'], $index->findMatching(SubscriptionKind::StateChange, 'light.hall')->toStrings());
+
+        $index->remove(new SubscriptionId('g'));
+
+        self::assertSame(0, $index->getRoutingStats()->cachedKeys);
+        self::assertSame(['h'], $index->findMatching(SubscriptionKind::StateChange, 'light.hall')->toStrings());
+    }
 }
