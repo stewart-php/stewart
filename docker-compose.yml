@@ -12,6 +12,7 @@ services:
     environment:
       XDEBUG_MODE: "${XDEBUG_MODE:-off}"
       GITHUB_ACTIONS:
+      REVOLT_DRIVER:
       # Inside the bind mount, so the non-root container user can write the cache.
       COMPOSER_HOME: /app/var/composer
     # From /etc/hosts, so amphp skips the uncached AAAA lookup that stalls new connections on CI runners.

@@ -19,6 +19,10 @@ description: 'The test suites, where tests live, and the fixtures and goldens th
 its read-only copy would be tested; `make test-packages LOWEST=1` does that for every package with the lowest allowed
 dependencies.
 
+The image has `ext-ev`, so the suites run on Revolt's `EvDriver`. To run them on `stream_select()`, which PHP without
+`ext-ev` uses, add `REVOLT_DRIVER='Revolt\EventLoop\Driver\StreamSelectDriver'` to the `make` command.
+`make loop-driver` prints the driver in use.
+
 ## Where tests live
 
 - Each package keeps its tests in `packages/<pkg>/tests/{Unit,Integration,Process,Persistence,Fixtures}`, in the

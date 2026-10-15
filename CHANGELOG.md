@@ -5,6 +5,14 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
+## [Unreleased]
+
+### Changed
+
+- The runtime image includes `ext-ev`, so the event loop runs on Revolt's `EvDriver` instead of `stream_select()`;
+  `stewart-php/runtime` suggests it for installs outside the image. Set
+  `REVOLT_DRIVER='Revolt\EventLoop\Driver\StreamSelectDriver'` to keep `stream_select()`
+
 ## [1.0.0] - 2026-10-13
 
 The first stable release. From here on, `stewart-php/contracts`, the generated classes, configuration keys,

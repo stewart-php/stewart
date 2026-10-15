@@ -47,6 +47,10 @@ sh: ## Interactive shell in the dev container
 doctor: ## Verify the container has what Stewart needs
 	$(RUN) php vendor/bin/stewart doctor
 
+.PHONY: loop-driver
+loop-driver: ## Print the event loop driver Revolt picks; REVOLT_DRIVER=<class> forces one
+	$(RUN) php -r 'require "vendor/autoload.php"; echo get_class(Revolt\EventLoop::getDriver()), PHP_EOL;'
+
 .PHONY: down
 down: ## Stop everything
 	$(DC) down --remove-orphans

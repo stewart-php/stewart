@@ -18,6 +18,7 @@ COPY --from=extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 COPY --from=composer /usr/bin/composer /usr/local/bin/composer
 
 RUN install-php-extensions \
+        ev \
         pcntl \
         sockets \
         zlib \
