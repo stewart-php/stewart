@@ -7,6 +7,11 @@ release could break; a release's "Upgrading" section says what to change.
 
 ## [Unreleased]
 
+### Added
+
+- The Helm chart's `revisionHistoryLimit` sets how many old ReplicaSets the Deployment keeps; 3 by default, down
+  from Kubernetes' 10
+
 ### Changed
 
 - The runtime image includes `ext-ev`, so the event loop runs on Revolt's `EvDriver` instead of `stream_select()`;

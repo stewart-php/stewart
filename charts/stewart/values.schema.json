@@ -105,6 +105,7 @@
         "workers": {"type": "integer", "minimum": 0},
         "env": {"type": "array"},
         "terminationGracePeriodSeconds": {"type": "integer", "minimum": 7},
+        "revisionHistoryLimit": {"type": "integer", "minimum": 0},
         "probes": {
             "type": "object",
             "properties": {
