@@ -140,6 +140,26 @@ final class HaClientOverWebsocketTest extends TestCase
         self::assertSame(['source' => 'test'], $event->data);
     }
 
+    public function testInvalidUtf8FrameIsDroppedAndTheConnectionStays(): void
+    {
+        $client = $this->connectClient();
+        /** @var DeferredFuture<HaEvent> $received */
+        $received = new DeferredFuture();
+
+        $subscriptionId = $client->subscribeAllEvents(
+            static function (StateChange $change): void {},
+            static function (HaEvent $event) use ($received): void {
+                $received->complete($event);
+            },
+        );
+        $this->server->sendUncheckedText('{"id":' . $subscriptionId . ',"type":"event","event":{"event_type":"' . "\xff" . '"}}');
+        $this->server->pushEvent($subscriptionId, ['event_type' => 'stewart_demo', 'data' => []]);
+
+        self::assertSame('stewart_demo', $received->getFuture()->await(new TimeoutCancellation(self::WAIT_SECONDS))->type);
+        self::assertSame([], $this->disconnects);
+        self::assertTrue($client->isConnected());
+    }
+
     public function testTriggerSubscriptionDeliversTriggerEvent(): void
     {
         $client = $this->connectClient();

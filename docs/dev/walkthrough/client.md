@@ -15,7 +15,9 @@ it.
 
 **Connecting.** `HaConnection::connect()` races the connect against `connect_timeout` (a composite cancellation),
 opens the socket with a heartbeat (amphp's `PeriodicHeartbeatQueue`, from `heartbeat_interval` and
-`heartbeat_missed_limit`), authenticates, and only then starts `receiveLoop()` in its own fiber.
+`heartbeat_missed_limit`), authenticates, and only then starts `receiveLoop()` in its own fiber. The parser skips
+amphp's UTF-8 check because `json_decode()` repeats it, so a frame with invalid UTF-8 is logged and dropped as not
+JSON, and the connection stays up.
 
 **Authenticating.** Home Assistant speaks a small protocol before the command protocol: `auth_required`, `auth`,
 `auth_ok`. `authenticate()` reads those messages directly, before the loop runs. An unexpected first message is

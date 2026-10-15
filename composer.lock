@@ -2227,7 +2227,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/client",
-                "reference": "746f4d0ea0925e20eef50ec20e072a07a6ee4778"
+                "reference": "2baec6b5bdc356798ee93d1397f1a0c20c56746a"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2246,6 +2246,7 @@
                 "daverandom/libdns": "<2.1"
             },
             "require-dev": {
+                "amphp/byte-stream": "^2.1",
                 "amphp/http-server": "^3.4",
                 "amphp/socket": "^2.4",
                 "amphp/websocket-server": "^4.0",

@@ -21,6 +21,7 @@
         "stewart-php/support": "self.version"
     },
     "require-dev": {
+        "amphp/byte-stream": "^2.1",
         "amphp/http-server": "^3.4",
         "amphp/socket": "^2.4",
         "amphp/websocket-server": "^4.0",

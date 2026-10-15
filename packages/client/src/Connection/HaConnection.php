@@ -209,6 +209,8 @@ final class HaConnection
                     ? null
                     : new PeriodicHeartbeatQueue(max(1, $this->config->heartbeatMissedLimit), max(1, (int) round($interval->toSeconds()))),
                 parserFactory: new Rfc6455ParserFactory(
+                    // json_decode() rejects invalid UTF-8 anyway.
+                    validateUtf8: false,
                     messageSizeLimit: $this->config->messageSizeLimit,
                     frameSizeLimit: $this->config->frameSizeLimit,
                 ),

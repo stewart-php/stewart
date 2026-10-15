@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Client\Tests\Fixtures;
 
+use Amp\ByteStream\ReadableBuffer;
 use Amp\Http\Server\DefaultErrorHandler;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\Response;
@@ -121,6 +122,14 @@ final class FakeHaServer implements WebsocketClientHandler
     {
         foreach ($this->clients as $client) {
             $client->sendText($payload);
+        }
+    }
+
+    // sendText() asserts valid UTF-8; a stream skips that check.
+    public function sendUncheckedText(string $payload): void
+    {
+        foreach ($this->clients as $client) {
+            $client->streamText(new ReadableBuffer($payload));
         }
     }
 
