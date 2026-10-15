@@ -5,6 +5,13 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
+## [Unreleased]
+
+### Fixed
+
+- `stewart status`, `app:pause`, `app:resume`, `app:reset` and `worker:restart` fail at once when no daemon
+  listens, instead of retrying the control socket for six seconds whatever `--timeout` says
+
 ## [1.1.0] - 2026-10-15
 
 The runtime image runs the event loop on `ext-ev`, and the Helm chart keeps fewer old ReplicaSets.
