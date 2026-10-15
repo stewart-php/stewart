@@ -5,7 +5,9 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
-## [Unreleased]
+## [1.1.0] - 2026-10-15
+
+The runtime image runs the event loop on `ext-ev`, and the Helm chart keeps fewer old ReplicaSets.
 
 ### Added
 
@@ -15,8 +17,9 @@ release could break; a release's "Upgrading" section says what to change.
 ### Changed
 
 - The runtime image includes `ext-ev`, so the event loop runs on Revolt's `EvDriver` instead of `stream_select()`;
-  `stewart-php/runtime` suggests it for installs outside the image. Set
-  `REVOLT_DRIVER='Revolt\EventLoop\Driver\StreamSelectDriver'` to keep `stream_select()`
+  `stewart-php/runtime` suggests it for installs outside the image. Projects on `runtime:1` get it with their next
+  image pull, without a Composer update. Set `REVOLT_DRIVER='Revolt\EventLoop\Driver\StreamSelectDriver'` to keep
+  `stream_select()`
 
 ## [1.0.0] - 2026-10-13
 
