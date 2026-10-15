@@ -50,6 +50,16 @@ case "$second_start" in
         ;;
 esac
 
+echo '--- compiled PHP is cached in /tmp, and timestamps are still validated'
+if ! mounted sh -c 'stewart --version > /dev/null && find /tmp -name "*.php.bin" | grep -q .'; then
+    echo 'opcache wrote no file cache to /tmp' >&2
+    exit 1
+fi
+[ "$(mounted php -r 'echo ini_get("opcache.validate_timestamps");')" = 1 ] || {
+    echo 'opcache serves cached code without checking timestamps' >&2
+    exit 1
+}
+
 echo '--- a project cloned at boot'
 commit_project() {
     git -C "$work/project" add -A

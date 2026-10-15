@@ -11,6 +11,8 @@ release could break; a release's "Upgrading" section says what to change.
 
 - MQTT and Valkey connections turn on `TCP_NODELAY`, so a burst of small packets no longer waits on delayed ACKs
 - The Home Assistant client asks for `coalesce_messages`, so a burst of events arrives in fewer WebSocket frames
+- The runtime image keeps compiled PHP in `/tmp` (`opcache.file_cache`), so workers and console commands after the
+  first start without compiling the framework again; code is still revalidated when files change
 
 ### Fixed
 
