@@ -52,6 +52,7 @@
         "stewart-php/testing": "self.version"
     },
     "suggest": {
+        "ext-ev": "Faster event loop than stream_select; Revolt picks it up when installed",
         "stewart-php/codegen": "Adds the generate command, for development or for generating when a container starts"
     },
     "autoload": {
