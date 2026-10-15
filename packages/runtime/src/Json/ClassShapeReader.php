@@ -36,6 +36,9 @@ final class ClassShapeReader
     /** @var array<class-string, true> */
     private array $classesBeingDescribed = [];
 
+    /** @var array<string, ValueShape> */
+    private array $valueShapes = [];
+
     public function __construct(private readonly ValueConverterCollection $converters) {}
 
     /** @param class-string $class */
@@ -121,6 +124,11 @@ final class ClassShapeReader
     }
 
     public function describeValueShape(string $type, string $where): ValueShape
+    {
+        return $this->valueShapes[$type] ??= $this->buildValueShape($type, $where);
+    }
+
+    private function buildValueShape(string $type, string $where): ValueShape
     {
         if (isset(self::SCALARS[$type])) {
             return new ValueShape(self::SCALARS[$type], $type);
