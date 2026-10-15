@@ -7,6 +7,7 @@ namespace Stewart\Client\Tests\Integration;
 use Amp\DeferredFuture;
 use Amp\TimeoutCancellation;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Stewart\Client\Connection\ConnectionConfig;
 use Stewart\Client\Connection\HaConnection;
@@ -73,6 +74,37 @@ final class HaClientOverWebsocketTest extends TestCase
 
         self::assertSame(FakeHaServer::HA_VERSION, $client->getHaVersion());
         self::assertSame('Europe/Budapest', $client->getTimeZone()->getName());
+    }
+
+    public function testCoalescingIsDeclaredAfterAuthentication(): void
+    {
+        $this->server->answerCommand('get_config', ['time_zone' => 'Europe/Budapest']);
+
+        $this->connectClient()->getTimeZone();
+
+        self::assertSame([['type' => 'supported_features', 'features' => ['coalesce_messages' => 1], 'id' => 1]], $this->server->listReceivedCommands('supported_features'));
+    }
+
+    /** @return iterable<string, array{bool}> */
+    public static function provideUnansweredDeclarations(): iterable
+    {
+        yield 'refused' => [false];
+        yield 'never answered' => [true];
+    }
+
+    #[DataProvider('provideUnansweredDeclarations')]
+    public function testUnansweredFeatureDeclarationLeavesTheConnectionWorking(bool $held): void
+    {
+        if ($held) {
+            $this->server->holdCommand('supported_features');
+        } else {
+            $this->server->rejectCommand('supported_features', 'unknown_command', 'Unknown command.');
+        }
+
+        $this->server->answerCommand('get_config', ['time_zone' => 'Europe/Budapest']);
+
+        self::assertSame('Europe/Budapest', $this->connectClient()->getTimeZone()->getName());
+        self::assertSame([], $this->disconnects);
     }
 
     public function testServiceCallContextAndCurrentUserOverSocket(): void
@@ -158,6 +190,52 @@ final class HaClientOverWebsocketTest extends TestCase
         self::assertSame('stewart_demo', $received->getFuture()->await(new TimeoutCancellation(self::WAIT_SECONDS))->type);
         self::assertSame([], $this->disconnects);
         self::assertTrue($client->isConnected());
+    }
+
+    public function testCoalescedFrameReachesHandlersInOrder(): void
+    {
+        $client = $this->connectClient();
+        $received = [];
+        /** @var DeferredFuture<null> $both */
+        $both = new DeferredFuture();
+
+        $subscriptionId = $client->subscribeAllEvents(
+            static function (StateChange $change): void {},
+            static function (HaEvent $event) use (&$received, $both): void {
+                $received[] = $event->type;
+
+                if (\count($received) === 2) {
+                    $both->complete();
+                }
+            },
+        );
+        $this->server->sendText(JsonEncoder::encodeToJson([
+            ['id' => $subscriptionId, 'type' => 'event', 'event' => ['event_type' => 'first', 'data' => []]],
+            ['id' => $subscriptionId, 'type' => 'event', 'event' => ['event_type' => 'second', 'data' => []]],
+        ]));
+
+        $both->getFuture()->await(new TimeoutCancellation(self::WAIT_SECONDS));
+
+        self::assertSame(['first', 'second'], $received);
+    }
+
+    public function testCoalescedFrameWithANonObjectIsDroppedAndTheConnectionStays(): void
+    {
+        $client = $this->connectClient();
+        /** @var DeferredFuture<HaEvent> $received */
+        $received = new DeferredFuture();
+
+        $subscriptionId = $client->subscribeAllEvents(
+            static function (StateChange $change): void {},
+            static function (HaEvent $event) use ($received): void {
+                $received->complete($event);
+            },
+        );
+        $this->server->sendText(JsonEncoder::encodeToJson([['id' => $subscriptionId, 'type' => 'event', 'event' => ['event_type' => 'dropped', 'data' => []]], 7]));
+        $this->server->pushEvent($subscriptionId, ['event_type' => 'stewart_demo', 'data' => []]);
+
+        self::assertSame('stewart_demo', $received->getFuture()->await(new TimeoutCancellation(self::WAIT_SECONDS))->type);
+        self::assertSame([], $this->disconnects);
     }
 
     public function testTriggerSubscriptionDeliversTriggerEvent(): void

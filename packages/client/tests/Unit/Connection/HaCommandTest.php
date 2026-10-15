@@ -13,6 +13,7 @@ use Stewart\Client\Component\ComponentSessionRequest;
 use Stewart\Client\Connection\Command\Authenticate;
 use Stewart\Client\Connection\Command\CallService;
 use Stewart\Client\Connection\Command\Component\SubscribeComponentSession;
+use Stewart\Client\Connection\Command\DeclareSupportedFeatures;
 use Stewart\Client\Connection\Command\FireEvent;
 use Stewart\Client\Connection\Command\GetCurrentUser;
 use Stewart\Client\Connection\Command\GetEntityRegistryEntry;
@@ -46,6 +47,7 @@ use Stewart\Support\Wire\EventPayload;
 #[CoversClass(SubscribeComponentSession::class)]
 #[CoversClass(GetEntityRegistryEntry::class)]
 #[CoversClass(UpdateEntityRegistryEntry::class)]
+#[CoversClass(DeclareSupportedFeatures::class)]
 final class HaCommandTest extends TestCase
 {
     public function testServiceCallOmitsEmptyParts(): void
@@ -185,6 +187,11 @@ final class HaCommandTest extends TestCase
     public function testParameterlessCommandSendsOnlyItsType(): void
     {
         self::assertSame(['type' => 'get_states'], new GetStates()->toMessage());
+    }
+
+    public function testFeatureDeclarationAsksForCoalescedMessages(): void
+    {
+        self::assertSame(['type' => 'supported_features', 'features' => ['coalesce_messages' => 1]], new DeclareSupportedFeatures()->toMessage());
     }
 
     public function testAuthenticationCarriesTheToken(): void

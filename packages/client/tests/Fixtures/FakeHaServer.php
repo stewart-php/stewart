@@ -25,7 +25,7 @@ final class FakeHaServer implements WebsocketClientHandler
 {
     public const string HA_VERSION = '2026.9.0';
 
-    private const array SUBSCRIPTION_COMMAND_TYPES = ['subscribe_events' => true, 'subscribe_trigger' => true, 'unsubscribe_events' => true];
+    private const array NULL_RESULT_COMMAND_TYPES = ['subscribe_events' => true, 'subscribe_trigger' => true, 'unsubscribe_events' => true, 'supported_features' => true];
 
     /** @var array<string, array<string, mixed>> */
     private array $replies = [];
@@ -194,7 +194,7 @@ final class FakeHaServer implements WebsocketClientHandler
             return;
         }
 
-        $reply = $this->replies[$type] ?? (isset(self::SUBSCRIPTION_COMMAND_TYPES[$type])
+        $reply = $this->replies[$type] ?? (isset(self::NULL_RESULT_COMMAND_TYPES[$type])
             ? ['type' => 'result', 'success' => true, 'result' => null]
             : ['type' => 'result', 'success' => false, 'error' => ['code' => 'unknown_command', 'message' => 'Unknown command.']]);
 

@@ -10,6 +10,7 @@ release could break; a release's "Upgrading" section says what to change.
 ### Changed
 
 - MQTT and Valkey connections turn on `TCP_NODELAY`, so a burst of small packets no longer waits on delayed ACKs
+- The Home Assistant client asks for `coalesce_messages`, so a burst of events arrives in fewer WebSocket frames
 
 ### Fixed
 

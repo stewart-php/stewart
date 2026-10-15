@@ -7,6 +7,7 @@ namespace Stewart\Client\Tests\Unit;
 use Amp\DeferredFuture;
 use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Revolt\EventLoop;
@@ -57,12 +58,12 @@ final class HaConnectionTest extends TestCase
         $connection = self::connect($socket);
 
         $answered = null;
-        self::subscribe($socket, $connection, function () use ($connection, &$answered): void {
+        $subscriptionId = self::subscribe($socket, $connection, function () use ($connection, &$answered): void {
             $answered = $connection->send(new GetStates());
         });
 
         $socket->replyWhenSent('get_states', ['type' => 'result', 'success' => true, 'result' => ['ok']]);
-        $socket->queueFrame(self::createEventFrame(1));
+        $socket->queueFrame(self::createEventFrame($subscriptionId));
         EventLoopTicks::settleUntil(static function () use (&$answered): bool {
             return $answered !== null;
         });
@@ -76,11 +77,11 @@ final class HaConnectionTest extends TestCase
         $connection = self::connect($socket);
 
         $gate = new DeferredFuture();
-        self::subscribe($socket, $connection, static function () use ($gate): void {
+        $subscriptionId = self::subscribe($socket, $connection, static function () use ($gate): void {
             $gate->getFuture()->await();
         });
 
-        $socket->queueFrame(self::createEventFrame(1));
+        $socket->queueFrame(self::createEventFrame($subscriptionId));
         EventLoopTicks::settle();
 
         $socket->replyWhenSent('get_config', ['type' => 'result', 'success' => true, 'result' => ['time_zone' => 'Europe/Budapest']]);
@@ -96,7 +97,7 @@ final class HaConnectionTest extends TestCase
         $connection = self::connect($socket);
 
         $seen = [];
-        self::subscribe($socket, $connection, static function (array $event) use (&$seen): void {
+        $subscriptionId = self::subscribe($socket, $connection, static function (array $event) use (&$seen): void {
             $seen[] = $event['sequence'];
 
             if ($event['sequence'] === 1) {
@@ -104,8 +105,8 @@ final class HaConnectionTest extends TestCase
             }
         });
 
-        $socket->queueFrame(self::createEventFrame(1, 1));
-        $socket->queueFrame(self::createEventFrame(1, 2));
+        $socket->queueFrame(self::createEventFrame($subscriptionId, 1));
+        $socket->queueFrame(self::createEventFrame($subscriptionId, 2));
         EventLoopTicks::settleUntil(static function () use (&$seen): bool {
             return \count($seen) === 2;
         });
@@ -119,13 +120,13 @@ final class HaConnectionTest extends TestCase
         $connection = self::connect($socket);
 
         $seen = [];
-        self::subscribe($socket, $connection, static function (array $event) use (&$seen): void {
+        $subscriptionId = self::subscribe($socket, $connection, static function (array $event) use (&$seen): void {
             delay(0);
             $seen[] = $event['sequence'];
         });
 
         foreach ([1, 2, 3] as $sequence) {
-            $socket->queueFrame(self::createEventFrame(1, $sequence));
+            $socket->queueFrame(self::createEventFrame($subscriptionId, $sequence));
         }
 
         EventLoopTicks::settle();
@@ -145,15 +146,15 @@ final class HaConnectionTest extends TestCase
         });
 
         $gate = new DeferredFuture();
-        self::subscribe($socket, $connection, static function () use ($gate): void {
+        $subscriptionId = self::subscribe($socket, $connection, static function () use ($gate): void {
             $gate->getFuture()->await();
         });
 
-        $socket->queueFrame(self::createEventFrame(1));
+        $socket->queueFrame(self::createEventFrame($subscriptionId));
         EventLoopTicks::settle();
 
         foreach ([2, 3, 4] as $sequence) {
-            $socket->queueFrame(self::createEventFrame(1, $sequence));
+            $socket->queueFrame(self::createEventFrame($subscriptionId, $sequence));
         }
 
         EventLoopTicks::settleUntil(static function () use (&$lost): bool {
@@ -173,7 +174,7 @@ final class HaConnectionTest extends TestCase
         $connection = self::connect($socket, eventBufferLimit: 2);
 
         $gate = new DeferredFuture();
-        self::subscribe($socket, $connection, static function () use ($gate): void {
+        $subscriptionId = self::subscribe($socket, $connection, static function () use ($gate): void {
             $gate->getFuture()->await();
         });
 
@@ -182,7 +183,7 @@ final class HaConnectionTest extends TestCase
         $socket->holdCloseUntil($closeRelease);
 
         foreach ([1, 2, 3, 4] as $sequence) {
-            $socket->queueFrame(self::createEventFrame(1, $sequence));
+            $socket->queueFrame(self::createEventFrame($subscriptionId, $sequence));
         }
 
         try {
@@ -203,13 +204,13 @@ final class HaConnectionTest extends TestCase
         $connection = self::connect($socket);
 
         $seen = [];
-        self::subscribe($socket, $connection, static function (array $event) use (&$seen): void {
+        $subscriptionId = self::subscribe($socket, $connection, static function (array $event) use (&$seen): void {
             delay(0);
             $seen[] = $event['sequence'];
         });
 
-        $socket->queueFrame(self::createEventFrame(1, 1));
-        $socket->queueFrame(self::createEventFrame(1, 2));
+        $socket->queueFrame(self::createEventFrame($subscriptionId, 1));
+        $socket->queueFrame(self::createEventFrame($subscriptionId, 2));
         EventLoopTicks::settle();
 
         $connection->flushEvents();
@@ -223,11 +224,11 @@ final class HaConnectionTest extends TestCase
         $connection = self::connect($socket);
 
         $gate = new DeferredFuture();
-        self::subscribe($socket, $connection, static function () use ($gate): void {
+        $subscriptionId = self::subscribe($socket, $connection, static function () use ($gate): void {
             $gate->getFuture()->await();
         });
 
-        $socket->queueFrame(self::createEventFrame(1));
+        $socket->queueFrame(self::createEventFrame($subscriptionId));
         EventLoopTicks::settle();
 
         async(static fn() => $socket->close(1001, 'restarting'))->ignore();
@@ -237,6 +238,69 @@ final class HaConnectionTest extends TestCase
         } finally {
             $gate->complete();
         }
+    }
+
+    public function testCoalescingIsDeclaredRightAfterAuthenticationWithoutWaiting(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+
+        $connection = self::connect($socket);
+
+        self::assertTrue($connection->isConnected());
+        self::assertSame(['auth', 'supported_features'], array_column($socket->sent, 'type'));
+        self::assertSame(['type' => 'supported_features', 'features' => ['coalesce_messages' => 1], 'id' => 1], $socket->sent[1]);
+    }
+
+    public function testRefusedFeatureDeclarationLeavesTheConnectionWorking(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $socket->replyWhenSent('supported_features', ['type' => 'result', 'success' => false, 'error' => ['code' => 'unknown_command', 'message' => 'Unknown command.']]);
+        $connection = self::connect($socket);
+
+        $socket->replyWhenSent('get_config', ['type' => 'result', 'success' => true, 'result' => ['time_zone' => 'Europe/Budapest']]);
+
+        self::assertSame(['time_zone' => 'Europe/Budapest'], $connection->send(new GetConfig()));
+        self::assertTrue($connection->isConnected());
+    }
+
+    /** @return iterable<string, array{bool}> */
+    public static function provideFrameShapes(): iterable
+    {
+        yield 'one message per frame' => [false];
+        yield 'coalesced into one frame' => [true];
+    }
+
+    #[DataProvider('provideFrameShapes')]
+    public function testCoalescedFrameDispatchesLikeSeparateFrames(bool $coalesced): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $connection = self::connect($socket);
+        $seen = [];
+        $subscriptionId = self::subscribe($socket, $connection, static function (array $event) use (&$seen): void {
+            $seen[] = $event['sequence'];
+        });
+        $pending = async(static fn(): array => $connection->send(new GetConfig()));
+        EventLoopTicks::settle();
+        $configId = $socket->listSentOfType('get_config')[0]['id'];
+        self::assertIsInt($configId);
+
+        $messages = [
+            self::createEventFrame($subscriptionId, 1),
+            ['id' => $configId, 'type' => 'result', 'success' => true, 'result' => ['time_zone' => 'Europe/Budapest']],
+            self::createEventFrame($subscriptionId, 2),
+        ];
+
+        if ($coalesced) {
+            $socket->queueCoalescedFrame(...$messages);
+        } else {
+            foreach ($messages as $message) {
+                $socket->queueFrame($message);
+            }
+        }
+
+        self::assertSame(['time_zone' => 'Europe/Budapest'], $pending->await());
+        $connection->flushEvents();
+        self::assertSame([1, 2], $seen);
     }
 
     public function testRejectedToken(): void
@@ -492,11 +556,11 @@ final class HaConnectionTest extends TestCase
     }
 
     /** @param Closure(array<string, mixed>): void $handler */
-    private static function subscribe(FakeWebsocketConnection $socket, HaConnection $connection, Closure $handler): void
+    private static function subscribe(FakeWebsocketConnection $socket, HaConnection $connection, Closure $handler): int
     {
         $socket->replyWhenSent('subscribe_events', ['type' => 'result', 'success' => true, 'result' => null]);
 
-        $connection->subscribeEvents(new SubscribeEvents('state_changed'), $handler);
+        return $connection->subscribeEvents(new SubscribeEvents('state_changed'), $handler);
     }
 
     /** @return array<string, mixed> */

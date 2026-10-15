@@ -21,12 +21,15 @@ JSON, and the connection stays up.
 
 **Authenticating.** Home Assistant speaks a small protocol before the command protocol: `auth_required`, `auth`,
 `auth_ok`. `authenticate()` reads those messages directly, before the loop runs. An unexpected first message is
-`UnexpectedGreeting`; a refused token is `TokenRejected`, which is fatal.
+`UnexpectedGreeting`; a refused token is `TokenRejected`, which is fatal. Right after `auth_ok` the connection sends
+`supported_features` with `coalesce_messages` and does not wait for the answer, so a refusal changes nothing.
 
 **Commands and events.** `MessageCorrelator` issues command IDs from 1 on each connection. `sendAndAwaitResponse()`
-applies `command_timeout` and forgets the ID in `finally`. `dispatchMessage()` knows two message types: a `result`
-completes a waiting command, an `event` goes to the handler registered under its subscription's command ID, through
-`EventDelivery`, a bounded queue (a full one is `EventBacklogExceeded`).
+applies `command_timeout` and forgets the ID in `finally`. With coalescing on, Home Assistant may send the messages it
+queued as one JSON array; `receiveLoop()` dispatches them in order, and drops the whole frame if one is not an object.
+`dispatchMessage()` knows two message types: a `result` completes a waiting command, an `event` goes to the handler
+registered under its subscription's command ID, through `EventDelivery`, a bounded queue (a full one is
+`EventBacklogExceeded`).
 
 **Losing the connection.** `handleConnectionLost()` fails every waiting command and calls the disconnect callback.
 The client does not reconnect; the broker's `WebsocketHaSession` does.
