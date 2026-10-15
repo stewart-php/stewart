@@ -89,12 +89,12 @@ final readonly class MqttConnector
     /** @throws Throwable */
     private function openSocket(MqttConfig $config, Cancellation $deadline): Socket
     {
+        $context = new ConnectContext()->withTcpNoDelay();
+
         if (!$config->serverUrl->usesTls) {
-            return connect($config->serverUrl->toSocketUri(), null, $deadline);
+            return connect($config->serverUrl->toSocketUri(), $context, $deadline);
         }
 
-        $tls = new ConnectContext()->withTlsContext(new ClientTlsContext($config->serverUrl->host));
-
-        return connectTls($config->serverUrl->toSocketUri(), $tls, $deadline);
+        return connectTls($config->serverUrl->toSocketUri(), $context->withTlsContext(new ClientTlsContext($config->serverUrl->host)), $deadline);
     }
 }

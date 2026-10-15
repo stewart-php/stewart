@@ -7,6 +7,10 @@ release could break; a release's "Upgrading" section says what to change.
 
 ## [Unreleased]
 
+### Changed
+
+- MQTT and Valkey connections turn on `TCP_NODELAY`, so a burst of small packets no longer waits on delayed ACKs
+
 ### Fixed
 
 - `stewart status`, `app:pause`, `app:resume`, `app:reset` and `worker:restart` fail at once when no daemon
