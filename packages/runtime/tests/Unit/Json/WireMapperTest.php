@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Tests\Unit\Json;
 
+use Countable;
 use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -207,6 +208,26 @@ final class WireMapperTest extends TestCase
         $this->expectExceptionMessageIsOrContains($message);
 
         $this->mapper->shapes->resolveClassShape($class);
+    }
+
+    public function testValueShapeIsDescribedOncePerType(): void
+    {
+        self::assertSame(
+            $this->mapper->shapes->describeValueShape(Label::class, 'First::$label'),
+            $this->mapper->shapes->describeValueShape(Label::class, 'Second::$label'),
+        );
+    }
+
+    public function testFailedDescriptionNamesEveryCaller(): void
+    {
+        foreach (['First::$items', 'Second::$items'] as $where) {
+            try {
+                $this->mapper->shapes->describeValueShape(Countable::class, $where);
+                self::fail('Countable has no converter.');
+            } catch (LogicException $e) {
+                self::assertStringStartsWith($where . ' is a Countable', $e->getMessage());
+            }
+        }
     }
 
     /** @param array<array-key, mixed> $tags */

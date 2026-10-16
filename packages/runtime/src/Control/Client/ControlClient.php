@@ -8,7 +8,7 @@ use Amp\ByteStream\BufferedReader;
 use Amp\ByteStream\BufferException;
 use Amp\Cancellation;
 use Amp\CancelledException;
-use Amp\Socket;
+use Amp\Socket\SocketConnector;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Config\ProjectRoot;
@@ -44,6 +44,7 @@ final readonly class ControlClient
         private FrameCodec $codec,
         private ProjectRoot $projectRoot,
         private Deadlines $deadlines,
+        private SocketConnector $controlSocketConnector,
     ) {}
 
     /** @throws ControlException|Throwable */
@@ -101,7 +102,7 @@ final readonly class ControlClient
      */
     private function exchangeFrames(ControlTarget $target, ClientFrame $request, string $responseClass, Cancellation $deadline): ServerFrame
     {
-        $socket = Socket\connect($target->address->resolveSocketAddress($this->projectRoot), null, $deadline);
+        $socket = $this->controlSocketConnector->connect($target->address->resolveSocketAddress($this->projectRoot), null, $deadline);
 
         try {
             $socket->write($this->codec->encodeFrame(new Hello($target->token, self::CLIENT_NAME)));

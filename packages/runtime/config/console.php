@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use Amp\Socket\DnsSocketConnector;
 use Stewart\Runtime\App\AppCatalogResolver;
 use Stewart\Runtime\App\AppDiscovery;
 use Stewart\Runtime\Config\EnvironmentVariables;
+use Stewart\Runtime\Control\Client\ControlClient;
 use Stewart\Runtime\Health\ReadinessCheck;
 use Stewart\Runtime\Kernel\BrokerKernel;
 use Stewart\Runtime\Kernel\ProfileCompiler;
@@ -17,6 +19,8 @@ use Symfony\Component\Console\DependencyInjection\AddConsoleCommandPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
+use function Symfony\Component\DependencyInjection\Loader\Configurator\inline_service;
+
 return static function (ContainerConfigurator $container, ContainerBuilder $builder): void {
     $services = $container->services()->defaults()->autowire()->autoconfigure();
 
@@ -25,6 +29,7 @@ return static function (ContainerConfigurator $container, ContainerBuilder $buil
     $services->load('Stewart\\Runtime\\Console\\', '../src/Console/');
     $services->load('Stewart\\Runtime\\Config\\', '../src/Config/');
     $services->load('Stewart\\Runtime\\Control\\Client\\', '../src/Control/Client/');
+    $services->set(ControlClient::class)->arg('$controlSocketConnector', inline_service(DnsSocketConnector::class));
     $services->set(ReadinessCheck::class);
 
     $services->set(ClosestNameFinder::class);

@@ -5,6 +5,20 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
+## [Unreleased]
+
+### Changed
+
+- MQTT and Valkey connections turn on `TCP_NODELAY`, so a burst of small packets no longer waits on delayed ACKs
+- The Home Assistant client asks for `coalesce_messages`, so a burst of events arrives in fewer WebSocket frames
+- The runtime image keeps compiled PHP in `/tmp` (`opcache.file_cache`), so workers and console commands after the
+  first start without compiling the framework again; code is still revalidated when files change
+
+### Fixed
+
+- `stewart status`, `app:pause`, `app:resume`, `app:reset` and `worker:restart` fail at once when no daemon
+  listens, instead of retrying the control socket for six seconds whatever `--timeout` says
+
 ## [1.1.0] - 2026-10-15
 
 The runtime image runs the event loop on `ext-ev`, and the Helm chart keeps fewer old ReplicaSets.

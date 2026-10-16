@@ -47,6 +47,15 @@ final class FakeWebsocketConnectionTest extends TestCase
         self::assertSame('{"id":2,"type":"pong"}', self::receiveText($socket));
     }
 
+    public function testCoalescedFrameCarriesItsMessagesAsOneArray(): void
+    {
+        $socket = new FakeWebsocketConnection();
+
+        $socket->queueCoalescedFrame(['id' => 1, 'type' => 'event'], ['id' => 2, 'type' => 'result']);
+
+        self::assertSame('[{"id":1,"type":"event"},{"id":2,"type":"result"}]', self::receiveText($socket));
+    }
+
     private static function receiveText(FakeWebsocketConnection $socket): string
     {
         $message = $socket->receive();

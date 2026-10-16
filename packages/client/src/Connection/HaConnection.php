@@ -22,6 +22,7 @@ use JsonException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Stewart\Client\Connection\Command\Authenticate;
+use Stewart\Client\Connection\Command\DeclareSupportedFeatures;
 use Stewart\Client\Connection\Command\HaCommand;
 use Stewart\Client\Connection\Command\SubscriptionCommand;
 use Stewart\Client\Connection\Command\UnsubscribeEvents;
@@ -88,6 +89,7 @@ final class HaConnection
 
             try {
                 $this->authenticate($socket, $cancellation);
+                $this->declareSupportedFeatures($socket);
             } catch (Throwable $e) {
                 $socket->close();
 
@@ -209,6 +211,8 @@ final class HaConnection
                     ? null
                     : new PeriodicHeartbeatQueue(max(1, $this->config->heartbeatMissedLimit), max(1, (int) round($interval->toSeconds()))),
                 parserFactory: new Rfc6455ParserFactory(
+                    // json_decode() rejects invalid UTF-8 anyway.
+                    validateUtf8: false,
                     messageSizeLimit: $this->config->messageSizeLimit,
                     frameSizeLimit: $this->config->frameSizeLimit,
                 ),
@@ -281,6 +285,14 @@ final class HaConnection
         ]);
     }
 
+    // The answer is not awaited: a refusal only means Home Assistant keeps sending one message per frame.
+    private function declareSupportedFeatures(WebsocketConnection $socket): void
+    {
+        $command = new DeclareSupportedFeatures();
+
+        $socket->sendText(self::encodeMessage([...$command->toMessage(), 'id' => $this->correlator->nextId()], $command->describe()));
+    }
+
     /** @return array<string, mixed> */
     private function receiveMessage(WebsocketConnection $socket, Cancellation $cancellation): array
     {
@@ -293,9 +305,7 @@ final class HaConnection
     {
         try {
             while (($message = $socket->receive()) !== null) {
-                $decoded = $this->decodeMessageOrLog($message->buffer());
-
-                if ($decoded !== null) {
+                foreach ($this->decodeMessageBatchOrLog($message->buffer()) as $decoded) {
                     $this->dispatchMessage($decoded);
                 }
             }
@@ -333,15 +343,15 @@ final class HaConnection
         }
     }
 
-    /** @return array<string, mixed>|null */
-    private function decodeMessageOrLog(string $payload): ?array
+    /** @return list<array<string, mixed>> */
+    private function decodeMessageBatchOrLog(string $payload): array
     {
         try {
-            return self::decodeMessage($payload);
+            return self::decodeMessageBatch($payload);
         } catch (HaClientException $e) {
             $this->logger->error('Failed handling a Home Assistant message', ['exception' => $e]);
 
-            return null;
+            return [];
         }
     }
 
@@ -417,12 +427,32 @@ final class HaConnection
     /** @return array<string, mixed> */
     private static function decodeMessage(string $payload): array
     {
+        return self::requireObjectMessage(self::decodeJsonPayload($payload));
+    }
+
+    // With coalesce_messages, Home Assistant sends the messages it queued as one JSON array.
+    /** @return list<array<string, mixed>> */
+    private static function decodeMessageBatch(string $payload): array
+    {
+        $decoded = self::decodeJsonPayload($payload);
+
+        return \is_array($decoded) && $decoded !== [] && array_is_list($decoded)
+            ? array_map(self::requireObjectMessage(...), $decoded)
+            : [self::requireObjectMessage($decoded)];
+    }
+
+    private static function decodeJsonPayload(string $payload): mixed
+    {
         try {
-            $decoded = JsonDecoder::decodeJson($payload);
+            return JsonDecoder::decodeJson($payload);
         } catch (JsonException $e) {
             throw HaClientException::protocolViolation('a message that is not JSON', $e);
         }
+    }
 
+    /** @return array<string, mixed> */
+    private static function requireObjectMessage(mixed $decoded): array
+    {
         if (!\is_array($decoded)) {
             throw HaClientException::protocolViolation('a non-object message');
         }

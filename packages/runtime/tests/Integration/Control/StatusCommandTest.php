@@ -39,6 +39,8 @@ final class StatusCommandTest extends TestCase
 
     private const string GOLDEN = __DIR__ . '/../../Fixtures/Control/Frames/snapshot.json';
 
+    private const float FIRST_CONNECT_RETRY_SECONDS = 2.0;
+
     private string $path;
 
     private ?ControlServer $server = null;
@@ -100,9 +102,11 @@ final class StatusCommandTest extends TestCase
     public function testNothingListeningIsOneLineAndExitOne(): void
     {
         $tester = $this->tester();
+        $startedAt = hrtime(true);
 
         $exit = $tester->execute(['--address' => 'unix://' . $this->path, '--token' => self::TOKEN, '--timeout' => '1s']);
 
+        self::assertLessThan(self::FIRST_CONNECT_RETRY_SECONDS, (hrtime(true) - $startedAt) / 1e9);
         self::assertSame(1, $exit);
         self::assertStringContainsString($this->path, $tester->getDisplay());
     }

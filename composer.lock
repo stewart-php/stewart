@@ -2227,7 +2227,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/client",
-                "reference": "746f4d0ea0925e20eef50ec20e072a07a6ee4778"
+                "reference": "2baec6b5bdc356798ee93d1397f1a0c20c56746a"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2246,6 +2246,7 @@
                 "daverandom/libdns": "<2.1"
             },
             "require-dev": {
+                "amphp/byte-stream": "^2.1",
                 "amphp/http-server": "^3.4",
                 "amphp/socket": "^2.4",
                 "amphp/websocket-server": "^4.0",
@@ -2395,7 +2396,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/runtime",
-                "reference": "1667f2cae3d56067bd418497c54a3ea532c34623"
+                "reference": "b16d5e34a356722f732b02913f99059763e76289"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2437,6 +2438,7 @@
                 "stewart-php/testing": "self.version"
             },
             "suggest": {
+                "ext-ev": "Faster event loop than stream_select; Revolt picks it up when installed",
                 "stewart-php/codegen": "Adds the generate command, for development or for generating when a container starts"
             },
             "bin": [
@@ -2531,11 +2533,12 @@
             "dist": {
                 "type": "path",
                 "url": "packages/store-redis",
-                "reference": "3b1efdf527a7f7a4df5f53f1270a616cefa4c6a4"
+                "reference": "ce21fa9118b7215b9715c4946d70cd6f748765f5"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
                 "amphp/redis": "^2.0.4",
+                "amphp/socket": "^2.4",
                 "php": ">=8.5",
                 "stewart-php/contracts": "self.version",
                 "stewart-php/store": "self.version",

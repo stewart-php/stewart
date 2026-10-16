@@ -287,13 +287,18 @@ final class WireMapper
     {
         $enum = $shape->type;
         \assert(is_subclass_of($enum, BackedEnum::class));
-        $expected = 'one of ' . implode(', ', array_map(static fn(BackedEnum $case): string => (string) $case->value, $enum::cases()));
 
         if (!(\is_int($value) || \is_string($value)) || get_debug_type($value) !== $shape->enumBackingType) {
-            throw JsonShapeException::wrongType($path, $expected, get_debug_type($value));
+            throw JsonShapeException::wrongType($path, self::describeEnumCases($enum), get_debug_type($value));
         }
 
-        return $enum::tryFrom($value) ?? throw JsonShapeException::unexpectedValue($path, $expected, $value);
+        return $enum::tryFrom($value) ?? throw JsonShapeException::unexpectedValue($path, self::describeEnumCases($enum), $value);
+    }
+
+    /** @param class-string<BackedEnum> $enum */
+    private static function describeEnumCases(string $enum): string
+    {
+        return 'one of ' . implode(', ', array_map(static fn(BackedEnum $case): string => (string) $case->value, $enum::cases()));
     }
 
     private function createWrongTypeException(ValueShape $shape, string $path, mixed $value): JsonShapeException

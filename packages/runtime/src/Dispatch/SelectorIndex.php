@@ -40,11 +40,14 @@ final class SelectorIndex
 
         if ($exactKey === null) {
             $this->patterns[$subscriptionId->value] = $entry;
-        } else {
-            $this->exact[$this->buildCacheKey($kind, $exactKey)][$subscriptionId->value] = $subscriptionId;
+            $this->cache = [];
+
+            return;
         }
 
-        $this->cache = [];
+        $cacheKey = $this->buildCacheKey($kind, $exactKey);
+        $this->exact[$cacheKey][$subscriptionId->value] = $subscriptionId;
+        unset($this->cache[$cacheKey]);
     }
 
     public function remove(SubscriptionId $subscriptionId): void
@@ -59,16 +62,18 @@ final class SelectorIndex
 
         $exactKey = $entry->selector->findExactPattern();
 
-        if ($exactKey !== null) {
-            $cacheKey = $this->buildCacheKey($entry->kind, $exactKey);
-            unset($this->exact[$cacheKey][$subscriptionId->value]);
+        if ($exactKey === null) {
+            $this->cache = [];
 
-            if (($this->exact[$cacheKey] ?? null) === []) {
-                unset($this->exact[$cacheKey]);
-            }
+            return;
         }
 
-        $this->cache = [];
+        $cacheKey = $this->buildCacheKey($entry->kind, $exactKey);
+        unset($this->exact[$cacheKey][$subscriptionId->value], $this->cache[$cacheKey]);
+
+        if (($this->exact[$cacheKey] ?? null) === []) {
+            unset($this->exact[$cacheKey]);
+        }
     }
 
     public function findMatching(SubscriptionKind $kind, string $key): SubscriptionIdCollection

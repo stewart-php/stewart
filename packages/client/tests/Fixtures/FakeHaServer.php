@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Client\Tests\Fixtures;
 
+use Amp\ByteStream\ReadableBuffer;
 use Amp\Http\Server\DefaultErrorHandler;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\Response;
@@ -24,7 +25,7 @@ final class FakeHaServer implements WebsocketClientHandler
 {
     public const string HA_VERSION = '2026.9.0';
 
-    private const array SUBSCRIPTION_COMMAND_TYPES = ['subscribe_events' => true, 'subscribe_trigger' => true, 'unsubscribe_events' => true];
+    private const array NULL_RESULT_COMMAND_TYPES = ['subscribe_events' => true, 'subscribe_trigger' => true, 'unsubscribe_events' => true, 'supported_features' => true];
 
     /** @var array<string, array<string, mixed>> */
     private array $replies = [];
@@ -124,6 +125,14 @@ final class FakeHaServer implements WebsocketClientHandler
         }
     }
 
+    // sendText() asserts valid UTF-8; a stream skips that check.
+    public function sendUncheckedText(string $payload): void
+    {
+        foreach ($this->clients as $client) {
+            $client->streamText(new ReadableBuffer($payload));
+        }
+    }
+
     public function dropConnections(): void
     {
         $this->clients = [];
@@ -185,7 +194,7 @@ final class FakeHaServer implements WebsocketClientHandler
             return;
         }
 
-        $reply = $this->replies[$type] ?? (isset(self::SUBSCRIPTION_COMMAND_TYPES[$type])
+        $reply = $this->replies[$type] ?? (isset(self::NULL_RESULT_COMMAND_TYPES[$type])
             ? ['type' => 'result', 'success' => true, 'result' => null]
             : ['type' => 'result', 'success' => false, 'error' => ['code' => 'unknown_command', 'message' => 'Unknown command.']]);
 

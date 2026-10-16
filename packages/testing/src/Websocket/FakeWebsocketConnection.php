@@ -65,6 +65,13 @@ final class FakeWebsocketConnection implements IteratorAggregate, WebsocketConne
         $this->wakeReceiver();
     }
 
+    /** @param array<string, mixed> ...$frames */
+    public function queueCoalescedFrame(array ...$frames): void
+    {
+        $this->inbound->enqueue(self::encodeFrame(array_values($frames)));
+        $this->wakeReceiver();
+    }
+
     /** @param array<string, mixed> $frame */
     public function replyWhenSent(string $type, array $frame): void
     {
@@ -233,7 +240,7 @@ final class FakeWebsocketConnection implements IteratorAggregate, WebsocketConne
         }
     }
 
-    /** @param array<string, mixed> $frame */
+    /** @param array<array-key, mixed> $frame */
     private static function encodeFrame(array $frame): string
     {
         return json_encode($frame, \JSON_THROW_ON_ERROR);

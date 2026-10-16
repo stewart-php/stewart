@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Tests\Integration\Worker;
 
 use Amp\Future;
+use Amp\Socket\DnsSocketConnector;
 use Amp\TimeoutCancellation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -77,7 +78,7 @@ final class AppPauseRoundTripTest extends TestCase
             ['shutdown_grace' => '1s', 'control' => ['listen' => 'unix://' . $socketPath, 'token' => self::CONTROL_TOKEN]],
         );
         $control = new ControlTarget(ControlAddress::parse('unix://' . $socketPath), self::CONTROL_TOKEN);
-        $client = new ControlClient(new FrameCodec(FrameCodec::createControlWireMapper()), new ProjectRoot(sys_get_temp_dir()), new RevoltTimers());
+        $client = new ControlClient(new FrameCodec(FrameCodec::createControlWireMapper()), new ProjectRoot(sys_get_temp_dir()), new RevoltTimers(), new DnsSocketConnector());
         $ready = $logger->waitForMessage('Worker ready');
 
         /** @var Future<null> $running */
@@ -141,7 +142,7 @@ final class AppPauseRoundTripTest extends TestCase
     {
         $appId = new AppId('serial-handler');
         $store = new InMemoryStoreBackend(SystemClock::inUtc());
-        $client = new ControlClient(new FrameCodec(FrameCodec::createControlWireMapper()), new ProjectRoot(sys_get_temp_dir()), new RevoltTimers());
+        $client = new ControlClient(new FrameCodec(FrameCodec::createControlWireMapper()), new ProjectRoot(sys_get_temp_dir()), new RevoltTimers(), new DnsSocketConnector());
         $timeout = Duration::seconds(self::WAIT_SECONDS);
         $controlListen = 'unix://' . sys_get_temp_dir() . '/stw-' . bin2hex(random_bytes(4)) . '.sock';
         $control = new ControlTarget(ControlAddress::parse($controlListen), self::CONTROL_TOKEN);

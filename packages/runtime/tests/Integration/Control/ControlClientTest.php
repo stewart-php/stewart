@@ -9,6 +9,7 @@ use Amp\DeferredFuture;
 use Amp\Future;
 use Amp\Socket;
 use Amp\Socket\ConnectException;
+use Amp\Socket\DnsSocketConnector;
 use Amp\Socket\ServerSocket;
 use Amp\Socket\UnixAddress;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -167,7 +168,7 @@ final class ControlClientTest extends TestCase
 
     private static function createClient(): ControlClient
     {
-        return new ControlClient(new FrameCodec(FrameCodec::createControlWireMapper()), self::createProjectRoot(), new RevoltTimers());
+        return new ControlClient(new FrameCodec(FrameCodec::createControlWireMapper()), self::createProjectRoot(), new RevoltTimers(), new DnsSocketConnector());
     }
 
     private static function createProjectRoot(): ProjectRoot
