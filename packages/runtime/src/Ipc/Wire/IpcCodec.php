@@ -44,6 +44,7 @@ final readonly class IpcCodec
         $entityIds = StringIdentifierConverter::createForEntityIds();
         $instants = new EpochInstantConverter();
         $contexts = new EventContextConverter();
+        $states = new EntityStateConverter($entityIds, $instants, $contexts);
 
         return new WireMapper(new ClassShapeReader(ValueConverterCollection::keyedByHandledClass([
             $instants,
@@ -56,7 +57,8 @@ final readonly class IpcCodec
             new TimeOfDayConverter(),
             new DateTimeImmutableConverter(),
             $contexts,
-            new EntityStateConverter($entityIds, $instants, $contexts),
+            $states,
+            new StateUpdateConverter($entityIds, $instants, $contexts, $states),
             $entityIds,
             StringIdentifierConverter::createForAppIds(),
             StringIdentifierConverter::createForAreaIds(),

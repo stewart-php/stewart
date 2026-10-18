@@ -10,10 +10,12 @@ use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
+use Stewart\Contracts\State\StateChangeOrigin;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\Ipc\Wire\EntityStateConverter;
 use Stewart\Runtime\Ipc\Wire\EventContextConverter;
+use Stewart\Runtime\Ipc\Wire\StateUpdateConverter;
 use Stewart\Runtime\Json\ClassShapeReader;
 use Stewart\Runtime\Json\Collection\ValueConverterCollection;
 use Stewart\Runtime\Json\EpochInstantConverter;
@@ -23,9 +25,11 @@ use Stewart\Runtime\Json\WireMapper;
 use Stewart\Support\Json\JsonDecoder;
 use Stewart\Support\Json\JsonEncoder;
 use Stewart\Support\Json\JsonShape;
+use Stewart\Support\State\StateUpdate;
 
 #[CoversClass(EventContextConverter::class)]
 #[CoversClass(EntityStateConverter::class)]
+#[CoversClass(StateUpdateConverter::class)]
 // A constructor parameter the converter does not write shows up as a key the reflected shape has.
 final class HandWrittenShapeParityTest extends TestCase
 {
@@ -52,14 +56,20 @@ final class HandWrittenShapeParityTest extends TestCase
     public static function provideSamples(): iterable
     {
         $at = Instant::fromEpochMicroseconds(1_758_700_000_123_456);
+        $entityIds = StringIdentifierConverter::createForEntityIds();
+        $instants = new EpochInstantConverter();
         $contexts = new EventContextConverter();
-        $states = new EntityStateConverter(StringIdentifierConverter::createForEntityIds(), new EpochInstantConverter(), $contexts);
+        $states = new EntityStateConverter($entityIds, $instants, $contexts);
+        $updates = new StateUpdateConverter($entityIds, $instants, $contexts, $states);
         $attributes = ['brightness' => 254, 'rgb_color' => [255, 170, 80], 'gain' => 1.0, 'effect' => null];
+        $light = new EntityState(new EntityId('light.hall'), 'on', $attributes, $at, $at->plus(Duration::seconds(1)), new EventContext('ctx', 'parent', 'user'));
 
         yield 'full context' => [$contexts, new EventContext('ctx', 'parent', 'user')];
         yield 'bare context' => [$contexts, new EventContext('ctx')];
-        yield 'full state' => [$states, new EntityState(new EntityId('light.hall'), 'on', $attributes, $at, $at->plus(Duration::seconds(1)), new EventContext('ctx', 'parent', 'user'))];
+        yield 'full state' => [$states, $light];
         yield 'bare state' => [$states, new EntityState(new EntityId('sensor.x'), '1')];
         yield 'list-shaped attributes' => [$states, new EntityState(new EntityId('sensor.x'), '1', JsonShape::treatKeysAsStrings(['a', 'b']))];
+        yield 'full update' => [$updates, new StateUpdate(new EntityId('light.hall'), $light, $at, new EventContext('ctx', null, 'user'), StateChangeOrigin::Resync)];
+        yield 'removal' => [$updates, new StateUpdate(new EntityId('light.hall'), null)];
     }
 }

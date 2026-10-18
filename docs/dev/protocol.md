@@ -31,7 +31,10 @@ State is encoded once for every worker.
 `StateSnapshot`, `StateResynced` and `StateUpdateBatch` hold `EntityStatesFragment` and
 `StateUpdatesFragment` fragments, which cache their JSON on the broker. The frame
 splices that JSON in unescaped. On the worker, the same classes hold the decoded
-lists.
+lists. Every worker decodes every change, so `StateUpdate`, `EntityState` and
+`EventContext` skip reflection and go through hand-written converters in
+`Ipc/Wire`. Their keys are the reflected ones, and `HandWrittenShapeParityTest`
+fails when the two differ.
 
 The vocabulary belongs to the wire. A message may use only contracts, the
 `Runtime\Model` enums and DTOs, and `Ipc` types such as `WorkerApp`,
