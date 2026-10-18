@@ -18,9 +18,10 @@ use Stewart\Runtime\Ipc\Message\MqttMessageDelivery;
 use Stewart\Runtime\Ipc\Message\Publish;
 use Stewart\Runtime\Ipc\Message\TopicMessage;
 use Stewart\Runtime\Ipc\Message\TriggerFired;
-use Stewart\Runtime\Ipc\Wire\EncodedStateChange;
+use Stewart\Runtime\Ipc\Wire\EncodedStateUpdate;
 use Stewart\Runtime\Model\Collection\SubscriptionIdCollection;
 use Stewart\Runtime\Model\SubscriptionKind;
+use Stewart\Support\State\StateUpdate;
 use Stewart\Support\Wire\TriggerSpec;
 
 final readonly class EventRouter implements MqttMessageRouter
@@ -33,10 +34,10 @@ final readonly class EventRouter implements MqttMessageRouter
 
     public function broadcastStateChange(StateChange $change): void
     {
-        $encoded = new EncodedStateChange($change);
+        $encoded = new EncodedStateUpdate(StateUpdate::fromStateChange($change));
 
         foreach ($this->slots->listLiveHandles() as $handle) {
-            $handle->sendStateChange($encoded);
+            $handle->sendStateUpdate($encoded);
         }
     }
 

@@ -10,6 +10,7 @@ use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
+use Stewart\Support\State\StateUpdate;
 
 final class StateCache
 {
@@ -33,13 +34,12 @@ final class StateCache
 
     public function applyChange(StateChange $change): void
     {
-        if ($change->to === null) {
-            unset($this->statesById[$change->entityId->value]);
-        } else {
-            $this->statesById[$change->entityId->value] = $change->to;
-        }
+        $this->replaceState($change->entityId, $change->to);
+    }
 
-        $this->collection = null;
+    public function applyUpdate(StateUpdate $update): void
+    {
+        $this->replaceState($update->entityId, $update->to);
     }
 
     public function find(EntityId $entityId): ?EntityState
@@ -65,5 +65,16 @@ final class StateCache
     public function count(): int
     {
         return \count($this->statesById);
+    }
+
+    private function replaceState(EntityId $entityId, ?EntityState $state): void
+    {
+        if ($state === null) {
+            unset($this->statesById[$entityId->value]);
+        } else {
+            $this->statesById[$entityId->value] = $state;
+        }
+
+        $this->collection = null;
     }
 }

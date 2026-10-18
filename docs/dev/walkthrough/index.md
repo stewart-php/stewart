@@ -16,7 +16,7 @@ bin/stewart
   → bin/worker.php (one process per worker) → WorkerKernel → WorkerSession
       construct apps, await StateSnapshot, initialize apps, WorkerReady
   → a state change: HaConnection → WebsocketHaSession → EventRouter → WorkerOutbox
-      → StateChangeBatch → LocalDispatcher → SubscriptionQueue → your handler
+      → StateUpdateBatch → StateCacheSync → LocalDispatcher → SubscriptionQueue → your handler
 ```
 
 | Page | Covers |

@@ -71,7 +71,8 @@ fresh if it sees everything. Broker-side routing reduces the work a worker does
 per event; it can never reduce the number of events it receives.
 
 That is the deliberate trade for `getState()` being a synchronous hash lookup
-rather than an await.
+rather than an await. The same cache supplies each change's `from`, so the broker
+sends only the new state.
 
 ---
 

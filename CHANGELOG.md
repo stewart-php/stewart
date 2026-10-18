@@ -15,6 +15,7 @@ release could break; a release's "Upgrading" section says what to change.
   first start without compiling the framework again; code is still revalidated when files change
 - A state change's `from` comes from the worker's state cache, so it is always what `getState()` returned just before
   the change
+- Workers receive only the new state of each change, so every worker decodes a smaller frame per state change
 
 ### Fixed
 

@@ -19,7 +19,6 @@ use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
-use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Topic\TopicEvent;
 use Stewart\Runtime\Ipc\Message\AppFailed;
@@ -70,6 +69,7 @@ use Stewart\Runtime\Tests\Fixtures\Protocol\TopicEcho;
 use Stewart\Runtime\Tests\Fixtures\Protocol\WorkerHarness;
 use Stewart\Runtime\Tests\Fixtures\Worker\InMemoryWorkerSpawner;
 use Stewart\Runtime\Time\SystemClock;
+use Stewart\Support\State\StateUpdate;
 use Stewart\Testing\Store\InMemoryStoreBackend;
 
 #[CoversNothing]
@@ -214,7 +214,7 @@ final class WorkerProtocolTest extends TestCase
         self::assertIsArray($publish->payload);
         self::assertSame('on', $publish->payload['state'] ?? null);
 
-        $this->sendChanges(self::createChange('sensor.hall_lux', '10', '20'));
+        $this->sendUpdates(self::createUpdate('sensor.hall_lux', '20'));
         $this->send(new Ping(nonce: 7, sentAt: SystemClock::inUtc()->getNow()));
         self::assertSame(7, $this->receiveUntil(Pong::class)->nonce);
 
@@ -228,7 +228,7 @@ final class WorkerProtocolTest extends TestCase
         $this->start([new WorkerApp(id: new AppId('change-edge-logger'), class: ChangeEdgeLogger::class, options: ['watch' => 'input_boolean.*'])]);
         $this->receiveUntil(WorkerReady::class);
 
-        $this->sendChanges(self::createChange(self::WATCHED, 'unknown', 'on'), self::createChange('input_boolean.protocol_added', 'off', 'on'));
+        $this->sendUpdates(self::createUpdate(self::WATCHED, 'on'), self::createUpdate('input_boolean.protocol_added', 'on'));
 
         $isEdge = static fn(LogRecord $log): bool => $log->message === ChangeEdgeLogger::MESSAGE;
 
@@ -444,7 +444,7 @@ final class WorkerProtocolTest extends TestCase
         $this->start([new WorkerApp(id: new AppId('serial-handler'), class: SerialHandler::class, options: [])]);
         $this->receiveUntil(WorkerReady::class);
 
-        $this->sendChanges(self::createChange(SerialHandler::ENTITY, '1', '2'), self::createChange(SerialHandler::ENTITY, '2', '3'));
+        $this->sendUpdates(self::createUpdate(SerialHandler::ENTITY, '2'), self::createUpdate(SerialHandler::ENTITY, '3'));
 
         $first = $this->receiveUntil(ServiceCallRequest::class);
         self::assertSame(['value' => '2'], $first->data);
@@ -471,7 +471,7 @@ final class WorkerProtocolTest extends TestCase
         $this->start([new WorkerApp(id: new AppId('serial-handler'), class: SerialHandler::class, options: [])]);
         $this->receiveUntil(WorkerReady::class);
 
-        $this->sendChanges(self::createChange(SerialHandler::ENTITY, '1', '2'));
+        $this->sendUpdates(self::createUpdate(SerialHandler::ENTITY, '2'));
         $request = $this->receiveUntil(ServiceCallRequest::class);
 
         $this->send(RequestFailed::fromException($request->correlationId, ServiceCallException::rejected('script', 'record', 'Service not found', 'not_found')));
@@ -586,7 +586,7 @@ final class WorkerProtocolTest extends TestCase
         self::assertStringContainsString('Home Assistant is disconnected', $call->context['exception']);
         self::assertSame(0, $requests, 'A call during an outage fails in the worker, without a round trip.');
 
-        $this->sendChanges(self::createChange(self::WATCHED, 'on', 'off'));
+        $this->sendUpdates(self::createUpdate(self::WATCHED, 'off'));
         $this->send(new StateResynced(states: self::createResyncSnapshot(), revision: 9, outage: Duration::seconds(12.5)));
 
         $announced = 0;
@@ -713,12 +713,12 @@ final class WorkerProtocolTest extends TestCase
 
     private function sendToggle(): void
     {
-        $this->sendChanges(self::createChange(self::WATCHED, 'off', 'on'));
+        $this->sendUpdates(self::createUpdate(self::WATCHED, 'on'));
     }
 
-    private function sendChanges(StateChange ...$changes): void
+    private function sendUpdates(StateUpdate ...$updates): void
     {
-        $this->getWorkerHarness()->sendChanges(...$changes);
+        $this->getWorkerHarness()->sendUpdates(...$updates);
     }
 
     /**
@@ -741,9 +741,9 @@ final class WorkerProtocolTest extends TestCase
         return $summary;
     }
 
-    private static function createChange(string $entityId, string $from, string $to): StateChange
+    private static function createUpdate(string $entityId, string $to): StateUpdate
     {
-        return new StateChange(new EntityId($entityId), new EntityState(new EntityId($entityId), $from), new EntityState(new EntityId($entityId), $to));
+        return new StateUpdate(new EntityId($entityId), new EntityState(new EntityId($entityId), $to));
     }
 
     /** @param list<LogRecord> $logs */

@@ -95,8 +95,9 @@ keeps writes ordered. What happens on enqueue depends on the message's `OutboxDe
 | `StateSegmentBoundary` | `StateSnapshot`, `StateResynced` | Resets coalescing |
 | `Plain` | Everything else | Always kept, in order |
 
-State changes coalesce per entity: the first queued change stays, later ones merge into one change at the tail that
-keeps the original `from`. Consecutive state changes leave as one `StateChangeBatch` of at most `worker_state_batch`.
+State updates coalesce per entity: the first queued update stays, and the latest replaces any later ones at the tail.
+The update carries no `from`, so the merged tail is the latest shared encoding. Consecutive state updates leave as one
+`StateUpdateBatch` of at most `worker_state_batch`.
 Drops are logged on a throttled schedule.
 
 ## Service calls

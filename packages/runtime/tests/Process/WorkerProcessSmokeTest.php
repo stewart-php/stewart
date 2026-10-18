@@ -12,7 +12,6 @@ use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
-use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Broker\ProcessWorkerSpawner;
 use Stewart\Runtime\Ipc\Message\LogRecord;
@@ -33,6 +32,7 @@ use Stewart\Runtime\Time\SystemClock;
 use Stewart\Store\Redis\RedisStoreBackendFactory;
 use Stewart\Store\StoreDsn;
 use Stewart\Store\StoreTiming;
+use Stewart\Support\State\StateUpdate;
 use Stewart\Support\Time\RevoltTimers;
 
 #[CoversNothing]
@@ -70,7 +70,7 @@ final class WorkerProcessSmokeTest extends TestCase
         $ready = $worker->receiveUntil(WorkerReady::class);
         self::assertSame(['edge-watcher'], $ready->appIds->collection->toStrings());
 
-        $worker->sendChanges(self::createToggleChange());
+        $worker->sendUpdates(self::createToggleUpdate());
         $request = $worker->receiveUntil(ServiceCallRequest::class);
         self::assertSame([self::LIGHT], array_map(strval(...), $request->target->entityIds ?? []));
 
@@ -96,7 +96,7 @@ final class WorkerProcessSmokeTest extends TestCase
         self::assertSame(1, $first->context['run'] ?? null);
 
         $worker->receiveUntil(WorkerReady::class);
-        $worker->sendChanges(self::createToggleChange());
+        $worker->sendUpdates(self::createToggleUpdate());
         $worker->receiveUntil(LogRecord::class, static fn(LogRecord $log): bool => $log->message === 'Change counted');
         $worker->shutDown('restarting');
 
@@ -125,9 +125,9 @@ final class WorkerProcessSmokeTest extends TestCase
         return $this->worker;
     }
 
-    private static function createToggleChange(): StateChange
+    private static function createToggleUpdate(): StateUpdate
     {
-        return new StateChange(new EntityId(self::WATCHED), new EntityState(new EntityId(self::WATCHED), 'off'), new EntityState(new EntityId(self::WATCHED), 'on'));
+        return new StateUpdate(new EntityId(self::WATCHED), new EntityState(new EntityId(self::WATCHED), 'on'));
     }
 
     private static function getStoreDsn(): StoreDsn

@@ -9,17 +9,17 @@ use Amp\Future;
 use Amp\TimeoutCancellation;
 use Closure;
 use PHPUnit\Framework\Assert;
-use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Broker\WorkerProcess;
 use Stewart\Runtime\Broker\WorkerSpawner;
 use Stewart\Runtime\Ipc\Message\Bootstrap;
 use Stewart\Runtime\Ipc\Message\Shutdown;
-use Stewart\Runtime\Ipc\Message\StateChangeBatch;
 use Stewart\Runtime\Ipc\Message\StateSnapshot;
+use Stewart\Runtime\Ipc\Message\StateUpdateBatch;
 use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
-use Stewart\Runtime\Ipc\Wire\StateChangesFragment;
-use Stewart\Support\State\Collection\StateChangeCollection;
+use Stewart\Runtime\Ipc\Wire\StateUpdatesFragment;
+use Stewart\Support\State\Collection\StateUpdateCollection;
+use Stewart\Support\State\StateUpdate;
 
 use function Amp\async;
 
@@ -49,9 +49,9 @@ final class WorkerHarness
         $this->process->transport()->send($message);
     }
 
-    public function sendChanges(StateChange ...$changes): void
+    public function sendUpdates(StateUpdate ...$updates): void
     {
-        $this->send(new StateChangeBatch(StateChangesFragment::fromCollection(StateChangeCollection::fromList($changes))));
+        $this->send(new StateUpdateBatch(StateUpdatesFragment::fromCollection(StateUpdateCollection::fromList($updates))));
     }
 
     /**

@@ -16,6 +16,7 @@ use Stewart\Contracts\State\StateChangeOrigin;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Support\State\Collection\StateChangeCollection;
+use Stewart\Support\State\Collection\StateUpdateCollection;
 
 final class StateCacheSync
 {
@@ -75,17 +76,16 @@ final class StateCacheSync
         return $reconstructed;
     }
 
-    public function applyStateChanges(StateChangeCollection $changes): StateChangeCollection
+    public function applyStateUpdates(StateUpdateCollection $updates): StateChangeCollection
     {
-        $applied = [];
+        $changes = [];
 
-        foreach ($changes as $change) {
-            $rebased = $change->withFrom($this->stateCache->find($change->entityId));
-            $this->stateCache->applyChange($rebased);
-            $applied[] = $rebased;
+        foreach ($updates as $update) {
+            $changes[] = $update->toStateChange($this->stateCache->find($update->entityId));
+            $this->stateCache->applyUpdate($update);
         }
 
-        return StateChangeCollection::fromList($applied);
+        return StateChangeCollection::fromList($changes);
     }
 
     public function countEntities(): int

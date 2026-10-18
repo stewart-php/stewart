@@ -50,7 +50,6 @@ use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
-use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Sun\GeoLocation;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
@@ -92,9 +91,9 @@ use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Ipc\Message\Shutdown;
-use Stewart\Runtime\Ipc\Message\StateChangeBatch;
 use Stewart\Runtime\Ipc\Message\StateResynced;
 use Stewart\Runtime\Ipc\Message\StateSnapshot;
+use Stewart\Runtime\Ipc\Message\StateUpdateBatch;
 use Stewart\Runtime\Ipc\Message\Subscribe;
 use Stewart\Runtime\Ipc\Message\SubscribeTrigger;
 use Stewart\Runtime\Ipc\Message\SubscriptionAck;
@@ -109,7 +108,7 @@ use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
 use Stewart\Runtime\Ipc\Wire\HistoricalStatesFragment;
 use Stewart\Runtime\Ipc\Wire\IpcCodec;
 use Stewart\Runtime\Ipc\Wire\RegistryFragment;
-use Stewart\Runtime\Ipc\Wire\StateChangesFragment;
+use Stewart\Runtime\Ipc\Wire\StateUpdatesFragment;
 use Stewart\Runtime\Ipc\Wire\WorkerAppsFragment;
 use Stewart\Runtime\Ipc\WorkerApp;
 use Stewart\Runtime\Ipc\WorkerSettings;
@@ -123,8 +122,9 @@ use Stewart\Runtime\Model\SubscriptionId;
 use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Store\StoreHealth;
-use Stewart\Support\State\Collection\StateChangeCollection;
+use Stewart\Support\State\Collection\StateUpdateCollection;
 use Stewart\Support\State\IndexedRegistry;
+use Stewart\Support\State\StateUpdate;
 use Stewart\Support\Wire\TriggerSpec;
 
 final class IpcMessageSamples
@@ -144,7 +144,7 @@ final class IpcMessageSamples
             'bootstrap' => IpcMessageSample::createRoundTrip(self::createBootstrap()),
             'state_snapshot' => new IpcMessageSample(new StateSnapshot(self::createStates($state), 4), new StateSnapshot(self::createStates($state), 4)),
             'registry_snapshot' => new IpcMessageSample(new RegistrySnapshot(self::createRegistry(), 3), new RegistrySnapshot(self::createRegistry(), 3)),
-            'state_changes' => new IpcMessageSample(self::createStateChangeBatch($at), self::createStateChangeBatch($at)),
+            'state_updates' => new IpcMessageSample(self::createStateUpdateBatch($at), self::createStateUpdateBatch($at)),
             'state_resynced' => new IpcMessageSample(new StateResynced(self::createStates($state), 9, Duration::seconds(12.5)), new StateResynced(self::createStates($state), 9, Duration::seconds(12.5))),
             'paused_apps_changed' => IpcMessageSample::createRoundTrip(new PausedAppsChanged(self::createAppIds('demo', 'echo'))),
             'ha_connection_lost' => IpcMessageSample::createRoundTrip(new HaConnectionLost($at, 'websocket closed')),
@@ -283,17 +283,16 @@ final class IpcMessageSamples
         ));
     }
 
-    private static function createStateChangeBatch(Instant $at): StateChangeBatch
+    private static function createStateUpdateBatch(Instant $at): StateUpdateBatch
     {
-        $change = new StateChange(
+        $update = new StateUpdate(
             new EntityId('light.hall'),
-            new EntityState(new EntityId('light.hall'), 'off', [], $at, $at),
             new EntityState(new EntityId('light.hall'), 'on', ['brightness' => 254, 'gain' => 1.0], $at, $at, new EventContext('ctx', null, 'user')),
             $at,
             new EventContext('ctx'),
         );
 
-        return new StateChangeBatch(StateChangesFragment::fromCollection(StateChangeCollection::fromList([$change])));
+        return new StateUpdateBatch(StateUpdatesFragment::fromCollection(StateUpdateCollection::fromList([$update])));
     }
 
     private static function createAppIds(string ...$ids): AppIdsFragment

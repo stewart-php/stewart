@@ -17,7 +17,7 @@ use Stewart\Runtime\Ipc\Message\BrokerMessage;
 use Stewart\Runtime\Ipc\Message\Pong;
 use Stewart\Runtime\Ipc\Message\Shutdown;
 use Stewart\Runtime\Ipc\Transport;
-use Stewart\Runtime\Ipc\Wire\EncodedStateChange;
+use Stewart\Runtime\Ipc\Wire\EncodedStateUpdate;
 use Stewart\Runtime\Lifecycle\WorkerHandleState;
 use Stewart\Runtime\Logging\EveryNthOccurrence;
 use Stewart\Runtime\Model\WorkerId;
@@ -109,13 +109,13 @@ final class WorkerHandle
         $this->flush();
     }
 
-    public function sendStateChange(EncodedStateChange $change): void
+    public function sendStateUpdate(EncodedStateUpdate $update): void
     {
         if (!$this->acceptsMessages()) {
             return;
         }
 
-        $this->outbox->pushStateChange($change);
+        $this->outbox->pushStateUpdate($update);
         $this->flush();
     }
 

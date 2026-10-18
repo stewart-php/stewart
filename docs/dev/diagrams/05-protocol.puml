@@ -16,8 +16,8 @@ package "Broker → Worker" as bw #E8F0FE {
         statesJson  <<pre-encoded>>
         revision
     }
-    class StateChangeBatch {
-        changesJson  <<pre-encoded>>
+    class StateUpdateBatch {
+        updatesJson  <<pre-encoded>>
         count
     }
     class HaConnectionLost {
@@ -91,7 +91,7 @@ package "Worker → Broker" as wb #E6F4EA {
 
 BrokerMessage <|.. Bootstrap
 BrokerMessage <|.. StateSnapshot
-BrokerMessage <|.. StateChangeBatch
+BrokerMessage <|.. StateUpdateBatch
 BrokerMessage <|.. HaConnectionLost
 BrokerMessage <|.. StateResynced
 BrokerMessage <|.. EventFired

@@ -12,18 +12,17 @@ use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
-use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Ipc\Message\LogRecord;
 use Stewart\Runtime\Ipc\Message\PausedAppsChanged;
 use Stewart\Runtime\Ipc\Message\Shutdown;
-use Stewart\Runtime\Ipc\Message\StateChangeBatch;
 use Stewart\Runtime\Ipc\Message\StateSnapshot;
+use Stewart\Runtime\Ipc\Message\StateUpdateBatch;
 use Stewart\Runtime\Ipc\Message\WorkerReady;
 use Stewart\Runtime\Ipc\Wire\AppIdsFragment;
 use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
-use Stewart\Runtime\Ipc\Wire\StateChangesFragment;
+use Stewart\Runtime\Ipc\Wire\StateUpdatesFragment;
 use Stewart\Runtime\Ipc\WorkerApp;
 use Stewart\Runtime\Kernel\SyntheticServices;
 use Stewart\Runtime\Kernel\WorkerKernel;
@@ -35,7 +34,8 @@ use Stewart\Runtime\Time\ProcessTimeZone;
 use Stewart\Runtime\Worker\Message\PausedAppsChangedHandler;
 use Stewart\Runtime\Worker\PausedAppsSync;
 use Stewart\Runtime\Worker\WorkerSession;
-use Stewart\Support\State\Collection\StateChangeCollection;
+use Stewart\Support\State\Collection\StateUpdateCollection;
+use Stewart\Support\State\StateUpdate;
 use Stewart\Support\Time\RevoltTimers;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
@@ -124,9 +124,8 @@ final class WorkerPauseTest extends TestCase
     private function sendHallChange(): void
     {
         $id = new EntityId('light.hall');
-        $change = new StateChange($id, new EntityState($id, 'off'), new EntityState($id, 'on'));
 
-        $this->transport->deliver(new StateChangeBatch(StateChangesFragment::fromCollection(StateChangeCollection::fromList([$change]))));
+        $this->transport->deliver(new StateUpdateBatch(StateUpdatesFragment::fromCollection(StateUpdateCollection::fromList([new StateUpdate($id, new EntityState($id, 'on'))]))));
         EventLoopTicks::settle();
     }
 }
