@@ -49,6 +49,7 @@ use Stewart\Runtime\Lifecycle\AppFailurePhase;
 use Stewart\Runtime\Lifecycle\AppState;
 use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
+use Stewart\Runtime\Tests\Fixtures\Protocol\ChangeEdgeLogger;
 use Stewart\Runtime\Tests\Fixtures\Protocol\ConstructCaller;
 use Stewart\Runtime\Tests\Fixtures\Protocol\DisposeCaller;
 use Stewart\Runtime\Tests\Fixtures\Protocol\EdgeWatcher;
@@ -220,6 +221,21 @@ final class WorkerProtocolTest extends TestCase
         $summary = $this->shutDown('operators done');
 
         self::assertStringContainsString('worker 0 stopped', $summary);
+    }
+
+    public function testAppSeesTheCachedStateAsFrom(): void
+    {
+        $this->start([new WorkerApp(id: new AppId('change-edge-logger'), class: ChangeEdgeLogger::class, options: ['watch' => 'input_boolean.*'])]);
+        $this->receiveUntil(WorkerReady::class);
+
+        $this->sendChanges(self::createChange(self::WATCHED, 'unknown', 'on'), self::createChange('input_boolean.protocol_added', 'off', 'on'));
+
+        $isEdge = static fn(LogRecord $log): bool => $log->message === ChangeEdgeLogger::MESSAGE;
+
+        self::assertSame(['entity_id' => self::WATCHED, 'from' => 'off', 'to' => 'on', 'is_new' => false], $this->receiveUntil(LogRecord::class, $isEdge)->context);
+        self::assertSame(['entity_id' => 'input_boolean.protocol_added', 'from' => null, 'to' => 'on', 'is_new' => true], $this->receiveUntil(LogRecord::class, $isEdge)->context);
+
+        $this->shutDown('done');
     }
 
     public function testPongCarriesActivityReportPerApp(): void

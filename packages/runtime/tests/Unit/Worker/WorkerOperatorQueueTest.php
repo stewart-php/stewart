@@ -99,7 +99,10 @@ final class WorkerOperatorQueueTest extends TestCase
         /** @var Future<string> $running */
         $running = async(fn(): string => $kernel->run($this->transport));
         $this->running = $running;
-        $this->transport->deliver(new StateSnapshot(EntityStatesFragment::fromCollection(EntityStateCollection::keyedByEntityId([])), revision: 1));
+        $this->transport->deliver(new StateSnapshot(EntityStatesFragment::fromCollection(EntityStateCollection::keyedByEntityId([
+            new EntityState(new EntityId('sensor.busy'), 'on'),
+            new EntityState(new EntityId('sensor.watched'), 'on'),
+        ])), revision: 1));
         EventLoopTicks::settleUntil(fn(): bool => $this->transport->listSentOfType(WorkerReady::class) !== []);
     }
 

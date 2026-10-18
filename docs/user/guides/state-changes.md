@@ -48,7 +48,7 @@ Patterns also match entities added later.
 ## Reacting to changes
 
 Each `StateChange` holds the entity ID and the state before (`$change->from`) and after (`$change->to`). Either can be
-`null`, when the entity was just added or removed.
+`null`, when the entity was just added or removed. `from` is what `getState()` returned just before the change.
 
 ```php
 $this->ha->watchStateChanges('sensor.*_temperature')->subscribe(function (StateChange $change): void {

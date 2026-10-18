@@ -75,9 +75,17 @@ final class StateCacheSync
         return $reconstructed;
     }
 
-    public function applyStateChange(StateChange $change): void
+    public function applyStateChanges(StateChangeCollection $changes): StateChangeCollection
     {
-        $this->stateCache->applyChange($change);
+        $applied = [];
+
+        foreach ($changes as $change) {
+            $rebased = $change->withFrom($this->stateCache->find($change->entityId));
+            $this->stateCache->applyChange($rebased);
+            $applied[] = $rebased;
+        }
+
+        return StateChangeCollection::fromList($applied);
     }
 
     public function countEntities(): int

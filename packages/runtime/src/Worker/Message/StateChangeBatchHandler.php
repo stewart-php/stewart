@@ -25,10 +25,6 @@ final readonly class StateChangeBatchHandler implements BrokerMessageHandler
     /** @param StateChangeBatch $message */
     public function handle(BrokerMessage $message): void
     {
-        foreach ($message->changes->collection as $change) {
-            $this->stateCacheSync->applyStateChange($change);
-        }
-
-        $this->dispatcher->dispatchStateChanges($message->changes->collection);
+        $this->dispatcher->dispatchStateChanges($this->stateCacheSync->applyStateChanges($message->changes->collection));
     }
 }
