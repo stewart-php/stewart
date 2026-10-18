@@ -41,8 +41,12 @@ final readonly class IpcCodec
 
     public static function createIpcWireMapper(): WireMapper
     {
+        $entityIds = StringIdentifierConverter::createForEntityIds();
+        $instants = new EpochInstantConverter();
+        $contexts = new EventContextConverter();
+
         return new WireMapper(new ClassShapeReader(ValueConverterCollection::keyedByHandledClass([
-            new EpochInstantConverter(),
+            $instants,
             new DurationConverter(),
             new SelectorConverter(),
             new MqttMessageConverter(),
@@ -51,7 +55,9 @@ final readonly class IpcCodec
             new ExposedStateConverter(),
             new TimeOfDayConverter(),
             new DateTimeImmutableConverter(),
-            StringIdentifierConverter::createForEntityIds(),
+            $contexts,
+            new EntityStateConverter($entityIds, $instants, $contexts),
+            $entityIds,
             StringIdentifierConverter::createForAppIds(),
             StringIdentifierConverter::createForAreaIds(),
             StringIdentifierConverter::createForFloorIds(),
