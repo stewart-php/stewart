@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker;
 
 use Stewart\Contracts\Event\HaEvent;
-use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Trigger\TriggerEvent;
@@ -17,6 +16,7 @@ use Stewart\Runtime\Ipc\Message\ExposedEntitySynced;
 use Stewart\Runtime\Ipc\Message\HaConnectionLost;
 use Stewart\Runtime\Ipc\Message\StateResynced;
 use Stewart\Runtime\Model\ResourceScope;
+use Stewart\Support\State\StateUpdate;
 use Stewart\Support\Wire\TriggerSpec;
 use Throwable;
 
@@ -33,9 +33,9 @@ final readonly class BrokerHaEvents implements HaSessionListener
         private ExposureCommandRouter $commandRouter,
     ) {}
 
-    public function stateChanged(StateChange $change): void
+    public function stateUpdated(StateUpdate $update): void
     {
-        $this->router->broadcastStateChange($change);
+        $this->router->broadcastStateUpdate($update);
     }
 
     public function eventFired(HaEvent $event): void

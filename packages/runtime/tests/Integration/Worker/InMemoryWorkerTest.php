@@ -21,7 +21,6 @@ use Stewart\Contracts\Registry\Collection\LabelCollection;
 use Stewart\Contracts\Registry\Collection\RegisteredEntityCollection;
 use Stewart\Contracts\Registry\RegisteredEntity;
 use Stewart\Contracts\State\EntityState;
-use Stewart\Contracts\State\StateChange;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
@@ -42,6 +41,7 @@ use Stewart\Runtime\Tests\Fixtures\Protocol\KitchenWatcher;
 use Stewart\Runtime\Tests\Fixtures\Protocol\SerialHandler;
 use Stewart\Runtime\Tests\Fixtures\Worker\InMemoryWorkerSpawner;
 use Stewart\Support\State\IndexedRegistry;
+use Stewart\Support\State\StateUpdate;
 use Stewart\Testing\Logging\RecordedLog;
 use Stewart\Testing\Logging\RecordingLogger;
 
@@ -67,11 +67,7 @@ final class InMemoryWorkerTest extends TestCase
         $ready->await(new TimeoutCancellation(self::WAIT_SECONDS));
 
         $called = $broker->homeAssistant->waitForNextCall();
-        $session->listener?->stateChanged(new StateChange(
-            new EntityId(SerialHandler::ENTITY),
-            new EntityState(new EntityId(SerialHandler::ENTITY), '1'),
-            new EntityState(new EntityId(SerialHandler::ENTITY), '2'),
-        ));
+        $session->listener?->stateUpdated(new StateUpdate(new EntityId(SerialHandler::ENTITY), new EntityState(new EntityId(SerialHandler::ENTITY), '2')));
 
         $called->await(new TimeoutCancellation(self::WAIT_SECONDS));
         self::assertCount(1, $broker->homeAssistant->listReceivedCalls());
@@ -106,7 +102,7 @@ final class InMemoryWorkerTest extends TestCase
         $called = $broker->homeAssistant->waitForNextCall();
 
         foreach (['light.porch', 'light.kitchen'] as $entityId) {
-            $session->listener?->stateChanged(new StateChange(new EntityId($entityId), null, new EntityState(new EntityId($entityId), 'on')));
+            $session->listener?->stateUpdated(new StateUpdate(new EntityId($entityId), new EntityState(new EntityId($entityId), 'on')));
         }
 
         $called->await(new TimeoutCancellation(self::WAIT_SECONDS));
@@ -138,11 +134,7 @@ final class InMemoryWorkerTest extends TestCase
         $ready->await(new TimeoutCancellation(self::WAIT_SECONDS));
 
         $read = $logger->waitForMessage('History read');
-        $session->listener?->stateChanged(new StateChange(
-            new EntityId(HistoryReporter::ENTITY),
-            new EntityState(new EntityId(HistoryReporter::ENTITY), 'on'),
-            new EntityState(new EntityId(HistoryReporter::ENTITY), 'off'),
-        ));
+        $session->listener?->stateUpdated(new StateUpdate(new EntityId(HistoryReporter::ENTITY), new EntityState(new EntityId(HistoryReporter::ENTITY), 'off')));
 
         $read->await(new TimeoutCancellation(self::WAIT_SECONDS));
         $record = $logger->records->findFirstWhere(static fn(RecordedLog $log): bool => $log->message === 'History read');

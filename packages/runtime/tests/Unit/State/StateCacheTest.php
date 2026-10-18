@@ -9,8 +9,8 @@ use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\EntityState;
-use Stewart\Contracts\State\StateChange;
 use Stewart\Runtime\State\StateCache;
+use Stewart\Support\State\StateUpdate;
 
 #[CoversClass(StateCache::class)]
 final class StateCacheTest extends TestCase
@@ -34,7 +34,7 @@ final class StateCacheTest extends TestCase
         $cache = new StateCache();
         $cache->replaceAll([new EntityState(new EntityId('light.hall'), 'on')]);
 
-        $cache->applyChange(new StateChange(new EntityId('light.hall'), new EntityState(new EntityId('light.hall'), 'on'), null));
+        $cache->applyUpdate(new StateUpdate(new EntityId('light.hall'), null));
 
         self::assertNull($cache->find(new EntityId('light.hall')));
         self::assertSame(0, $cache->count());

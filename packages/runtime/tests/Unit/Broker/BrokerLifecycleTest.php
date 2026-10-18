@@ -19,7 +19,6 @@ use Stewart\Contracts\Exception\ServiceCallError;
 use Stewart\Contracts\Exception\StoreException;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\EntityState;
-use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\App\AppDefinition;
@@ -263,7 +262,8 @@ final class BrokerLifecycleTest extends TestCase
         $this->startBroker();
 
         $hall = new EntityId('light.hall');
-        $this->session->listener?->stateChanged(new StateChange($hall, new EntityState($hall, 'off'), new EntityState($hall, 'on')));
+        $update = new StateUpdate($hall, new EntityState($hall, 'on'));
+        $this->session->listener?->stateUpdated($update);
         EventLoopTicks::settleUntil(fn(): bool => $this->hasEachWorkerReceivedOne(StateUpdateBatch::class));
 
         foreach ([0, 1] as $workerId) {
@@ -274,7 +274,7 @@ final class BrokerLifecycleTest extends TestCase
             $codec = IpcCodec::createForWorkerBootstrap();
             $decoded = $codec->decodeMessage($codec->encodeMessage($batches[0]));
             self::assertInstanceOf(StateUpdateBatch::class, $decoded);
-            self::assertEquals([new StateUpdate($hall, new EntityState($hall, 'on'))], $decoded->updates->collection->listValues());
+            self::assertEquals([$update], $decoded->updates->collection->listValues());
         }
     }
 

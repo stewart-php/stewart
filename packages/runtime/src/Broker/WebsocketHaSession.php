@@ -11,7 +11,6 @@ use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
 use Stewart\Client\HaSiteSettings;
 use Stewart\Contracts\Event\HaEvent;
-use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Sun\GeoLocation;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\MonotonicTime;
@@ -23,6 +22,7 @@ use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
 use Stewart\Runtime\Ipc\Wire\RegistryFragment;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\StateCache;
+use Stewart\Support\State\StateUpdate;
 use Stewart\Support\Wire\TriggerSpec;
 use Throwable;
 
@@ -42,8 +42,8 @@ final class WebsocketHaSession implements HaSession
 
     private bool $establishing = false;
 
-    /** @var array<string, StateChange> */
-    private array $pendingChanges = [];
+    /** @var array<string, StateUpdate> */
+    private array $pendingUpdates = [];
 
     private ?HaSiteSettings $siteSettings = null;
 
@@ -179,7 +179,7 @@ final class WebsocketHaSession implements HaSession
 
     private function connectSubscribeAndSeed(): void
     {
-        // Subscribe before seeding and buffer changes in between, so no change is lost.
+        // Subscribe before seeding and buffer updates in between, so no update is lost.
         $this->triggers->markLinkLost();
         $this->componentSession->markLinkLost();
         $this->client->close();
@@ -187,7 +187,7 @@ final class WebsocketHaSession implements HaSession
         $this->establishing = true;
 
         try {
-            $this->client->subscribeAllEvents($this->onStateChanged(...), $this->onEventFired(...));
+            $this->client->subscribeStateUpdatesAndEvents($this->onStateUpdated(...), $this->onEventFired(...));
             $this->triggers->resubscribeAll();
             $this->componentSession->openSession();
             $this->siteSettings ??= $this->client->getSiteSettings();
@@ -200,29 +200,29 @@ final class WebsocketHaSession implements HaSession
             $this->registry->replaceAsNextRevision($registry);
             $this->states->replaceAll($states);
 
-            foreach ($this->pendingChanges as $change) {
-                $this->states->applyChange($change);
+            foreach ($this->pendingUpdates as $update) {
+                $this->states->applyUpdate($update);
             }
 
             ++$this->revision;
         } finally {
             $this->establishing = false;
-            $this->pendingChanges = [];
+            $this->pendingUpdates = [];
         }
     }
 
-    private function onStateChanged(StateChange $change): void
+    private function onStateUpdated(StateUpdate $update): void
     {
         if ($this->establishing) {
-            $this->pendingChanges[$change->entityId->value] = $change;
+            $this->pendingUpdates[$update->entityId->value] = $update;
 
             return;
         }
 
-        $this->states->applyChange($change);
+        $this->states->applyUpdate($update);
         ++$this->revision;
 
-        $this->listener->stateChanged($change);
+        $this->listener->stateUpdated($update);
     }
 
     private function onEventFired(HaEvent $event): void

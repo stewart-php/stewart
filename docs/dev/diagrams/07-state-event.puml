@@ -9,7 +9,7 @@ participant "Worker 1" as w1 $worker
 participant "App\n(in worker 0)" as app $usercode
 
 ha -> b : event state_changed\n{ entity_id, old_state, new_state }
-b -> b : StateCache.applyChange()
+b -> b : decode new_state only\nStateCache.applyUpdate()
 
 par fan-out to every worker
     b -> w0 : **StateUpdateBatch** { updates }\nnew state only

@@ -15,7 +15,6 @@ use Stewart\Contracts\Exception\ScheduleError;
 use Stewart\Contracts\Schedule\ScheduledRun;
 use Stewart\Contracts\Schedule\ScheduledTask;
 use Stewart\Contracts\State\EntityState;
-use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Schedule\EntityTimeScheduler;
@@ -27,6 +26,7 @@ use Stewart\Runtime\Tests\Fixtures\Schedule\WorkerSchedulerFixture;
 use Stewart\Runtime\Tests\Fixtures\Worker\AppResourcesFixture;
 use Stewart\Runtime\Tests\Fixtures\Worker\RecordingScheduleListener;
 use Stewart\Sun\UnlocatedSunCalendar;
+use Stewart\Support\State\StateUpdate;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Logging\RecordingLogger;
 use Stewart\Testing\Time\EventLoopTicks;
@@ -297,9 +297,10 @@ final class WorkerSchedulerEntityTimeTest extends TestCase
     private function changeWakeUp(string $value, array $attributes = []): void
     {
         $id = new EntityId(self::WAKE_UP);
-        $change = new StateChange($id, $this->states->find($id), new EntityState($id, $value, $attributes));
+        $update = new StateUpdate($id, new EntityState($id, $value, $attributes));
+        $change = $update->toStateChange($this->states->find($id));
 
-        $this->states->applyChange($change);
+        $this->states->applyUpdate($update);
         $this->fixture->dispatcher->dispatchStateChange($change);
         EventLoopTicks::settle();
     }

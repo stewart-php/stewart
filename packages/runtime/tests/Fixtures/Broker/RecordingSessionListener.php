@@ -6,20 +6,20 @@ namespace Stewart\Runtime\Tests\Fixtures\Broker;
 
 use RuntimeException;
 use Stewart\Contracts\Event\HaEvent;
-use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Runtime\Broker\Exposure\ExposedEntityCommand;
 use Stewart\Runtime\Broker\Exposure\ExposedEntitySync;
 use Stewart\Runtime\Broker\HaSessionListener;
+use Stewart\Support\State\StateUpdate;
 use Stewart\Support\Wire\TriggerSpec;
 use Throwable;
 
 final class RecordingSessionListener implements HaSessionListener
 {
-    /** @var list<StateChange> */
-    public array $changes = [];
+    /** @var list<StateUpdate> */
+    public array $updates = [];
 
     /** @var list<HaEvent> */
     public array $events = [];
@@ -47,9 +47,9 @@ final class RecordingSessionListener implements HaSessionListener
 
     public bool $failOnReconnect = false;
 
-    public function stateChanged(StateChange $change): void
+    public function stateUpdated(StateUpdate $update): void
     {
-        $this->changes[] = $change;
+        $this->updates[] = $update;
     }
 
     public function eventFired(HaEvent $event): void

@@ -8,7 +8,6 @@ use Closure;
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\Mqtt\MqttMessage;
-use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Topic\TopicEvent;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Runtime\Broker\Mqtt\MqttMessageRouter;
@@ -32,9 +31,9 @@ final readonly class EventRouter implements MqttMessageRouter
         private LoggerInterface $logger,
     ) {}
 
-    public function broadcastStateChange(StateChange $change): void
+    public function broadcastStateUpdate(StateUpdate $update): void
     {
-        $encoded = new EncodedStateUpdate(StateUpdate::fromStateChange($change));
+        $encoded = new EncodedStateUpdate($update);
 
         foreach ($this->slots->listLiveHandles() as $handle) {
             $handle->sendStateUpdate($encoded);

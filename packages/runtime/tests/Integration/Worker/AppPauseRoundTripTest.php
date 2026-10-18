@@ -13,7 +13,6 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\State\EntityState;
-use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
@@ -42,6 +41,7 @@ use Stewart\Runtime\Time\SystemClock;
 use Stewart\Store\GuardedStoreBackend;
 use Stewart\Store\StoreDsn;
 use Stewart\Store\StoreTiming;
+use Stewart\Support\State\StateUpdate;
 use Stewart\Support\Time\RevoltTimers;
 use Stewart\Testing\Logging\RecordingLogger;
 use Stewart\Testing\Store\InMemoryStoreBackend;
@@ -87,11 +87,11 @@ final class AppPauseRoundTripTest extends TestCase
 
         self::assertTrue($client->pauseApp($control, $appId, Duration::seconds(self::WAIT_SECONDS))->changed);
         self::assertFalse($client->pauseApp($control, $appId, Duration::seconds(self::WAIT_SECONDS))->changed, 'Pausing a paused app changes nothing.');
-        $this->changeSerial($session, '1', '2');
+        $this->changeSerial($session, '2');
 
         self::assertTrue($client->resumeApp($control, $appId, Duration::seconds(self::WAIT_SECONDS))->changed);
         $called = $broker->homeAssistant->waitForNextCall();
-        $this->changeSerial($session, '2', '3');
+        $this->changeSerial($session, '3');
         $called->await(new TimeoutCancellation(self::WAIT_SECONDS));
 
         self::assertCount(1, $broker->homeAssistant->listReceivedCalls());
@@ -128,7 +128,7 @@ final class AppPauseRoundTripTest extends TestCase
 
         foreach (['2', '3'] as $value) {
             $called = $broker->homeAssistant->waitForNextCall();
-            $this->changeSerial($session, '1', $value);
+            $this->changeSerial($session, $value);
             $called->await(new TimeoutCancellation(self::WAIT_SECONDS));
         }
 
@@ -155,11 +155,11 @@ final class AppPauseRoundTripTest extends TestCase
         $session = new FakeHaSession();
         $second = $this->startBrokerWithStore($appId, $store, $session, $controlListen);
         self::assertEquals($pause, $client->fetchSnapshot($control, $timeout)->apps[0]->pause);
-        $this->changeSerial($session, '1', '2');
+        $this->changeSerial($session, '2');
 
         self::assertTrue($client->resumeApp($control, $appId, $timeout)->changed);
         $called = $second->homeAssistant->waitForNextCall();
-        $this->changeSerial($session, '2', '3');
+        $this->changeSerial($session, '3');
         $called->await(new TimeoutCancellation(self::WAIT_SECONDS));
 
         self::assertSame([['value' => '3']], array_map(static fn(ReceivedServiceCall $call): array => $call->data, $second->homeAssistant->listReceivedCalls()));
@@ -197,10 +197,10 @@ final class AppPauseRoundTripTest extends TestCase
         $this->running = null;
     }
 
-    private function changeSerial(FakeHaSession $session, string $from, string $to): void
+    private function changeSerial(FakeHaSession $session, string $to): void
     {
         $entityId = new EntityId(SerialHandler::ENTITY);
 
-        $session->listener?->stateChanged(new StateChange($entityId, new EntityState($entityId, $from), new EntityState($entityId, $to)));
+        $session->listener?->stateUpdated(new StateUpdate($entityId, new EntityState($entityId, $to)));
     }
 }

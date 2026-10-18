@@ -22,11 +22,6 @@ final readonly class StateUpdate
         public StateChangeOrigin $origin = StateChangeOrigin::Live,
     ) {}
 
-    public static function fromStateChange(StateChange $change): self
-    {
-        return new self($change->entityId, $change->to, $change->firedAt, $change->context, $change->origin);
-    }
-
     public function toStateChange(?EntityState $from): StateChange
     {
         return new StateChange($this->entityId, $from, $this->to, $this->firedAt, $this->context, $this->origin);

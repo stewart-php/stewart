@@ -13,7 +13,6 @@ use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
-use Stewart\Contracts\State\StateChange;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
@@ -28,6 +27,7 @@ use Stewart\Runtime\Tests\Fixtures\Broker\WorkerPoolFixture;
 use Stewart\Runtime\Tests\Fixtures\Protocol\OwnChangeReporter;
 use Stewart\Runtime\Tests\Fixtures\Worker\InMemoryWorkerSpawner;
 use Stewart\Runtime\Worker\WorkerHaContext;
+use Stewart\Support\State\StateUpdate;
 use Stewart\Testing\Logging\RecordingLogger;
 use Stewart\Testing\Time\EventLoopTicks;
 
@@ -75,6 +75,6 @@ final class OwnChangeRoundTripTest extends TestCase
     {
         $light = new EntityId(OwnChangeReporter::LIGHT);
 
-        $session->listener?->stateChanged(new StateChange($light, null, new EntityState($light, $state, context: $context), context: $context));
+        $session->listener?->stateUpdated(new StateUpdate($light, new EntityState($light, $state, context: $context), context: $context));
     }
 }
