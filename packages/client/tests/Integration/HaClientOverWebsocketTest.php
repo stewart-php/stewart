@@ -27,6 +27,7 @@ use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
 use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Support\Json\JsonEncoder;
+use Stewart\Support\State\StateUpdate;
 use Stewart\Support\Time\RevoltTimers;
 use Stewart\Support\Wire\EventPayload;
 use Stewart\Testing\Exception\AssertsReason;
@@ -170,6 +171,34 @@ final class HaClientOverWebsocketTest extends TestCase
 
         self::assertSame('stewart_demo', $event->type);
         self::assertSame(['source' => 'test'], $event->data);
+    }
+
+    public function testStateUpdateArrivesWithoutTheOldState(): void
+    {
+        $client = $this->connectClient();
+        $updates = [];
+        /** @var DeferredFuture<HaEvent> $received */
+        $received = new DeferredFuture();
+
+        $subscriptionId = $client->subscribeStateUpdatesAndEvents(
+            static function (StateUpdate $update) use (&$updates): void {
+                $updates[] = $update;
+            },
+            static function (HaEvent $event) use ($received): void {
+                $received->complete($event);
+            },
+        );
+        $this->server->pushEvent($subscriptionId, ['event_type' => 'state_changed', 'data' => [
+            'entity_id' => 'light.hall',
+            'old_state' => ['entity_id' => 'light.hall', 'state' => 'off'],
+            'new_state' => ['entity_id' => 'light.hall', 'state' => 'on'],
+        ]]);
+        $this->server->pushEvent($subscriptionId, ['event_type' => 'stewart_demo', 'data' => []]);
+
+        self::assertSame('stewart_demo', $received->getFuture()->await(new TimeoutCancellation(self::WAIT_SECONDS))->type);
+        self::assertCount(1, $updates);
+        self::assertSame('light.hall', $updates[0]->entityId->value);
+        self::assertSame('on', $updates[0]->to?->state);
     }
 
     public function testInvalidUtf8FrameIsDroppedAndTheConnectionStays(): void

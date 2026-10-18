@@ -20,6 +20,7 @@ use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Stewart\Runtime\Tests\Fixtures\Worker\RecordingDispatchListener;
 use Stewart\Runtime\Worker\Context\DispatchStreams;
+use Stewart\Support\State\StateUpdate;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
 
@@ -70,7 +71,7 @@ final class QueuedStreamFixture
     {
         $id = new EntityId($entityId);
 
-        $this->states->applyChange(new StateChange($id, null, new EntityState($id, $state)));
+        $this->states->applyUpdate(new StateUpdate($id, new EntityState($id, $state)));
     }
 
     public function pauseScope(): void

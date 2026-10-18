@@ -27,14 +27,14 @@ poller, the listeners, the control plane and the signal watchers.
 which retries with backoff and rethrows only fatal client errors (a rejected token, a non-admin user). Each attempt:
 
 1. marks trigger and component links lost, closes any old socket, connects;
-2. sets `establishing` and subscribes to all events, then re-issues every live trigger and opens the component
-   session;
+2. sets `establishing` and subscribes to all events through `HaClient::subscribeStateUpdatesAndEvents()`, which
+   decodes only `new_state` of each `state_changed`, then re-issues every live trigger and opens the component session;
 3. reads the site settings and Stewart's user ID (cached after the first time);
 4. calls `get_states` and reads the registries;
-5. replaces the registry, then the state cache, replays the state changes buffered meanwhile, and bumps the
+5. replaces the registry, then the state cache, replays the state updates buffered meanwhile, and bumps the
    revision.
 
-**Subscribe before seed.** While `establishing`, `onStateChanged()` buffers changes per entity, so nothing between
+**Subscribe before seed.** While `establishing`, `onStateUpdated()` buffers updates per entity, so nothing between
 the subscription and the seed is lost. Events and trigger fires arriving then are dropped instead, so no handler
 reacts with pre-outage state.
 
@@ -73,7 +73,7 @@ the exposure and registry requests). A handler that throws is logged per message
 
 **From Home Assistant.** `Broker/BrokerHaEvents` receives the session's callbacks:
 
-- A state change goes to `EventRouter::broadcastStateChange()`: encoded once, sent to every live worker. State
+- A state update goes to `EventRouter::broadcastStateUpdate()`: encoded once, sent to every live worker. State
   subscriptions never reach the broker; each worker matches them against its own cache.
 - An event schedules a registry refresh when it is a `*_registry_updated` event, then is routed as `EventFired` to the
   workers whose subscriptions match, with their subscription IDs.
@@ -95,8 +95,9 @@ keeps writes ordered. What happens on enqueue depends on the message's `OutboxDe
 | `StateSegmentBoundary` | `StateSnapshot`, `StateResynced` | Resets coalescing |
 | `Plain` | Everything else | Always kept, in order |
 
-State changes coalesce per entity: the first queued change stays, later ones merge into one change at the tail that
-keeps the original `from`. Consecutive state changes leave as one `StateChangeBatch` of at most `worker_state_batch`.
+State updates coalesce per entity: the first queued update stays, and the latest replaces any later ones at the tail.
+The update carries no `from`, so the merged tail is the latest shared encoding. Consecutive state updates leave as one
+`StateUpdateBatch` of at most `worker_state_batch`.
 Drops are logged on a throttled schedule.
 
 ## Service calls

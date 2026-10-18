@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Tests\Unit\Broker;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\NullLogger;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\HaEvent;
@@ -21,17 +22,20 @@ use Stewart\Runtime\Ipc\Message\BrokerMessage;
 use Stewart\Runtime\Ipc\Message\EventFired;
 use Stewart\Runtime\Ipc\Message\Ping;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
-use Stewart\Runtime\Ipc\Message\StateChangeBatch;
 use Stewart\Runtime\Ipc\Message\StateSnapshot;
+use Stewart\Runtime\Ipc\Message\StateUpdateBatch;
 use Stewart\Runtime\Ipc\Message\TopicMessage;
-use Stewart\Runtime\Ipc\Wire\EncodedStateChange;
+use Stewart\Runtime\Ipc\Wire\EncodedStateUpdate;
 use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
 use Stewart\Runtime\Ipc\Wire\IpcCodec;
 use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\SubscriptionId;
+use Stewart\Runtime\State\StateCache;
+use Stewart\Runtime\Worker\StateCacheSync;
+use Stewart\Support\State\StateUpdate;
 
 #[CoversClass(WorkerOutbox::class)]
-#[CoversClass(EncodedStateChange::class)]
+#[CoversClass(EncodedStateUpdate::class)]
 final class WorkerOutboxTest extends TestCase
 {
     public function testControlMessagesAreNeverDropped(): void
@@ -45,17 +49,18 @@ final class WorkerOutboxTest extends TestCase
         self::assertCount(50, self::drain($outbox));
     }
 
-    public function testConsecutiveStateChangesTravelAsOneBatch(): void
+    public function testConsecutiveStateUpdatesTravelAsOneBatch(): void
     {
         $outbox = self::createOutbox();
+        $worker = self::createWorkerCache(['light.a' => 'off', 'light.b' => 'off']);
 
-        $outbox->pushStateChange(self::createEncodedChange('light.a', 'off', 'on'));
-        $outbox->pushStateChange(self::createEncodedChange('light.b', 'off', 'on'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', 'on'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.b', 'on'));
 
         $sent = self::drain($outbox);
 
         self::assertCount(1, $sent);
-        self::assertSame(['light.a:off>on', 'light.b:off>on'], self::describeEdges($sent[0]));
+        self::assertSame(['light.a:off>on', 'light.b:off>on'], self::describeEdges($worker, $sent[0]));
         self::assertSame(1, $outbox->buildStatus()->stateBatchesSent);
         self::assertSame(2, $outbox->buildStatus()->largestStateBatch);
     }
@@ -63,12 +68,13 @@ final class WorkerOutboxTest extends TestCase
     public function testBurstMergesIntoFirstAndLatest(): void
     {
         $outbox = self::createOutbox();
+        $worker = self::createWorkerCache(['light.a' => 'on']);
 
-        $outbox->pushStateChange(self::createEncodedChange('light.a', 'on', 'off'));
-        $outbox->pushStateChange(self::createEncodedChange('light.a', 'off', 'on'));
-        $outbox->pushStateChange(self::createEncodedChange('light.a', 'on', 'dim'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', 'off'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', 'on'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', 'dim'));
 
-        self::assertSame(['light.a:on>off', 'light.a:off>dim'], self::describeEdges(self::drain($outbox)[0]));
+        self::assertSame(['light.a:on>off', 'light.a:off>dim'], self::describeEdges($worker, self::drain($outbox)[0]));
         self::assertSame(1, $outbox->coalescedStateChanges);
     }
 
@@ -76,10 +82,10 @@ final class WorkerOutboxTest extends TestCase
     {
         $outbox = self::createOutbox();
 
-        $outbox->pushStateChange(self::createEncodedChange('light.a', 'on', 'off'));
-        $outbox->pushStateChange(self::createEncodedChange('light.a', 'off', 'on'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', 'off'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', 'on'));
 
-        $changes = self::decodeChanges(self::drain($outbox)[0]);
+        $changes = self::applyOnWorker(self::createWorkerCache(['light.a' => 'on']), self::drain($outbox)[0]);
 
         self::assertTrue($changes[0]->changedTo('off'));
         self::assertTrue($changes[1]->changedTo('on'));
@@ -89,34 +95,36 @@ final class WorkerOutboxTest extends TestCase
     public function testMergedChangeMovesBehindEarlierEvent(): void
     {
         $outbox = self::createOutbox();
+        $worker = self::createWorkerCache(['light.a' => '1']);
 
-        $outbox->pushStateChange(self::createEncodedChange('light.a', '1', '2'));
-        $outbox->pushStateChange(self::createEncodedChange('light.a', '2', '3'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', '2'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', '3'));
         $outbox->enqueue(new EventFired(new HaEvent('zha_event'), [new SubscriptionId('w0:2')]));
-        $outbox->pushStateChange(self::createEncodedChange('light.a', '3', '4'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', '4'));
 
         $sent = self::drain($outbox);
 
         self::assertCount(3, $sent);
-        self::assertSame(['light.a:1>2'], self::describeEdges($sent[0]));
+        self::assertSame(['light.a:1>2'], self::describeEdges($worker, $sent[0]));
         self::assertInstanceOf(EventFired::class, $sent[1]);
-        self::assertSame(['light.a:2>4'], self::describeEdges($sent[2]));
+        self::assertSame(['light.a:2>4'], self::describeEdges($worker, $sent[2]));
     }
 
     public function testEventEndsABatchSoOrderIsKept(): void
     {
         $outbox = self::createOutbox();
+        $worker = self::createWorkerCache(['light.a' => '1', 'light.b' => '1']);
 
-        $outbox->pushStateChange(self::createEncodedChange('light.a', '1', '2'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', '2'));
         $outbox->enqueue(new EventFired(new HaEvent('zha_event'), [new SubscriptionId('w0:2')]));
-        $outbox->pushStateChange(self::createEncodedChange('light.b', '1', '2'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.b', '2'));
 
         $sent = self::drain($outbox);
 
         self::assertCount(3, $sent);
-        self::assertSame(['light.a:1>2'], self::describeEdges($sent[0]));
+        self::assertSame(['light.a:1>2'], self::describeEdges($worker, $sent[0]));
         self::assertInstanceOf(EventFired::class, $sent[1]);
-        self::assertSame(['light.b:1>2'], self::describeEdges($sent[2]));
+        self::assertSame(['light.b:1>2'], self::describeEdges($worker, $sent[2]));
     }
 
     public function testBatchNeverExceedsItsLimit(): void
@@ -124,10 +132,10 @@ final class WorkerOutboxTest extends TestCase
         $outbox = self::createOutbox(stateBatch: 2);
 
         foreach (['a', 'b', 'c', 'd', 'e'] as $name) {
-            $outbox->pushStateChange(self::createEncodedChange('light.' . $name, '1', '2'));
+            $outbox->pushStateUpdate(self::createEncodedUpdate('light.' . $name, '2'));
         }
 
-        $sizes = array_map(static fn(BrokerMessage $message): int => self::assertStateChangeBatch($message)->changes->collection->count(), self::drain($outbox));
+        $sizes = array_map(static fn(BrokerMessage $message): int => self::assertStateUpdateBatch($message)->updates->collection->count(), self::drain($outbox));
 
         self::assertSame([2, 2, 1], $sizes);
         self::assertSame(3, $outbox->buildStatus()->stateBatchesSent);
@@ -137,49 +145,53 @@ final class WorkerOutboxTest extends TestCase
     public function testSnapshotStopsMergingAcrossIt(): void
     {
         $outbox = self::createOutbox();
+        $worker = self::createWorkerCache(['light.a' => '1']);
 
-        $outbox->pushStateChange(self::createEncodedChange('light.a', '1', '2'));
-        $outbox->pushStateChange(self::createEncodedChange('light.a', '2', '3'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', '2'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', '3'));
         $outbox->enqueue(new StateSnapshot(EntityStatesFragment::fromCollection(EntityStateCollection::empty()), 7));
-        $outbox->pushStateChange(self::createEncodedChange('light.a', '3', '4'));
-        $outbox->pushStateChange(self::createEncodedChange('light.a', '4', '5'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', '4'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', '5'));
 
         $sent = self::drain($outbox);
 
         self::assertCount(3, $sent);
-        self::assertSame(['light.a:1>2', 'light.a:2>3'], self::describeEdges($sent[0]));
+        self::assertSame(['light.a:1>2', 'light.a:2>3'], self::describeEdges($worker, $sent[0]));
         self::assertInstanceOf(StateSnapshot::class, $sent[1]);
-        self::assertSame(['light.a:3>4', 'light.a:4>5'], self::describeEdges($sent[2]));
+        self::assertSame(['light.a:3>4', 'light.a:4>5'], self::describeEdges($worker, $sent[2]));
         self::assertSame(0, $outbox->coalescedStateChanges);
     }
 
-    public function testChangeAlreadySentIsNotMergedInto(): void
+    public function testUpdateAlreadySentIsNotMergedInto(): void
     {
         $outbox = self::createOutbox();
+        $worker = self::createWorkerCache(['light.a' => '1']);
 
-        $outbox->pushStateChange(self::createEncodedChange('light.a', '1', '2'));
-        $outbox->pushStateChange(self::createEncodedChange('light.a', '2', '3'));
-        $outbox->takeNext();
-        $outbox->pushStateChange(self::createEncodedChange('light.a', '3', '4'));
-        $outbox->pushStateChange(self::createEncodedChange('light.a', '4', '5'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', '2'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', '3'));
 
-        self::assertSame(['light.a:3>4', 'light.a:4>5'], self::describeEdges(self::drain($outbox)[0]));
+        self::assertSame(['light.a:1>2', 'light.a:2>3'], self::describeEdges($worker, self::drain($outbox)[0]));
+
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', '4'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', '5'));
+
+        self::assertSame(['light.a:3>4', 'light.a:4>5'], self::describeEdges($worker, self::drain($outbox)[0]));
         self::assertSame(0, $outbox->coalescedStateChanges);
     }
 
     public function testOneEncodingIsSharedByEveryOutbox(): void
     {
-        $change = self::createEncodedChange('light.a', '1', '2');
+        $update = self::createEncodedUpdate('light.a', '2');
         $first = self::createOutbox();
         $second = self::createOutbox();
 
-        $first->pushStateChange($change);
-        $second->pushStateChange($change);
+        $first->pushStateUpdate($update);
+        $second->pushStateUpdate($update);
 
         $mapper = IpcCodec::createIpcWireMapper();
 
-        self::assertSame(self::assertStateChangeBatch(self::drain($first)[0])->changes->encodeToJson($mapper), self::assertStateChangeBatch(self::drain($second)[0])->changes->encodeToJson($mapper));
-        self::assertSame($change->encodeToJson($mapper), $change->encodeToJson(IpcCodec::createIpcWireMapper()));
+        self::assertSame(self::assertStateUpdateBatch(self::drain($first)[0])->updates->encodeToJson($mapper), self::assertStateUpdateBatch(self::drain($second)[0])->updates->encodeToJson($mapper));
+        self::assertSame($update->encodeToJson($mapper), $update->encodeToJson(IpcCodec::createIpcWireMapper()));
     }
 
     public function testTopicMessagesBeyondTheLimitDropTheOldest(): void
@@ -262,9 +274,9 @@ final class WorkerOutboxTest extends TestCase
 
         $outbox->enqueue(new TopicMessage(new TopicEvent('a', null, new AppId('demo'), Instant::fromEpochMicroseconds(0)), [new SubscriptionId('w0:0')]));
         $outbox->enqueue(new TopicMessage(new TopicEvent('b', null, new AppId('demo'), Instant::fromEpochMicroseconds(0)), []));
-        $outbox->pushStateChange(self::createEncodedChange('light.a', '1', '2'));
-        $outbox->pushStateChange(self::createEncodedChange('light.a', '2', '3'));
-        $outbox->pushStateChange(self::createEncodedChange('light.a', '3', '4'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', '2'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', '3'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', '4'));
 
         $status = $outbox->buildStatus();
 
@@ -278,35 +290,45 @@ final class WorkerOutboxTest extends TestCase
         return new WorkerOutbox(new OutboxLimits($eventBuffer, $stateBatch));
     }
 
-    private static function createEncodedChange(string $entityId, string $from, string $to): EncodedStateChange
+    private static function createEncodedUpdate(string $entityId, string $to): EncodedStateUpdate
     {
-        return new EncodedStateChange(new StateChange(new EntityId($entityId), new EntityState(new EntityId($entityId), $from), new EntityState(new EntityId($entityId), $to)));
+        return new EncodedStateUpdate(new StateUpdate(new EntityId($entityId), new EntityState(new EntityId($entityId), $to)));
     }
 
-    private static function assertStateChangeBatch(BrokerMessage $message): StateChangeBatch
+    /** @param array<string, string> $statesById */
+    private static function createWorkerCache(array $statesById): StateCacheSync
     {
-        self::assertInstanceOf(StateChangeBatch::class, $message);
+        $worker = new StateCacheSync(new StateCache(), new NullLogger());
+        $states = array_map(static fn(string $id, string $state): EntityState => new EntityState(new EntityId($id), $state), array_keys($statesById), $statesById);
+        $worker->seedFromSnapshot(EntityStateCollection::keyedByEntityId($states), 1);
+
+        return $worker;
+    }
+
+    private static function assertStateUpdateBatch(BrokerMessage $message): StateUpdateBatch
+    {
+        self::assertInstanceOf(StateUpdateBatch::class, $message);
 
         return $message;
     }
 
     /** @return list<string> */
-    private static function describeEdges(BrokerMessage $message): array
+    private static function describeEdges(StateCacheSync $worker, BrokerMessage $message): array
     {
         return array_map(
             static fn(StateChange $change): string => \sprintf('%s:%s>%s', $change->entityId, $change->from?->state, $change->to?->state),
-            self::decodeChanges($message),
+            self::applyOnWorker($worker, $message),
         );
     }
 
     /** @return list<StateChange> */
-    private static function decodeChanges(BrokerMessage $message): array
+    private static function applyOnWorker(StateCacheSync $worker, BrokerMessage $message): array
     {
         $codec = IpcCodec::createForWorkerBootstrap();
-        $decoded = $codec->decodeMessage($codec->encodeMessage(self::assertStateChangeBatch($message)));
-        self::assertInstanceOf(StateChangeBatch::class, $decoded);
+        $decoded = $codec->decodeMessage($codec->encodeMessage(self::assertStateUpdateBatch($message)));
+        self::assertInstanceOf(StateUpdateBatch::class, $decoded);
 
-        return $decoded->changes->collection->listValues();
+        return $worker->applyStateUpdates($decoded->updates->collection)->listValues();
     }
 
     /** @return list<BrokerMessage> */

@@ -12,6 +12,7 @@ use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\State\StateChangeOrigin;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Support\Json\JsonShape;
+use Stewart\Support\State\StateUpdate;
 
 final readonly class EventDecoder
 {
@@ -19,6 +20,16 @@ final readonly class EventDecoder
 
     /** @param array<string, mixed> $event */
     public function decodeStateChange(array $event): ?StateChange
+    {
+        $update = $this->decodeStateUpdate($event);
+        $data = $event['data'] ?? null;
+        $old = \is_array($data) ? $data['old_state'] ?? null : null;
+
+        return $update?->toStateChange(\is_array($old) ? $this->states->decodeEntityStateOrSkip($old) : null);
+    }
+
+    /** @param array<string, mixed> $event */
+    public function decodeStateUpdate(array $event): ?StateUpdate
     {
         $data = $event['data'] ?? null;
 
@@ -32,13 +43,11 @@ final readonly class EventDecoder
             return null;
         }
 
-        $old = $data['old_state'] ?? null;
         $new = $data['new_state'] ?? null;
         $context = $event['context'] ?? null;
 
-        return new StateChange(
+        return new StateUpdate(
             entityId: $entityId,
-            from: \is_array($old) ? $this->states->decodeEntityStateOrSkip($old) : null,
             to: \is_array($new) ? $this->states->decodeEntityStateOrSkip($new) : null,
             firedAt: $this->states->parseInstantOrWarn($event['time_fired'] ?? null, $entityId->value, 'time_fired'),
             context: \is_array($context) ? EventContext::fromArray($context) : null,

@@ -13,6 +13,10 @@ release could break; a release's "Upgrading" section says what to change.
 - The Home Assistant client asks for `coalesce_messages`, so a burst of events arrives in fewer WebSocket frames
 - The runtime image keeps compiled PHP in `/tmp` (`opcache.file_cache`), so workers and console commands after the
   first start without compiling the framework again; code is still revalidated when files change
+- A state change's `from` comes from the worker's state cache, so it is always what `getState()` returned just before
+  the change
+- Workers receive only the new state of each change, and the broker no longer decodes Home Assistant's `old_state`,
+  so each state change costs less CPU on the broker and on every worker
 
 ### Fixed
 

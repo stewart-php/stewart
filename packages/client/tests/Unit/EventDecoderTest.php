@@ -111,6 +111,24 @@ final class EventDecoderTest extends TestCase
         self::assertEquals($change->to?->lastChangedAt, $change->to?->lastUpdatedAt);
     }
 
+    public function testStateUpdateLeavesOldStateUndecoded(): void
+    {
+        $update = $this->decoder->decodeStateUpdate(self::createStateChangedWithBrokenOldState());
+
+        self::assertNotNull($update);
+        self::assertSame('light.hall', (string) $update->entityId);
+        self::assertSame('on', $update->to?->state);
+        self::assertTrue($this->logger->records->isEmpty());
+    }
+
+    public function testStateChangeStillDecodesOldState(): void
+    {
+        $change = $this->decoder->decodeStateChange(self::createStateChangedWithBrokenOldState());
+
+        self::assertSame('off', $change?->from?->state);
+        self::assertSame(['last_changed'], $this->logger->records->mapToList(static fn($record): mixed => $record->context['field'] ?? null));
+    }
+
     public function testMalformedTimestampWarnsOncePerField(): void
     {
         $broken = ['entity_id' => 'sensor.odd', 'state' => '1', 'last_changed' => 'yesterday', 'last_updated' => 'yesterday'];
@@ -137,5 +155,18 @@ final class EventDecoderTest extends TestCase
 
         self::assertNull($event?->firedAt);
         self::assertSame(['warning'], $this->logger->records->mapToList(static fn($record): string => $record->level));
+    }
+
+    /** @return array<string, mixed> */
+    private static function createStateChangedWithBrokenOldState(): array
+    {
+        return [
+            'event_type' => 'state_changed',
+            'data' => [
+                'entity_id' => 'light.hall',
+                'old_state' => ['entity_id' => 'light.hall', 'state' => 'off', 'last_changed' => 'yesterday'],
+                'new_state' => ['entity_id' => 'light.hall', 'state' => 'on'],
+            ],
+        ];
     }
 }

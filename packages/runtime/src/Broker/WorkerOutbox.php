@@ -7,24 +7,24 @@ namespace Stewart\Runtime\Broker;
 use Stewart\Runtime\Control\Protocol\Status\OutboxStatus;
 use Stewart\Runtime\Ipc\Message\BrokerMessage;
 use Stewart\Runtime\Ipc\Message\OutboxDelivery;
-use Stewart\Runtime\Ipc\Message\StateChangeBatch;
-use Stewart\Runtime\Ipc\Wire\Collection\EncodedStateChangeCollection;
-use Stewart\Runtime\Ipc\Wire\EncodedStateChange;
-use Stewart\Runtime\Ipc\Wire\StateChangesFragment;
+use Stewart\Runtime\Ipc\Message\StateUpdateBatch;
+use Stewart\Runtime\Ipc\Wire\Collection\EncodedStateUpdateCollection;
+use Stewart\Runtime\Ipc\Wire\EncodedStateUpdate;
+use Stewart\Runtime\Ipc\Wire\StateUpdatesFragment;
 
 final class WorkerOutbox
 {
-    /** @var array<int, BrokerMessage|EncodedStateChange> */
+    /** @var array<int, BrokerMessage|EncodedStateUpdate> */
     private array $queue = [];
 
     private int $nextSequence = 0;
 
-    // Per entity: the first queued change and one merged tail; a segment boundary resets both.
+    // Per entity: the first queued update and one merged tail; a segment boundary resets both.
     /** @var array<string, int> */
-    private array $firstStateChanges = [];
+    private array $firstStateUpdates = [];
 
     /** @var array<string, int> */
-    private array $lastStateChanges = [];
+    private array $lastStateUpdates = [];
 
     /** @var array<class-string<BrokerMessage>, int> */
     private array $latestOnlySequences = [];
@@ -52,60 +52,54 @@ final class WorkerOutbox
         };
     }
 
-    public function pushStateChange(EncodedStateChange $change): void
+    public function pushStateUpdate(EncodedStateUpdate $update): void
     {
-        $entityId = $change->change->entityId->value;
+        $entityId = $update->update->entityId->value;
 
-        if (!isset($this->firstStateChanges[$entityId])) {
-            $this->firstStateChanges[$entityId] = $this->appendToQueue($change);
-
-            return;
-        }
-
-        $lastSequence = $this->lastStateChanges[$entityId] ?? null;
-        $last = $lastSequence === null ? null : $this->queue[$lastSequence];
-
-        if ($lastSequence === null || !$last instanceof EncodedStateChange) {
-            $this->lastStateChanges[$entityId] = $this->appendToQueue($change);
+        if (!isset($this->firstStateUpdates[$entityId])) {
+            $this->firstStateUpdates[$entityId] = $this->appendToQueue($update);
 
             return;
         }
 
-        // Re-appended at the end, so the merged change never overtakes a later event.
-        unset($this->queue[$lastSequence]);
+        $lastSequence = $this->lastStateUpdates[$entityId] ?? null;
 
-        $this->lastStateChanges[$entityId] = $this->appendToQueue(new EncodedStateChange($change->change->withFrom($last->change->from)));
+        // Re-appended at the end, so the merged update never overtakes a later event.
+        if ($lastSequence !== null) {
+            unset($this->queue[$lastSequence]);
+            ++$this->coalescedStateChanges;
+        }
 
-        ++$this->coalescedStateChanges;
+        $this->lastStateUpdates[$entityId] = $this->appendToQueue($update);
     }
 
     public function takeNext(): ?BrokerMessage
     {
         $entry = $this->shiftEntry();
 
-        if (!$entry instanceof EncodedStateChange) {
+        if (!$entry instanceof EncodedStateUpdate) {
             return $entry;
         }
 
         $batch = [$entry];
 
-        while (\count($batch) < $this->limits->stateBatch && $this->headIsStateChange()) {
+        while (\count($batch) < $this->limits->stateBatch && $this->headIsStateUpdate()) {
             $next = $this->shiftEntry();
-            \assert($next instanceof EncodedStateChange);
+            \assert($next instanceof EncodedStateUpdate);
             $batch[] = $next;
         }
 
         ++$this->batchesSent;
         $this->largestBatch = max($this->largestBatch, \count($batch));
 
-        return new StateChangeBatch(StateChangesFragment::fromEncodedChanges(EncodedStateChangeCollection::fromList($batch)));
+        return new StateUpdateBatch(StateUpdatesFragment::fromEncodedUpdates(EncodedStateUpdateCollection::fromList($batch)));
     }
 
     public function clear(): void
     {
         $this->queue = [];
-        $this->firstStateChanges = [];
-        $this->lastStateChanges = [];
+        $this->firstStateUpdates = [];
+        $this->lastStateUpdates = [];
         $this->droppable = [];
         $this->latestOnlySequences = [];
     }
@@ -121,7 +115,7 @@ final class WorkerOutbox
         );
     }
 
-    private function shiftEntry(): BrokerMessage|EncodedStateChange|null
+    private function shiftEntry(): BrokerMessage|EncodedStateUpdate|null
     {
         $sequence = array_key_first($this->queue);
 
@@ -132,8 +126,8 @@ final class WorkerOutbox
         $entry = $this->queue[$sequence];
         unset($this->queue[$sequence]);
 
-        if ($entry instanceof EncodedStateChange) {
-            $this->forgetStateChange($entry->change->entityId->value, $sequence);
+        if ($entry instanceof EncodedStateUpdate) {
+            $this->forgetStateUpdate($entry->update->entityId->value, $sequence);
 
             return $entry;
         }
@@ -147,25 +141,25 @@ final class WorkerOutbox
         return $entry;
     }
 
-    private function forgetStateChange(string $entityId, int $sequence): void
+    private function forgetStateUpdate(string $entityId, int $sequence): void
     {
-        if (($this->firstStateChanges[$entityId] ?? null) !== $sequence) {
+        if (($this->firstStateUpdates[$entityId] ?? null) !== $sequence) {
             return;
         }
 
-        unset($this->firstStateChanges[$entityId]);
+        unset($this->firstStateUpdates[$entityId]);
 
-        if (isset($this->lastStateChanges[$entityId])) {
-            $this->firstStateChanges[$entityId] = $this->lastStateChanges[$entityId];
-            unset($this->lastStateChanges[$entityId]);
+        if (isset($this->lastStateUpdates[$entityId])) {
+            $this->firstStateUpdates[$entityId] = $this->lastStateUpdates[$entityId];
+            unset($this->lastStateUpdates[$entityId]);
         }
     }
 
-    private function headIsStateChange(): bool
+    private function headIsStateUpdate(): bool
     {
         $sequence = array_key_first($this->queue);
 
-        return $sequence !== null && $this->queue[$sequence] instanceof EncodedStateChange;
+        return $sequence !== null && $this->queue[$sequence] instanceof EncodedStateUpdate;
     }
 
     private function pushDroppable(BrokerMessage $message): void
@@ -197,11 +191,11 @@ final class WorkerOutbox
     private function pushSegmentBoundary(BrokerMessage $message): void
     {
         $this->appendToQueue($message);
-        $this->firstStateChanges = [];
-        $this->lastStateChanges = [];
+        $this->firstStateUpdates = [];
+        $this->lastStateUpdates = [];
     }
 
-    private function appendToQueue(BrokerMessage|EncodedStateChange $entry): int
+    private function appendToQueue(BrokerMessage|EncodedStateUpdate $entry): int
     {
         $sequence = $this->nextSequence++;
         $this->queue[$sequence] = $entry;

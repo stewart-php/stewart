@@ -6,11 +6,11 @@ namespace Stewart\Runtime\Worker\Message;
 
 use Stewart\Runtime\Dispatch\LocalDispatcher;
 use Stewart\Runtime\Ipc\Message\BrokerMessage;
-use Stewart\Runtime\Ipc\Message\StateChangeBatch;
+use Stewart\Runtime\Ipc\Message\StateUpdateBatch;
 use Stewart\Runtime\Worker\StateCacheSync;
 
-/** @implements BrokerMessageHandler<StateChangeBatch> */
-final readonly class StateChangeBatchHandler implements BrokerMessageHandler
+/** @implements BrokerMessageHandler<StateUpdateBatch> */
+final readonly class StateUpdateBatchHandler implements BrokerMessageHandler
 {
     public function __construct(
         private StateCacheSync $stateCacheSync,
@@ -19,16 +19,12 @@ final readonly class StateChangeBatchHandler implements BrokerMessageHandler
 
     public function handledMessageClass(): string
     {
-        return StateChangeBatch::class;
+        return StateUpdateBatch::class;
     }
 
-    /** @param StateChangeBatch $message */
+    /** @param StateUpdateBatch $message */
     public function handle(BrokerMessage $message): void
     {
-        foreach ($message->changes->collection as $change) {
-            $this->stateCacheSync->applyStateChange($change);
-        }
-
-        $this->dispatcher->dispatchStateChanges($message->changes->collection);
+        $this->dispatcher->dispatchStateChanges($this->stateCacheSync->applyStateUpdates($message->updates->collection));
     }
 }

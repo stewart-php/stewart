@@ -28,8 +28,8 @@ message class that has no tag. `ProcessContext` still wraps each frame string in
 `serialize()` is a string, never an object graph.
 
 State is encoded once for every worker.
-`StateSnapshot`, `StateResynced` and `StateChangeBatch` hold `EntityStatesFragment` and
-`StateChangesFragment` fragments, which cache their JSON on the broker. The frame
+`StateSnapshot`, `StateResynced` and `StateUpdateBatch` hold `EntityStatesFragment` and
+`StateUpdatesFragment` fragments, which cache their JSON on the broker. The frame
 splices that JSON in unescaped. On the worker, the same classes hold the decoded
 lists.
 
@@ -85,7 +85,7 @@ Forty-one messages, closed by the `BrokerMessage`, `CorrelatedReply` and
 | `StateSnapshot` | Whole-world state, **encoded once** and shared by every worker (`EntityStatesFragment`). Also means "you are new: initialize your apps". |
 | `HaConnectionLost` | Home Assistant is gone, with the moment and the reason. Service calls now fail in the worker, and apps hear `ConnectionLost`. Also sent right after `StateSnapshot` to a worker bootstrapped during an outage. |
 | `StateResynced` | The rebuilt snapshot after a reconnect. The worker diffs it against its state cache, replays the differences as reconstructed state changes, then tells apps `ConnectionRestored`. Nothing is initialized again. |
-| `StateChangeBatch` | One or more state changes, in order, each encoded once (`StateChangesFragment`). Sent to every live worker; each matches them against its own subscriptions. |
+| `StateUpdateBatch` | One or more state updates, in order, each encoded once (`StateUpdatesFragment`). An update carries the new state, not the previous one. Sent to every live worker; each rebuilds the change from its cache and matches it against its own subscriptions. |
 | `EventFired` | Any other Home Assistant event — `zha_event`, a custom one — plus the subscription IDs that matched. Sent only to workers that asked. |
 | `ServiceCallResult` | Answer to a `ServiceCallRequest`, with the call's `EventContext` (`dry-run:…` under dry run). Always sent, success or not. |
 | `EventFireResult` | Answer to an `EventFireRequest`, with the fired event's `EventContext`. |
@@ -214,10 +214,15 @@ Two `amphp/parallel` details that bite:
 
 ![State event](diagrams/07-state-event.svg)
 
-The broker sends every state change to every live worker, which applies it to
-its state cache and then matches it against its own subscriptions. There is no
-routing decision on the broker and no window in which a subscription exists in
-the worker but not yet in the broker.
+The broker sends every state change to every live worker as a `StateUpdate`: the
+new state without the previous one. The worker takes `from` from its state
+cache, applies the update and then matches the change against its own
+subscriptions. There is no routing decision on the broker and no window in which
+a subscription exists in the worker but not yet in the broker.
+
+A worker's snapshot is queued before any update, and every update reaches every
+live worker in order. So the cached state is the one Home Assistant replaced, and
+`from` is what `getState()` returned just before the change.
 
 Matching is memoised per entity ID in a `SelectorIndex`, the same one the
 broker uses for events and topics. Entity IDs are a bounded, slow-changing set,
@@ -356,12 +361,12 @@ but never loses the latest.
 A queued `RegistrySnapshot` is replaced by a newer one, like an unanswered
 probe, so a slow worker gets only the latest registry.
 
-Coalescing keeps the first queued change of an entity where it is and merges
-every later one into a single change at the tail, from the state the first one
-reached to the latest. on → off → on therefore still arrives as two edges, and
-the merged change never overtakes an event queued before it. Consecutive queued
-state changes leave as one `StateChangeBatch` of at most `worker_state_batch`
-(256 by default).
+Coalescing keeps the first queued update of an entity where it is and replaces
+every later one with the latest, at the tail. The worker applies the first one
+before the tail, so the tail's `from` is the state the first one reached. on →
+off → on therefore still arrives as two edges, and the merged update never
+overtakes an event queued before it. Consecutive queued state updates leave as
+one `StateUpdateBatch` of at most `worker_state_batch` (256 by default).
 
 Inside the worker, each subscription queues up to `subscription_buffer` events
 (100 by default) while its handler is busy. When a state-change queue is full, it
@@ -369,7 +374,7 @@ first drops the oldest change that a newer change of the same entity supersedes,
 and the newer one starts from the dropped one's state. A quiet entity's only
 change therefore survives a chatty neighbour. If no entity has two queued
 changes, and for every other kind of event, the oldest is dropped. A burst of
-state changes, one `StateChangeBatch` or a resync, is queued whole: older queued
+state changes, one `StateUpdateBatch` or a resync, is queued whole: older queued
 events make room for it. Drops are counted per app and logged as a sampled
 warning.
 

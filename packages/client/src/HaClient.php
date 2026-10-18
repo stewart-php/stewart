@@ -83,6 +83,7 @@ use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Support\Json\JsonShape;
 use Stewart\Support\State\IndexedRegistry;
+use Stewart\Support\State\StateUpdate;
 use Stewart\Support\Time\Deadlines;
 use Stewart\Support\Wire\EventPayload;
 
@@ -339,25 +340,18 @@ final class HaClient
      */
     public function subscribeAllEvents(Closure $onStateChange, Closure $onEvent): int
     {
-        $decoder = $this->decoder;
+        return $this->subscribeEventsWithStateDecoder($this->decoder->decodeStateChange(...), $onStateChange, $onEvent);
+    }
 
-        return $this->subscribe(new SubscribeEvents(), static function (array $event) use ($decoder, $onStateChange, $onEvent): void {
-            if (($event['event_type'] ?? null) === HaEvent::STATE_CHANGED) {
-                $change = $decoder->decodeStateChange($event);
-
-                if ($change !== null) {
-                    $onStateChange($change);
-                }
-
-                return;
-            }
-
-            $decoded = $decoder->decodeEvent($event);
-
-            if ($decoded !== null) {
-                $onEvent($decoded);
-            }
-        });
+    /**
+     * @internal
+     * @param Closure(StateUpdate): void $onStateUpdate
+     * @param Closure(HaEvent): void $onEvent
+     * @throws HaClientException
+     */
+    public function subscribeStateUpdatesAndEvents(Closure $onStateUpdate, Closure $onEvent): int
+    {
+        return $this->subscribeEventsWithStateDecoder($this->decoder->decodeStateUpdate(...), $onStateUpdate, $onEvent);
     }
 
     /**
@@ -476,6 +470,36 @@ final class HaClient
     public function unsubscribeEvents(int $subscriptionId): void
     {
         $this->connection->unsubscribeEvents($subscriptionId);
+    }
+
+    /**
+     * @template T of object
+     * @param Closure(array<string, mixed>): ?T $decodeState
+     * @param Closure(T): void $onState
+     * @param Closure(HaEvent): void $onEvent
+     * @throws HaClientException
+     */
+    private function subscribeEventsWithStateDecoder(Closure $decodeState, Closure $onState, Closure $onEvent): int
+    {
+        $decoder = $this->decoder;
+
+        return $this->subscribe(new SubscribeEvents(), static function (array $event) use ($decoder, $decodeState, $onState, $onEvent): void {
+            if (($event['event_type'] ?? null) === HaEvent::STATE_CHANGED) {
+                $state = $decodeState($event);
+
+                if ($state !== null) {
+                    $onState($state);
+                }
+
+                return;
+            }
+
+            $decoded = $decoder->decodeEvent($event);
+
+            if ($decoded !== null) {
+                $onEvent($decoded);
+            }
+        });
     }
 
     /**

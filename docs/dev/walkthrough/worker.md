@@ -88,9 +88,10 @@ subscription's own queue rather than running the handler on the timer's fiber.
 
 `Dispatch/LocalDispatcher::register()` gives the subscription an ID (`<workerPrefix>:<n>`) and a `SubscriptionQueue`.
 State-change selectors are indexed locally (`SelectorIndex`, `EntityFilterIndex`); only broker-routed kinds (events,
-topics, MQTT, triggers) send a `Subscribe` or `SubscribeTrigger` through `BrokerSubscriptions`. A `StateChangeBatch`
-updates the cache first, then is matched locally; events arrive with the broker's matched subscription IDs. A refused
-`SubscriptionAck` cancels the subscription.
+topics, MQTT, triggers) send a `Subscribe` or `SubscribeTrigger` through `BrokerSubscriptions`.
+`StateCacheSync::applyStateUpdates()` turns a `StateUpdateBatch` into changes, reading each `from` from the cache before
+it applies the update; the changes are then matched locally. Events arrive with the broker's matched subscription IDs. A
+refused `SubscriptionAck` cancels the subscription.
 
 `Dispatch/SubscriptionQueue` is bounded by `subscription_buffer`, dropping superseded state changes first, then the
 oldest. One drain fiber per queue runs the handlers, so one subscription handles its events one at a time while

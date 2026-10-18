@@ -17,6 +17,8 @@ use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Worker\StateCacheSync;
 use Stewart\Support\State\Collection\StateChangeCollection;
+use Stewart\Support\State\Collection\StateUpdateCollection;
+use Stewart\Support\State\StateUpdate;
 use Stewart\Testing\Logging\RecordingLogger;
 
 #[CoversClass(StateCacheSync::class)]
@@ -126,6 +128,49 @@ final class StateCacheSyncTest extends TestCase
         self::assertEquals(self::createInstantAt(9), $removed->firedAt);
     }
 
+    public function testAppliedUpdateStartsFromTheCachedState(): void
+    {
+        $this->sync->seedFromSnapshot(self::createStates('off'), 1);
+
+        $applied = $this->sync->applyStateUpdates(StateUpdateCollection::fromList([self::createUpdate('light.hall', 'on')]));
+
+        self::assertSame(['light.hall:off>on'], self::describeEdges($applied));
+        self::assertSame('on', $this->stateCache->find(new EntityId('light.hall'))?->state);
+    }
+
+    public function testUpdateOfAnUncachedEntityIsNew(): void
+    {
+        $this->sync->seedFromSnapshot(self::createStates('off'), 1);
+
+        $applied = $this->sync->applyStateUpdates(StateUpdateCollection::fromList([self::createUpdate('light.porch', 'on')]));
+
+        self::assertTrue($applied->getFirst()?->isNew());
+        self::assertSame(2, $this->sync->countEntities());
+    }
+
+    public function testRemovalStartsFromTheCachedState(): void
+    {
+        $this->sync->seedFromSnapshot(self::createStates('off'), 1);
+
+        $applied = $this->sync->applyStateUpdates(StateUpdateCollection::fromList([new StateUpdate(new EntityId('light.hall'), null)]));
+
+        self::assertSame(['light.hall:off>'], self::describeEdges($applied));
+        self::assertTrue($applied->getFirst()?->isRemoved());
+        self::assertSame(0, $this->sync->countEntities());
+    }
+
+    public function testUpdatesOfOneEntityInABatchChain(): void
+    {
+        $this->sync->seedFromSnapshot(self::createStates('off'), 1);
+
+        $applied = $this->sync->applyStateUpdates(StateUpdateCollection::fromList([
+            self::createUpdate('light.hall', 'on'),
+            self::createUpdate('light.hall', 'dim'),
+        ]));
+
+        self::assertSame(['light.hall:off>on', 'light.hall:on>dim'], self::describeEdges($applied));
+    }
+
     /**
      * @param list<EntityState> $before
      * @param list<EntityState> $after
@@ -143,6 +188,11 @@ final class StateCacheSyncTest extends TestCase
         return $changes->mapToList(
             static fn(StateChange $c): string => \sprintf('%s:%s>%s', $c->entityId->value, $c->from?->state, $c->to?->state),
         );
+    }
+
+    private static function createUpdate(string $entityId, string $to): StateUpdate
+    {
+        return new StateUpdate(new EntityId($entityId), new EntityState(new EntityId($entityId), $to));
     }
 
     private static function createState(string $entityId, string $state, int $updatedSecond): EntityState

@@ -9,15 +9,15 @@ participant "Worker 1" as w1 $worker
 participant "App\n(in worker 0)" as app $usercode
 
 ha -> b : event state_changed\n{ entity_id, old_state, new_state }
-b -> b : StateCache.applyChange()
+b -> b : decode new_state only\nStateCache.applyUpdate()
 
 par fan-out to every worker
-    b -> w0 : **StateChangeBatch** { changes }
-    b -> w1 : **StateChangeBatch** { changes }
+    b -> w0 : **StateUpdateBatch** { updates }\nnew state only
+    b -> w1 : **StateUpdateBatch** { updates }\nnew state only
 end
 
-w0 -> w0 : stateCache.applyChange()
-w1 -> w1 : stateCache.applyChange()
+w0 -> w0 : from = stateCache.find()\nstateCache.applyUpdate()
+w1 -> w1 : from = stateCache.find()\nstateCache.applyUpdate()
 w0 -> w0 : match subscriptions\n**memoised** per entity id
 note over w1
   Worker 1 still updates its state cache even

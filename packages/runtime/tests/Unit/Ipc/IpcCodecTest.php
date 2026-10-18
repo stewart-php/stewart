@@ -13,7 +13,6 @@ use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
-use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\Exception\TransportError;
@@ -21,16 +20,16 @@ use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\Publish;
 use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\Shutdown;
-use Stewart\Runtime\Ipc\Message\StateChangeBatch;
 use Stewart\Runtime\Ipc\Message\StateSnapshot;
+use Stewart\Runtime\Ipc\Message\StateUpdateBatch;
 use Stewart\Runtime\Ipc\Message\Unsubscribe;
 use Stewart\Runtime\Ipc\StoreSettings;
-use Stewart\Runtime\Ipc\Wire\Collection\EncodedStateChangeCollection;
-use Stewart\Runtime\Ipc\Wire\EncodedStateChange;
+use Stewart\Runtime\Ipc\Wire\Collection\EncodedStateUpdateCollection;
+use Stewart\Runtime\Ipc\Wire\EncodedStateUpdate;
 use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
 use Stewart\Runtime\Ipc\Wire\IpcCodec;
 use Stewart\Runtime\Ipc\Wire\IpcMessageCatalog;
-use Stewart\Runtime\Ipc\Wire\StateChangesFragment;
+use Stewart\Runtime\Ipc\Wire\StateUpdatesFragment;
 use Stewart\Runtime\Json\ClassShapeReader;
 use Stewart\Runtime\Json\Collection\ValueConverterCollection;
 use Stewart\Runtime\Json\WireMapper;
@@ -40,6 +39,7 @@ use Stewart\Runtime\Model\SubscriptionId;
 use Stewart\Runtime\Tests\Fixtures\Ipc\IpcMessageSamples;
 use Stewart\Runtime\Tests\Fixtures\Wire\BrokenDurationConverter;
 use Stewart\Support\Exception\JsonShapeException;
+use Stewart\Support\State\StateUpdate;
 use Stewart\Testing\Exception\AssertsReason;
 
 #[CoversNamespace('Stewart\Runtime\Ipc\Wire')]
@@ -63,10 +63,10 @@ final class IpcCodecTest extends TestCase
     {
         $decoded = $this->codecs->decodeMessage($this->codecs->encodeMessage($sent));
 
-        if ($received instanceof StateChangeBatch) {
-            // A decoded batch keeps plain changes, an outgoing one their encodings; only the changes compare.
-            self::assertInstanceOf(StateChangeBatch::class, $decoded);
-            self::assertEquals($received->changes->collection, $decoded->changes->collection);
+        if ($received instanceof StateUpdateBatch) {
+            // A decoded batch keeps plain updates, an outgoing one their encodings; only the updates compare.
+            self::assertInstanceOf(StateUpdateBatch::class, $decoded);
+            self::assertEquals($received->updates->collection, $decoded->updates->collection);
 
             return;
         }
@@ -153,13 +153,13 @@ final class IpcCodecTest extends TestCase
         self::assertEquals($sent, $this->codecs->decodeMessage($this->codecs->encodeMessage($sent)));
     }
 
-    public function testStateChangeIsEncodedOnceForEveryBatch(): void
+    public function testStateUpdateIsEncodedOnceForEveryBatch(): void
     {
-        $change = new EncodedStateChange(new StateChange(new EntityId('light.hall'), null, new EntityState(new EntityId('light.hall'), 'on')));
+        $update = new EncodedStateUpdate(new StateUpdate(new EntityId('light.hall'), new EntityState(new EntityId('light.hall'), 'on')));
         $mapper = IpcCodec::createIpcWireMapper();
 
-        self::assertSame($change->encodeToJson($mapper), $change->encodeToJson(IpcCodec::createIpcWireMapper()));
-        self::assertSame('[' . $change->encodeToJson($mapper) . ']', StateChangesFragment::fromEncodedChanges(EncodedStateChangeCollection::fromList([$change]))->encodeToJson($mapper));
+        self::assertSame($update->encodeToJson($mapper), $update->encodeToJson(IpcCodec::createIpcWireMapper()));
+        self::assertSame('[' . $update->encodeToJson($mapper) . ']', StateUpdatesFragment::fromEncodedUpdates(EncodedStateUpdateCollection::fromList([$update]))->encodeToJson($mapper));
     }
 
     public function testNumericAttributeKeysComeBackAsStrings(): void
@@ -180,7 +180,7 @@ final class IpcCodecTest extends TestCase
 
     public function testMalformedStateNamesItsPath(): void
     {
-        $frame = '{"t":"state_changes","m":{"changes":[{"entity_id":"a.b","from":null,"to":{"entity_id":"a.b","state":"on","attributes":{},"last_changed_at_us":"now","last_updated_at_us":null,"context":null},"fired_at_us":null,"context":null,"origin":"live"}]}}';
+        $frame = '{"t":"state_updates","m":{"updates":[{"entity_id":"a.b","to":{"entity_id":"a.b","state":"on","attributes":{},"last_changed_at_us":"now","last_updated_at_us":null,"context":null},"fired_at_us":null,"context":null,"origin":"live"}]}}';
 
         try {
             $this->codecs->decodeMessage($frame);
@@ -188,7 +188,7 @@ final class IpcCodecTest extends TestCase
         } catch (TransportException $e) {
             $previous = $e->getPrevious();
             self::assertInstanceOf(JsonShapeException::class, $previous);
-            self::assertSame('changes.0.to.last_changed_at_us', $previous->context['key'] ?? null);
+            self::assertSame('updates.0.to.last_changed_at_us', $previous->context['key'] ?? null);
         }
     }
 

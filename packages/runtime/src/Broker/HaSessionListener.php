@@ -5,18 +5,18 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker;
 
 use Stewart\Contracts\Event\HaEvent;
-use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Runtime\Broker\Exposure\ExposedEntityCommand;
 use Stewart\Runtime\Broker\Exposure\ExposedEntitySync;
+use Stewart\Support\State\StateUpdate;
 use Stewart\Support\Wire\TriggerSpec;
 use Throwable;
 
 interface HaSessionListener
 {
-    public function stateChanged(StateChange $change): void;
+    public function stateUpdated(StateUpdate $update): void;
 
     public function eventFired(HaEvent $event): void;
 

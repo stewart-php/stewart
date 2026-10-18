@@ -21,10 +21,10 @@ use Stewart\Client\HaClient;
 use Stewart\Client\Registry\RegistryDecoder;
 use Stewart\Client\State\EntityStateDecoder;
 use Stewart\Contracts\App\AppId;
+use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\SensorConfig;
-use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
@@ -44,6 +44,7 @@ use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Tests\Fixtures\Broker\RecordingSessionListener;
 use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
+use Stewart\Support\State\StateUpdate;
 use Stewart\Support\Wire\TriggerSpec;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Logging\RecordingLogger;
@@ -164,7 +165,7 @@ final class WebsocketHaSessionTest extends TestCase
         self::assertSame('kitchen', $session->snapshotRegistry()->registry->registry->findEntityPlacement(self::HALL)->areaId?->value);
     }
 
-    public function testChangesDuringSeedAreAppliedSilently(): void
+    public function testUpdatesDuringSeedAreAppliedSilently(): void
     {
         $socket = self::createHaSocket(['hall' => 'off', 'porch' => 'off'], during: [
             self::createStateChangedFrame(self::HALL, 'on'),
@@ -179,21 +180,22 @@ final class WebsocketHaSessionTest extends TestCase
             $states[$state->entityId->value] = $state->state;
         }
 
-        self::assertSame([self::HALL => 'dimmed', self::PORCH => 'off'], $states, 'The latest buffered change per entity wins.');
+        self::assertSame([self::HALL => 'dimmed', self::PORCH => 'off'], $states, 'The latest buffered update per entity wins.');
         self::assertSame(1, $session->snapshotStateCache()->revision);
-        self::assertSame([], $this->listener->changes);
+        self::assertSame([], $this->listener->updates);
         self::assertSame([], $this->listener->events, 'An event during establish would reach a handler before the state cache is rebuilt.');
     }
 
-    public function testChangeAfterSeedBumpsRevision(): void
+    public function testUpdateAfterSeedReachesTheListenerAndBumpsRevision(): void
     {
         $socket = self::createHaSocket(['hall' => 'off']);
         $session = $this->open($socket);
 
         $socket->queueFrame(self::createStateChangedFrame(self::HALL, 'on'));
-        EventLoopTicks::settleUntil(fn(): bool => \count($this->listener->changes) === 1);
+        EventLoopTicks::settleUntil(fn(): bool => \count($this->listener->updates) === 1);
 
-        self::assertSame([self::HALL], array_map(static fn(StateChange $change): string => $change->entityId->value, $this->listener->changes));
+        self::assertSame([self::HALL . ':on'], array_map(static fn(StateUpdate $update): string => $update->entityId->value . ':' . $update->to?->state, $this->listener->updates));
+        self::assertSame('on', $session->snapshotStateCache()->states->collection->find(new EntityId(self::HALL))?->state);
         self::assertSame(2, $session->snapshotStateCache()->revision);
     }
 
@@ -278,7 +280,7 @@ final class WebsocketHaSessionTest extends TestCase
         $socket->queueFrame(self::createStateChangedFrame(self::HALL, 'on'));
         EventLoopTicks::settle();
 
-        self::assertSame([], $this->listener->changes);
+        self::assertSame([], $this->listener->updates);
         self::assertSame([], $this->listener->lost);
     }
 

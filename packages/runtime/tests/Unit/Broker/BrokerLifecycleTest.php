@@ -19,7 +19,6 @@ use Stewart\Contracts\Exception\ServiceCallError;
 use Stewart\Contracts\Exception\StoreException;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\EntityState;
-use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\App\AppDefinition;
@@ -67,9 +66,9 @@ use Stewart\Runtime\Ipc\Message\RegistrySnapshot;
 use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
-use Stewart\Runtime\Ipc\Message\StateChangeBatch;
 use Stewart\Runtime\Ipc\Message\StateResynced;
 use Stewart\Runtime\Ipc\Message\StateSnapshot;
+use Stewart\Runtime\Ipc\Message\StateUpdateBatch;
 use Stewart\Runtime\Ipc\Message\Subscribe;
 use Stewart\Runtime\Ipc\Message\SubscriptionAck;
 use Stewart\Runtime\Ipc\Wire\IpcCodec;
@@ -101,6 +100,7 @@ use Stewart\Runtime\Tests\Fixtures\Generated\Code\Manifest;
 use Stewart\Store\GuardedStoreBackend;
 use Stewart\Store\StoreDsn;
 use Stewart\Store\StoreTiming;
+use Stewart\Support\State\StateUpdate;
 use Stewart\Support\Time\RevoltTimers;
 use Stewart\Testing\Async\Latch;
 use Stewart\Testing\Exception\AssertsReason;
@@ -261,19 +261,20 @@ final class BrokerLifecycleTest extends TestCase
     {
         $this->startBroker();
 
-        $change = new StateChange(new EntityId('light.hall'), null, new EntityState(new EntityId('light.hall'), 'on'));
-        $this->session->listener?->stateChanged($change);
-        EventLoopTicks::settleUntil(fn(): bool => $this->hasEachWorkerReceivedOne(StateChangeBatch::class));
+        $hall = new EntityId('light.hall');
+        $update = new StateUpdate($hall, new EntityState($hall, 'on'));
+        $this->session->listener?->stateUpdated($update);
+        EventLoopTicks::settleUntil(fn(): bool => $this->hasEachWorkerReceivedOne(StateUpdateBatch::class));
 
         foreach ([0, 1] as $workerId) {
-            $batches = $this->listSentToWorker($workerId, StateChangeBatch::class);
+            $batches = $this->listSentToWorker($workerId, StateUpdateBatch::class);
 
             self::assertCount(1, $batches);
-            self::assertCount(1, $batches[0]->changes->collection);
+            self::assertCount(1, $batches[0]->updates->collection);
             $codec = IpcCodec::createForWorkerBootstrap();
             $decoded = $codec->decodeMessage($codec->encodeMessage($batches[0]));
-            self::assertInstanceOf(StateChangeBatch::class, $decoded);
-            self::assertEquals([$change], $decoded->changes->collection->listValues());
+            self::assertInstanceOf(StateUpdateBatch::class, $decoded);
+            self::assertEquals([$update], $decoded->updates->collection->listValues());
         }
     }
 

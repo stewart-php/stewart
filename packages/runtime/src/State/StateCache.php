@@ -9,7 +9,7 @@ use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
-use Stewart\Contracts\State\StateChange;
+use Stewart\Support\State\StateUpdate;
 
 final class StateCache
 {
@@ -31,12 +31,12 @@ final class StateCache
         $this->collection = null;
     }
 
-    public function applyChange(StateChange $change): void
+    public function applyUpdate(StateUpdate $update): void
     {
-        if ($change->to === null) {
-            unset($this->statesById[$change->entityId->value]);
+        if ($update->to === null) {
+            unset($this->statesById[$update->entityId->value]);
         } else {
-            $this->statesById[$change->entityId->value] = $change->to;
+            $this->statesById[$update->entityId->value] = $update->to;
         }
 
         $this->collection = null;
