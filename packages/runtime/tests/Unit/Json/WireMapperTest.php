@@ -25,6 +25,7 @@ use Stewart\Runtime\Tests\Fixtures\Wire\Everything;
 use Stewart\Runtime\Tests\Fixtures\Wire\HiddenConstructor;
 use Stewart\Runtime\Tests\Fixtures\Wire\HoldsInterface;
 use Stewart\Runtime\Tests\Fixtures\Wire\Label;
+use Stewart\Runtime\Tests\Fixtures\Wire\LabelConverter;
 use Stewart\Runtime\Tests\Fixtures\Wire\NarrowUnion;
 use Stewart\Runtime\Tests\Fixtures\Wire\NestsFragment;
 use Stewart\Runtime\Tests\Fixtures\Wire\NotPromoted;
@@ -216,6 +217,26 @@ final class WireMapperTest extends TestCase
             $this->mapper->shapes->describeValueShape(Label::class, 'First::$label'),
             $this->mapper->shapes->describeValueShape(Label::class, 'Second::$label'),
         );
+    }
+
+    public function testListShapeIsDescribedOncePerElementType(): void
+    {
+        self::assertSame(
+            $this->mapper->shapes->describeListShape(Label::class, 'First::$labels'),
+            $this->mapper->shapes->describeListShape(Label::class, 'Second::$labels'),
+        );
+    }
+
+    public function testConverterHandlesItsClassAtTheTopLevel(): void
+    {
+        $mapper = new WireMapper(new ClassShapeReader(ValueConverterCollection::keyedByHandledClass([new LabelConverter()])));
+        $label = new Label('hall');
+
+        self::assertSame('{"t":"hall"}', $mapper->encodeObject($label));
+        self::assertSame('[{"t":"hall"}]', $mapper->encodeObjectList([$label]));
+        self::assertSame(['t' => 'hall'], $mapper->normalizeObject($label));
+        self::assertEquals($label, $mapper->decodeObject(Label::class, ['t' => 'hall']));
+        self::assertEquals([$label], $mapper->decodeObjectList(Label::class, [['t' => 'hall']], 'labels'));
     }
 
     public function testFailedDescriptionNamesEveryCaller(): void

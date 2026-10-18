@@ -39,6 +39,9 @@ final class ClassShapeReader
     /** @var array<string, ValueShape> */
     private array $valueShapes = [];
 
+    /** @var array<string, ValueShape> */
+    private array $listShapes = [];
+
     public function __construct(private readonly ValueConverterCollection $converters) {}
 
     /** @param class-string $class */
@@ -120,12 +123,22 @@ final class ClassShapeReader
 
         return $listOf === null
             ? new ValueShape(ValueKind::Map)
-            : new ValueShape(ValueKind::List, element: $this->describeValueShape($listOf->newInstance()->type, $where));
+            : $this->describeListShape($listOf->newInstance()->type, $where);
     }
 
     public function describeValueShape(string $type, string $where): ValueShape
     {
         return $this->valueShapes[$type] ??= $this->buildValueShape($type, $where);
+    }
+
+    public function describeListShape(string $elementType, string $where): ValueShape
+    {
+        return $this->listShapes[$elementType] ??= new ValueShape(ValueKind::List, element: $this->describeValueShape($elementType, $where));
+    }
+
+    public function findConverterForClass(string $class): ?ValueConverter
+    {
+        return $this->converters->findForClass($class);
     }
 
     private function buildValueShape(string $type, string $where): ValueShape

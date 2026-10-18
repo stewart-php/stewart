@@ -21,6 +21,12 @@ final class WireMapper
     /** @throws JsonException|StewartException */
     public function encodeObject(object $dto): string
     {
+        $converter = $this->shapes->findConverterForClass($dto::class);
+
+        if ($converter !== null) {
+            return JsonEncoder::encodeToJson($converter->encodeValue($dto));
+        }
+
         $shape = $this->shapes->resolveClassShape($dto::class);
 
         if (!$shape->holdsFragment) {
@@ -48,13 +54,12 @@ final class WireMapper
         return JsonEncoder::encodeToJson(array_map($this->normalizeObject(...), $dtos));
     }
 
-    /**
-     * @return array<string, mixed>|stdClass
-     * @throws StewartException
-     */
-    public function normalizeObject(object $dto): array|stdClass
+    /** @throws StewartException */
+    public function normalizeObject(object $dto): mixed
     {
-        return $this->normalizeFields($this->shapes->resolveClassShape($dto::class), $dto);
+        $converter = $this->shapes->findConverterForClass($dto::class);
+
+        return $converter === null ? $this->normalizeFields($this->shapes->resolveClassShape($dto::class), $dto) : $converter->encodeValue($dto);
     }
 
     /**
@@ -65,6 +70,27 @@ final class WireMapper
      * @throws StewartException
      */
     public function decodeObject(string $class, array $data, string $path = ''): object
+    {
+        $converter = $this->shapes->findConverterForClass($class);
+
+        if ($converter === null) {
+            return $this->decodeFields($class, $data, $path);
+        }
+
+        $decoded = $converter->decodeValue($data, $path);
+        \assert($decoded instanceof $class);
+
+        return $decoded;
+    }
+
+    /**
+     * @template T of object
+     * @param class-string<T> $class
+     * @param array<array-key, mixed> $data
+     * @return T
+     * @throws StewartException
+     */
+    private function decodeFields(string $class, array $data, string $path): object
     {
         $arguments = [];
 
@@ -94,8 +120,7 @@ final class WireMapper
      */
     public function decodeObjectList(string $class, mixed $data, string $path): array
     {
-        $element = $this->shapes->describeValueShape($class, $class);
-        $items = $this->decodeValue(new ValueShape(ValueKind::List, element: $element), $data, $path);
+        $items = $this->decodeValue($this->shapes->describeListShape($class, $class), $data, $path);
         \assert(\is_array($items) && array_is_list($items));
 
         /** @var list<T> $items */
@@ -222,7 +247,7 @@ final class WireMapper
         /** @var class-string $class */
         $class = $shape->type;
 
-        return \is_array($value) ? $this->decodeObject($class, $value, $path) : throw $this->createWrongTypeException($shape, $path, $value);
+        return \is_array($value) ? $this->decodeFields($class, $value, $path) : throw $this->createWrongTypeException($shape, $path, $value);
     }
 
     /** @throws StewartException */
@@ -242,7 +267,7 @@ final class WireMapper
             throw JsonShapeException::unexpectedValue($path . '.' . $key, 'one of ' . implode(', ', array_keys($shape->variants->variants)), $name);
         }
 
-        return $this->decodeObject($class, $value, $path);
+        return $this->decodeFields($class, $value, $path);
     }
 
     /** @throws StewartException */
