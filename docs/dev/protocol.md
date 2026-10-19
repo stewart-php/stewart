@@ -364,12 +364,14 @@ but never loses the latest.
 A queued `RegistrySnapshot` is replaced by a newer one, like an unanswered
 probe, so a slow worker gets only the latest registry.
 
-Coalescing keeps the first queued update of an entity where it is and replaces
-every later one with the latest, at the tail. The worker applies the first one
-before the tail, so the tail's `from` is the state the first one reached. on →
-off → on therefore still arrives as two edges, and the merged update never
-overtakes an event queued before it. Consecutive queued state updates leave as
-one `StateUpdateBatch` of at most `worker_state_batch` (256 by default).
+Consecutive queued state updates leave as one `StateUpdateBatch` of at most
+`worker_state_batch` (256 by default). Coalescing starts only once a full batch
+is queued, so a burst that fits in one batch reaches the worker step by step.
+It keeps the first queued update of an entity where it is and replaces every
+later one with the latest, at the tail. The worker applies the first one before
+the tail, so the tail's `from` is the state the first one reached. on → off → on
+therefore still arrives as two edges, and the merged update never overtakes an
+event queued before it.
 
 Inside the worker, each subscription queues up to `subscription_buffer` events
 (100 by default) while its handler is busy. When a state-change queue is full, it

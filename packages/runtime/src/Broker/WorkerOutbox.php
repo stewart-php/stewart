@@ -32,6 +32,8 @@ final class WorkerOutbox
     /** @var array<int, true> in queue order */
     private array $droppable = [];
 
+    private int $queuedStateUpdates = 0;
+
     public private(set) int $dropped = 0;
 
     public private(set) int $coalescedStateChanges = 0;
@@ -57,20 +59,21 @@ final class WorkerOutbox
         $entityId = $update->update->entityId->value;
 
         if (!isset($this->firstStateUpdates[$entityId])) {
-            $this->firstStateUpdates[$entityId] = $this->appendToQueue($update);
+            $this->firstStateUpdates[$entityId] = $this->appendStateUpdate($update);
 
             return;
         }
 
         $lastSequence = $this->lastStateUpdates[$entityId] ?? null;
 
-        // Re-appended at the end, so the merged update never overtakes a later event.
-        if ($lastSequence !== null) {
+        // Only a backlog beyond the next batch merges; re-appending keeps the merged update behind later events.
+        if ($lastSequence !== null && $this->queuedStateUpdates >= $this->limits->stateBatch) {
             unset($this->queue[$lastSequence]);
+            --$this->queuedStateUpdates;
             ++$this->coalescedStateChanges;
         }
 
-        $this->lastStateUpdates[$entityId] = $this->appendToQueue($update);
+        $this->lastStateUpdates[$entityId] = $this->appendStateUpdate($update);
     }
 
     public function takeNext(): ?BrokerMessage
@@ -102,6 +105,7 @@ final class WorkerOutbox
         $this->lastStateUpdates = [];
         $this->droppable = [];
         $this->latestOnlySequences = [];
+        $this->queuedStateUpdates = 0;
     }
 
     public function buildStatus(): OutboxStatus
@@ -127,6 +131,7 @@ final class WorkerOutbox
         unset($this->queue[$sequence]);
 
         if ($entry instanceof EncodedStateUpdate) {
+            --$this->queuedStateUpdates;
             $this->forgetStateUpdate($entry->update->entityId->value, $sequence);
 
             return $entry;
@@ -193,6 +198,13 @@ final class WorkerOutbox
         $this->appendToQueue($message);
         $this->firstStateUpdates = [];
         $this->lastStateUpdates = [];
+    }
+
+    private function appendStateUpdate(EncodedStateUpdate $update): int
+    {
+        ++$this->queuedStateUpdates;
+
+        return $this->appendToQueue($update);
     }
 
     private function appendToQueue(BrokerMessage|EncodedStateUpdate $entry): int
