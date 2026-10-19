@@ -65,9 +65,25 @@ final class WorkerOutboxTest extends TestCase
         self::assertSame(2, $outbox->buildStatus()->largestStateBatch);
     }
 
-    public function testBurstMergesIntoFirstAndLatest(): void
+    public function testBurstWithinOneBatchKeepsEveryEdge(): void
     {
         $outbox = self::createOutbox();
+        $worker = self::createWorkerCache(['light.a' => 'on']);
+
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', 'off'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', 'on'));
+        $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', 'dim'));
+
+        $sent = self::drain($outbox);
+
+        self::assertCount(1, $sent);
+        self::assertSame(['light.a:on>off', 'light.a:off>on', 'light.a:on>dim'], self::describeEdges($worker, $sent[0]));
+        self::assertSame(0, $outbox->coalescedStateChanges);
+    }
+
+    public function testBacklogMergesIntoFirstAndLatest(): void
+    {
+        $outbox = self::createOutbox(stateBatch: 2);
         $worker = self::createWorkerCache(['light.a' => 'on']);
 
         $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', 'off'));
@@ -78,14 +94,45 @@ final class WorkerOutboxTest extends TestCase
         self::assertSame(1, $outbox->coalescedStateChanges);
     }
 
+    public function testOnlyUpdatesBeyondOneBatchMerge(): void
+    {
+        $outbox = self::createOutbox(stateBatch: 3);
+        $worker = self::createWorkerCache(['light.a' => '0']);
+
+        foreach (['1', '2', '3', '4', '5'] as $state) {
+            $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', $state));
+        }
+
+        self::assertSame(['light.a:0>1', 'light.a:1>2', 'light.a:2>5'], self::describeEdges($worker, self::drain($outbox)[0]));
+        self::assertSame(2, $outbox->coalescedStateChanges);
+    }
+
+    public function testSentBacklogNoLongerCountsTowardMerging(): void
+    {
+        $outbox = self::createOutbox(stateBatch: 3);
+
+        foreach (['1', '2', '3', '4'] as $state) {
+            $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', $state));
+        }
+
+        self::drain($outbox);
+
+        foreach (['5', '6', '7'] as $state) {
+            $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', $state));
+        }
+
+        self::assertSame(1, $outbox->coalescedStateChanges);
+    }
+
     public function testFlapKeepsBothEdges(): void
     {
-        $outbox = self::createOutbox();
+        $outbox = self::createOutbox(stateBatch: 1);
 
         $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', 'off'));
         $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', 'on'));
 
-        $changes = self::applyOnWorker(self::createWorkerCache(['light.a' => 'on']), self::drain($outbox)[0]);
+        $worker = self::createWorkerCache(['light.a' => 'on']);
+        $changes = array_merge(...array_map(static fn(BrokerMessage $message): array => self::applyOnWorker($worker, $message), self::drain($outbox)));
 
         self::assertTrue($changes[0]->changedTo('off'));
         self::assertTrue($changes[1]->changedTo('on'));
@@ -94,7 +141,7 @@ final class WorkerOutboxTest extends TestCase
 
     public function testMergedChangeMovesBehindEarlierEvent(): void
     {
-        $outbox = self::createOutbox();
+        $outbox = self::createOutbox(stateBatch: 2);
         $worker = self::createWorkerCache(['light.a' => '1']);
 
         $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', '2'));
@@ -144,7 +191,7 @@ final class WorkerOutboxTest extends TestCase
 
     public function testSnapshotStopsMergingAcrossIt(): void
     {
-        $outbox = self::createOutbox();
+        $outbox = self::createOutbox(stateBatch: 2);
         $worker = self::createWorkerCache(['light.a' => '1']);
 
         $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', '2'));
@@ -164,18 +211,15 @@ final class WorkerOutboxTest extends TestCase
 
     public function testUpdateAlreadySentIsNotMergedInto(): void
     {
-        $outbox = self::createOutbox();
-        $worker = self::createWorkerCache(['light.a' => '1']);
+        $outbox = self::createOutbox(stateBatch: 1);
 
         $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', '2'));
         $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', '3'));
-
-        self::assertSame(['light.a:1>2', 'light.a:2>3'], self::describeEdges($worker, self::drain($outbox)[0]));
-
+        self::drain($outbox);
         $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', '4'));
         $outbox->pushStateUpdate(self::createEncodedUpdate('light.a', '5'));
 
-        self::assertSame(['light.a:3>4', 'light.a:4>5'], self::describeEdges($worker, self::drain($outbox)[0]));
+        self::assertCount(2, self::drain($outbox));
         self::assertSame(0, $outbox->coalescedStateChanges);
     }
 
@@ -270,7 +314,7 @@ final class WorkerOutboxTest extends TestCase
 
     public function testStatusCountsWhatIsQueuedAndWhatWasLost(): void
     {
-        $outbox = self::createOutbox(eventBuffer: 1);
+        $outbox = self::createOutbox(eventBuffer: 1, stateBatch: 2);
 
         $outbox->enqueue(new TopicMessage(new TopicEvent('a', null, new AppId('demo'), Instant::fromEpochMicroseconds(0)), [new SubscriptionId('w0:0')]));
         $outbox->enqueue(new TopicMessage(new TopicEvent('b', null, new AppId('demo'), Instant::fromEpochMicroseconds(0)), []));

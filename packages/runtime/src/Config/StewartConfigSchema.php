@@ -87,7 +87,7 @@ final class StewartConfigSchema implements ConfigurationInterface
                     ->defaultValue(1000)
                 ->end()
                 ->integerNode('worker_state_batch')
-                    ->info('State changes sent to a worker in one message at most.')
+                    ->info('State changes sent to a worker in one message at most. Once this many are queued, newer changes of an entity merge into its latest queued one.')
                     ->min(1)
                     ->defaultValue(256)
                 ->end()

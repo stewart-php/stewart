@@ -5,6 +5,13 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
+## [Unreleased]
+
+### Fixed
+
+- State changes of an entity merge only once a full `worker_state_batch` is queued for a worker, so a burst from one
+  Home Assistant frame reaches handlers step by step instead of losing the changes between its first and its latest
+
 ## [1.2.0] - 2026-10-19
 
 State changes cost less CPU on the broker and on workers, and Home Assistant traffic arrives in fewer, cheaper frames.

@@ -32,7 +32,7 @@ shutdown_grace:       5s
 # Topic messages and Home Assistant events buffered per worker, together up to this many, before the oldest are dropped.
 worker_event_buffer:  1000
 
-# State changes sent to a worker in one message at most.
+# State changes sent to a worker in one message at most. Once this many are queued, newer changes of an entity merge into its latest queued one.
 worker_state_batch:   256
 
 # Events queued per subscription while its handler is busy, before queued events are dropped, superseded state changes first. A burst of state changes from Home Assistant is always queued whole.
