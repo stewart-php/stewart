@@ -41,7 +41,11 @@ final class RecordingDeadlines implements Deadlines
             return Future::complete();
         }
 
-        return ($this->delayCountWaiters[$count] ??= new DeferredFuture())->getFuture();
+        /** @var DeferredFuture<null> $waiter */
+        $waiter = $this->delayCountWaiters[$count] ?? new DeferredFuture();
+        $this->delayCountWaiters[$count] = $waiter;
+
+        return $waiter->getFuture();
     }
 
     /** @return list<int> */

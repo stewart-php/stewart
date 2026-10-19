@@ -96,7 +96,11 @@ final class FakeMqttServer
     /** @return Future<null> */
     public function waitFor(FakeMqttServerEvent $event): Future
     {
-        return ($this->waiters[$event->name] ??= new DeferredFuture())->getFuture();
+        /** @var DeferredFuture<null> $waiter */
+        $waiter = $this->waiters[$event->name] ?? new DeferredFuture();
+        $this->waiters[$event->name] = $waiter;
+
+        return $waiter->getFuture();
     }
 
     public function publishToClients(MqttMessage $message, ?int $packetId = null): void

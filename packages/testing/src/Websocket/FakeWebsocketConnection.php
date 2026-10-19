@@ -108,6 +108,7 @@ final class FakeWebsocketConnection implements IteratorAggregate, WebsocketConne
                 return null;
             }
 
+            /** @var DeferredFuture<null> $deferred */
             $deferred = new DeferredFuture();
             $this->waiting[] = $deferred;
             $deferred->getFuture()->await($cancellation);
