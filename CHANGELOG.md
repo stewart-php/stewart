@@ -5,7 +5,9 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
-## [Unreleased]
+## [1.2.0] - 2026-10-19
+
+State changes cost less CPU on the broker and on workers, and Home Assistant traffic arrives in fewer, cheaper frames.
 
 ### Changed
 
@@ -17,11 +19,15 @@ release could break; a release's "Upgrading" section says what to change.
   the change
 - Workers receive only the new state of each change, and the broker no longer decodes Home Assistant's `old_state`,
   so each state change costs less CPU on the broker and on every worker
+- The broker encodes state changes, snapshots and history for workers with hand-written converters instead of
+  reflection, and waiting on one entity no longer clears every other entity's cached routing match
 
 ### Fixed
 
 - `stewart status`, `app:pause`, `app:resume`, `app:reset` and `worker:restart` fail at once when no daemon
   listens, instead of retrying the control socket for six seconds whatever `--timeout` says
+- A Home Assistant frame with invalid UTF-8 is logged and dropped, instead of closing the connection and forcing a
+  resync
 
 ## [1.1.0] - 2026-10-15
 
