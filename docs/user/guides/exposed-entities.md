@@ -153,6 +153,12 @@ unavailable. Expose entities in `initialize()`: an entity exposed later, for
 example from a schedule, is removed at startup and created again, losing what
 was set on it in Home Assistant. Set `expose.prune: false` to keep every entity.
 
+Pruning runs only for a daemon that connects. To clean up after one you no
+longer run, for example a test `expose.instance`, delete its hub under
+**Settings → Devices & services → Stewart**: its devices and entities go with
+it. A single device can be deleted the same way. Home Assistant refuses while
+the daemon is connected; a daemon that connects again creates its entities again.
+
 ## Errors
 
 Every handle call waits for Stewart's main process and can throw `ExposureException`:

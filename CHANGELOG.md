@@ -5,6 +5,13 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
+## [Unreleased]
+
+### Added
+
+- Home Assistant can delete the devices of a Stewart daemon that is not connected; deleting its hub removes its
+  devices and entities, so a test `expose.instance` no longer lingers
+
 ## [1.2.1] - 2026-10-19
 
 A burst of state changes from Home Assistant reaches workers whole again.

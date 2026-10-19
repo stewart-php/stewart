@@ -4,6 +4,7 @@ from typing import Any
 
 from homeassistant.core import Event, callback
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.entity_platform import EntityPlatform
 
 from .change import EntityChange, EntityUpsert
@@ -82,6 +83,15 @@ class ExposedEntities:
             self._entity_registry.async_remove(entry.entity_id)
         self._devices.remove_if_empty(entry.device_id for _, entry in stale)
         return [entry.entity_id for _, entry in stale]
+
+    # Stewart prunes the devices of a connected instance itself.
+    @callback
+    def release_device(self, device: DeviceEntry) -> bool:
+        instance = self._devices.find_instance(device)
+        if instance is not None and self._sessions.has_session(instance):
+            return False
+        self._devices.remove_dependents(device)
+        return True
 
     # A user may delete an entity in Home Assistant; it stays deleted until Stewart upserts it again.
     @callback

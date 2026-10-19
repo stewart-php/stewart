@@ -77,8 +77,24 @@ class DeviceDirectory:
             if device is None or self._has_entities(device_id):
                 continue
             self._registry.async_remove_device(device_id)
-            if device.via_device_id is not None and not self._has_children(device.via_device_id):
+            if device.via_device_id is not None and not self._list_children(device.via_device_id):
                 self._registry.async_remove_device(device.via_device_id)
+
+    # Home Assistant detaches the children of a removed device instead of removing them, so a hub takes them along.
+    @callback
+    def remove_dependents(self, device: DeviceEntry) -> None:
+        for child in self._list_children(device.id):
+            self._registry.async_remove_device(child.id)
+        hub_id = device.via_device_id
+        if hub_id is not None and all(child.id == device.id for child in self._list_children(hub_id)):
+            self._registry.async_remove_device(hub_id)
+
+    # Instance cannot hold "/", so it is everything before the first one.
+    @staticmethod
+    def find_instance(device: DeviceEntry) -> str | None:
+        return next(
+            (identifier.partition("/")[0] for domain, identifier in device.identifiers if domain == DOMAIN), None
+        )
 
     def _ensure_hub(self, instance: str) -> DeviceEntry:
         return self._registry.async_get_or_create(
@@ -92,8 +108,8 @@ class DeviceDirectory:
     def _has_entities(self, device_id: str) -> bool:
         return bool(er.async_entries_for_device(self._entity_registry, device_id, include_disabled_entities=True))
 
-    def _has_children(self, hub_id: str) -> bool:
-        return any(device.via_device_id == hub_id for device in self._list_own_devices())
+    def _list_children(self, hub_id: str) -> list[DeviceEntry]:
+        return [device for device in self._list_own_devices() if device.via_device_id == hub_id]
 
     def _find_own_device(self, device_id: str) -> DeviceEntry | None:
         return next((device for device in self._list_own_devices() if device.id == device_id), None)
