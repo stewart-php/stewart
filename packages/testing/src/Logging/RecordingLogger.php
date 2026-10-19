@@ -42,7 +42,11 @@ final class RecordingLogger extends AbstractLogger
             return Future::complete();
         }
 
-        return ($this->awaited[$message] ??= new DeferredFuture())->getFuture();
+        /** @var DeferredFuture<null> $waiter */
+        $waiter = $this->awaited[$message] ?? new DeferredFuture();
+        $this->awaited[$message] = $waiter;
+
+        return $waiter->getFuture();
     }
 
     /** @return list<string> */

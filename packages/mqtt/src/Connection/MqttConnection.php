@@ -81,10 +81,12 @@ final class MqttConnection
         }
 
         $packetId = $this->allocatePacketId();
-        $this->pendingAcks[$packetId] = new DeferredFuture();
+        /** @var DeferredFuture<null> $pending */
+        $pending = new DeferredFuture();
+        $this->pendingAcks[$packetId] = $pending;
         $this->writePacket($this->encoder->encodePublish($message, $packetId));
 
-        return $this->pendingAcks[$packetId]->getFuture();
+        return $pending->getFuture();
     }
 
     /**
@@ -94,10 +96,12 @@ final class MqttConnection
     public function subscribeFilter(string $topicFilter): Future
     {
         $packetId = $this->allocatePacketId();
-        $this->pendingSubAcks[$packetId] = new DeferredFuture();
+        /** @var DeferredFuture<MqttQos|null> $pending */
+        $pending = new DeferredFuture();
+        $this->pendingSubAcks[$packetId] = $pending;
         $this->writePacket($this->encoder->encodeSubscribe($packetId, $topicFilter, self::SUBSCRIPTION_QOS));
 
-        return $this->pendingSubAcks[$packetId]->getFuture();
+        return $pending->getFuture();
     }
 
     /**
@@ -107,10 +111,12 @@ final class MqttConnection
     public function unsubscribeFilter(string $topicFilter): Future
     {
         $packetId = $this->allocatePacketId();
-        $this->pendingAcks[$packetId] = new DeferredFuture();
+        /** @var DeferredFuture<null> $pending */
+        $pending = new DeferredFuture();
+        $this->pendingAcks[$packetId] = $pending;
         $this->writePacket($this->encoder->encodeUnsubscribe($packetId, $topicFilter));
 
-        return $this->pendingAcks[$packetId]->getFuture();
+        return $pending->getFuture();
     }
 
     public function disconnect(): void

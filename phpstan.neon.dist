@@ -52,10 +52,6 @@ parameters:
         -
             identifier: class.notFound
             path: packages/runtime/tests/Fixtures/Container/NeedsMissingClass.php
-        # PHP 8 no longer deprecates casting a ReflectionType to string.
-        -
-            identifier: class.toStringDeprecated
-            path: packages/runtime/src/Json/ClassShapeReader.php
         # The mapper reads DTO properties by their wire field names.
         -
             identifier: property.dynamicName
