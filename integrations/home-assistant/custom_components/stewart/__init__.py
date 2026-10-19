@@ -1,5 +1,7 @@
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.device_registry import DeviceEntry
 
 from .action import ExposedActions
 from .const import PLATFORMS
@@ -26,3 +28,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: StewartConfigEntry) -> 
     if unloaded := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         entry.runtime_data.sessions.end_all_sessions()
     return unloaded
+
+
+async def async_remove_config_entry_device(hass: HomeAssistant, entry: StewartConfigEntry, device: DeviceEntry) -> bool:  # noqa: ARG001
+    return entry.state is ConfigEntryState.LOADED and entry.runtime_data.entities.release_device(device)
