@@ -7,6 +7,8 @@ namespace Stewart\Runtime\Tests\Unit\Console;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Runtime\App\AppCatalogResolver;
+use Stewart\Runtime\Broker\AppPlacement;
+use Stewart\Runtime\Config\ConfigLoader;
 use Stewart\Runtime\Config\EnvironmentVariables;
 use Stewart\Runtime\Config\ProjectRoot;
 use Stewart\Runtime\Console\CheckCommand;
@@ -21,31 +23,7 @@ final class CheckCommandTest extends TestCase
 {
     private const string VALID_CONFIG = "home_assistant:\n  url: 'ws://example.invalid/api/websocket'\n  token: check-token\n";
 
-    private const string LOADABLE_APP_SOURCE = <<<'PHP'
-        use Stewart\Contracts\App;
-        use Stewart\Contracts\Automation;
-
-        #[Automation(id: 'porch')]
-        final class Porch implements App
-        {
-            public function initialize(): void {}
-
-            public function dispose(): void {}
-        }
-        PHP;
-
-    private const string HYPHENATED_APP_SOURCE = <<<'PHP'
-        use Stewart\Contracts\App;
-        use Stewart\Contracts\Automation;
-
-        #[Automation(id: 'porch-light')]
-        final class PorchLight implements App
-        {
-            public function initialize(): void {}
-
-            public function dispose(): void {}
-        }
-        PHP;
+    private const int AUTO_POOL_SIZE = 2;
 
     private TempDirectory $temp;
 
@@ -65,7 +43,7 @@ final class CheckCommandTest extends TestCase
 
     public function testProjectThatLoadsPasses(): void
     {
-        $this->apps->writeClass('Porch', self::LOADABLE_APP_SOURCE);
+        $this->apps->writeClass('Porch', self::createAppSource('Porch', 'porch'));
 
         $tester = $this->runCheck(self::VALID_CONFIG);
 
@@ -73,9 +51,34 @@ final class CheckCommandTest extends TestCase
         self::assertStringContainsString('1 automations load; 1 enabled', $tester->getDisplay());
     }
 
+    public function testEveryAppIsListedWithItsWorkerAndState(): void
+    {
+        $this->apps->writeClass('Garden', self::createAppSource('Garden', 'garden'));
+        $this->apps->writeClass('Hall', self::createAppSource('Hall', 'hall'));
+        $this->apps->writeClass('Porch', self::createAppSource('Porch', 'porch'));
+
+        $tester = $this->runCheck(self::VALID_CONFIG . "apps:\n  garden:\n    enabled: false\n  hall:\n    paused: true\n");
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertMatchesRegularExpression('/^ *garden +\S+\\\\Garden +- +disabled *$/m', $tester->getDisplay());
+        self::assertMatchesRegularExpression('/^ *hall +\S+\\\\Hall +0 +paused *$/m', $tester->getDisplay());
+        self::assertMatchesRegularExpression('/^ *porch +\S+\\\\Porch +1 +enabled *$/m', $tester->getDisplay());
+    }
+
+    public function testPinnedAppKeepsItsWorker(): void
+    {
+        $this->apps->writeClass('Hall', self::createAppSource('Hall', 'hall'));
+        $this->apps->writeClass('Porch', self::createAppSource('Porch', 'porch'));
+
+        $tester = $this->runCheck(self::VALID_CONFIG . "apps:\n  porch:\n    worker: 3\n");
+
+        self::assertMatchesRegularExpression('/^ *hall +\S+ +0 +enabled *$/m', $tester->getDisplay());
+        self::assertMatchesRegularExpression('/^ *porch +\S+ +3 +enabled *$/m', $tester->getDisplay());
+    }
+
     public function testUnloadableAppFileFailsWithItsPath(): void
     {
-        $this->apps->writeClass('Porch', self::LOADABLE_APP_SOURCE);
+        $this->apps->writeClass('Porch', self::createAppSource('Porch', 'porch'));
         $this->apps->writeClass('Broken', 'final class Broken {');
 
         $tester = $this->runCheck(self::VALID_CONFIG);
@@ -94,7 +97,7 @@ final class CheckCommandTest extends TestCase
 
     public function testOverrideForUnknownAppWarnsAndPasses(): void
     {
-        $this->apps->writeClass('Porch', self::LOADABLE_APP_SOURCE);
+        $this->apps->writeClass('Porch', self::createAppSource('Porch', 'porch'));
 
         $tester = $this->runCheck(self::VALID_CONFIG . "apps:\n  missing:\n    enabled: false\n");
 
@@ -105,7 +108,7 @@ final class CheckCommandTest extends TestCase
 
     public function testEnvironmentOverrideReachesHyphenatedApp(): void
     {
-        $this->apps->writeClass('PorchLight', self::HYPHENATED_APP_SOURCE);
+        $this->apps->writeClass('PorchLight', self::createAppSource('PorchLight', 'porch-light'));
 
         $tester = $this->runCheck(self::VALID_CONFIG, ['STEWART_APPS__PORCH_LIGHT__ENABLED' => 'false']);
 
@@ -115,14 +118,35 @@ final class CheckCommandTest extends TestCase
 
     public function testEnvironmentAloneIsEnoughWithoutAConfigFile(): void
     {
-        $this->apps->writeClass('Porch', self::LOADABLE_APP_SOURCE);
+        $this->apps->writeClass('Porch', self::createAppSource('Porch', 'porch'));
         $environment = new EnvironmentVariables(['STEWART_HOME_ASSISTANT__URL' => 'ws://ha.local:8123', 'STEWART_HOME_ASSISTANT__TOKEN' => 'check-token']);
 
-        $tester = new CommandTester(new CheckCommand(ConfigLoaderFixture::createLoader($environment, new ProjectRoot($this->temp->path)), $this->apps->createDiscovery(), new AppCatalogResolver()));
+        $tester = new CommandTester($this->createCommand(ConfigLoaderFixture::createLoader($environment, new ProjectRoot($this->temp->path))));
         $tester->execute([], ['capture_stderr_separately' => true]);
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getErrorOutput());
         self::assertStringContainsString('No config file at ' . $this->temp->getFilePath('stewart.yaml') . '; using the environment only.', $tester->getErrorOutput());
+    }
+
+    private static function createAppSource(string $class, string $id): string
+    {
+        return <<<PHP
+            use Stewart\\Contracts\\App;
+            use Stewart\\Contracts\\Automation;
+
+            #[Automation(id: '{$id}')]
+            final class {$class} implements App
+            {
+                public function initialize(): void {}
+
+                public function dispose(): void {}
+            }
+            PHP;
+    }
+
+    private function createCommand(ConfigLoader $loader): CheckCommand
+    {
+        return new CheckCommand($loader, $this->apps->createDiscovery(), new AppCatalogResolver(), new AppPlacement(self::AUTO_POOL_SIZE));
     }
 
     /** @param array<string, string> $environment */
@@ -131,7 +155,7 @@ final class CheckCommandTest extends TestCase
         $path = $this->temp->getFilePath('stewart.yaml');
         file_put_contents($path, $configYaml);
 
-        $tester = new CommandTester(new CheckCommand(ConfigLoaderFixture::createLoader(new EnvironmentVariables($environment)), $this->apps->createDiscovery(), new AppCatalogResolver()));
+        $tester = new CommandTester($this->createCommand(ConfigLoaderFixture::createLoader(new EnvironmentVariables($environment))));
         $tester->execute(['--config' => $path], ['capture_stderr_separately' => true]);
 
         return $tester;

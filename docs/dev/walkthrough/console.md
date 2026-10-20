@@ -103,7 +103,12 @@ In the schema, `normalizeKeys(false)` on `apps` is load-bearing: Symfony would o
 
 `App/AppCatalogResolver::resolveCatalog()` merges discovery with `apps:` from the config. Discovery is the source of
 truth: an override naming no discovered app is kept as unmatched, and `run` and `check` warn about it. `--only`
-admits an app even when `enabled: false`. A pinned worker beyond `workers` is an error. The result is an `AppCatalog` of `AppDefinition`s (ID, class, options, worker, starts paused).
+admits an app even when `enabled: false`. A pinned worker beyond `workers` is an error. The result is an
+`AppCatalog` of `AppDefinition`s (ID, class, options, worker, starts paused).
+
+`Console/CheckCommand` resolves the same catalog and plans worker slots with the broker's `AppPlacement`, which the
+console profile registers with its `CpuCountDetector`. With `workers: 0` the pool size is the CPU count where `check`
+runs, which matches the daemon's in Compose and in a Git-deploy pod.
 
 ## The run command
 

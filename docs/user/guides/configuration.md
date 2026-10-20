@@ -99,7 +99,8 @@ A variable that is not set and has no fallback stops Stewart with the setting's 
 
 ## Checking a configuration
 
-`stewart check` loads the configuration and every file in `apps/`, and fails if any does not load. Run it in CI or
+`stewart check` loads the configuration and every file in `apps/`, and fails if any does not load. Otherwise it
+lists every app with its class, the worker it runs on and whether it is enabled, paused or disabled. Run it in CI or
 before a deploy: `make sh`, then `stewart check`. The [Git deploy mode](../deploy/git.md) runs it on every new
 commit.
 

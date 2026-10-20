@@ -8,10 +8,15 @@ use Stewart\Contracts\Exception\StewartException;
 use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\App\AppCatalogResolver;
 use Stewart\Runtime\App\AppDiscovery;
+use Stewart\Runtime\App\Collection\DiscoveredAppCollection;
+use Stewart\Runtime\App\DiscoveredApp;
 use Stewart\Runtime\App\UnloadableAppFile;
+use Stewart\Runtime\Broker\AppPlacement;
+use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Config\ConfigLoader;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -25,6 +30,7 @@ final class CheckCommand extends StewartCommand
         private readonly ConfigLoader $config,
         private readonly AppDiscovery $discovery,
         private readonly AppCatalogResolver $catalogs,
+        private readonly AppPlacement $placement,
     ) {
         parent::__construct();
     }
@@ -54,6 +60,7 @@ final class CheckCommand extends StewartCommand
 
         $this->writeMissingConfigFileNotice($output, $this->config->findMissingDefaultFile($this->findConfigOption($input)));
         $this->writeUnmatchedOverridesNotice($output, $apps);
+        $this->writeAppTable($output, $discovered->apps, $apps, $this->placement->planWorkerSlots($apps->enabled, $config));
         $output->writeln(\sprintf('Configuration and %d automations load; %d enabled.', $discovered->apps->count(), $apps->enabled->count()));
 
         return Command::SUCCESS;
@@ -67,6 +74,20 @@ final class CheckCommand extends StewartCommand
                 implode(', ', $apps->unmatchedOverrideIds->toStrings()),
                 $apps->knownIds->isEmpty() ? 'none' : implode(', ', $apps->knownIds->toStrings()),
             ));
+        }
+    }
+
+    private function writeAppTable(OutputInterface $output, DiscoveredAppCollection $discovered, AppCatalog $apps, WorkerSlotCollection $slots): void
+    {
+        $rows = $discovered->mapToList(static function (DiscoveredApp $app) use ($apps, $slots): array {
+            $definition = $apps->enabled->find($app->id);
+            $state = $definition === null ? 'disabled' : ($definition->startsPaused ? 'paused' : 'enabled');
+
+            return [$app->id->value, $app->class, (string) ($slots->findWorkerOfApp($app->id) ?? '-'), $state];
+        });
+
+        if ($rows !== []) {
+            new Table($output)->setStyle('compact')->setHeaders(['app', 'class', 'worker', 'state'])->setRows($rows)->render();
         }
     }
 
