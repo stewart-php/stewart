@@ -6,7 +6,6 @@ namespace Stewart\Docs\Generator;
 
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
 use Stewart\Runtime\Metrics\Exposition\MetricFamily;
-use Stewart\Runtime\Metrics\Exposition\MetricSample;
 use Stewart\Runtime\Metrics\RuntimeMetricSource;
 
 final readonly class MetricsPage implements ReferencePage
@@ -51,15 +50,6 @@ final readonly class MetricsPage implements ReferencePage
 
     private function formatLabels(MetricFamily $family): string
     {
-        $names = [];
-
-        foreach ($family->listSamples() as $sample) {
-            \assert($sample instanceof MetricSample);
-            $names += array_fill_keys(array_keys($sample->labels->listValuesByName()), true);
-        }
-
-        unset($names['le']);
-
-        return implode(', ', array_map(MarkdownTable::formatCode(...), array_map(strval(...), array_keys($names))));
+        return implode(', ', array_map(MarkdownTable::formatCode(...), $family->labelNames));
     }
 }

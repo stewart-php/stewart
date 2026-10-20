@@ -17,8 +17,8 @@ final readonly class ComponentMetricSource implements RuntimeMetricSource
     public function collectMetrics(RuntimeSnapshot $snapshot): array
     {
         $component = $snapshot->component;
-        $info = new MetricFamily('stewart_component_info', 'Version and protocol of the stewart Home Assistant integration; always 1.', MetricType::Gauge);
-        $states = new MetricFamily('stewart_component_state', 'State of the stewart Home Assistant integration; 1 for the current one.', MetricType::Gauge);
+        $info = new MetricFamily('stewart_component_info', 'Version and protocol of the stewart Home Assistant integration; always 1.', MetricType::Gauge, ['version', 'protocol']);
+        $states = new MetricFamily('stewart_component_state', 'State of the stewart Home Assistant integration; 1 for the current one.', MetricType::Gauge, ['state']);
 
         if ($component?->version !== null && $component->protocol !== null) {
             $info->recordSample(MetricLabels::fromLabel('version', $component->version)->withLabel('protocol', (string) $component->protocol), 1);

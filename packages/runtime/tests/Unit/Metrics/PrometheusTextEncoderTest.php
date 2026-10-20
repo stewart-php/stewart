@@ -21,7 +21,7 @@ final class PrometheusTextEncoderTest extends TestCase
 {
     public function testWritesHelpTypeAndLabelledSamples(): void
     {
-        $family = new MetricFamily('stewart_things_total', 'Things.', MetricType::Counter);
+        $family = new MetricFamily('stewart_things_total', 'Things.', MetricType::Counter, ['app', 'worker']);
         $family->recordSample(MetricLabels::fromLabel('app', 'porch')->withLabel('worker', '0'), 3);
         $family->recordSample(MetricLabels::none(), 0.25);
 
@@ -43,7 +43,7 @@ final class PrometheusTextEncoderTest extends TestCase
 
     public function testHistogramWritesBucketsSumAndCount(): void
     {
-        $family = new MetricFamily('stewart_call_seconds', 'Calls.', MetricType::Histogram);
+        $family = new MetricFamily('stewart_call_seconds', 'Calls.', MetricType::Histogram, ['outcome']);
         $buckets = [new HistogramBucket(0.005, 1), new HistogramBucket(0.25, 3), new HistogramBucket(INF, 4)];
         $family->recordHistogram(MetricLabels::fromLabel('outcome', 'ok'), new Histogram($buckets, 4, Duration::milliseconds(1500)));
 
@@ -60,7 +60,7 @@ final class PrometheusTextEncoderTest extends TestCase
 
     public function testFamilyWithoutSamplesIsLeftOut(): void
     {
-        self::assertSame('', $this->encode(new MetricFamily('stewart_empty', 'Nothing.', MetricType::Gauge)));
+        self::assertSame('', $this->encode(new MetricFamily('stewart_empty', 'Nothing.', MetricType::Gauge, [])));
     }
 
     private function encode(MetricFamily $family): string
