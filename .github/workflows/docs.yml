@@ -23,9 +23,6 @@ concurrency:
   group: docs-publish
   cancel-in-progress: false
 
-env:
-  DOCKERHUB_LOGIN: ${{ vars.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
-
 jobs:
   publish:
     name: Build and publish
@@ -36,6 +33,11 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - uses: ./.github/actions/setup-docker
+        with:
+          buildx: "false"
+          dockerhub-username: ${{ vars.DOCKERHUB_USERNAME }}
+          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Check out the ref to publish
         id: ref
         run: |
@@ -56,11 +58,6 @@ jobs:
           echo "target=$target" >> "$GITHUB_OUTPUT"
         env:
           INPUT_REF: ${{ inputs.ref }}
-      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
-        if: env.DOCKERHUB_LOGIN == 'true'
-        with:
-          username: ${{ vars.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - run: make docs-install
       - run: make docs-build
         if: steps.ref.outputs.target == 'release'
