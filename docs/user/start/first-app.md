@@ -94,8 +94,8 @@ Leave out `ONLY` to run every app. To keep Stewart running in the background, us
 with `make logs` and stop it with `make down`. For a server, see
 [Deploying](../deploy/index.md).
 
-You no longer need the example app. Delete `apps/HelloApp.php`, `tests/HelloAppTest.php` and its `hello:` entry in
-`stewart.yaml`.
+You no longer need the example apps. Delete `apps/HelloApp.php`, `apps/ChangeCounter.php`, their tests in `tests/`
+and their `hello:` and `change-counter:` entries in `stewart.yaml`.
 
 ## Common problems
 

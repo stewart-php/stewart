@@ -11,6 +11,9 @@ automation on and off, a number to tune it. This app publishes the average of tw
 ```php file=../../examples/apps/AverageTemperature.php
 ```
 
+A new project also has `apps/ChangeCounter.php`, which exposes a sensor, a switch, a number and an action together;
+turn it on in `stewart.yaml` once the integration below is installed.
+
 ## Setting it up
 
 Exposed entities need the **Stewart integration** in Home Assistant, of the same version as Stewart:
