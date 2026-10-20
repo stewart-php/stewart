@@ -32,18 +32,20 @@ An app is a class in `apps/` that implements `Stewart\Contracts\App` and carries
 `apps/HelloApp.php` is one. Constructor parameters are injected by type (`HaContext`, a PSR logger, `Scheduler`,
 `Store`, `Clock`, your own services from `services.php`) or filled from the app's `options` in `stewart.yaml`.
 
-`HelloApp` also counts the changes it sees in `sensor.stewart_hello_changes_seen`, while
-`switch.stewart_hello_counting` is on; each change adds `number.stewart_hello_step`, whose icon shows when counting
-is paused. Entities an app exposes need the `stewart` Home Assistant integration; without
-it, the app logs why and keeps running.
+`HelloApp` greets in the log and with a notification in Home Assistant, then logs every change of `sun.sun`.
+`apps/ChangeCounter.php` shows what an app can expose: it counts those changes in
+`sensor.stewart_change_counter_changes_seen` while `switch.stewart_change_counter_counting` is on, and each change
+adds `number.stewart_change_counter_step`. Exposed entities need the `stewart` Home Assistant integration, so it is
+`enabled: false` in `stewart.yaml` until you install that.
 
 Import generated classes with `use App\Generated\…;`. Inside `namespace App`, a qualified `App\Generated\X` would
 resolve against the imported `Stewart\Contracts\App` interface instead.
 
 ### Testing an app
 
-`tests/HelloAppTest.php` shows the pattern: `AppHarness` from `stewart-php/testing` builds the app with its options
-and fakes, the test pushes states and commands, and `advanceTime()` runs timers, schedules and waits without waiting.
+`tests/HelloAppTest.php` and `tests/ChangeCounterTest.php` show the pattern: `AppHarness` from `stewart-php/testing`
+builds the app with its options and fakes, the test pushes states and commands, and `advanceTime()` runs timers,
+schedules and waits without waiting.
 Run `make test`.
 
 ### Generated classes

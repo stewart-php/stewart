@@ -1,5 +1,5 @@
 #!/bin/sh
-# Smoke-tests exposure against a real Home Assistant: the skeleton's hello app publishes a sensor, a switch and a number through the integration.
+# Smoke-tests exposure against a real Home Assistant: the skeleton's ChangeCounter app publishes a sensor, a switch and a number through the integration.
 set -eu
 
 : "${HA_E2E_IMAGE:?set HA_E2E_IMAGE to the Home Assistant image under test}"
@@ -31,7 +31,7 @@ echo '--- home assistant with the stewart integration'
 e2e up -d --wait homeassistant
 driver provision
 
-echo '--- the hello app exposes its sensor'
+echo '--- the change counter exposes its sensor'
 e2e up -d stewart
 driver await-sensor 0
 
@@ -54,7 +54,7 @@ driver toggle
 driver await-sensor 5
 
 echo '--- an app-defined action resets the count'
-driver action hello_reset_count '{"to": 2}'
+driver action change_counter_reset_count '{"to": 2}'
 driver await-sensor 2
 
 echo '--- the sensor turns unavailable when Stewart stops'

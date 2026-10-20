@@ -6,3 +6,8 @@ apps:
     options:
       # Options become named constructor arguments of the app.
       watch: sun.sun
+  change-counter:
+    # Its entities need the Stewart integration in Home Assistant; turn it on once that is installed.
+    enabled: false
+    options:
+      watch: sun.sun
