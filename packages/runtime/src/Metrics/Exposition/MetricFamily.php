@@ -11,17 +11,21 @@ final class MetricFamily
     /** @var list<MetricSample> */
     private array $samples = [];
 
-    /** @param non-empty-string $name */
+    /**
+     * @param non-empty-string $name
+     * @param list<non-empty-string> $labelNames
+     */
     public function __construct(
         public readonly string $name,
         public readonly string $help,
         public readonly MetricType $type,
+        public readonly array $labelNames,
     ) {}
 
     /** @param non-empty-string $name */
     public static function createWithSample(string $name, string $help, MetricType $type, MetricLabels $labels, int|float|bool $value): self
     {
-        $family = new self($name, $help, $type);
+        $family = new self($name, $help, $type, array_keys($labels->listValuesByName()));
         $family->recordSample($labels, $value);
 
         return $family;

@@ -21,6 +21,8 @@ release could break; a release's "Upgrading" section says what to change.
 - `stewart --help` lists the commands, instead of showing the help of `run`; `stewart run --help` still shows it
 - The CLI reference lists only each command's own arguments and options, instead of the console's global options
   under `config:reference`
+- The metrics reference lists the labels of `stewart_app_exposed_commands_total` and
+  `stewart_worker_restart_due_timestamp_seconds`, instead of none
 
 ## [1.2.1] - 2026-10-19
 

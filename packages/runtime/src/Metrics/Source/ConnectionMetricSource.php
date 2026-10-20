@@ -17,13 +17,13 @@ final readonly class ConnectionMetricSource implements RuntimeMetricSource
     public function collectMetrics(RuntimeSnapshot $snapshot): array
     {
         $connection = $snapshot->connection;
-        $phases = new MetricFamily('stewart_ha_connection_phase', 'Home Assistant connection phase; 1 for the current one.', MetricType::Gauge);
+        $phases = new MetricFamily('stewart_ha_connection_phase', 'Home Assistant connection phase; 1 for the current one.', MetricType::Gauge, ['phase']);
 
         foreach (ConnectionPhase::cases() as $phase) {
             $phases->recordSample(MetricLabels::fromLabel('phase', $phase->value), $phase === $connection->phase);
         }
 
-        $lastOutage = new MetricFamily('stewart_ha_last_outage_seconds', 'Length of the last Home Assistant outage.', MetricType::Gauge);
+        $lastOutage = new MetricFamily('stewart_ha_last_outage_seconds', 'Length of the last Home Assistant outage.', MetricType::Gauge, []);
 
         if ($connection->lastOutage !== null) {
             $lastOutage->recordSample(MetricLabels::none(), $connection->lastOutage->toSeconds());

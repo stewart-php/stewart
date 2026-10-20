@@ -17,8 +17,8 @@ final readonly class StoreMetricSource implements RuntimeMetricSource
     public function collectMetrics(RuntimeSnapshot $snapshot): array
     {
         $store = $snapshot->store;
-        $available = new MetricFamily('stewart_store_available', 'Whether workers reach the store; 1 or 0.', MetricType::Gauge);
-        $lastFailure = new MetricFamily('stewart_store_last_failure_timestamp_seconds', 'Unix time of the last store failure.', MetricType::Gauge);
+        $available = new MetricFamily('stewart_store_available', 'Whether workers reach the store; 1 or 0.', MetricType::Gauge, []);
+        $lastFailure = new MetricFamily('stewart_store_last_failure_timestamp_seconds', 'Unix time of the last store failure.', MetricType::Gauge, []);
 
         if ($store !== null) {
             $available->recordSample(MetricLabels::none(), $store->available);

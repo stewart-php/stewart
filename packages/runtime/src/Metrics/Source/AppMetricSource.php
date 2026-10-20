@@ -19,22 +19,24 @@ final readonly class AppMetricSource implements RuntimeMetricSource
     /** @return list<MetricFamily> */
     public function collectMetrics(RuntimeSnapshot $snapshot): array
     {
-        $info = new MetricFamily('stewart_app_info', 'App class per app; always 1.', MetricType::Gauge);
-        $states = new MetricFamily('stewart_app_state', 'App lifecycle state; 1 for the current one.', MetricType::Gauge);
-        $paused = new MetricFamily('stewart_app_paused', 'Whether the app is paused; 1 or 0.', MetricType::Gauge);
-        $subscriptions = new MetricFamily('stewart_app_subscriptions', 'Subscriptions the app holds.', MetricType::Gauge);
-        $schedules = new MetricFamily('stewart_app_schedules', 'Schedules the app holds.', MetricType::Gauge);
-        $exposedEntities = new MetricFamily('stewart_app_exposed_entities', 'Home Assistant entities the app exposes, unavailable ones included.', MetricType::Gauge);
-        $delivered = new MetricFamily('stewart_app_events_delivered_total', 'Events delivered to the app handlers.', MetricType::Counter);
-        $subscriptionDropped = new MetricFamily('stewart_app_subscription_dropped_total', 'Events dropped because a subscription queue was full.', MetricType::Counter);
-        $scheduleRuns = new MetricFamily('stewart_app_schedule_runs_total', 'Scheduled handler runs.', MetricType::Counter);
-        $publishes = new MetricFamily('stewart_app_publishes_total', 'Messages the app published.', MetricType::Counter);
-        $failures = new MetricFamily('stewart_app_failures_total', 'Handler failures of the app.', MetricType::Counter);
-        $suppressed = new MetricFamily('stewart_app_suppressed_total', 'Work skipped while the app was paused.', MetricType::Counter);
-        $lastFailure = new MetricFamily('stewart_app_last_failure_timestamp_seconds', 'Unix time of the last app failure.', MetricType::Gauge);
-        $serviceCalls = new MetricFamily('stewart_app_service_calls_total', 'Home Assistant calls of the app by outcome.', MetricType::Counter);
-        $exposedCommands = new MetricFamily('stewart_app_exposed_commands_total', 'Home Assistant commands on the app\'s exposed entities by outcome.', MetricType::Counter);
-        $serviceCallDuration = new MetricFamily('stewart_app_service_call_duration_seconds', 'Home Assistant call latency of the app by outcome.', MetricType::Histogram);
+        $appLabels = ['app', 'worker'];
+        $outcomeLabels = [...$appLabels, 'outcome'];
+        $info = new MetricFamily('stewart_app_info', 'App class per app; always 1.', MetricType::Gauge, [...$appLabels, 'class']);
+        $states = new MetricFamily('stewart_app_state', 'App lifecycle state; 1 for the current one.', MetricType::Gauge, [...$appLabels, 'state']);
+        $paused = new MetricFamily('stewart_app_paused', 'Whether the app is paused; 1 or 0.', MetricType::Gauge, $appLabels);
+        $subscriptions = new MetricFamily('stewart_app_subscriptions', 'Subscriptions the app holds.', MetricType::Gauge, $appLabels);
+        $schedules = new MetricFamily('stewart_app_schedules', 'Schedules the app holds.', MetricType::Gauge, $appLabels);
+        $exposedEntities = new MetricFamily('stewart_app_exposed_entities', 'Home Assistant entities the app exposes, unavailable ones included.', MetricType::Gauge, $appLabels);
+        $delivered = new MetricFamily('stewart_app_events_delivered_total', 'Events delivered to the app handlers.', MetricType::Counter, $appLabels);
+        $subscriptionDropped = new MetricFamily('stewart_app_subscription_dropped_total', 'Events dropped because a subscription queue was full.', MetricType::Counter, $appLabels);
+        $scheduleRuns = new MetricFamily('stewart_app_schedule_runs_total', 'Scheduled handler runs.', MetricType::Counter, $appLabels);
+        $publishes = new MetricFamily('stewart_app_publishes_total', 'Messages the app published.', MetricType::Counter, $appLabels);
+        $failures = new MetricFamily('stewart_app_failures_total', 'Handler failures of the app.', MetricType::Counter, $appLabels);
+        $suppressed = new MetricFamily('stewart_app_suppressed_total', 'Work skipped while the app was paused.', MetricType::Counter, $appLabels);
+        $lastFailure = new MetricFamily('stewart_app_last_failure_timestamp_seconds', 'Unix time of the last app failure.', MetricType::Gauge, $appLabels);
+        $serviceCalls = new MetricFamily('stewart_app_service_calls_total', 'Home Assistant calls of the app by outcome.', MetricType::Counter, $outcomeLabels);
+        $exposedCommands = new MetricFamily('stewart_app_exposed_commands_total', 'Home Assistant commands on the app\'s exposed entities by outcome.', MetricType::Counter, $outcomeLabels);
+        $serviceCallDuration = new MetricFamily('stewart_app_service_call_duration_seconds', 'Home Assistant call latency of the app by outcome.', MetricType::Histogram, $outcomeLabels);
 
         foreach ($snapshot->apps as $app) {
             $labels = MetricLabels::fromLabel('app', $app->id)->withLabel('worker', $app->workerId === null ? '' : (string) $app->workerId);

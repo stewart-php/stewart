@@ -14,6 +14,7 @@ RUNTIME_IMAGE ?= stewart-runtime:local
 HELM    := $(DOCKER) run --rm -v "$(CURDIR):/work" -w /work -u "$(UID):$(GID)" -e HOME=/tmp alpine/helm:4.3.0
 LINT_RUN := $(DOCKER) run --rm -v "$(CURDIR):/repo" -w /repo
 WORKFLOWS := .github/workflows/*.yml skeleton/.github/workflows/*.yml
+ACTIONS := .github/actions/*/action.yml
 DOCKERFILES := .docker/php/Dockerfile .docker/ha/Dockerfile skeleton/Dockerfile
 KUBECONFORM := $(DOCKER) run --rm -i ghcr.io/yannh/kubeconform:v0.8.0 -schema-location default \
 	-schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
@@ -108,7 +109,7 @@ check: stan cs test test-docs test-integration test-process test-persistence tes
 .PHONY: lint-ci
 lint-ci: ## Lint and security-audit the GitHub workflows, lint the Dockerfiles
 	$(LINT_RUN) rhysd/actionlint:1.7.12 -no-color $(WORKFLOWS)
-	$(LINT_RUN) -e GH_TOKEN ghcr.io/zizmorcore/zizmor:1.30.1 --format=$(if $(GITHUB_ACTIONS),github,plain) $(WORKFLOWS)
+	$(LINT_RUN) -e GH_TOKEN ghcr.io/zizmorcore/zizmor:1.30.1 --format=$(if $(GITHUB_ACTIONS),github,plain) $(WORKFLOWS) $(ACTIONS)
 	$(LINT_RUN) hadolint/hadolint:v2.15.1 hadolint --no-color $(DOCKERFILES)
 
 .PHONY: stan

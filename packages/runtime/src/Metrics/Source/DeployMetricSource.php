@@ -16,8 +16,8 @@ final readonly class DeployMetricSource implements RuntimeMetricSource
     public function collectMetrics(RuntimeSnapshot $snapshot): array
     {
         $deploy = $snapshot->deploy;
-        $info = new MetricFamily('stewart_deploy_info', 'Commit the daemon runs while it polls for new ones; always 1.', MetricType::Gauge);
-        $failures = new MetricFamily('stewart_deploy_failures_total', 'New commits that failed stewart check and were not deployed.', MetricType::Counter);
+        $info = new MetricFamily('stewart_deploy_info', 'Commit the daemon runs while it polls for new ones; always 1.', MetricType::Gauge, ['commit']);
+        $failures = new MetricFamily('stewart_deploy_failures_total', 'New commits that failed stewart check and were not deployed.', MetricType::Counter, []);
 
         if ($deploy !== null) {
             $info->recordSample(MetricLabels::fromLabel('commit', $deploy->commit), 1);

@@ -13,7 +13,7 @@ token. [Status and control](../guides/status.md#metrics) explains how to turn th
 | Metric | Type | Labels | Meaning |
 | --- | --- | --- | --- |
 | `stewart_app_events_delivered_total` | counter | `app`, `worker` | Events delivered to the app handlers. |
-| `stewart_app_exposed_commands_total` | counter |  | Home Assistant commands on the app's exposed entities by outcome. |
+| `stewart_app_exposed_commands_total` | counter | `app`, `worker`, `outcome` | Home Assistant commands on the app's exposed entities by outcome. |
 | `stewart_app_exposed_entities` | gauge | `app`, `worker` | Home Assistant entities the app exposes, unavailable ones included. |
 | `stewart_app_failures_total` | counter | `app`, `worker` | Handler failures of the app. |
 | `stewart_app_info` | gauge | `app`, `worker`, `class` | App class per app; always 1. |
@@ -60,7 +60,7 @@ token. [Status and control](../guides/status.md#metrics) explains how to turn th
 | `stewart_worker_phase` | gauge | `worker`, `phase` | Worker lifecycle phase; 1 for the current one. |
 | `stewart_worker_quarantines_total` | counter | `worker` | Times the worker was quarantined after using up its restart budget. |
 | `stewart_worker_ready` | gauge | `worker` | Whether the worker finished booting its apps; 1 or 0. |
-| `stewart_worker_restart_due_timestamp_seconds` | gauge |  | Unix time of the next scheduled restart. |
+| `stewart_worker_restart_due_timestamp_seconds` | gauge | `worker` | Unix time of the next scheduled restart. |
 | `stewart_worker_restarts_in_window` | gauge | `worker` | Restarts inside the current restart budget window. |
 | `stewart_worker_restarts_total` | counter | `worker` | Restarts scheduled since the daemon started. |
 | `stewart_worker_service_calls_in_flight` | gauge | `worker` | Home Assistant calls of this worker awaiting an answer. |
