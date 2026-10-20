@@ -66,8 +66,6 @@ jobs:
   distribution:
     needs: verify
     uses: ./.github/workflows/distribution.yml
-    secrets:
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
   image:
     needs: [verify, distribution]

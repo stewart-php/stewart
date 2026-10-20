@@ -36,8 +36,6 @@ jobs:
       - uses: ./.github/actions/setup-docker
         with:
           buildx: "false"
-          dockerhub-username: ${{ vars.DOCKERHUB_USERNAME }}
-          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Check out the ref to publish
         id: ref
         run: |

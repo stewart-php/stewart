@@ -17,9 +17,6 @@ on:
   pull_request:
     paths: *paths
   workflow_call:
-    secrets:
-      DOCKERHUB_TOKEN:
-        required: false
   workflow_dispatch:
 
 permissions:
@@ -38,9 +35,6 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-docker
-        with:
-          dockerhub-username: ${{ vars.DOCKERHUB_USERNAME }}
-          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build the toolchain image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:

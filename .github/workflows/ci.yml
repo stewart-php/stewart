@@ -21,31 +21,6 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-docker
-        with:
-          dockerhub-username: ${{ vars.DOCKERHUB_USERNAME }}
-          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Diagnose Docker Hub pulls
-        continue-on-error: true
-        env:
-          DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-        run: |
-          echo "--- daemon.json"; sudo cat /etc/docker/daemon.json
-          echo "--- client config"; jq '{auths: (.auths // {} | keys), credsStore, credHelpers}' ~/.docker/config.json || true
-          scope='service=registry.docker.io&scope=repository:ratelimitpreview/test:pull'
-          probe() { curl -s --head -H "Authorization: Bearer $1" https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest | grep -iE '^HTTP/|ratelimit'; }
-          echo "--- Docker Hub, anonymous"; probe "$(curl -s "https://auth.docker.io/token?$scope" | jq -r .token)"
-          echo "--- Docker Hub, as $DOCKERHUB_USERNAME"; probe "$(curl -s --user "$DOCKERHUB_USERNAME:$DOCKERHUB_TOKEN" "https://auth.docker.io/token?$scope" | jq -r .token)"
-          echo "--- mirror.gcr.io manifest"
-          curl -s -o /dev/null -w '%{http_code}\n' -H 'Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json' https://mirror.gcr.io/v2/library/eclipse-mosquitto/manifests/2
-          sudo jq '. + {"debug": true}' /etc/docker/daemon.json | sudo tee /etc/docker/daemon.json.new > /dev/null
-          sudo mv /etc/docker/daemon.json.new /etc/docker/daemon.json
-          sudo kill -HUP "$(pidof dockerd)"
-          sleep 2
-          since=$(date '+%Y-%m-%d %H:%M:%S')
-          echo "--- docker pull mirror.gcr.io/library/eclipse-mosquitto:2"; docker pull mirror.gcr.io/library/eclipse-mosquitto:2 || true
-          echo "--- docker pull eclipse-mosquitto:2"; docker pull eclipse-mosquitto:2 || true
-          echo "--- dockerd log"; sudo journalctl -u docker --since "$since" --no-pager | grep -iE 'mirror|endpoint|pull|auth|toomany|error' | tail -60
       - name: Build the toolchain image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
@@ -87,8 +62,6 @@ jobs:
       - uses: ./.github/actions/setup-docker
         with:
           buildx: "false"
-          dockerhub-username: ${{ vars.DOCKERHUB_USERNAME }}
-          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
       - run: |
           echo "::add-matcher::.github/matchers/actionlint.json"
           echo "::add-matcher::.github/matchers/hadolint.json"
@@ -107,8 +80,6 @@ jobs:
       - uses: ./.github/actions/setup-docker
         with:
           buildx: "false"
-          dockerhub-username: ${{ vars.DOCKERHUB_USERNAME }}
-          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
       - run: make docs-install
       - run: make docs-build
 
@@ -121,9 +92,6 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-docker
-        with:
-          dockerhub-username: ${{ vars.DOCKERHUB_USERNAME }}
-          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build the Home Assistant toolchain image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
@@ -149,9 +117,6 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-docker
-        with:
-          dockerhub-username: ${{ vars.DOCKERHUB_USERNAME }}
-          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build the toolchain image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
