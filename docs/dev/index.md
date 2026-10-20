@@ -9,6 +9,7 @@ description: 'How Stewart is built: architecture, code walkthrough and protocols
 | **[Conventions](conventions.md)** | How code here is written: names, data, errors, wiring, wire classes. |
 | **[Testing](testing.md)** | The test suites, where tests live, fixtures and goldens. |
 | **[Releasing](releasing.md)** | What gets published where, versions, image tags, and cutting a release. |
+| **[Changelog](https://stewart-php.github.io/docs-dev/changelog/)** | Every change of every release, read from `CHANGELOG.md`. |
 | **[Architecture](architecture.md)** | Process model, packages, the API surface, and the invariants that hold it together. |
 | **[Code walkthrough](walkthrough/index.md)** | The execution path in the order it runs, from `bin/stewart` to an app handling an event. |
 | **[Channel protocol](protocol.md)** | The broker↔worker message set, the sequences that use it, and how it fails. |

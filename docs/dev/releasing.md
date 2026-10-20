@@ -12,7 +12,8 @@ This repository is the only place Stewart is developed. Everything else is publi
 | Home Assistant integration | Read-only `stewart-php/hass-stewart`, its releases carry `stewart.zip` for HACS | `split.yml` |
 | `ghcr.io/stewart-php/runtime`, `…-dev` | GHCR, linux/amd64 and linux/arm64 | `release.yml`, `rebuild.yml` via `runtime-image.yml` |
 | `oci://ghcr.io/stewart-php/charts/stewart` | GHCR | `release.yml` |
-| Release notes | GitHub releases | `release.yml`, from `CHANGELOG.md` |
+| Release notes | GitHub releases | `release.yml`, from `docs/releases/X.Y.Z.md` |
+| Changelog | `/docs-dev/changelog/`, read from `CHANGELOG.md` | `docs.yml` |
 | Documentation | `stewart-php.github.io/docs` and `/docs-dev`, from `stewart-php/stewart-php.github.io` | `docs.yml` |
 
 ## Versioning
@@ -46,17 +47,21 @@ minor release, after `make check` is green on that PHP in CI, and say so in the 
 
 1. Move the `Unreleased` entries in `CHANGELOG.md` under `## [X.Y.Z] - YYYY-MM-DD`. When projects have
    something to change, add "Upgrading" notes.
-2. For a new minor, point the skeleton at it: `^X.Y` for the `stewart-php/*` requirements in
+2. Write `docs/releases/X.Y.Z.md`, the GitHub release text: a short paragraph on what the release is about, the
+   three to five changes users will care about most with a sentence each, the rest in a short list, and how to
+   upgrade. Write it for people who use Stewart, not for the people who build it; the changelog keeps every detail.
+   `release.yml` refuses a tag without it and adds a link to the changelog.
+3. For a new minor, point the skeleton at it: `^X.Y` for the `stewart-php/*` requirements in
    `skeleton/composer.json`. For a new major, also `ghcr.io/stewart-php/runtime:X` (`X-dev` in `compose.dev.yaml`) in
    `skeleton/Dockerfile`, `skeleton/compose.yaml`, `skeleton/compose.dev.yaml` and `skeleton/deploy/compose.git.yaml`.
    `release.yml` refuses a tag that does not match.
-3. Set `version` in `integrations/home-assistant/custom_components/stewart/manifest.json` to `X.Y.Z`; `release.yml`
+4. Set `version` in `integrations/home-assistant/custom_components/stewart/manifest.json` to `X.Y.Z`; `release.yml`
    refuses a tag that does not match.
-4. Commit and `git push origin main`, then wait for `CI` to pass on that commit.
-5. Tag and push the tag: `git tag -s vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z`. `release.yml` refuses a commit
+5. Commit and `git push origin main`, then wait for `CI` to pass on that commit.
+6. Tag and push the tag: `git tag -s vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z`. `release.yml` refuses a commit
    without a passing `CI` run; once CI passes, re-run the failed jobs instead of moving the tag. It runs the
    `Distribution` checks before it builds the image, and the image is scanned before it is tagged and signed.
-6. Watch `Split`, `Release` and `Docs`. When they are green, `composer create-project stewart-php/skeleton` in a scratch
+7. Watch `Split`, `Release` and `Docs`. When they are green, `composer create-project stewart-php/skeleton` in a scratch
    directory should install `X.Y.Z`, and `stewart-php/hass-stewart` should have an `X.Y.Z` release with `stewart.zip`, and
 `https://stewart-php.github.io/docs/` should show the new version's pages.
 
@@ -97,6 +102,8 @@ Done once, by an owner of the `stewart-php` organization, before `v0.1.0`.
 
 - `help/upgrading.md` in the user docs is generated from the "Upgrading" sections of `CHANGELOG.md`. After editing
   them, run `make docs-reference`; `make test-docs` fails until you do.
+- The developer site reads `CHANGELOG.md` itself and shows it as `/docs-dev/changelog/`
+  (`docs/site/src/content.config.ts`), so it changes with every published tag.
 - `docs.yml` builds both sites from the release tag and pushes them into `docs/` and `docs-dev/` of
   `stewart-php/stewart-php.github.io`. It keeps the site root (a landing page), `/docs/<major>.x/` and `/docs/next/`.
 - Every push to `main` that changes `docs/` publishes the user docs of `main` to `/docs/next/`, with a banner and
