@@ -16,6 +16,8 @@ services:
     volumes:
       - app:/app
       - composer-cache:/tmp/composer
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       valkey:
         condition: service_healthy
