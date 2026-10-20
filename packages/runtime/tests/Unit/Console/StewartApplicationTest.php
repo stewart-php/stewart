@@ -47,11 +47,19 @@ final class StewartApplicationTest extends TestCase
         yield 'inline config' => [['--config=' . self::MISSING_CONFIG]];
     }
 
+    /** @return iterable<string, array{list<string>}> */
+    public static function provideHelpWithoutCommand(): iterable
+    {
+        yield 'long' => [['--help']];
+        yield 'short' => [['-h']];
+        yield 'after a run option' => [['-c', self::MISSING_CONFIG, '--help']];
+    }
+
     /** @param list<string> $arguments */
     #[DataProvider('provideLeadingRunOptions')]
     public function testLeadingRunOptionsReachRun(array $arguments): void
     {
-        $output = $this->runApplication($arguments);
+        $output = $this->runApplication($arguments, Command::FAILURE);
 
         self::assertStringContainsString('Config file ' . self::MISSING_CONFIG . ' not found.', $output);
         self::assertStringNotContainsString('is not defined', $output);
@@ -60,7 +68,7 @@ final class StewartApplicationTest extends TestCase
 
     public function testCommandAfterLeadingOptionIsUsed(): void
     {
-        $output = $this->runApplication(['-c', self::MISSING_CONFIG, 'status']);
+        $output = $this->runApplication(['-c', self::MISSING_CONFIG, 'status'], Command::FAILURE);
 
         self::assertStringContainsString('pass --address and --token', $output);
         self::assertStringContainsString(self::MISSING_CONFIG, $output);
@@ -68,14 +76,32 @@ final class StewartApplicationTest extends TestCase
 
     public function testMistypedCommandStillGetsSuggestion(): void
     {
-        $output = $this->runApplication(['-n', 'stauts']);
+        $output = $this->runApplication(['-n', 'stauts'], Command::FAILURE);
 
         self::assertStringContainsString('Command "stauts" is not defined.', $output);
         self::assertStringContainsString('status', $output);
     }
 
     /** @param list<string> $arguments */
-    private function runApplication(array $arguments): string
+    #[DataProvider('provideHelpWithoutCommand')]
+    public function testHelpWithoutCommandListsCommands(array $arguments): void
+    {
+        $output = $this->runApplication($arguments, Command::SUCCESS);
+
+        self::assertStringContainsString('Available commands:', $output);
+        self::assertStringContainsString('or list the commands when none is given', $output);
+    }
+
+    public function testHelpAfterRunShowsRunHelp(): void
+    {
+        $output = $this->runApplication(['run', '--help'], Command::SUCCESS);
+
+        self::assertStringContainsString('--log-level', $output);
+        self::assertStringNotContainsString('Available commands:', $output);
+    }
+
+    /** @param list<string> $arguments */
+    private function runApplication(array $arguments, int $expectedExitCode): string
     {
         $application = new ConsoleKernel(sys_get_temp_dir(), [], new SyntheticServices()->withService(ConfigLoader::class, ConfigLoaderFixture::createLoader()))->createApplication();
         $application->setAutoExit(false);
@@ -83,7 +109,7 @@ final class StewartApplicationTest extends TestCase
 
         $exit = $application->run(new ArgvInput(['stewart', ...$arguments]), $output);
 
-        self::assertSame(Command::FAILURE, $exit);
+        self::assertSame($expectedExitCode, $exit);
 
         return $output->fetch();
     }

@@ -49,7 +49,8 @@ Values known only at run time enter in two ways:
 when it runs. Codegen's `GenerateCommand` arrives through codegen's own `config/services.php`.
 
 `Console/StewartApplication` makes `run` the default command, and overrides `getCommandName()` so options placed
-before the command name (`stewart -c x.yaml`) belong to `run` instead of being read as a command name.
+before the command name (`stewart -c x.yaml`) belong to `run` instead of being read as a command name. `--help` with no
+command name runs `list`, where Symfony would show `run`'s help.
 
 ## Configuration
 
