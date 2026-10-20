@@ -13,7 +13,7 @@ fi
 rm -rf "$target"
 mkdir -p "$target"
 
-for entry in src tests config bin composer.json phpunit.xml.dist; do
+for entry in src resources tests config bin composer.json phpunit.xml.dist; do
     if [ -e "$source/$entry" ]; then
         cp -R "$source/$entry" "$target/"
     fi
