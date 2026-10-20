@@ -26,6 +26,7 @@ vendor/bin/stewart generate --snapshot-in="$snapshot"
 for file in generated/*.php; do
     php -l "$file" > /dev/null
 done
+vendor/bin/stewart check
 
 vendor/bin/phpstan analyse --no-progress
 vendor/bin/phpunit

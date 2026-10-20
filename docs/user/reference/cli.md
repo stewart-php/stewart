@@ -29,7 +29,7 @@ Your project runs these commands with `make`. The `stewart` commands below run i
 | `make debug` | Run in the foreground with Xdebug |
 | `make config` | Show the effective config, secrets masked |
 | `make config-reference` | Show every supported config option |
-| `make check` | Check that the configuration and every app load, and list the apps |
+| `make check` | Check that the configuration loads and every app can be built, and list the apps |
 | `make test` | Run the tests |
 | `make stan` | Static analysis |
 | `make up` | Start the daemon in the background |
@@ -103,7 +103,7 @@ stewart app:resume [options] [--] <app>
 
 ### check
 
-Check that the configuration loads and every automation file loads
+Check that the configuration loads and every app can be built
 
 ```
 stewart check [options]

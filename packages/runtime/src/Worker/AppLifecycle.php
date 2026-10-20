@@ -10,6 +10,7 @@ use LogicException;
 use Stewart\Contracts\App;
 use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Exception\StewartException;
+use Stewart\Runtime\Container\AppContainerBlueprint;
 use Stewart\Runtime\Container\AppContainerBuilder;
 use Stewart\Runtime\Container\AppRuntimeServices;
 use Stewart\Runtime\Container\TypedContainer;
@@ -48,8 +49,8 @@ final class AppLifecycle
         try {
             $build = $this->containers->buildAppContainer(
                 apps: $this->bootstrap->apps->collection,
+                blueprint: AppContainerBlueprint::fromBootstrap($this->bootstrap),
                 runtime: $this->runtime,
-                servicesFile: $this->bootstrap->settings->servicesFile,
                 workerId: $this->bootstrap->workerId,
             );
         } catch (StewartException $e) {

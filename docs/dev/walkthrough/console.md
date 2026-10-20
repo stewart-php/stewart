@@ -108,7 +108,10 @@ admits an app even when `enabled: false`. A pinned worker beyond `workers` is an
 
 `Console/CheckCommand` resolves the same catalog and plans worker slots with the broker's `AppPlacement`, which the
 console profile registers with its `CpuCountDetector`. With `workers: 0` the pool size is the CPU count where `check`
-runs, which matches the daemon's in Compose and in a Git-deploy pod.
+runs, which matches the daemon's in Compose and in a Git-deploy pod. For each slot it calls
+`AppContainerBuilder::findAppBuildFailures()` with an `AppContainerBlueprint` made from the config, so the app
+containers compile exactly as in the workers but nothing is resolved. Failures print first, one line per app, because
+the Git deploy gate keeps the first line as the rejection reason.
 
 `Console/DoctorCommand` prints findings from `Doctor/ContainerChecks` (extensions, tmpdir, socket binding) and, unless
 `--offline`, `Doctor/ConnectionChecks`: `.env`, the config, then a real connection through `HaClientFactory` (token

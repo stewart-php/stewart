@@ -8,6 +8,7 @@ use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionParameter;
 use Stewart\Contracts\App\AppId;
+use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Store\GlobalStore;
 use Stewart\Contracts\Store\PeerStore;
@@ -15,6 +16,8 @@ use Stewart\Contracts\Store\ReadableStore;
 use Stewart\Contracts\Store\Store;
 use Stewart\Runtime\Exception\ContainerError;
 use Stewart\Runtime\Exception\ContainerException;
+use Stewart\Store\Exception\StoreSetupException;
+use Stewart\Support\Text\ClosestNameFinder;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -22,6 +25,11 @@ use Symfony\Component\DependencyInjection\Reference;
 
 final readonly class StoreAttributesPass implements CompilerPassInterface
 {
+    public function __construct(
+        private AppIdCollection $knownAppIds,
+        private ClosestNameFinder $closestNameFinder,
+    ) {}
+
     public function process(ContainerBuilder $container): void
     {
         foreach ($container->getDefinitions() as $definition) {
@@ -84,12 +92,27 @@ final readonly class StoreAttributesPass implements CompilerPassInterface
         $id = AppContainerBuilder::buildPeerStoreServiceId($peerAppId);
 
         if (!$container->hasDefinition($id)) {
-            $container->setDefinition($id, new Definition(ReadableStore::class)
-                ->setFactory([new Reference(AppContainerBuilder::STORES), 'openPeerStoreForReading'])
-                ->setArguments([$peerAppId]));
+            $container->setDefinition($id, $this->definePeerStore($peerAppId));
         }
 
         return new Reference($id);
+    }
+
+    private function definePeerStore(AppId $peerAppId): Definition
+    {
+        $definition = new Definition(ReadableStore::class);
+
+        if (!$this->knownAppIds->containsId($peerAppId)) {
+            // An error, not a throw, so it fails only the services that take this peer store.
+            return $definition->addError(fn(): string => StoreSetupException::unknownPeerApp(
+                $peerAppId,
+                $this->closestNameFinder->findClosestName($peerAppId->value, $this->knownAppIds->toStrings()),
+            )->getMessage());
+        }
+
+        return $definition
+            ->setFactory([new Reference(AppContainerBuilder::STORES), 'openPeerStoreForReading'])
+            ->setArguments([$peerAppId]);
     }
 
     /** @throws ContainerException */

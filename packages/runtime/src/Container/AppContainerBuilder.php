@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Container;
 
+use Closure;
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\App;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\ExceptionReason;
+use Stewart\Contracts\Exception\MqttError;
+use Stewart\Contracts\Exception\MqttException;
 use Stewart\Contracts\Exception\StewartException;
+use Stewart\Contracts\Exception\StoreError;
+use Stewart\Contracts\Exception\StoreException;
 use Stewart\Contracts\Exposure\EntityExposure;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\Mqtt\Mqtt;
@@ -34,6 +39,8 @@ use Stewart\Runtime\Worker\WorkerMqtt;
 use Stewart\Runtime\Worker\WorkerRegistryEditor;
 use Stewart\Store\ReadOnlyStore;
 use Stewart\Store\ScopedStore;
+use Stewart\Store\Stores;
+use Stewart\Support\Text\ClosestNameFinder;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\Argument\BoundArgument;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
@@ -89,7 +96,21 @@ final readonly class AppContainerBuilder
 
     private const string SERVICES_SUFFIX = '.services';
 
-    public function __construct(private AppOptionResolver $optionResolver) {}
+    private const array ALWAYS_AVAILABLE_SERVICE_IDS = [
+        Clock::class,
+        SunCalendar::class,
+        self::LOGGER,
+        self::CONTEXT,
+        self::SCHEDULER,
+        self::LOOP_TIMERS,
+        self::EXPOSURE,
+        self::REGISTRY_EDITOR,
+    ];
+
+    public function __construct(
+        private AppOptionResolver $optionResolver,
+        private ClosestNameFinder $closestNameFinder,
+    ) {}
 
     public static function buildAppServiceId(AppId $appId): string
     {
@@ -102,7 +123,19 @@ final readonly class AppContainerBuilder
     }
 
     /** @throws StewartException */
-    public function buildAppContainer(WorkerAppCollection $apps, AppRuntimeServices $runtime, ?string $servicesFile, WorkerId $workerId): AppContainerBuild
+    public function buildAppContainer(WorkerAppCollection $apps, AppContainerBlueprint $blueprint, AppRuntimeServices $runtime, WorkerId $workerId): AppContainerBuild
+    {
+        return $this->compileAppContainer($apps, $blueprint, $workerId, $runtime);
+    }
+
+    /** @throws StewartException */
+    public function findAppBuildFailures(WorkerAppCollection $apps, AppContainerBlueprint $blueprint, WorkerId $workerId): AppBuildFailureCollection
+    {
+        return $this->compileAppContainer($apps, $blueprint, $workerId)->failures;
+    }
+
+    /** @throws StewartException */
+    private function compileAppContainer(WorkerAppCollection $apps, AppContainerBlueprint $blueprint, WorkerId $workerId, ?AppRuntimeServices $runtime = null): AppContainerBuild
     {
         $registrations = [];
         $failures = [];
@@ -116,13 +149,13 @@ final readonly class AppContainerBuilder
         }
 
         try {
-            $container = $this->compileContainerFor($registrations, $runtime, $servicesFile, $workerId);
+            $container = $this->compileContainerFor($registrations, $blueprint, $workerId, $runtime);
         } catch (Throwable $e) {
             if ($registrations === []) {
                 throw $this->explainWorkerFailure($workerId, $e);
             }
 
-            return $this->isolateUnbuildableApps($registrations, $failures, $runtime, $servicesFile, $workerId);
+            return $this->isolateUnbuildableApps($registrations, $failures, $blueprint, $workerId, $runtime);
         }
 
         return new AppContainerBuild($container, AppBuildFailureCollection::keyedByAppId($failures));
@@ -136,39 +169,34 @@ final readonly class AppContainerBuilder
     private function isolateUnbuildableApps(
         array $registrations,
         array $failures,
-        AppRuntimeServices $runtime,
-        ?string $servicesFile,
+        AppContainerBlueprint $blueprint,
         WorkerId $workerId,
+        ?AppRuntimeServices $runtime,
     ): AppContainerBuild {
-        $this->compileOrFailWorker([], $runtime, $servicesFile, $workerId);
-        $isolated = [];
+        $this->compileOrFailWorker([], $blueprint, $workerId);
+        $survivors = [];
 
         foreach ($registrations as $registration) {
             try {
-                $this->compileContainerFor([$registration], $runtime, $servicesFile, $workerId);
+                $this->compileContainerFor([$registration], $blueprint, $workerId);
+                $survivors[] = $registration;
             } catch (Throwable $e) {
-                $failures[] = new AppBuildFailure($registration->app->id, $this->explainAppFailure($registration->app->id, $e));
-                $isolated[] = $registration->app->id->value;
+                $appId = $registration->app->id;
+                $failures[] = new AppBuildFailure($appId, ContainerException::createForReason(ContainerError::AppBuildFailed, $e, appId: $appId->value));
             }
         }
 
-        if ($isolated !== []) {
-            $runtime->logger->warning('The app container failed to compile; apps that cannot be built were left out', ['apps' => $isolated]);
-        }
-
-        $survivors = array_values(array_filter($registrations, static fn(AppRegistration $registration): bool => !\in_array($registration->app->id->value, $isolated, true)));
-
-        return new AppContainerBuild($this->compileOrFailWorker($survivors, $runtime, $servicesFile, $workerId), AppBuildFailureCollection::keyedByAppId($failures));
+        return new AppContainerBuild($this->compileOrFailWorker($survivors, $blueprint, $workerId, $runtime), AppBuildFailureCollection::keyedByAppId($failures));
     }
 
     /**
      * @param list<AppRegistration> $registrations
      * @throws StewartException
      */
-    private function compileOrFailWorker(array $registrations, AppRuntimeServices $runtime, ?string $servicesFile, WorkerId $workerId): TypedContainer
+    private function compileOrFailWorker(array $registrations, AppContainerBlueprint $blueprint, WorkerId $workerId, ?AppRuntimeServices $runtime = null): TypedContainer
     {
         try {
-            return $this->compileContainerFor($registrations, $runtime, $servicesFile, $workerId);
+            return $this->compileContainerFor($registrations, $blueprint, $workerId, $runtime);
         } catch (Throwable $e) {
             throw $this->explainWorkerFailure($workerId, $e);
         }
@@ -178,35 +206,29 @@ final readonly class AppContainerBuilder
      * @param list<AppRegistration> $registrations
      * @throws Throwable
      */
-    private function compileContainerFor(array $registrations, AppRuntimeServices $runtime, ?string $servicesFile, WorkerId $workerId): TypedContainer
+    private function compileContainerFor(array $registrations, AppContainerBlueprint $blueprint, WorkerId $workerId, ?AppRuntimeServices $runtime = null): TypedContainer
     {
         $container = new ContainerBuilder();
         $container->setParameter('stewart.worker_id', $workerId->value);
 
-        if ($servicesFile !== null) {
-            $this->loadUserServices($container, $servicesFile);
+        if ($blueprint->servicesFile !== null) {
+            $this->loadUserServices($container, $blueprint->servicesFile);
         }
 
-        $synthetics = [
-            Clock::class => $runtime->clock,
-            SunCalendar::class => $runtime->sunCalendar,
-            self::LOGGER => $runtime->logger,
-            self::CONTEXT => $runtime->context,
-            self::SCHEDULER => $runtime->scheduler,
-            self::LOOP_TIMERS => $runtime->timers,
-            self::STORES => $runtime->stores,
-            self::MQTT => $runtime->mqtt,
-            self::EXPOSURE => $runtime->exposure,
-            self::REGISTRY_EDITOR => $runtime->registryEditor,
-        ];
-
-        $this->registerFrameworkServices($container, array_keys($synthetics), $runtime->generated);
+        $this->registerFrameworkServices($container, $blueprint);
 
         foreach ($registrations as $registration) {
-            $this->registerApp($container, $registration, $runtime->generated);
+            $this->registerApp($container, $registration, $blueprint->generated);
         }
 
-        return $this->compileWithSynthetics($container, $synthetics);
+        $container->addCompilerPass(new StoreAttributesPass($blueprint->knownAppIds, $this->closestNameFinder), PassConfig::TYPE_BEFORE_OPTIMIZATION);
+        $container->compile();
+
+        if ($runtime !== null) {
+            $this->attachRuntimeServices($container, $blueprint, $runtime);
+        }
+
+        return new TypedContainer($container);
     }
 
     /** @return StewartException<ExceptionReason> */
@@ -236,13 +258,26 @@ final readonly class AppContainerBuilder
         $this->rejectAppDefinitions($container);
     }
 
-    /** @param list<string> $syntheticIds */
-    private function registerFrameworkServices(ContainerBuilder $container, array $syntheticIds, ?GeneratedRoots $generated): void
+    private function registerFrameworkServices(ContainerBuilder $container, AppContainerBlueprint $blueprint): void
     {
-        foreach ($syntheticIds as $id) {
-            // Public so unused definitions survive compilation and can still be set.
-            $container->register($id)->setSynthetic(true)->setPublic(true);
+        foreach (self::ALWAYS_AVAILABLE_SERVICE_IDS as $id) {
+            $this->registerRuntimeService($container, $id);
         }
+
+        $this->registerConfigurableRuntimeService(
+            $container,
+            self::STORES,
+            Stores::class,
+            $blueprint->storeConfigured,
+            static fn(): string => StoreException::createForReason(StoreError::NotConfigured)->getMessage(),
+        );
+        $this->registerConfigurableRuntimeService(
+            $container,
+            self::MQTT,
+            WorkerMqtt::class,
+            $blueprint->mqttConfigured,
+            static fn(): string => MqttException::createForReason(MqttError::NotConfigured)->getMessage(),
+        );
 
         // A user service belongs to no automation, so its Store is the global scope.
         $container->register(self::GLOBAL_STORE, ScopedStore::class)
@@ -256,26 +291,59 @@ final readonly class AppContainerBuilder
         $container->setAlias(HaContext::class, self::CONTEXT)->setPublic(true);
         $container->setAlias(Scheduler::class, self::SCHEDULER)->setPublic(true);
         $container->setAlias(Timers::class, self::TIMERS)->setPublic(true);
-        $container->setAlias(Store::class, self::GLOBAL_STORE)->setPublic(true);
-        $container->setAlias(ReadableStore::class, self::READ_ONLY_GLOBAL_STORE)->setPublic(true);
-        $container->setAlias(Mqtt::class, self::MQTT)->setPublic(true);
+        // Private, so an unconfigured store or MQTT fails only the services that take them.
+        $container->setAlias(Store::class, self::GLOBAL_STORE);
+        $container->setAlias(ReadableStore::class, self::READ_ONLY_GLOBAL_STORE);
+        $container->setAlias(Mqtt::class, self::MQTT);
         $container->setAlias(EntityExposure::class, self::EXPOSURE)->setPublic(true);
         $container->setAlias(RegistryEditor::class, self::REGISTRY_EDITOR)->setPublic(true);
 
-        $this->registerSharedGeneratedRoots($container, $generated);
+        $this->registerSharedGeneratedRoots($container, $blueprint->generated);
     }
 
-    /** @param array<string, object> $synthetics */
-    private function compileWithSynthetics(ContainerBuilder $container, array $synthetics): TypedContainer
+    private function registerRuntimeService(ContainerBuilder $container, string $id): void
     {
-        $container->addCompilerPass(new StoreAttributesPass(), PassConfig::TYPE_BEFORE_OPTIMIZATION);
-        $container->compile();
+        // Public so unused definitions survive compilation and can still be set.
+        $container->register($id)->setSynthetic(true)->setPublic(true);
+    }
 
-        foreach ($synthetics as $id => $service) {
-            $container->set($id, $service);
+    /** @param Closure(): string $describeMissingConfiguration */
+    private function registerConfigurableRuntimeService(ContainerBuilder $container, string $id, string $class, bool $configured, Closure $describeMissingConfiguration): void
+    {
+        if ($configured) {
+            $this->registerRuntimeService($container, $id);
+
+            return;
         }
 
-        return new TypedContainer($container);
+        // Compiling drops unused definitions before it reports errors, so only services that reach this one fail.
+        $container->register($id, $class)->addError($describeMissingConfiguration);
+    }
+
+    private function attachRuntimeServices(ContainerBuilder $container, AppContainerBlueprint $blueprint, AppRuntimeServices $runtime): void
+    {
+        $services = [
+            Clock::class => $runtime->clock,
+            SunCalendar::class => $runtime->sunCalendar,
+            self::LOGGER => $runtime->logger,
+            self::CONTEXT => $runtime->context,
+            self::SCHEDULER => $runtime->scheduler,
+            self::LOOP_TIMERS => $runtime->timers,
+            self::EXPOSURE => $runtime->exposure,
+            self::REGISTRY_EDITOR => $runtime->registryEditor,
+        ];
+
+        if ($blueprint->storeConfigured) {
+            $services[self::STORES] = $runtime->stores;
+        }
+
+        if ($blueprint->mqttConfigured) {
+            $services[self::MQTT] = $runtime->mqtt;
+        }
+
+        foreach ($services as $id => $service) {
+            $container->set($id, $service);
+        }
     }
 
     /** @throws ContainerException */

@@ -394,7 +394,7 @@ final class AppLifecycleTest extends TestCase
             ),
             $this->resources->resources,
             new AppFailureReporter($this->transport, new StderrFallback(new WorkerId(0)), new AppActivityCounters(), new HandlerFailureSampler()),
-            new AppContainerBuilder(new AppOptionResolver(new ClosestNameFinder())),
+            new AppContainerBuilder(new AppOptionResolver(new ClosestNameFinder()), new ClosestNameFinder()),
         );
     }
 

@@ -80,7 +80,7 @@ config-reference: ## Show every supported config option
 	$(RUN) stewart config:reference
 
 .PHONY: check
-check: ## Check that the configuration and every app load, and list the apps
+check: ## Check that the configuration loads and every app can be built, and list the apps
 	$(RUN) stewart check
 
 .PHONY: test

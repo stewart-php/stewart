@@ -10,6 +10,8 @@ use Stewart\Runtime\Broker\AppPlacement;
 use Stewart\Runtime\Broker\AppPlacementFactory;
 use Stewart\Runtime\Broker\CpuCountDetector;
 use Stewart\Runtime\Config\EnvironmentVariables;
+use Stewart\Runtime\Container\AppContainerBuilder;
+use Stewart\Runtime\Container\AppOptionResolver;
 use Stewart\Runtime\Control\Client\ControlClient;
 use Stewart\Runtime\Health\ReadinessCheck;
 use Stewart\Runtime\Kernel\BrokerKernel;
@@ -48,6 +50,8 @@ return static function (ContainerConfigurator $container, ContainerBuilder $buil
     $services->set(CpuCountDetector::class);
     $services->set(AppPlacementFactory::class);
     $services->set(AppPlacement::class)->factory([service(AppPlacementFactory::class), 'createPlacementForHost']);
+    $services->set(AppOptionResolver::class);
+    $services->set(AppContainerBuilder::class);
     $services->set(LoggerFactory::class);
     $services->set(Filesystem::class);
     $services->set(HaClientFactory::class);

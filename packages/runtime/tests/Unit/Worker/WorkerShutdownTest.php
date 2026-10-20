@@ -232,7 +232,7 @@ final class WorkerShutdownTest extends TestCase
             AppRuntimeServicesFixture::createAppRuntimeServices(transport: $transport, resources: $resources),
             $resources->resources,
             new AppFailureReporter($transport, new StderrFallback(new WorkerId(0)), new AppActivityCounters(), new HandlerFailureSampler()),
-            new AppContainerBuilder(new AppOptionResolver(new ClosestNameFinder())),
+            new AppContainerBuilder(new AppOptionResolver(new ClosestNameFinder()), new ClosestNameFinder()),
         );
 
         $this->shutdown = new WorkerShutdown($this->apps, $resources->resources, $this->pending, $this->timers, $this->logger, TestBootstrap::createWorkerSettings(shutdownGrace: Duration::seconds(5)));

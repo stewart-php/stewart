@@ -91,7 +91,8 @@ kubectl exec deployment/home-stewart -- stewart worker:restart 0  # also brings 
 ```
 
 In `git` mode the daemon fetches `code.git.ref` every `code.git.poll`. A new commit is installed beside the running
-one and must pass `stewart check`; only then does the daemon stop gracefully and start again on it, in the same pod.
+one and must pass `stewart check`, which builds every enabled app; only then does the daemon stop gracefully and start
+again on it, in the same pod.
 A commit that fails the check is logged, shown by `stewart status` and counted in `stewart_deploy_failures_total`, and
 never tried again; the running commit stays. To go back, set `code.git.ref` to a commit.
 

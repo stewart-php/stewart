@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\Sun\SunCalendar;
-use Stewart\Runtime\App\GeneratedRoots;
 use Stewart\Runtime\Dispatch\DispatchListener;
 use Stewart\Runtime\Dispatch\SubscriptionListener;
 use Stewart\Runtime\Model\ResourceScope;
@@ -69,7 +68,6 @@ return static function (ContainerConfigurator $container): void {
     $services->set(StateCache::class);
     $services->set(RegistryCache::class);
     $services->set(StoreValueCodec::class);
-    $services->set(GeneratedRoots::class)->factory([GeneratedRoots::class, 'fromWorkerSettings']);
 
     $services->alias(StoreBackendOpener::class, DsnStoreBackendOpener::class);
     $services->set(GuardedStoreBackend::class)->factory([service(StoreBackendOpener::class), 'openForBootstrap']);
