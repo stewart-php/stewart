@@ -14,6 +14,7 @@ release could break; a release's "Upgrading" section says what to change.
 
 ### Fixed
 
+- `stewart --help` lists the commands, instead of showing the help of `run`; `stewart run --help` still shows it
 - The CLI reference lists only each command's own arguments and options, instead of the console's global options
   under `config:reference`
 

@@ -6,18 +6,42 @@ namespace Stewart\Runtime\Console;
 
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\ArgvInput;
+use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
 
 final class StewartApplication extends Application
 {
     private const string END_OF_OPTIONS = '--';
 
+    private const string LIST_COMMAND = 'list';
+
     public function __construct(string $version)
     {
         parent::__construct('Stewart', $version);
         $this->setDefaultCommand(RunCommand::NAME);
+    }
+
+    public function doRun(InputInterface $input, OutputInterface $output): int
+    {
+        // Symfony would show the default command's help instead.
+        if ($this->getCommandName($input) === null && $input->hasParameterOption(['--help', '-h'], true)) {
+            return parent::doRun(new ArrayInput(['command' => self::LIST_COMMAND]), $output);
+        }
+
+        return parent::doRun($input, $output);
+    }
+
+    protected function getDefaultInputDefinition(): InputDefinition
+    {
+        $definition = parent::getDefaultInputDefinition();
+        $options = $definition->getOptions();
+        $options['help'] = new InputOption('help', 'h', InputOption::VALUE_NONE, 'Display help for the given command, or list the commands when none is given');
+        $definition->setOptions(array_values($options));
+
+        return $definition;
     }
 
     protected function getCommandName(InputInterface $input): ?string

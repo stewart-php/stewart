@@ -32,6 +32,13 @@ final class ApplicationTest extends TestCase
         self::assertStringContainsString('Config file /nonexistent/stewart.yaml not found.', $stdout);
     }
 
+    public function testHelpWithoutCommandListsCommands(): void
+    {
+        $stdout = self::runBinary(['--help'], 0);
+
+        self::assertStringContainsString('Available commands:', $stdout);
+    }
+
     /** @param list<string> $arguments */
     private static function runBinary(array $arguments, int $expectedExitCode): string
     {
