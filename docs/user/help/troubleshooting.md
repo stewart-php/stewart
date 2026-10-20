@@ -5,8 +5,9 @@ sidebar:
   order: 1
 ---
 
-Start with two commands. `make logs` (or `make run` in the foreground) shows what Stewart says, and `make status`
-shows each app's state and last failure. Most problems name themselves in one of them.
+Start with three commands. `make doctor` checks the settings and the connections to Home Assistant and the store,
+`make logs` (or `make run` in the foreground) shows what Stewart says, and `make status` shows each app's state and
+last failure. Most problems name themselves in one of them.
 On a [Git](../deploy/git.md) or [image](../deploy/image.md) server, which has no Makefile, use
 `docker compose -f compose.git.yaml logs -f stewart` and `… exec stewart stewart status` instead.
 

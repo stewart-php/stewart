@@ -24,6 +24,7 @@ Fill in `STEWART_HOME_ASSISTANT__URL` and `STEWART_HOME_ASSISTANT__TOKEN` in `.e
 
 ```bash
 make generate     # typed entity and service classes from your Home Assistant, into generated/
+make doctor       # the connection to Home Assistant, the token's rights and the store
 make check        # the configuration and every app load; lists the apps and their workers
 make run          # run in the foreground; Ctrl-C stops it
 make status       # from another terminal

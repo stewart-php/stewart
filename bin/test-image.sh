@@ -41,7 +41,7 @@ echo '--- a mounted project'
 mounted() {
     docker run --rm -u "$user" -v "$PWD/$work/project:/app" -v "$PWD:/monorepo:ro" -e STEWART_BOOT_COMPOSER=auto "$image" "$@"
 }
-mounted doctor
+mounted doctor --offline
 second_start=$(mounted --version 2>&1)
 case "$second_start" in
     *'installing dependencies'*)

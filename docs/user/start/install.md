@@ -64,7 +64,7 @@ make setup
 ```
 
 `make setup` pulls the Docker images, creates a `.env` file for your settings, installs the dependencies, and checks
-that the container can run Stewart. It ends with:
+that the container can run Stewart. It does not connect anywhere yet, and ends with:
 
 ```
 All good.
@@ -84,13 +84,24 @@ STEWART_HOME_ASSISTANT__TOKEN=paste-the-token-here
   address of Home Assistant, or `host.docker.internal` when Home Assistant runs on the same machine as Stewart.
 - `.env` holds secrets. Git already ignores it, so keep it that way.
 
+Check the connection:
+
+```bash
+make doctor
+```
+
+Next to the container checks, `make doctor` connects to Home Assistant and shows whether the token belongs to an
+administrator, whether Home Assistant has a location (sun schedules need one), whether the optional Stewart
+integration is installed, and whether the store answers. A `✗ FAIL` line names what to fix; a `! warn` line is fine
+until you need that feature.
+
 Now let Stewart read your entities and services:
 
 ```bash
 make generate
 ```
 
-This connects to Home Assistant and writes typed PHP classes into `generated/`. If it works, your connection works.
+This connects to Home Assistant and writes typed PHP classes into `generated/`.
 [Typed entities](../guides/codegen.md) explains what the classes are for.
 
 ## 5. Run it

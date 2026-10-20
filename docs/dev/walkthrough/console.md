@@ -110,6 +110,12 @@ admits an app even when `enabled: false`. A pinned worker beyond `workers` is an
 console profile registers with its `CpuCountDetector`. With `workers: 0` the pool size is the CPU count where `check`
 runs, which matches the daemon's in Compose and in a Git-deploy pod.
 
+`Console/DoctorCommand` prints findings from `Doctor/ContainerChecks` (extensions, tmpdir, socket binding) and, unless
+`--offline`, `Doctor/ConnectionChecks`: `.env`, the config, then a real connection through `HaClientFactory` (token
+rights from `fetchCurrentUser()`, the location from `get_config`, the integration from `stewart/version`) and a probe
+of the configured store. Settings that are not there are skipped, warnings do not fail, and the console profile loads
+`stewart-php/store-redis` for the probe.
+
 `Console/Scaffold/AppScaffold` backs `make:app`. It finds the apps namespace the way discovery does (the PSR-4 root
 holding `$appsDirectory`), puts the test under that namespace plus `Tests\`, renders the stubs in
 `resources/scaffold/`, and refuses an existing file or an ID that collides with a discovered app.

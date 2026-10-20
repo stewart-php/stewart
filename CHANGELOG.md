@@ -17,6 +17,9 @@ release could break; a release's "Upgrading" section says what to change.
   `make worker-restart WORKER=…`
 - `stewart make:app PorchLight` (`make app NAME=PorchLight` in a project) creates an app in `apps/` and its test in
   `tests/`, deriving the ID `porch-light` unless `--id` sets one
+- `stewart doctor` (`make doctor`) also checks `.env`, the configuration, the Home Assistant connection, whether the
+  token belongs to an administrator, the Home Assistant location, the Stewart integration and the store; settings
+  that are not there are skipped, and `--offline` keeps only the container checks, as `make setup` does
 
 ### Changed
 

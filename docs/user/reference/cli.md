@@ -15,14 +15,14 @@ Your project runs these commands with `make`. The `stewart` commands below run i
 | Command | What it does |
 | --- | --- |
 | `make help` | Show this help |
-| `make setup` | First run: pull the images, create .env, install dependencies, verify |
+| `make setup` | First run: pull the images, create .env, install dependencies, check the container |
 | `make pull` | Pull the runtime images |
 | `make env` | Create .env from .env.example with a fresh control token, unless it exists |
 | `make install` | composer install |
 | `make update` | composer update |
 | `make upgrade` | Move to another Stewart release line, then pull its images and install it [VERSION=2.0] |
 | `make sh` | Shell in the development container |
-| `make doctor` | Check the container can run Stewart |
+| `make doctor` | Check the container, the settings, and the connections to Home Assistant and the store |
 | `make app` | Create an app in apps/ and its test in tests/ [NAME=PorchLight] |
 | `make generate` | Write typed entity and service classes from Home Assistant into generated/ [ARGS=--allow-shrink] |
 | `make run` | Run in the foreground [ONLY="hello porch" to run only those apps, DRY_RUN=1 to send no service calls] |
@@ -136,11 +136,16 @@ stewart config:reference
 
 ### doctor
 
-Check that this PHP can run Stewart
+Check that this PHP can run Stewart, and that it reaches Home Assistant and the store
 
 ```
-stewart doctor
+stewart doctor [options]
 ```
+
+| Option | Meaning | Default |
+| --- | --- | --- |
+| `-c, --config=…` | Path to stewart.yaml; defaults to stewart.yaml in the project root |  |
+| `--offline` | Check only this container, not the settings and connections |  |
 
 ### generate
 

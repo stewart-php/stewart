@@ -22,7 +22,8 @@ help: ## Show this help
 # --- development -------------------------------------------------------
 
 .PHONY: setup
-setup: pull env install doctor ## First run: pull the images, create .env, install dependencies, verify
+setup: pull env install ## First run: pull the images, create .env, install dependencies, check the container
+	$(RUN) stewart doctor --offline
 
 .PHONY: pull
 pull: ## Pull the runtime images
@@ -51,8 +52,8 @@ sh: ## Shell in the development container
 	$(RUN) sh
 
 .PHONY: doctor
-doctor: ## Check the container can run Stewart
-	$(RUN) stewart doctor
+doctor: ## Check the container, the settings, and the connections to Home Assistant and the store
+	$(RUN_APP) stewart doctor
 
 .PHONY: app
 app: ## Create an app in apps/ and its test in tests/ [NAME=PorchLight]
