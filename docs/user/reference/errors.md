@@ -18,11 +18,11 @@ Thrown as `HaClientException`.
 | Reason | Message | What to do |
 | --- | --- | --- |
 | `ClosedLocally` | The connection was closed locally while {phase}. |  |
-| `ConnectTimedOut` | Connecting to Home Assistant at {url} timed out after {timeout}. Check home_assistant.url. |  |
-| `ConnectFailed` | Could not connect to Home Assistant at {url}: {cause} |  |
+| `ConnectTimedOut` | Connecting to Home Assistant at {url} timed out after {timeout}. Check home_assistant.url. | Test the URL from the container: `make sh`, then `wget -qO- http://your-host:8123`. |
+| `ConnectFailed` | Could not connect to Home Assistant at {url}: {cause} | Check `STEWART_HOME_ASSISTANT__URL`; inside the container `localhost` is the container, so use the host name, IP or `host.docker.internal`. |
 | `NotConnected` | Not connected to Home Assistant. |  |
 | `SendFailed` | Failed to send {command}: {cause} |  |
-| `ClosedDuringAuthentication` | Home Assistant closed the connection during authentication. |  |
+| `ClosedDuringAuthentication` | Home Assistant closed the connection during authentication. | Check `STEWART_HOME_ASSISTANT__TOKEN`, then the Home Assistant log from the same moment. |
 | `ConnectionDropped` | The connection to Home Assistant was lost ({detail}). |  |
 | `MessageTooLarge` | Home Assistant sent a message over the size limit, so the connection was dropped. Raise home_assistant.message_size_limit or home_assistant.frame_size_limit. |  |
 | `ProtocolViolation` | Home Assistant sent {detail}. |  |
@@ -31,11 +31,11 @@ Thrown as `HaClientException`.
 | `CommandUnauthorized` | {command} failed: {detail} |  |
 | `CommandUnencodable` | {command} could not be encoded: {cause} |  |
 | `UnexpectedGreeting` | Expected auth_required from Home Assistant, got "{receivedType}". |  |
-| `TokenRejected` | Home Assistant rejected the access token: {reason}. Check STEWART_HOME_ASSISTANT__TOKEN. |  |
+| `TokenRejected` | Home Assistant rejected the access token: {reason}. Check STEWART_HOME_ASSISTANT__TOKEN. | Create a long-lived access token on your Home Assistant profile, under Security, as an administrator. |
 | `AdministratorRequired` | Home Assistant refused the event subscription; the access token must belong to an administrator. Update STEWART_HOME_ASSISTANT__TOKEN. | Create the token from a Home Assistant administrator. |
 | `EventBacklogExceeded` | Event handlers are more than {limit} events behind; dropping the connection. |  |
 | `EventQueueReentered` | An event callback cannot wait for the event queue it is being delivered by. |  |
-| `UrlInvalid` | "{url}" is not a Home Assistant URL; use http://, https://, ws:// or wss:// and a host. |  |
+| `UrlInvalid` | "{url}" is not a Home Assistant URL; use http://, https://, ws:// or wss:// and a host. | For example `ws://homeassistant.local:8123/api/websocket` in `STEWART_HOME_ASSISTANT__URL`. |
 | `ComponentInstanceInvalid` | "{instance}" is not an instance name; use lowercase letters, digits and underscores, starting with a letter, up to 64 characters. |  |
 
 ## CodegenError
@@ -200,9 +200,9 @@ Thrown as `StoreException`.
 | `ValueNotEncodable` | The value for key "{key}" is not JSON-encodable: {cause} |  |
 | `ValueNotAMap` | {class}::toStorage() returned a list for key "{key}"; expected a map of named fields. |  |
 | `NotConfigured` | Persistence is not configured; set persistence.url in stewart.yaml or STEWART_PERSISTENCE__URL in .env. | Set `STEWART_PERSISTENCE__URL`. |
-| `Unreachable` | The store at {target} is unreachable: {detail} |  |
+| `Unreachable` | The store at {target} is unreachable: {detail} | Check `STEWART_PERSISTENCE__URL` and that Valkey runs: `docker compose ps valkey`. |
 | `Refused` | The store at {target} refused the operation: {detail} |  |
-| `TimedOut` | The store at {target} did not answer within {timeout}. |  |
+| `TimedOut` | The store at {target} did not answer within {timeout}. | Check that Valkey is not overloaded; `docker compose logs valkey` shows its state. |
 | `RecentlyFailed` | The store at {target} failed moments ago and is not being retried yet: {detail} |  |
 | `TypeMismatch` | Key "{key}" holds {actual}, not {expected}. | Read the key with the type it was written with, or delete it. |
 | `NotIncrementable` | Key "{key}" cannot be incremented: {detail} |  |
@@ -299,7 +299,7 @@ Thrown as `BrokerException`.
 
 | Reason | Message | What to do |
 | --- | --- | --- |
-| `NoWorkersStarted` | None of {workers} workers could be started. |  |
+| `NoWorkersStarted` | None of {workers} workers could be started. | The log lines above name why each worker failed; `stewart doctor` checks the PHP setup. |
 | `WorkerSpawnTimedOut` | Worker {worker} did not connect within {timeout}. |  |
 
 ## ConfigurationError
@@ -309,8 +309,8 @@ Thrown as `ConfigurationException`.
 | Reason | Message | What to do |
 | --- | --- | --- |
 | `SchemaViolation` | {cause} |  |
-| `ConfigFileMissing` | Config file {path} not found. |  |
-| `ConfigFileUnparsable` | Could not parse {path}: {cause} |  |
+| `ConfigFileMissing` | Config file {path} not found. | Fix the `--config` path; without the option, Stewart reads `stewart.yaml` in the project root, or the environment alone. |
+| `ConfigFileUnparsable` | Could not parse {path}: {cause} | Fix the YAML where the cause points, then check the result with `make config`. |
 | `ConfigFileNotAMap` | {path} holds {actualType}; expected a map of settings. |  |
 | `ValueInvalid` | "{value}" is not {expected}. |  |
 | `KeyInvalid` | {path} must be {expected}. |  |
@@ -319,20 +319,20 @@ Thrown as `ConfigurationException`.
 | `DurationTooLong` | {path} is {value}; expected at most {maximum}. |  |
 | `MaxDelayBelowInitialDelay` | {path} is {value}; expected at least {initialDelayPath} ({initialDelay}). |  |
 | `RestartWindowTooShort` | supervision.restart_window is {window}, but the backoff for restart_attempts ({attempts}) adds up to {backoffTotal}, so a crash-looping worker is never quarantined. |  |
-| `HomeAssistantMissing` | home_assistant is not configured. Set STEWART_HOME_ASSISTANT__URL and STEWART_HOME_ASSISTANT__TOKEN. |  |
-| `PlaceholderUnset` | {setting} refers to ${{variable}}, which is not set. Set it or add a default: ${{variable}:-value}. |  |
-| `ControlTokenMissing` | control.token is required while control.listen is set; set STEWART_CONTROL__TOKEN or set control.listen to "off". |  |
-| `AdminTokenMissing` | http.admin.token is required while http.admin.listen is set; set STEWART_HTTP__ADMIN__TOKEN or set http.admin.listen to "off". |  |
+| `HomeAssistantMissing` | home_assistant is not configured. Set STEWART_HOME_ASSISTANT__URL and STEWART_HOME_ASSISTANT__TOKEN. | `make env` creates `.env` with both keys to fill in. |
+| `PlaceholderUnset` | {setting} refers to ${{variable}}, which is not set. Set it or add a default: ${{variable}:-value}. | Add the variable to `.env`. |
+| `ControlTokenMissing` | control.token is required while control.listen is set; set STEWART_CONTROL__TOKEN or set control.listen to "off". | `make env` writes a fresh token into a new `.env`; for an older one, add `STEWART_CONTROL__TOKEN=` followed by `openssl rand -hex 16`. |
+| `AdminTokenMissing` | http.admin.token is required while http.admin.listen is set; set STEWART_HTTP__ADMIN__TOKEN or set http.admin.listen to "off". | Create one with `openssl rand -hex 16` and set it as `STEWART_HTTP__ADMIN__TOKEN`. |
 | `WorkerIndexOutOfRange` | App "{appId}" is pinned to worker {worker}, but the highest worker index is {highestIndex}. |  |
 | `AppSelectionUnknown` | --only names app "{appId}", but no automation has that ID. |  |
 | `EnvironmentVariableUnknown` | {variable} is not a Stewart setting; run `stewart config:reference` for all options. | Fix the variable name; keys are joined by two underscores. |
 | `EnvironmentVariableTooDeep` | {variable} is deeper than the configuration; {valuePath} is a value, not a section. |  |
 | `EnvironmentVariableNamesSection` | {variable} names a section; set the keys under it, such as {variable}{separator}KEY. |  |
-| `EnvironmentValueInvalid` | {variable} is "{raw}"; expected {expected}. |  |
+| `EnvironmentValueInvalid` | {variable} is "{raw}"; expected {expected}. | Fix the value in `.env`; `make config-reference` lists the type of every setting. |
 | `EnvironmentValueUnparsable` | {variable} is not a valid inline list or map: {cause} |  |
 | `EnvironmentVariableConflict` | {variable} and {otherVariable} both set {valuePath}; keep one. |  |
 | `EnvironmentSecretFileUnreadable` | {variable} points to {path}, which cannot be read. |  |
-| `MqttPackageMissing` | mqtt.url is set, but the MQTT client is not installed; run `composer require stewart-php/mqtt`. |  |
+| `MqttPackageMissing` | mqtt.url is set, but the MQTT client is not installed; run `composer require stewart-php/mqtt`. | Or unset `STEWART_MQTT__URL` if no app uses MQTT. |
 
 ## ContainerError
 
@@ -371,11 +371,11 @@ Thrown as `ControlException`.
 | `FrameClassUnknown` | Unknown frame {frameClass}. |  |
 | `FrameUndecodable` | Could not decode the "{frameType}" control frame: {cause} |  |
 | `ConfigUnavailable` | Could not read control.listen and control.token (pass --address and --token): {cause} |  |
-| `ControlDisabled` | The configuration sets control.listen to off; pass --address. |  |
+| `ControlDisabled` | The configuration sets control.listen to off; pass --address. | Pass the daemon's address, such as `--address tcp://homeassistant.local:7333`, or run `make status` next to the daemon. |
 | `TokenMissing` | No control token; set STEWART_CONTROL__TOKEN or pass --token. |  |
-| `ConnectionRejected` | The broker refused the connection: {reason} |  |
+| `ConnectionRejected` | The broker refused the connection: {reason} | For a wrong token, use the daemon's `STEWART_CONTROL__TOKEN`; `make status` runs next to the daemon with its `.env`. |
 | `UnexpectedGreeting` | The broker sent {frameClass} instead of a welcome. |  |
-| `ProtocolMismatch` | Broker speaks control protocol {brokerProtocol}, this client {clientProtocol}. |  |
+| `ProtocolMismatch` | Broker speaks control protocol {brokerProtocol}, this client {clientProtocol}. | Use the `stewart` of the running daemon's version, for example `make status`, which runs in its container. |
 | `BrokerHungUp` | The broker hung up before the session ended. |  |
 | `UnexpectedFrame` | The broker sent {frameClass} instead of {expectedFrameClass}. |  |
 | `RequestTimedOut` | The broker did not answer within {timeout}. |  |
@@ -407,7 +407,7 @@ Thrown as `TransportException`.
 | `ReceiveFailed` | Failed to receive from peer: {cause} |  |
 | `UnexpectedMessage` | Expected a JSON frame, got {actualType}. |  |
 | `UndecodableFrame` | Could not decode "{messageType}" frame: {reason} |  |
-| `ProtocolMismatch` | Broker speaks IPC protocol {actual}, this worker {expected}. |  |
+| `ProtocolMismatch` | Broker speaks IPC protocol {actual}, this worker {expected}. | Restart the daemon after updating Stewart, so the broker and its workers run the same version. |
 | `MessageTypeMissing` | No IPC message type is registered for {messageClass}. |  |
 | `MessageTagMissing` | IPC message {messageClass} has no #[IpcMessage] attribute. |  |
 | `MessageTagDuplicated` | IPC tag "{tag}" is declared by both {firstClass} and {secondClass}. |  |
@@ -427,7 +427,7 @@ Thrown as `StoreSetupException`.
 
 | Reason | Message | What to do |
 | --- | --- | --- |
-| `DsnInvalid` | Store URL is invalid ({length} characters); expected a URL like "redis://host:6379/0". |  |
+| `DsnInvalid` | Store URL is invalid ({length} characters); expected a URL like "redis://host:6379/0". | Fix `STEWART_PERSISTENCE__URL`; URL-encode special characters in a password. |
 | `SchemeUnsupported` | No installed store backend handles "{scheme}://"; installed schemes: {supported}. |  |
 | `UnknownPeerApp` | No automation has ID "{appId}", so its store cannot be opened. |  |
 | `PrefixInvalid` | Store prefix "{prefix}" is invalid; expected a letter or digit, then up to 63 letters, digits, ".", "_" or "-". |  |

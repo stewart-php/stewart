@@ -28,6 +28,8 @@ release could break; a release's "Upgrading" section says what to change.
   under `config:reference`
 - The metrics reference lists the labels of `stewart_app_exposed_commands_total` and
   `stewart_worker_restart_due_timestamp_seconds`, instead of none
+- The error reference says what to do for the errors a first run or an upgrade hits: Home Assistant connection and
+  token, configuration files and tokens, control and worker protocol versions, and the store
 
 ## [1.2.1] - 2026-10-19
 
