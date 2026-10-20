@@ -5,6 +5,13 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
+## [Unreleased]
+
+### Added
+
+- The Helm chart creates a Service for the admin API once `adminApi.host` is reachable from other pods, so other
+  workloads reach it at `http://<release>-stewart.<namespace>.svc:8081`
+
 ## [1.3.0] - 2026-10-20
 
 Home Assistant can delete the devices of a daemon that is gone, an unknown app ID in the configuration warns

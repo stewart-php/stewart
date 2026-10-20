@@ -1,0 +1,18 @@
+{{- if include "stewart.adminReachable" . }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "stewart.fullname" . }}
+  labels:
+    {{- include "stewart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: daemon
+spec:
+  type: ClusterIP
+  ports:
+    - name: admin
+      port: {{ .Values.adminApi.port }}
+      targetPort: admin
+  selector:
+    {{- include "stewart.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: daemon
+{{- end }}

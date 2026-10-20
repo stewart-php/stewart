@@ -53,8 +53,9 @@ kubectl exec deployment/home-stewart -- stewart worker:restart 0
 ```
 
 With `adminApi.enabled: true`, the [admin API](../reference/admin-api.md) and Prometheus metrics listen on port 8081,
-inside the pod only (`kubectl port-forward` reaches it). Set `adminApi.host: 0.0.0.0` to reach it from other pods;
-`adminApi.podMonitor.enabled: true` creates a `PodMonitor` for the Prometheus Operator and needs that host.
+inside the pod only (`kubectl port-forward` reaches it). Set `adminApi.host: 0.0.0.0` to reach it from other pods:
+the chart then creates a Service, so the release `home` answers at `http://home-stewart.<namespace>.svc:8081`.
+`adminApi.podMonitor.enabled: true` creates a `PodMonitor` for the Prometheus Operator and needs that host too.
 
 ## Common problems
 

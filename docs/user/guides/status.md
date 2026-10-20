@@ -142,7 +142,7 @@ calls it:
 ```yaml
 rest_command:
   stewart_pause:
-    url: "http://stewart.home.svc:8081/api/apps/{{ app }}/pause"
+    url: "http://home-stewart.default.svc:8081/api/apps/{{ app }}/pause"   # the Helm chart's Service; on Docker, the host
     method: post
     headers:
       authorization: !secret stewart_admin_bearer   # "Bearer <token>"

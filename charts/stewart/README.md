@@ -15,8 +15,8 @@ helm install home oci://ghcr.io/stewart-php/charts/stewart \
 ## What it runs
 
 - **One pod, always.** Two daemons would both run every automation, so the Deployment has one replica and the
-  `Recreate` strategy: an upgrade stops the old pod before starting the new one. There is no Service; only the
-  kubelet's probes connect to Stewart.
+  `Recreate` strategy: an upgrade stops the old pod before starting the new one. Only the admin API gets a Service,
+  once it listens beyond loopback; otherwise only the kubelet's probes connect to Stewart.
 - **Probes** call the daemon's HTTP port (`/healthz`, `/readyz` on `probes.port`), which answers in-process without
   starting PHP. Liveness (and startup) checks that the daemon answers. Readiness also needs a live Home Assistant
   connection and no quarantined worker, so `kubectl get pods` shows when automations are not running.
@@ -61,7 +61,7 @@ classes are rewritten inside the image.
 | `persistence.existingSecret`, `.existingSecretKey` | `""`, `url` | Secret holding the URL, when it carries a password |
 | `control.existingSecret`, `.existingSecretKey` | `""`, `token` | Secret with the control token; name one when rendering with `helm template`, or the generated token changes on every render |
 | `adminApi.enabled` | `false` | Start the HTTP admin API (`http.admin`) that lists, pauses and resumes apps and restarts workers |
-| `adminApi.host`, `.port` | `127.0.0.1`, `8081` | Where it binds; loopback is reachable through `kubectl port-forward`, `0.0.0.0` from other pods |
+| `adminApi.host`, `.port` | `127.0.0.1`, `8081` | Where it binds; loopback is reachable through `kubectl port-forward`, `0.0.0.0` from other pods through the Service `<release>-stewart` |
 | `adminApi.existingSecret`, `.existingSecretKey` | `""`, `token` | Secret with the admin bearer token; name one when rendering with `helm template`, or the generated token changes on every render |
 | `adminApi.podMonitor.enabled` | `false` | Create a Prometheus Operator `PodMonitor` that scrapes `/metrics` with the admin token; needs `adminApi.host: 0.0.0.0` |
 | `adminApi.podMonitor.interval`, `.scrapeTimeout`, `.labels` | `""`, `""`, `{}` | Scrape settings, and labels your Prometheus selects PodMonitors by (`release: …` for kube-prometheus-stack) |
@@ -108,4 +108,5 @@ curl -H "Authorization: Bearer $TOKEN" localhost:8081/metrics                   
 
 For Prometheus Operator, `adminApi.podMonitor.enabled: true` with `adminApi.host: 0.0.0.0` scrapes `/metrics`
 using the same token. Binding `0.0.0.0` makes the pause endpoints reachable from other pods too, still behind
-the token; the chart refuses to render a PodMonitor against a loopback host.
+the token, at `http://<release>-stewart.<namespace>.svc:8081` through the Service the chart then creates; the chart
+refuses to render a PodMonitor against a loopback host.
