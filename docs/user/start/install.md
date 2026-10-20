@@ -90,8 +90,8 @@ make run
 ```
 
 Stewart connects, starts the example app `apps/HelloApp.php`, and logs `Hello from Stewart` with the number of
-entities it found. After that, the app logs every change of `sun.sun`. It also logs
-`The hello entities are not exposed`: that is expected until you install the optional
+entities it found. Home Assistant shows the same greeting as a notification. After that, the app logs every change of
+`sun.sun`. A second example, `apps/ChangeCounter.php`, stays off until you install the optional
 [Stewart integration](../guides/exposed-entities.md#setting-it-up).
 
 In a second terminal, ask the running Stewart how it is doing:

@@ -12,6 +12,11 @@ release could break; a release's "Upgrading" section says what to change.
 - The Helm chart creates a Service for the admin API once `adminApi.host` is reachable from other pods, so other
   workloads reach it at `http://<release>-stewart.<namespace>.svc:8081`
 
+### Changed
+
+- New projects start with a short `HelloApp` that greets in the log and with a Home Assistant notification; the
+  exposure demo moved to `ChangeCounter`, which stays off until the Stewart integration is installed
+
 ## [1.3.0] - 2026-10-20
 
 Home Assistant can delete the devices of a daemon that is gone, an unknown app ID in the configuration warns
