@@ -22,6 +22,13 @@ app.kubernetes.io/name: {{ include "stewart.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
+{{- define "stewart.adminReachable" -}}
+{{- $host := .Values.adminApi.host -}}
+{{- if and .Values.adminApi.enabled (not (or (hasPrefix "127." $host) (has $host (list "localhost" "::1")))) -}}
+true
+{{- end -}}
+{{- end }}
+
 {{- define "stewart.valkeyName" -}}
 {{- printf "%s-valkey" (include "stewart.fullname" .) | trunc 63 | trimSuffix "-" }}
 {{- end }}
