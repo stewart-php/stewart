@@ -128,20 +128,6 @@ Show every supported option with its type and default
 stewart config:reference
 ```
 
-| Argument | Meaning |
-| --- | --- |
-| `command` | The command to execute |
-
-| Option | Meaning | Default |
-| --- | --- | --- |
-| `-h, --help` | Display help for the given command. When no command is given display help for the <info>run</info> command |  |
-| `--silent` | Do not output any message |  |
-| `-q, --quiet` | Only errors are displayed. All other output is suppressed |  |
-| `-v\|vv\|vvv, --verbose` | Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug |  |
-| `-V, --version` | Display this application version |  |
-| `--ansi` | Force (or disable --no-ansi) ANSI output |  |
-| `-n, --no-interaction` | Do not ask any interactive question |  |
-
 ### doctor
 
 Check that this PHP can run Stewart
