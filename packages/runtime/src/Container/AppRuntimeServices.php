@@ -7,7 +7,6 @@ namespace Stewart\Runtime\Container;
 use Stewart\Contracts\Sun\SunCalendar;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Timers;
-use Stewart\Runtime\App\GeneratedRoots;
 use Stewart\Runtime\Schedule\WorkerScheduler;
 use Stewart\Runtime\Worker\WorkerEntityExposure;
 use Stewart\Runtime\Worker\WorkerHaContext;
@@ -30,6 +29,5 @@ final readonly class AppRuntimeServices
         public WorkerEntityExposure $exposure,
         public WorkerRegistryEditor $registryEditor,
         public SunCalendar $sunCalendar,
-        public ?GeneratedRoots $generated = null,
     ) {}
 }

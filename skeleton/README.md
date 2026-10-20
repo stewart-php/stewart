@@ -25,7 +25,7 @@ Fill in `STEWART_HOME_ASSISTANT__URL` and `STEWART_HOME_ASSISTANT__TOKEN` in `.e
 ```bash
 make generate     # typed entity and service classes from your Home Assistant, into generated/
 make doctor       # the connection to Home Assistant, the token's rights and the store
-make check        # the configuration and every app load; lists the apps and their workers
+make check        # the configuration loads and every app can be built; lists the apps and their workers
 make run          # run in the foreground; Ctrl-C stops it
 make status       # from another terminal
 ```
@@ -125,9 +125,10 @@ Copy `deploy/compose.git.yaml` and a filled-in `.env` to the server, set the rep
 file).
 
 Every minute (`deploy.git.poll`) the daemon fetches the ref. A new commit is installed into its own directory beside
-the running one, dependencies copied when `composer.lock` is unchanged, and must pass `stewart check`; then the daemon
-stops gracefully and starts again on it. A commit that fails the check is logged, shown by `stewart status`, and never
-tried again, so the running commit stays until a fixed one is pushed. A restart applies the same check.
+the running one, dependencies copied when `composer.lock` is unchanged, and must pass `stewart check`, which builds
+every enabled app; then the daemon stops gracefully and starts again on it. A commit that fails the check is logged,
+shown by `stewart status`, and never tried again, so the running commit stays until a fixed one is pushed. A restart
+applies the same check.
 
 | Entrypoint variable | Meaning |
 |---|---|

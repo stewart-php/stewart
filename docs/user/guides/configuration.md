@@ -99,10 +99,12 @@ A variable that is not set and has no fallback stops Stewart with the setting's 
 
 ## Checking a configuration
 
-`stewart check` loads the configuration and every file in `apps/`, and fails if any does not load. Otherwise it
-lists every app with its class, the worker it runs on and whether it is enabled, paused or disabled. Run it in CI or
-before a deploy: `make sh`, then `stewart check`. The [Git deploy mode](../deploy/git.md) runs it on every new
-commit.
+`stewart check` loads the configuration and every file in `apps/`, then builds every enabled app the way its worker
+does, without running any of your code. It fails, naming each app, on a missing or unknown option, a constructor
+argument nothing provides, a `Store` without `persistence.url`, an `Mqtt` without `mqtt.url`, or a `#[PeerStore]`
+naming no app. Otherwise it lists every app with its class, the worker it runs on and whether it is enabled, paused
+or disabled. Run it in CI or before a deploy: `make check`. The [Git deploy mode](../deploy/git.md) runs it on every
+new commit.
 
 ## Settings you are likely to change
 

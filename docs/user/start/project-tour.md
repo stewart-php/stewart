@@ -106,7 +106,7 @@ commands. These are the ones you use most:
 | `make generate` | Write the typed classes from Home Assistant into `generated/` |
 | `make config` | Show the settings in effect |
 | `make config-reference` | Show every setting with its default |
-| `make check` | Check that the configuration and every app load, and list the apps with their workers |
+| `make check` | Check that the configuration loads and every app can be built, and list the apps with their workers |
 | `make sh` | Open a shell in the container |
 | `make up` / `make down` | Start Stewart in the background / stop it |
 | `make logs` | Follow the log of the background Stewart |

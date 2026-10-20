@@ -5,6 +5,23 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
+## [Unreleased]
+
+### Added
+
+- `stewart check` builds every enabled app's container the way its worker does, without running any app code, and
+  fails naming each app that cannot be built: a missing or unknown option, a constructor argument nothing provides,
+  a `Store` without `persistence.url`, an `Mqtt` without `mqtt.url`, or a `#[PeerStore]` naming no app, with the
+  closest ID
+- `stewart check` notes classes in `apps/` that implement `App` without `#[Automation]`, as `stewart run` does
+
+### Changed
+
+- A Git deploy rejects a commit with an app that cannot be built, because `stewart check` now builds the apps; before,
+  the commit went out and that app failed on its own
+- An app that takes a `Store` or `Mqtt` that is not configured, or a `#[PeerStore]` naming no app, fails when its
+  worker builds the container, with the reason `app_build_failed`, instead of when it is constructed
+
 ## [1.4.0] - 2026-10-20
 
 A new project reaches its first automation in fewer steps, and `stewart doctor` names what is missing.

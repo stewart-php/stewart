@@ -9,11 +9,15 @@ use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\App\AppCatalogResolver;
 use Stewart\Runtime\App\AppDiscovery;
 use Stewart\Runtime\App\Collection\DiscoveredAppCollection;
+use Stewart\Runtime\App\Collection\UnmarkedAppCollection;
 use Stewart\Runtime\App\DiscoveredApp;
 use Stewart\Runtime\App\UnloadableAppFile;
 use Stewart\Runtime\Broker\AppPlacement;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Config\ConfigLoader;
+use Stewart\Runtime\Container\AppContainerBlueprint;
+use Stewart\Runtime\Container\AppContainerBuilder;
+use Stewart\Runtime\Container\Collection\AppBuildFailureCollection;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
@@ -21,7 +25,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: self::NAME, description: 'Check that the configuration loads and every automation file loads')]
+#[AsCommand(name: self::NAME, description: 'Check that the configuration loads and every app can be built')]
 final class CheckCommand extends StewartCommand
 {
     public const string NAME = 'check';
@@ -31,6 +35,8 @@ final class CheckCommand extends StewartCommand
         private readonly AppDiscovery $discovery,
         private readonly AppCatalogResolver $catalogs,
         private readonly AppPlacement $placement,
+        private readonly AppContainerBuilder $containers,
+        private readonly string $userServicesFile,
     ) {
         parent::__construct();
     }
@@ -58,12 +64,56 @@ final class CheckCommand extends StewartCommand
             return Command::FAILURE;
         }
 
+        $slots = $this->placement->planWorkerSlots($apps->enabled, $config);
+
+        try {
+            $failures = $this->findAppBuildFailures($slots, AppContainerBlueprint::fromProjectConfig($config, $apps->knownIds, $this->userServicesFile));
+        } catch (StewartException $e) {
+            $errors->writeln('<error>' . $e->getMessage() . '</error>');
+
+            return Command::FAILURE;
+        }
+
+        if (!$failures->isEmpty()) {
+            foreach ($apps->enabled as $app) {
+                $failure = $failures->find($app->id);
+
+                if ($failure !== null) {
+                    $errors->writeln('<error>' . $failure->error->getMessage() . '</error>');
+                }
+            }
+
+            return Command::FAILURE;
+        }
+
         $this->writeMissingConfigFileNotice($output, $this->config->findMissingDefaultFile($this->findConfigOption($input)));
         $this->writeUnmatchedOverridesNotice($output, $apps);
-        $this->writeAppTable($output, $discovered->apps, $apps, $this->placement->planWorkerSlots($apps->enabled, $config));
+        $this->writeUnmarkedAppNotices($output, $discovered->unmarked);
+        $this->writeAppTable($output, $discovered->apps, $apps, $slots);
         $output->writeln(\sprintf('Configuration and %d automations load; %d enabled.', $discovered->apps->count(), $apps->enabled->count()));
 
         return Command::SUCCESS;
+    }
+
+    /** @throws StewartException */
+    private function findAppBuildFailures(WorkerSlotCollection $slots, AppContainerBlueprint $blueprint): AppBuildFailureCollection
+    {
+        $failures = [];
+
+        foreach ($slots as $slot) {
+            foreach ($this->containers->findAppBuildFailures($slot->listWorkerApps(), $blueprint, $slot->workerId) as $failure) {
+                $failures[] = $failure;
+            }
+        }
+
+        return AppBuildFailureCollection::keyedByAppId($failures);
+    }
+
+    private function writeUnmarkedAppNotices(OutputInterface $output, UnmarkedAppCollection $unmarked): void
+    {
+        foreach ($unmarked as $app) {
+            $this->writeNotice($output, \sprintf('%s implements App but is not marked #[Automation], so it will not run.', $app->class));
+        }
     }
 
     private function writeUnmatchedOverridesNotice(OutputInterface $output, AppCatalog $apps): void

@@ -10,8 +10,6 @@ use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\HaEvent;
-use Stewart\Contracts\Exception\MqttError;
-use Stewart\Contracts\Exception\MqttException;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exception\TopicException;
 use Stewart\Contracts\Mqtt\MqttMessage;
@@ -21,6 +19,8 @@ use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Topic\TopicEvent;
+use Stewart\Runtime\Exception\ContainerError;
+use Stewart\Runtime\Exception\ContainerException;
 use Stewart\Runtime\Ipc\Message\AppFailed;
 use Stewart\Runtime\Ipc\Message\EventFired;
 use Stewart\Runtime\Ipc\Message\EventFireRequest;
@@ -531,8 +531,9 @@ final class WorkerProtocolTest extends TestCase
         $failure = $this->receiveUntil(AppFailed::class);
         $ready = $this->receiveUntil(WorkerReady::class);
 
-        self::assertSame(MqttException::class, $failure->class);
-        self::assertSame(MqttError::NotConfigured->value, $failure->details?->reason);
+        self::assertSame(ContainerException::class, $failure->class);
+        self::assertSame(ContainerError::AppBuildFailed->value, $failure->details?->reason);
+        self::assertStringContainsString('mqtt.url', $failure->message);
         self::assertSame(['mqtt-relay'], $ready->failedAppIds->collection->toStrings());
 
         $this->shutDown('done');

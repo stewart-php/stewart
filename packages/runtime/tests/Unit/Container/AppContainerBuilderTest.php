@@ -20,19 +20,19 @@ use Stewart\Contracts\Store\Store;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\App\GeneratedRoots;
 use Stewart\Runtime\Container\AppBuildFailure;
+use Stewart\Runtime\Container\AppContainerBlueprint;
 use Stewart\Runtime\Container\AppContainerBuild;
 use Stewart\Runtime\Container\AppContainerBuilder;
 use Stewart\Runtime\Container\AppOptionResolver;
 use Stewart\Runtime\Container\AppRuntimeServices;
 use Stewart\Runtime\Container\Collection\AppBuildFailureCollection;
+use Stewart\Runtime\Container\StoreAttributesPass;
 use Stewart\Runtime\Container\TypedContainer;
 use Stewart\Runtime\Dispatch\LocalDispatcher;
 use Stewart\Runtime\Exception\ContainerError;
 use Stewart\Runtime\Ipc\Collection\WorkerAppCollection;
-use Stewart\Runtime\Ipc\Message\LogRecord;
 use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Ipc\WorkerApp;
-use Stewart\Runtime\Model\LogLevel;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Schedule\WorkerTimers;
@@ -47,7 +47,9 @@ use Stewart\Runtime\Tests\Fixtures\Container\NeedsAutowiredScalar;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsClock;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsGenerated;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsMissingClass;
+use Stewart\Runtime\Tests\Fixtures\Container\NeedsMqtt;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsNullableScalar;
+use Stewart\Runtime\Tests\Fixtures\Container\NeedsPeer;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsScalar;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsStores;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsSunCalendar;
@@ -67,6 +69,7 @@ use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\PendingRequests;
 use Stewart\Runtime\Worker\WorkerHaContext;
 use Stewart\Runtime\Worker\WorkerLogger;
+use Stewart\Runtime\Worker\WorkerMqtt;
 use Stewart\Store\DisabledStores;
 use Stewart\Store\KeyspacedStores;
 use Stewart\Store\ReadOnlyStore;
@@ -78,9 +81,10 @@ use Stewart\Support\Text\ClosestNameFinder;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Store\InMemoryStoreBackend;
 use Stewart\Testing\Time\VirtualClock;
-use Throwable;
 
 #[CoversClass(AppContainerBuilder::class)]
+#[CoversClass(AppContainerBlueprint::class)]
+#[CoversClass(StoreAttributesPass::class)]
 #[CoversClass(AppRuntimeServices::class)]
 #[CoversClass(TypedContainer::class)]
 #[CoversClass(AppOptionResolver::class)]
@@ -102,6 +106,8 @@ final class AppContainerBuilderTest extends TestCase
 
     private const string UNWIRABLE_SERVICE = __DIR__ . '/../../Fixtures/Container/services/unwirable-service.php';
 
+    private const array KNOWN_APP_IDS = ['demo', 'hall-light', 'keeper', 'boiler'];
+
     private StateCache $stateCache;
 
     private Stores $stores;
@@ -109,6 +115,8 @@ final class AppContainerBuilderTest extends TestCase
     private AppResourcesFixture $resources;
 
     private NullTransport $transport;
+
+    private bool $mqttConfigured = false;
 
     protected function setUp(): void
     {
@@ -149,19 +157,45 @@ final class AppContainerBuilderTest extends TestCase
 
     public function testWithoutPersistenceOnlyStoreUsersFail(): void
     {
-        $services = $this->buildContainer([
+        $build = $this->buildAppContainer([
             new WorkerApp(id: new AppId('demo'), class: Demo::class, options: []),
             new WorkerApp(id: new AppId('keeper'), class: NeedsStores::class, options: []),
         ]);
 
-        $this->getApp($services, 'demo', Demo::class);
+        self::assertStringContainsString('persistence.url', $this->findFailure($build, 'keeper', ContainerError::AppBuildFailed)->getMessage());
+        self::assertInstanceOf(Demo::class, $this->getApp($build->container, 'demo', Demo::class));
+    }
 
-        try {
-            $this->getApp($services, 'keeper', NeedsStores::class);
-            self::fail('Without persistence there is no store to hand out.');
-        } catch (Throwable $e) {
-            self::assertStringContainsString('persistence.url', self::findRootCause($e)->getMessage());
-        }
+    public function testPeerStoreWithoutPersistenceFailsItsApp(): void
+    {
+        $build = $this->buildAppContainer([new WorkerApp(id: new AppId('keeper'), class: NeedsPeer::class, options: [])]);
+
+        self::assertStringContainsString('persistence.url', $this->findFailure($build, 'keeper', ContainerError::AppBuildFailed)->getMessage());
+    }
+
+    public function testUserServiceTakingAStoreFailsTheWorkerWithoutPersistence(): void
+    {
+        $e = $this->assertThrowsReason(ContainerError::BuildFailed, fn() => $this->buildAppContainer([new WorkerApp(id: new AppId('demo'), class: Demo::class, options: [])], self::SERVICES_FILE));
+
+        self::assertStringContainsString('persistence.url', $e->getMessage());
+    }
+
+    public function testWithoutMqttOnlyMqttUsersFail(): void
+    {
+        $build = $this->buildAppContainer([
+            new WorkerApp(id: new AppId('demo'), class: Demo::class, options: []),
+            new WorkerApp(id: new AppId('relay'), class: NeedsMqtt::class, options: []),
+        ]);
+
+        self::assertStringContainsString('mqtt.url', $this->findFailure($build, 'relay', ContainerError::AppBuildFailed)->getMessage());
+        self::assertInstanceOf(Demo::class, $this->getApp($build->container, 'demo', Demo::class));
+    }
+
+    public function testMqttUserGetsMqttWhenItIsConfigured(): void
+    {
+        $this->mqttConfigured = true;
+
+        self::assertInstanceOf(WorkerMqtt::class, $this->buildSingleApp('relay', NeedsMqtt::class)->mqtt);
     }
 
     public function testEachAppGetsItsOwnContext(): void
@@ -296,7 +330,11 @@ final class AppContainerBuilderTest extends TestCase
             new WorkerApp(id: new AppId('demo'), class: Demo::class, options: []),
         ]);
 
-        self::assertStringContainsString('type it ReadableStore', $this->findFailure($build, 'keeper', ContainerError::PeerStoreWritable)->getMessage());
+        $failure = $this->findFailure($build, 'keeper', ContainerError::AppBuildFailed);
+
+        self::assertInstanceOf(StewartException::class, $failure->getPrevious());
+        self::assertSame(ContainerError::PeerStoreWritable, $failure->getPrevious()->reason);
+        self::assertStringContainsString('type it ReadableStore', $failure->getMessage());
         self::assertInstanceOf(Demo::class, $this->getApp($build->container, 'demo', Demo::class));
     }
 
@@ -488,18 +526,27 @@ final class AppContainerBuilderTest extends TestCase
         self::assertInstanceOf(Demo::class, $this->getApp($build->container, 'demo', Demo::class));
     }
 
-    public function testIsolatedAppsAreNamedInOneWarning(): void
+    public function testFailuresAreFoundWithoutRuntimeServices(): void
     {
-        $this->buildAppContainer([
-            new WorkerApp(id: new AppId('demo'), class: Demo::class, options: []),
+        $apps = WorkerAppCollection::fromList([
+            new WorkerApp(id: new AppId('demo'), class: Demo::class, options: ['wtach' => 'typo']),
             new WorkerApp(id: new AppId('unregistered'), class: NeedsUnregisteredService::class, options: []),
-            new WorkerApp(id: new AppId('missing'), class: NeedsMissingClass::class, options: []),
+            new WorkerApp(id: new AppId('keeper'), class: NeedsStores::class, options: []),
+            new WorkerApp(id: new AppId('hall-light'), class: HallLight::class, options: []),
         ]);
 
-        $warnings = array_values(array_filter($this->transport->sent, static fn(object $message): bool => $message instanceof LogRecord && $message->level === LogLevel::Warning));
+        $failures = $this->createBuilder()->findAppBuildFailures($apps, $this->createBlueprint(), new WorkerId(0));
 
-        self::assertCount(1, $warnings);
-        self::assertSame(['apps' => ['unregistered', 'missing']], $warnings[0]->context);
+        self::assertSame(['demo', 'unregistered', 'keeper'], $failures->mapToList(static fn(AppBuildFailure $failure): string => $failure->appId->value));
+        self::assertSame(ContainerError::AppOptionUnknown, $failures->find(new AppId('demo'))?->error->reason);
+        self::assertSame(ContainerError::AppBuildFailed, $failures->find(new AppId('keeper'))?->error->reason);
+    }
+
+    public function testFindingFailuresStillFailsOnABrokenServicesFile(): void
+    {
+        $apps = WorkerAppCollection::fromList([new WorkerApp(id: new AppId('demo'), class: Demo::class, options: [])]);
+
+        $this->assertThrowsReason(ContainerError::BuildFailed, fn() => $this->createBuilder()->findAppBuildFailures($apps, $this->createBlueprint(self::UNWIRABLE_SERVICE), new WorkerId(0)));
     }
 
     public function testUnwirableUserServiceFailsTheWholeWorker(): void
@@ -572,17 +619,17 @@ final class AppContainerBuilderTest extends TestCase
         self::assertStringContainsString('$entity', $this->findFailure($build, 'lamp', ContainerError::AppOptionMissing)->getMessage());
     }
 
-    public function testUnknownPeerFailsAppConstruction(): void
+    public function testUnknownPeerFailsItsAppWithASuggestion(): void
     {
         $this->stores = $this->createBackedStores();
-        $services = $this->buildContainer([new WorkerApp(id: new AppId('keeper'), class: NeedsUnknownPeer::class, options: [])]);
 
-        try {
-            $this->getApp($services, 'keeper', App::class);
-            self::fail('There is no automation called "boilr" to read.');
-        } catch (Throwable $e) {
-            self::assertStringContainsString('Did you mean "boiler"?', self::findRootCause($e)->getMessage());
-        }
+        $build = $this->buildAppContainer([
+            new WorkerApp(id: new AppId('keeper'), class: NeedsUnknownPeer::class, options: []),
+            new WorkerApp(id: new AppId('demo'), class: Demo::class, options: []),
+        ]);
+
+        self::assertStringEndsWith('Did you mean "boiler"?', $this->findFailure($build, 'keeper', ContainerError::AppBuildFailed)->getMessage());
+        self::assertInstanceOf(Demo::class, $this->getApp($build->container, 'demo', Demo::class));
     }
 
     /** @param list<WorkerApp> $apps */
@@ -598,15 +645,33 @@ final class AppContainerBuilderTest extends TestCase
     /** @param list<WorkerApp> $apps */
     private function buildAppContainer(array $apps, ?string $servicesFile = null, ?GeneratedRoots $generated = null): AppContainerBuild
     {
-        return new AppContainerBuilder(new AppOptionResolver(new ClosestNameFinder()))->buildAppContainer(WorkerAppCollection::fromList($apps), $this->createRuntimeServices($generated), $servicesFile, new WorkerId(0));
+        return $this->createBuilder()->buildAppContainer(WorkerAppCollection::fromList($apps), $this->createBlueprint($servicesFile, $generated), $this->createRuntimeServices(), new WorkerId(0));
     }
 
-    private function createRuntimeServices(?GeneratedRoots $generated = null): AppRuntimeServices
+    private function createBuilder(): AppContainerBuilder
+    {
+        return new AppContainerBuilder(new AppOptionResolver(new ClosestNameFinder()), new ClosestNameFinder());
+    }
+
+    private function createBlueprint(?string $servicesFile = null, ?GeneratedRoots $generated = null): AppContainerBlueprint
+    {
+        $this->stores ??= new DisabledStores();
+
+        return new AppContainerBlueprint(
+            servicesFile: $servicesFile,
+            generated: $generated,
+            knownAppIds: self::createKnownAppIds(),
+            storeConfigured: !$this->stores instanceof DisabledStores,
+            mqttConfigured: $this->mqttConfigured,
+        );
+    }
+
+    private function createRuntimeServices(): AppRuntimeServices
     {
         $this->stateCache ??= new StateCache();
         $this->stores ??= new DisabledStores();
 
-        return AppRuntimeServicesFixture::createAppRuntimeServices(transport: $this->transport, stateCache: $this->stateCache, resources: $this->resources, stores: $this->stores, generated: $generated);
+        return AppRuntimeServicesFixture::createAppRuntimeServices(transport: $this->transport, stateCache: $this->stateCache, resources: $this->resources, stores: $this->stores, mqttEnabled: $this->mqttConfigured);
     }
 
     /**
@@ -646,15 +711,11 @@ final class AppContainerBuilderTest extends TestCase
 
     private function createBackedStores(): Stores
     {
-        return new KeyspacedStores(new InMemoryStoreBackend(new VirtualClock()), new StorePrefix('stewart'), AppIdCollection::fromList([new AppId('demo'), new AppId('hall-light'), new AppId('keeper'), new AppId('boiler')]), new StoreValueCodec(), new ClosestNameFinder());
+        return new KeyspacedStores(new InMemoryStoreBackend(new VirtualClock()), new StorePrefix('stewart'), self::createKnownAppIds(), new StoreValueCodec(), new ClosestNameFinder());
     }
 
-    private static function findRootCause(Throwable $e): Throwable
+    private static function createKnownAppIds(): AppIdCollection
     {
-        while ($e->getPrevious() !== null) {
-            $e = $e->getPrevious();
-        }
-
-        return $e;
+        return AppIdCollection::fromList(array_map(static fn(string $id): AppId => new AppId($id), self::KNOWN_APP_IDS));
     }
 }

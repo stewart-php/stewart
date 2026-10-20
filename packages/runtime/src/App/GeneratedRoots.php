@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Runtime\App;
 
 use Stewart\Contracts\Generated\Manifest;
-use Stewart\Runtime\Ipc\WorkerSettings;
 
 final readonly class GeneratedRoots
 {
@@ -19,11 +18,6 @@ final readonly class GeneratedRoots
         public string $servicesClass,
         public ?string $manifestClass,
     ) {}
-
-    public static function fromWorkerSettings(WorkerSettings $workerSettings): ?self
-    {
-        return self::fromNamespace($workerSettings->generatedNamespace);
-    }
 
     public static function fromNamespace(string $generatedNamespace): ?self
     {

@@ -8,7 +8,6 @@ use Psr\Log\NullLogger;
 use Stewart\Contracts\Sun\GeoLocation;
 use Stewart\Contracts\Sun\SunCalendar;
 use Stewart\Contracts\Time\Duration;
-use Stewart\Runtime\App\GeneratedRoots;
 use Stewart\Runtime\Container\AppRuntimeServices;
 use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Model\ResourceScope;
@@ -54,7 +53,6 @@ final class AppRuntimeServicesFixture
         StateCache $stateCache = new StateCache(),
         AppResourcesFixture $resources = new AppResourcesFixture(),
         Stores $stores = new DisabledStores(),
-        ?GeneratedRoots $generated = null,
         ?WorkerLogger $logger = null,
         bool $mqttEnabled = false,
         ?SunCalendar $sunCalendar = null,
@@ -98,7 +96,6 @@ final class AppRuntimeServicesFixture
                 ResourceScope::shared(),
             ),
             sunCalendar: $sunCalendar,
-            generated: $generated,
         );
     }
 }

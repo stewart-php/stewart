@@ -7,13 +7,16 @@ namespace Stewart\Runtime\Tests\Unit\Container;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\App\AppId;
+use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Runtime\Container\AppContainerBuilder;
 use Stewart\Runtime\Container\StoreAttributesPass;
 use Stewart\Runtime\Exception\ContainerError;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsAttributedStores;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsInvalidPeerId;
+use Stewart\Runtime\Tests\Fixtures\Container\NeedsUnknownPeer;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsWritablePeer;
 use Stewart\Runtime\Tests\Fixtures\Container\SharedStoreConsumer;
+use Stewart\Support\Text\ClosestNameFinder;
 use Stewart\Testing\Exception\AssertsReason;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -29,7 +32,7 @@ final class StoreAttributesPassTest extends TestCase
         $container = new ContainerBuilder();
         $definition = $container->autowire('keeper', NeedsAttributedStores::class);
 
-        new StoreAttributesPass()->process($container);
+        $this->createPass()->process($container);
 
         self::assertEquals(new Reference(AppContainerBuilder::GLOBAL_STORE), $definition->getArgument('$shared'));
         self::assertEquals(new Reference(AppContainerBuilder::READ_ONLY_GLOBAL_STORE), $definition->getArgument('$sharedView'));
@@ -40,7 +43,7 @@ final class StoreAttributesPassTest extends TestCase
         $container = new ContainerBuilder();
         $definition = $container->autowire('keeper', NeedsAttributedStores::class);
 
-        new StoreAttributesPass()->process($container);
+        $this->createPass()->process($container);
 
         self::assertArrayNotHasKey('$store', $definition->getArguments());
     }
@@ -51,7 +54,7 @@ final class StoreAttributesPassTest extends TestCase
         $first = $container->autowire('first', NeedsAttributedStores::class);
         $second = $container->autowire('second', NeedsAttributedStores::class);
 
-        new StoreAttributesPass()->process($container);
+        $this->createPass()->process($container);
 
         $peerId = AppContainerBuilder::buildPeerStoreServiceId(new AppId('boiler'));
         $peer = $container->getDefinition($peerId);
@@ -67,7 +70,7 @@ final class StoreAttributesPassTest extends TestCase
         $container = new ContainerBuilder();
         $definition = $container->autowire(SharedStoreConsumer::class, SharedStoreConsumer::class);
 
-        new StoreAttributesPass()->process($container);
+        $this->createPass()->process($container);
 
         self::assertEquals(new Reference(AppContainerBuilder::buildPeerStoreServiceId(new AppId('demo'))), $definition->getArgument('$demo'));
     }
@@ -78,7 +81,7 @@ final class StoreAttributesPassTest extends TestCase
         $named = $container->autowire('named', NeedsAttributedStores::class)->setArgument('$shared', new Reference('mine'));
         $positional = $container->autowire('positional', NeedsAttributedStores::class)->setArgument(1, new Reference('mine'));
 
-        new StoreAttributesPass()->process($container);
+        $this->createPass()->process($container);
 
         self::assertEquals(new Reference('mine'), $named->getArgument('$shared'));
         self::assertEquals(new Reference('mine'), $positional->getArgument(1));
@@ -90,7 +93,7 @@ final class StoreAttributesPassTest extends TestCase
         $container = new ContainerBuilder();
         $definition = $container->setDefinition('manual', new Definition(NeedsAttributedStores::class));
 
-        new StoreAttributesPass()->process($container);
+        $this->createPass()->process($container);
 
         self::assertSame([], $definition->getArguments());
     }
@@ -100,7 +103,7 @@ final class StoreAttributesPassTest extends TestCase
         $container = new ContainerBuilder();
         $container->autowire('keeper', NeedsWritablePeer::class);
 
-        $this->assertThrowsReason(ContainerError::PeerStoreWritable, fn() => new StoreAttributesPass()->process($container));
+        $this->assertThrowsReason(ContainerError::PeerStoreWritable, fn() => $this->createPass()->process($container));
     }
 
     public function testInvalidPeerAppIdIsRefused(): void
@@ -108,6 +111,28 @@ final class StoreAttributesPassTest extends TestCase
         $container = new ContainerBuilder();
         $container->autowire('keeper', NeedsInvalidPeerId::class);
 
-        $this->assertThrowsReason(ContainerError::PeerStoreAppIdInvalid, fn() => new StoreAttributesPass()->process($container));
+        $this->assertThrowsReason(ContainerError::PeerStoreAppIdInvalid, fn() => $this->createPass()->process($container));
+    }
+
+    public function testUnknownPeerFailsOnlyWhereItIsUsed(): void
+    {
+        $container = new ContainerBuilder();
+        $container->autowire('keeper', NeedsUnknownPeer::class);
+
+        $this->createPass()->process($container);
+
+        $peer = $container->getDefinition(AppContainerBuilder::buildPeerStoreServiceId(new AppId('boilr')));
+
+        $errors = $peer->getErrors();
+
+        self::assertNull($peer->getFactory());
+        self::assertCount(1, $errors);
+        self::assertIsString($errors[0]);
+        self::assertStringEndsWith('Did you mean "boiler"?', $errors[0]);
+    }
+
+    private function createPass(): StoreAttributesPass
+    {
+        return new StoreAttributesPass(AppIdCollection::fromList([new AppId('boiler'), new AppId('demo')]), new ClosestNameFinder());
     }
 }

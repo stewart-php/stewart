@@ -95,9 +95,12 @@ An attribute on the constructor parameter picks other storage:
 | `#[PeerStore('away-mode')] ReadableStore $away` | Another app's storage, read-only |
 
 `#[PeerStore]` must be typed `ReadableStore`, so each key has a single writer: the app it belongs to. A peer ID that
-does not exist stops the app at start, and the error suggests the closest ID.
+does not exist stops the app at start and fails `stewart check`, and the error suggests the closest ID.
 
 A service from `services.php` that asks for a `Store` gets the shared storage, because a service belongs to no app.
+Without `persistence.url`, an app that takes a `Store`, or a service it uses that takes one, does not start, and
+`stewart check` names it. A service marked `public()` in `services.php` that takes a `Store` stops its whole
+worker instead.
 
 ## When the server is down
 

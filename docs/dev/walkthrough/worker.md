@@ -42,7 +42,9 @@ reading state in `initialize()` works.
 
 ## Building apps
 
-`Container/AppContainerBuilder::buildAppContainer()` builds one container for all of the worker's apps:
+`Container/AppContainerBuilder::buildAppContainer()` builds one container for all of the worker's apps, from an
+`AppContainerBlueprint` (`services.php`, the generated roots, the known app IDs, and whether a store and MQTT are
+configured) and the live `AppRuntimeServices`, which are set only after compiling:
 
 - `AppOptionResolver` checks each app's options before compiling: the class exists, every option matches a
   parameter (with a suggestion when it does not), none is repeated, required ones are set, types coerce. It escapes
@@ -55,9 +57,13 @@ reading state in `initialize()` works.
   registry editor, through `forApp($appId)` factories, and the generated `Entities` and `Services` bound to its
   context.
 - `StoreAttributesPass` maps `#[GlobalStore]` and `#[PeerStore]` parameters to store services; a writable peer store
-  is an error.
-- If compiling fails, `isolateUnbuildableApps()` compiles each app alone, fails only the broken ones, and compiles
-  the rest again.
+  is an error, and a peer that names no app becomes an error definition.
+- Without a store or MQTT, `.stewart.stores` and `.stewart.mqtt` are error definitions too. Symfony drops unused
+  definitions before it reports errors, so only apps that reach one fail, and at compile time. The `Store`,
+  `ReadableStore` and `Mqtt` aliases stay private for the same reason.
+- If compiling fails, `isolateUnbuildableApps()` compiles each app alone, fails only the broken ones as
+  `AppBuildFailed`, and compiles the rest again.
+- `findAppBuildFailures()` runs the same steps without runtime services; `stewart check` uses it.
 
 The container is a local variable of `constructApps()`: consulted at boot, then gone. Nothing resolves services per
 event.

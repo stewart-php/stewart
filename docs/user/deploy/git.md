@@ -51,7 +51,8 @@ readable by user 10001, and set `STEWART_BOOT_GIT_SSH_KEY_FILE: /run/secrets/<na
 1. Every minute (`STEWART_DEPLOY__GIT__POLL`), Stewart fetches the branch.
 2. A new commit is exported into its own directory. If `composer.lock` did not change, the running dependencies are
    reused; otherwise they are installed.
-3. The new commit must pass `stewart check`: the configuration loads and every app class loads.
+3. The new commit must pass `stewart check`: the configuration loads, and every enabled app can be built with its
+   options and the services it takes, such as a `Store` that needs `persistence.url`.
 4. If it passes, Stewart stops gracefully and starts again on the new commit, in the same container.
 5. If it fails, Stewart logs why, keeps running the old commit, and never tries that commit again. Status shows it
    on the `deploy` row. Push a fix to move on.
