@@ -14,6 +14,8 @@ release could break; a release's "Upgrading" section says what to change.
 
 ### Fixed
 
+- The Helm chart rolls the pod when `homeAssistant.token` or `persistence.url` changes, instead of keeping the
+  old value until the next restart
 - `host.docker.internal` reaches the host with `make up` and the deploy compose files too, not only with `make run`;
   in an existing project, add `extra_hosts: ["host.docker.internal:host-gateway"]` to the `stewart` service in
   `compose.yaml`

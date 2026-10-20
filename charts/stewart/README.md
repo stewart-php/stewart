@@ -24,6 +24,8 @@ helm install home oci://ghcr.io/stewart-php/charts/stewart \
 - **Secrets** are mounted as files and read through `STEWART_*_FILE` variables; none is passed as a plain environment
   value. An app option can come from a mounted secret the same way, through `env`:
   `STEWART_APPS__WEATHER__OPTIONS__API_KEY_FILE`. The control token, used by `stewart status` and `exec` probes inside the pod, is generated once per release.
+  Changing `homeAssistant.token` or `persistence.url` rolls the pod; after editing an existing Secret, run
+  `kubectl rollout restart`, since Stewart reads secrets only at start.
 - **Locked down**: non-root (uid 10001), read-only root filesystem, no capabilities, no service account token,
   `enableServiceLinks: false`.
 

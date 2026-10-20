@@ -36,7 +36,8 @@ helm install home oci://ghcr.io/stewart-php/charts/stewart \
   Assistant connection. `kubectl get pods` shows when automations are not running.
 - **Valkey** runs next to Stewart and keeps its data on a 1 Gi volume. To use your own server, set `persistence.url`
   and `valkey.enabled: false`.
-- **`stewart.yaml`** comes from your project. Set `config` in the values to replace it.
+- **`stewart.yaml`** comes from your project. Set `config` in the values to replace it entirely: the two are not
+  merged, so repeat the app options your project's file holds.
 
 The chart's [README](https://github.com/stewart-php/stewart/blob/main/charts/stewart/README.md) lists every value.
 
