@@ -25,6 +25,19 @@ release asks you to do something.
 
 ## Upgrade notes
 
+### 1.4
+
+1. Run `make upgrade VERSION=1.4`. Protocols are unchanged, so a 1.3 daemon, `stewart` CLI and Home Assistant
+   integration work with 1.4.
+2. The new Makefile targets reach only new projects. To use them, copy `check`, `app`, `app-pause`, `app-resume`,
+   `app-reset`, `worker-restart` and the `required` line from the
+   [skeleton's Makefile](https://github.com/stewart-php/skeleton/blob/main/Makefile); there, `doctor` runs with
+   `$(RUN_APP)` and `setup` runs `stewart doctor --offline`.
+3. To make Valkey optional, first add `COMPOSE_PROFILES=store` to `.env` next to `STEWART_PERSISTENCE__URL`. Then add
+   `profiles: [store]` to the `valkey` service and `required: false` under `depends_on: valkey:` in `compose.yaml` and
+   in any deploy compose file you copied. With the profile but without the `.env` line, Valkey no longer starts.
+4. An existing `HelloApp` keeps working; nothing changes for it.
+
 ### 1.3
 
 1. Run `make upgrade VERSION=1.3`. Protocols are unchanged, so a 1.2 daemon, `stewart` CLI and Home Assistant
