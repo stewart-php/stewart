@@ -112,17 +112,18 @@ off, for example) is `mixed` until you generate again.
 
 ## Snapshots for CI
 
-`--snapshot-out` saves what `generate` read, and `--snapshot-in` generates from that file without connecting. In CI,
-check the committed classes against a committed snapshot:
+`--snapshot-out` saves what `generate` read, and `--snapshot-in` generates from that file without connecting. A
+snapshot is a copy of your home's state, with locations, IP addresses and access tokens of cameras, so a new
+project's CI leaves this check out. In a private repository, you can commit one and check the committed classes
+against it:
 
 ```bash
-make generate ARGS=--snapshot-out=var/snapshot.json                     # on your machine; commit the file
-make generate ARGS="--check --snapshot-in=var/snapshot.json"           # in CI
+make generate ARGS=--snapshot-out=snapshot.json                     # on your machine; commit the file
+make generate ARGS="--check --snapshot-in=snapshot.json"           # in CI
 ```
 
-Generating from the same snapshot always gives the same files. A snapshot is a copy of your home's state, with
-locations, IP addresses and access tokens of cameras, so keep it out of public repositories. The same goes for
-`generated/`, which names your entities.
+Generating from the same snapshot always gives the same files. Keep the snapshot out of public repositories; the same
+goes for `generated/`, which names your entities.
 
 ## In production
 

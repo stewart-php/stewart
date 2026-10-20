@@ -6,8 +6,10 @@ sidebar:
 ---
 
 Your project's `.github/workflows/image.yml` builds your code and its dependencies into a Docker image on every push
-to `main` and every `v*` tag, for amd64 and arm64. The server then runs that image. It needs no Git, no Composer and
-no access to your repository; what runs is exactly what CI built.
+to `main` and every `v*` tag, for amd64 and arm64. It first runs your CI: static analysis, the tests and
+`stewart check`, which builds every app with the settings in `.env.example`. A commit that fails them gets no image.
+The server then runs that image. It needs no Git, no Composer and no access to your repository; what runs is exactly
+what CI built.
 
 ## Set it up
 
@@ -64,3 +66,6 @@ development packages, and copies your code in. Keep its `FROM` lines on the same
 **`denied` when pulling.** The server is not logged in to `ghcr.io`, or the token cannot read packages.
 
 **The server still runs the old code.** `up -d` reuses a pulled image only after `pull`. Run both commands.
+
+**A push got no image.** CI failed for that commit. The **Image** run's `check` job shows why; `make stan`,
+`make test` and `make check` on your machine show the same.

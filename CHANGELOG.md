@@ -21,6 +21,8 @@ release could break; a release's "Upgrading" section says what to change.
   the commit went out and that app failed on its own
 - An app that takes a `Store` or `Mqtt` that is not configured, or a `#[PeerStore]` naming no app, fails when its
   worker builds the container, with the reason `app_build_failed`, instead of when it is constructed
+- New projects' CI also runs `make check` against the settings in `.env.example`, and the Image workflow runs CI
+  first, so a commit that fails it gets no image
 
 ## [1.4.0] - 2026-10-20
 

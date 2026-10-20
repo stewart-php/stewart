@@ -4,12 +4,13 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_call:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -25,3 +26,7 @@ jobs:
         run: make stan
       - name: Tests
         run: make test
+      - name: Settings from .env.example, with a placeholder token
+        run: sed 's/^STEWART_HOME_ASSISTANT__TOKEN=$/STEWART_HOME_ASSISTANT__TOKEN=ci/' .env.example > .env
+      - name: Configuration and apps
+        run: make check
