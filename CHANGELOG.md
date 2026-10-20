@@ -12,6 +12,11 @@ release could break; a release's "Upgrading" section says what to change.
 - Home Assistant can delete the devices of a Stewart daemon that is not connected; deleting its hub removes its
   devices and entities, so a test `expose.instance` no longer lingers
 
+### Fixed
+
+- The CLI reference lists only each command's own arguments and options, instead of the console's global options
+  under `config:reference`
+
 ## [1.2.1] - 2026-10-19
 
 A burst of state changes from Home Assistant reaches workers whole again.

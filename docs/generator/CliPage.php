@@ -69,7 +69,8 @@ final readonly class CliPage implements ReferencePage
 
     private function renderCommand(Command $command): string
     {
-        $definition = $command->getDefinition();
+        // Running a command merges the console's global options into its definition.
+        $definition = $command->getNativeDefinition();
         $lines = ['', '### ' . $command->getName(), '', $command->getDescription(), '', '```', 'stewart ' . $command->getSynopsis(true), '```'];
         $arguments = array_map(
             static fn(InputArgument $argument): array => [MarkdownTable::formatCode($argument->getName()), $argument->getDescription()],
