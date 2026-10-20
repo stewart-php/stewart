@@ -31,7 +31,7 @@ export const SITES = {
         sidebar: () => [
             {
                 label: 'Contributing',
-                items: ['contributing', 'conventions', 'testing', 'releasing'],
+                items: ['contributing', 'conventions', 'testing', 'releasing', 'changelog'],
             },
             {
                 label: 'Internals',

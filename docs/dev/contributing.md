@@ -61,7 +61,8 @@ make check      # every check CI runs
 1. Branch from `main`.
 2. Make the change, with tests. Follow the [conventions](conventions.md); several of them are enforced by PHPStan
    rules and architecture tests.
-3. Add a line to the `Unreleased` section of `CHANGELOG.md` when users notice the change.
+3. Add a line to the `Unreleased` section of `CHANGELOG.md` when users notice the change, ending with the pull
+   request: `([#94](https://github.com/stewart-php/stewart/pull/94))`.
 4. Update the user docs in `docs/user/` when behaviour changes, and run `make docs-reference` when a setting,
    command, error or metric changed.
 5. Run `make check`, push, and open a pull request.

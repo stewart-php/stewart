@@ -5,30 +5,50 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
-## [Unreleased]
+## [1.4.0] - 2026-10-20
+
+A new project reaches its first automation in fewer steps, and `stewart doctor` names what is missing.
 
 ### Added
 
 - The Helm chart creates a Service for the admin API once `adminApi.host` is reachable from other pods, so other
   workloads reach it at `http://<release>-stewart.<namespace>.svc:8081`
+  ([#88](https://github.com/stewart-php/stewart/pull/88))
 - `stewart check` lists every app with its class, the worker it runs on and whether it is enabled, paused or
-  disabled
+  disabled ([#91](https://github.com/stewart-php/stewart/pull/91))
 - New projects get `make check`, `make app-pause APP=…`, `make app-resume APP=…`, `make app-reset APP=…` and
-  `make worker-restart WORKER=…`
+  `make worker-restart WORKER=…` ([#92](https://github.com/stewart-php/stewart/pull/92))
 - `stewart make:app PorchLight` (`make app NAME=PorchLight` in a project) creates an app in `apps/` and its test in
   `tests/`, deriving the ID `porch-light` unless `--id` sets one
+  ([#93](https://github.com/stewart-php/stewart/pull/93))
 - `stewart doctor` (`make doctor`) also checks `.env`, the configuration, the Home Assistant connection, whether the
   token belongs to an administrator, the Home Assistant location, the Stewart integration and the store; settings
   that are not there are skipped, and `--offline` keeps only the container checks, as `make setup` does
+  ([#94](https://github.com/stewart-php/stewart/pull/94))
 
 ### Changed
 
 - New projects start with a short `HelloApp` that greets in the log and with a Home Assistant notification; the
   exposure demo moved to `ChangeCounter`, which stays off until the Stewart integration is installed
+  ([#89](https://github.com/stewart-php/stewart/pull/89))
 - Valkey starts only while `.env` sets `COMPOSE_PROFILES=store`; new projects have that line next to
   `STEWART_PERSISTENCE__URL`, so removing both leaves Valkey off when no app takes a `Store`
+  ([#90](https://github.com/stewart-php/stewart/pull/90))
 - The skeleton README starts with the Docker-only `composer create-project` command, and the install guide covers
-  Windows through WSL2
+  Windows through WSL2 ([#90](https://github.com/stewart-php/stewart/pull/90))
+
+### Upgrading
+
+1. Run `make upgrade VERSION=1.4`. Protocols are unchanged, so a 1.3 daemon, `stewart` CLI and Home Assistant
+   integration work with 1.4.
+2. The new Makefile targets reach only new projects. To use them, copy `check`, `app`, `app-pause`, `app-resume`,
+   `app-reset`, `worker-restart` and the `required` line from the
+   [skeleton's Makefile](https://github.com/stewart-php/skeleton/blob/main/Makefile); there, `doctor` runs with
+   `$(RUN_APP)` and `setup` runs `stewart doctor --offline`.
+3. To make Valkey optional, first add `COMPOSE_PROFILES=store` to `.env` next to `STEWART_PERSISTENCE__URL`. Then add
+   `profiles: [store]` to the `valkey` service and `required: false` under `depends_on: valkey:` in `compose.yaml` and
+   in any deploy compose file you copied. With the profile but without the `.env` line, Valkey no longer starts.
+4. An existing `HelloApp` keeps working; nothing changes for it.
 
 ## [1.3.0] - 2026-10-20
 

@@ -62,6 +62,10 @@ jobs:
         run: grep -q "^## \[$VERSION\]" CHANGELOG.md
         env:
           VERSION: ${{ steps.version.outputs.version }}
+      - name: The release has its notes
+        run: test -s "docs/releases/$VERSION.md"
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
 
   distribution:
     needs: verify
@@ -124,9 +128,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Publish the changelog section
+      - name: Publish the release notes
         run: |
-          awk -v heading="## [$VERSION]" 'index($0, heading) == 1 { found = 1; next } found && /^## \[/ { exit } found' CHANGELOG.md > notes.md
+          {
+            cat "docs/releases/$VERSION.md"
+            printf '\n---\n\nEvery change is in the [changelog](https://stewart-php.github.io/docs-dev/changelog/).\n'
+          } > notes.md
           gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag
         env:
           VERSION: ${{ needs.verify.outputs.version }}
