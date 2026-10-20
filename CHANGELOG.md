@@ -14,6 +14,8 @@ release could break; a release's "Upgrading" section says what to change.
 
 ### Fixed
 
+- `stewart status` and the `stewart_broker_memory_bytes` and `stewart_worker_memory_bytes` metrics report each
+  process's resident memory, instead of the PHP heap, which left out opcache and extensions; expect higher values
 - An app ID in `stewart.yaml` or a `STEWART_APPS__*` variable that names no automation logs a warning and is ignored,
   as documented, instead of stopping the daemon; `stewart check` prints the warning and passes
 - `stewart --help` lists the commands, instead of showing the help of `run`; `stewart run --help` still shows it

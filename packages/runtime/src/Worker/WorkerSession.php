@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Worker;
 
 use Psr\Log\LoggerInterface;
 use Stewart\Runtime\Exception\TransportException;
+use Stewart\Runtime\Health\ProcessMemory;
 use Stewart\Runtime\Ipc\Message\Bootstrap;
 use Stewart\Runtime\Ipc\Message\WorkerReady;
 use Stewart\Runtime\Ipc\Transport;
@@ -29,6 +30,7 @@ final readonly class WorkerSession
         private BrokerMessageReader $reader,
         private WorkerShutdown $shutdown,
         private LoopErrorReporter $loopErrors,
+        private ProcessMemory $processMemory,
         private LoggerInterface $logger,
     ) {}
 
@@ -82,7 +84,7 @@ final readonly class WorkerSession
             $this->transport->send(new WorkerReady(
                 appIds: AppIdsFragment::fromCollection($this->apps->listAppIdsInState(AppState::Running)),
                 failedAppIds: AppIdsFragment::fromCollection($this->apps->listAppIdsInState(AppState::Failed)),
-                memoryBytes: memory_get_usage(true),
+                memoryBytes: $this->processMemory->measureResidentBytes(),
             ));
         } catch (TransportException $e) {
             $this->logger->debug('Could not report ready; the broker channel is closed', ['exception' => $e]);

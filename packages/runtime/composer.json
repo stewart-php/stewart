@@ -27,6 +27,7 @@
         "ext-filter": "*",
         "ext-json": "*",
         "ext-pcntl": "*",
+        "ext-posix": "*",
         "monolog/monolog": "^3.12",
         "psr/log": "^3.0",
         "revolt/event-loop": "^1.0.9",
@@ -45,7 +46,6 @@
         "symfony/yaml": "^7.4 || ^8.0"
     },
     "require-dev": {
-        "ext-posix": "*",
         "phpunit/phpunit": "^13.3",
         "psr/container": "^2.0",
         "stewart-php/store-redis": "self.version",

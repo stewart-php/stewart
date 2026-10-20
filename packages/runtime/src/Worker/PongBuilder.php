@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Worker;
 
 use Stewart\Contracts\Time\Clock;
 use Stewart\Runtime\Dispatch\LocalDispatcher;
+use Stewart\Runtime\Health\ProcessMemory;
 use Stewart\Runtime\Ipc\Message\AppActivityReport;
 use Stewart\Runtime\Ipc\Message\Ping;
 use Stewart\Runtime\Ipc\Message\Pong;
@@ -22,6 +23,7 @@ final readonly class PongBuilder
         private ScheduleRegistry $schedules,
         private AppActivityCounters $activityCounters,
         private Clock $clock,
+        private ProcessMemory $processMemory,
         private ?GuardedStoreBackend $store = null,
     ) {}
 
@@ -42,7 +44,7 @@ final readonly class PongBuilder
         return new Pong(
             nonce: $ping->nonce,
             loopLag: $this->clock->getNow()->elapsedSince($ping->sentAt),
-            memoryBytes: memory_get_usage(true),
+            memoryBytes: $this->processMemory->measureResidentBytes(),
             apps: $reports,
             store: $this->store?->getHealth(),
         );

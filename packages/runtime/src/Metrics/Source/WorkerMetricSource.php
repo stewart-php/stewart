@@ -21,7 +21,7 @@ final readonly class WorkerMetricSource implements RuntimeMetricSource
         $ready = new MetricFamily('stewart_worker_ready', 'Whether the worker finished booting its apps; 1 or 0.', MetricType::Gauge);
         $missedProbes = new MetricFamily('stewart_worker_missed_probes', 'Liveness probes the worker has not answered in a row.', MetricType::Gauge);
         $loopLag = new MetricFamily('stewart_worker_loop_lag_seconds', 'Event loop lag the worker last reported.', MetricType::Gauge);
-        $memory = new MetricFamily('stewart_worker_memory_bytes', 'Memory the worker process last reported.', MetricType::Gauge);
+        $memory = new MetricFamily('stewart_worker_memory_bytes', 'Resident memory (RSS) the worker process last reported.', MetricType::Gauge);
         $lastPong = new MetricFamily('stewart_worker_last_pong_timestamp_seconds', 'Unix time of the last liveness answer.', MetricType::Gauge);
         $restartsInWindow = new MetricFamily('stewart_worker_restarts_in_window', 'Restarts inside the current restart budget window.', MetricType::Gauge);
         $restarts = new MetricFamily('stewart_worker_restarts_total', 'Restarts scheduled since the daemon started.', MetricType::Counter);

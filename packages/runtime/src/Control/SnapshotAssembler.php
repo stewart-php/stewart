@@ -25,6 +25,7 @@ use Stewart\Runtime\Control\Protocol\Status\DeployFailure;
 use Stewart\Runtime\Control\Protocol\Status\DeployStatus;
 use Stewart\Runtime\Control\Protocol\Status\RegistrationInfo;
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
+use Stewart\Runtime\Health\ProcessMemory;
 use Stewart\Runtime\Model\StewartVersion;
 
 final readonly class SnapshotAssembler implements SnapshotSource
@@ -43,6 +44,7 @@ final readonly class SnapshotAssembler implements SnapshotSource
         private WorkerStatusBuilder $workerStatuses,
         private AppStatusBuilder $appStatuses,
         private StoreHealthBuilder $storeHealth,
+        private ProcessMemory $processMemory,
         private Clock $clock,
     ) {}
 
@@ -67,7 +69,7 @@ final readonly class SnapshotAssembler implements SnapshotSource
         return new DaemonInfo(
             pid: getmypid() ?: 0,
             startedAt: $this->startTime->getStartedAt(),
-            memoryBytes: memory_get_usage(true),
+            memoryBytes: $this->processMemory->measureResidentBytes(),
             version: $this->stewartVersion->value,
             timeZone: $this->session->getTimeZone()->getName(),
             entities: $this->session->countEntities(),
