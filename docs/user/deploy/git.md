@@ -11,7 +11,8 @@ switched to. A push to `main` reaches the server within a minute, and a broken p
 
 ## Set it up
 
-Copy two files to the server: `deploy/compose.git.yaml` from your project, and a filled-in `.env`. In
+Copy two files to the server: `deploy/compose.git.yaml` from your project, and a filled-in `.env`. Its
+`COMPOSE_PROFILES=store` line starts Valkey next to Stewart; drop it and the store URL when no app takes a `Store`. In
 `compose.git.yaml`, set your repository:
 
 ```yaml

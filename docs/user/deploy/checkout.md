@@ -17,7 +17,7 @@ cp .env.example .env    # fill it in as on your machine; STEWART_CONTROL__TOKEN=
 make up
 ```
 
-`make up` starts Stewart and Valkey in the background. On its first start, the container installs your
+`make up` starts Stewart, and Valkey while `.env` sets `COMPOSE_PROFILES=store`, in the background. On its first start, the container installs your
 dependencies, which takes a minute. Then:
 
 ```bash

@@ -16,6 +16,10 @@ release could break; a release's "Upgrading" section says what to change.
 
 - New projects start with a short `HelloApp` that greets in the log and with a Home Assistant notification; the
   exposure demo moved to `ChangeCounter`, which stays off until the Stewart integration is installed
+- Valkey starts only while `.env` sets `COMPOSE_PROFILES=store`; new projects have that line next to
+  `STEWART_PERSISTENCE__URL`, so removing both leaves Valkey off when no app takes a `Store`
+- The skeleton README starts with the Docker-only `composer create-project` command, and the install guide covers
+  Windows through WSL2
 
 ## [1.3.0] - 2026-10-20
 

@@ -16,11 +16,15 @@ A `Store` parameter gives the app its own storage, filed under its ID. No other 
 
 ## Setting it up
 
-A new project already has it: `compose.yaml` runs a [Valkey](https://valkey.io) server, and `.env` points Stewart at it:
+A new project already has it: `compose.yaml` runs a [Valkey](https://valkey.io) server, and `.env` turns it on and
+points Stewart at it:
 
 ```bash
+COMPOSE_PROFILES=store
 STEWART_PERSISTENCE__URL=redis://valkey:6379/0
 ```
+
+When no app takes a `Store`, remove both lines: Valkey then no longer starts.
 
 Any Redis-compatible server works. A password and a database number go in the URL:
 `redis://:secret@my-redis:6379/3`. `unix:///path/to/redis.sock` connects over a socket. TLS (`rediss://`) is not
@@ -140,6 +144,6 @@ The test harness gives apps an in-memory store. `$harness->stores->openAppStore(
 **`Persistence is not configured`.** Set `STEWART_PERSISTENCE__URL` in `.env`.
 
 **Stewart does not start: the store is unreachable.** Check that the `valkey` container runs (`docker compose ps`) and
-that the URL names it.
+that the URL names it. Valkey starts only while `.env` has `COMPOSE_PROFILES=store`.
 
 **`Key "…" holds …, not …`.** Two apps, or two versions of one app, wrote different types under the same key.

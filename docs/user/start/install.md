@@ -16,6 +16,16 @@ its example app.
   Assistant add-on: it runs in its own container, on the same machine or another one.
 - **A long-lived access token from an administrator user.** The next section shows how to make one.
 
+### On Windows
+
+Run Stewart inside WSL2, not from PowerShell: the commands below use `make`, `bash` and `id`.
+
+1. Install Docker Desktop and turn on its WSL integration for your distribution, under **Settings → Resources → WSL
+   integration**.
+2. In the WSL terminal, install `make`: `sudo apt install make`.
+3. Keep the project in the Linux home folder (`~/my-home`), not under `/mnt/c`. Files there are much faster, and
+   their owner matches the container user.
+
 ## 1. Create a Home Assistant user for Stewart
 
 Stewart works best with its own Home Assistant user. Its changes are then marked as Stewart's, and an app can tell

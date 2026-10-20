@@ -19,7 +19,7 @@ On a [Git](../deploy/git.md) or [image](../deploy/image.md) server, which has no
 where two belong. See [Configuration](../guides/configuration.md#environment-variables).
 
 **The store is unreachable.** With `persistence.url` set, Stewart checks the store at start. Check that the `valkey`
-container runs (`docker compose ps`).
+container runs (`docker compose ps`); it starts only while `.env` sets `COMPOSE_PROFILES=store`.
 
 **`STEWART_CONTROL__TOKEN` is missing.** The control socket needs a token. `make env` creates `.env` with one; on an
 older `.env`, add `STEWART_CONTROL__TOKEN=` followed by `openssl rand -hex 16`.
