@@ -57,8 +57,8 @@ Your code is in Git. What else is worth keeping:
 ## Resources
 
 Stewart runs a main process and one or more workers, each a PHP process. The Helm chart reserves 128 MB of memory and
-allows 512 MB, which fits most homes. `make status` shows the memory each process uses. `workers: 0` (the default)
-starts one worker per CPU core, at most 4; on a Raspberry Pi with little memory, `workers: 1` or `2` is plenty.
+allows 512 MB, which fits most homes. `make status` shows the resident memory (RSS) of each process. `workers: 0` (the
+default) starts one worker per CPU core, at most 4; on a Raspberry Pi with little memory, `workers: 1` or `2` is plenty.
 
 ## Updating Stewart
 

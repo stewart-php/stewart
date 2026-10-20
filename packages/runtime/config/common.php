@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Stewart\Contracts\Time\Timers;
+use Stewart\Runtime\Health\ProcessMemory;
 use Stewart\Runtime\Ipc\Wire\IpcCodec;
 use Stewart\Runtime\Ipc\Wire\IpcMessageCatalog;
 use Stewart\Runtime\Json\WireMapper;
@@ -26,6 +27,8 @@ return static function (ContainerConfigurator $container): void {
     $services->alias(Deadlines::class, RevoltTimers::class);
 
     $services->set(ClosestNameFinder::class);
+
+    $services->set(ProcessMemory::class);
 
     $services->set(DefaultProcessTimeZone::class);
     $services->alias(ProcessTimeZone::class, DefaultProcessTimeZone::class)->public();

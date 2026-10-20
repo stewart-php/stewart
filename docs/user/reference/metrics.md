@@ -28,7 +28,7 @@ token. [Status and control](../guides/status.md#metrics) explains how to turn th
 | `stewart_app_subscription_dropped_total` | counter | `app`, `worker` | Events dropped because a subscription queue was full. |
 | `stewart_app_subscriptions` | gauge | `app`, `worker` | Subscriptions the app holds. |
 | `stewart_app_suppressed_total` | counter | `app`, `worker` | Work skipped while the app was paused. |
-| `stewart_broker_memory_bytes` | gauge |  | Memory the broker process holds. |
+| `stewart_broker_memory_bytes` | gauge |  | Resident memory (RSS) of the broker process. |
 | `stewart_build_info` | gauge | `version`, `ha_version` | Stewart and Home Assistant versions; always 1. |
 | `stewart_component_info` | gauge | `version`, `protocol` | Version and protocol of the stewart Home Assistant integration; always 1. |
 | `stewart_component_state` | gauge | `state` | State of the stewart Home Assistant integration; 1 for the current one. |
@@ -50,7 +50,7 @@ token. [Status and control](../guides/status.md#metrics) explains how to turn th
 | `stewart_store_last_failure_timestamp_seconds` | gauge |  | Unix time of the last store failure. |
 | `stewart_worker_last_pong_timestamp_seconds` | gauge | `worker` | Unix time of the last liveness answer. |
 | `stewart_worker_loop_lag_seconds` | gauge | `worker` | Event loop lag the worker last reported. |
-| `stewart_worker_memory_bytes` | gauge | `worker` | Memory the worker process last reported. |
+| `stewart_worker_memory_bytes` | gauge | `worker` | Resident memory (RSS) the worker process last reported. |
 | `stewart_worker_missed_probes` | gauge | `worker` | Liveness probes the worker has not answered in a row. |
 | `stewart_worker_outbox_coalesced_state_changes_total` | counter | `worker` | State changes merged into a newer one before delivery. |
 | `stewart_worker_outbox_dropped_total` | counter | `worker` | Messages dropped because the worker outbox was full. |

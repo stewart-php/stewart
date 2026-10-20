@@ -4,7 +4,7 @@ stewart_build_info{version="stub",ha_version="2026.9.1"} 1
 # HELP stewart_start_time_seconds Unix time the daemon started.
 # TYPE stewart_start_time_seconds gauge
 stewart_start_time_seconds 1790416800
-# HELP stewart_broker_memory_bytes Memory the broker process holds.
+# HELP stewart_broker_memory_bytes Resident memory (RSS) of the broker process.
 # TYPE stewart_broker_memory_bytes gauge
 stewart_broker_memory_bytes 52428800
 # HELP stewart_ha_entities Entities in the Home Assistant state cache.
@@ -65,7 +65,7 @@ stewart_worker_missed_probes{worker="0"} 0
 # HELP stewart_worker_loop_lag_seconds Event loop lag the worker last reported.
 # TYPE stewart_worker_loop_lag_seconds gauge
 stewart_worker_loop_lag_seconds{worker="0"} 0.003
-# HELP stewart_worker_memory_bytes Memory the worker process last reported.
+# HELP stewart_worker_memory_bytes Resident memory (RSS) the worker process last reported.
 # TYPE stewart_worker_memory_bytes gauge
 stewart_worker_memory_bytes{worker="0"} 20971520
 # HELP stewart_worker_last_pong_timestamp_seconds Unix time of the last liveness answer.

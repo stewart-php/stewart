@@ -33,8 +33,8 @@ The other commands on this page run inside the Stewart container:
 
 | Table | Shows |
 |---|---|
-| Daemon | Stewart's version, uptime and memory; the Home Assistant connection and its last outage; whether the store is up; the `component` row (the Stewart integration in Home Assistant); the `deploy` row (the running commit and the last rejected one, in Git mode); service calls waiting and refused. |
-| Workers | Whether each worker is running, how much memory it uses, how often it restarted, and whether it is falling behind (events waiting or dropped). |
+| Daemon | Stewart's version, uptime and resident memory; the Home Assistant connection and its last outage; whether the store is up; the `component` row (the Stewart integration in Home Assistant); the `deploy` row (the running commit and the last rejected one, in Git mode); service calls waiting and refused. |
+| Workers | Whether each worker is running, how much resident memory it uses, how often it restarted, and whether it is falling behind (events waiting or dropped). |
 | Apps | Whether each app is running, paused (and by whom: `config`, `control` or `http`) or failed; how many events and schedule runs it handled or skipped while paused; its exposed entities; how its service calls went. |
 | Failures | Each app's last failure: when, where, the reason and the message. |
 

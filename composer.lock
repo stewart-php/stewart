@@ -2396,7 +2396,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/runtime",
-                "reference": "b16d5e34a356722f732b02913f99059763e76289"
+                "reference": "b579c186d9c2a90bbd560fac9b931e65b3af96b2"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2412,6 +2412,7 @@
                 "ext-filter": "*",
                 "ext-json": "*",
                 "ext-pcntl": "*",
+                "ext-posix": "*",
                 "monolog/monolog": "^3.12",
                 "php": ">=8.5",
                 "psr/log": "^3.0",
@@ -2431,7 +2432,6 @@
                 "symfony/yaml": "^7.4 || ^8.0"
             },
             "require-dev": {
-                "ext-posix": "*",
                 "phpunit/phpunit": "^13.3",
                 "psr/container": "^2.0",
                 "stewart-php/store-redis": "self.version",
