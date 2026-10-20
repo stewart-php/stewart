@@ -115,7 +115,7 @@ make deploy             # later: git pull, restart; changed dependencies are ins
 ### An image built by CI
 
 `.github/workflows/image.yml` builds this repository into `ghcr.io/<owner>/<repository>` for amd64 and arm64 on every
-push to `main` and every `v*` tag. Copy `deploy/compose.image.yaml` and a filled-in `.env` to the server, set the
+push to `main` and every `v*` tag, once CI passes for that commit. Copy `deploy/compose.image.yaml` and a filled-in `.env` to the server, set the
 image, and `docker compose -f compose.image.yaml up -d`. Kubernetes runs the same image (below).
 
 ### A clone that follows a branch

@@ -86,8 +86,8 @@ with Xdebug, and installs dependencies only when you run `make install`.
 **`Dockerfile`** and **`deploy/`** are for servers. See
 [Deploying](../deploy/index.md).
 
-**`.github/workflows/`** runs `make stan` and `make test` on every push (`ci.yml`), and builds an image of your
-project (`image.yml`). Dependabot proposes Stewart updates.
+**`.github/workflows/`** runs `make stan`, `make test` and `make check` on every push (`ci.yml`), and builds an
+image of your project once they pass (`image.yml`). Dependabot proposes Stewart updates.
 
 ## make commands
 
