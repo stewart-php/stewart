@@ -13,6 +13,8 @@ release could break; a release's "Upgrading" section says what to change.
   workloads reach it at `http://<release>-stewart.<namespace>.svc:8081`
 - `stewart check` lists every app with its class, the worker it runs on and whether it is enabled, paused or
   disabled
+- New projects get `make check`, `make app-pause APP=…`, `make app-resume APP=…`, `make app-reset APP=…` and
+  `make worker-restart WORKER=…`
 
 ### Changed
 

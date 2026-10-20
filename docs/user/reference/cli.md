@@ -28,6 +28,7 @@ Your project runs these commands with `make`. The `stewart` commands below run i
 | `make debug` | Run in the foreground with Xdebug |
 | `make config` | Show the effective config, secrets masked |
 | `make config-reference` | Show every supported config option |
+| `make check` | Check that the configuration and every app load, and list the apps |
 | `make test` | Run the tests |
 | `make stan` | Static analysis |
 | `make up` | Start the daemon in the background |
@@ -35,6 +36,10 @@ Your project runs these commands with `make`. The `stewart` commands below run i
 | `make deploy` | Pull the latest commit and restart; changed dependencies are installed on start |
 | `make logs` | Follow the daemon logs |
 | `make status` | One-shot status of the running daemon |
+| `make app-pause` | Pause an app of the running daemon [APP=porch-light] |
+| `make app-resume` | Resume a paused app [APP=porch-light] |
+| `make app-reset` | Forget a stored pause or resume, so stewart.yaml decides again [APP=porch-light] |
+| `make worker-restart` | Restart a worker of the running daemon [WORKER=0] |
 
 ## stewart
 

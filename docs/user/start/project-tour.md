@@ -104,9 +104,12 @@ commands. These are the ones you use most:
 | `make generate` | Write the typed classes from Home Assistant into `generated/` |
 | `make config` | Show the settings in effect |
 | `make config-reference` | Show every setting with its default |
+| `make check` | Check that the configuration and every app load, and list the apps with their workers |
 | `make sh` | Open a shell in the container |
 | `make up` / `make down` | Start Stewart in the background / stop it |
 | `make logs` | Follow the log of the background Stewart |
 | `make status` | Ask the running Stewart how its apps are doing |
+| `make app-pause APP=…` / `make app-resume APP=…` | Pause or resume one app of the running Stewart; `make app-reset APP=…` forgets the choice |
+| `make worker-restart WORKER=…` | Restart one worker of the running Stewart |
 | `make update` | Update dependencies within your Stewart version |
 | `make upgrade VERSION=…` | Move to another Stewart version |
