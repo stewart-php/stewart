@@ -27,7 +27,8 @@ older `.env`, add `STEWART_CONTROL__TOKEN=` followed by `openssl rand -hex 16`.
 ## Stewart cannot reach Home Assistant
 
 **It keeps reconnecting.** Check the URL from inside the container: `make sh`, then
-`wget -qO- http://your-host:8123`. `localhost` is the container itself; use Home Assistant's host name or IP.
+`wget -qO- http://your-host:8123`. `localhost` is the container itself; use Home Assistant's host name or IP, or
+`host.docker.internal` when it runs on the same machine.
 
 **`AdministratorRequired`.** The token belongs to a user without administrator rights.
 

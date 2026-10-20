@@ -14,6 +14,9 @@ release could break; a release's "Upgrading" section says what to change.
 
 ### Fixed
 
+- `host.docker.internal` reaches the host with `make up` and the deploy compose files too, not only with `make run`;
+  in an existing project, add `extra_hosts: ["host.docker.internal:host-gateway"]` to the `stewart` service in
+  `compose.yaml`
 - `stewart status` and the `stewart_broker_memory_bytes` and `stewart_worker_memory_bytes` metrics report each
   process's resident memory, instead of the PHP heap, which left out opcache and extensions; expect higher values
 - An app ID in `stewart.yaml` or a `STEWART_APPS__*` variable that names no automation logs a warning and is ignored,

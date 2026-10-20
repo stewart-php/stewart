@@ -71,8 +71,7 @@ STEWART_HOME_ASSISTANT__TOKEN=paste-the-token-here
 
 - The URL is the address you open Home Assistant at. `http://` and `https://` work as well as `ws://` and `wss://`.
 - Stewart runs in a container, so `localhost` means the container, not your machine. Use the host name or IP
-  address of Home Assistant. If Home Assistant runs on the same machine, `host.docker.internal` reaches it with
-  `make run`; on a server, use the machine's IP address.
+  address of Home Assistant, or `host.docker.internal` when Home Assistant runs on the same machine as Stewart.
 - `.env` holds secrets. Git already ignores it, so keep it that way.
 
 Now let Stewart read your entities and services:

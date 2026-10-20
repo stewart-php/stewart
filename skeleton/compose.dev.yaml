@@ -6,7 +6,5 @@ services:
       STEWART_BOOT_COMPOSER: never
       COMPOSER_HOME: /app/var/composer
       XDEBUG_MODE: "${XDEBUG_MODE:-off}"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     stdin_open: true
     tty: true
