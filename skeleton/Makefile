@@ -11,6 +11,9 @@ RUN     := $(DEV) run --rm --no-deps stewart
 RUN_APP := $(DEV) run --rm
 SERVER  := docker compose
 
+# The value of a variable a target needs, or a stop that shows how to set it.
+required = $(or $($(1)),$(error Set $(1), for example: make $@ $(1)=$(2)))
+
 .PHONY: help
 help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -71,6 +74,10 @@ config: ## Show the effective config, secrets masked
 config-reference: ## Show every supported config option
 	$(RUN) stewart config:reference
 
+.PHONY: check
+check: ## Check that the configuration and every app load, and list the apps
+	$(RUN) stewart check
+
 .PHONY: test
 test: ## Run the tests
 	$(RUN) vendor/bin/phpunit
@@ -101,3 +108,19 @@ logs: ## Follow the daemon logs
 .PHONY: status
 status: ## One-shot status of the running daemon
 	$(SERVER) run --rm --no-deps stewart stewart status
+
+.PHONY: app-pause
+app-pause: ## Pause an app of the running daemon [APP=porch-light]
+	$(SERVER) run --rm --no-deps stewart stewart app:pause $(call required,APP,porch-light)
+
+.PHONY: app-resume
+app-resume: ## Resume a paused app [APP=porch-light]
+	$(SERVER) run --rm --no-deps stewart stewart app:resume $(call required,APP,porch-light)
+
+.PHONY: app-reset
+app-reset: ## Forget a stored pause or resume, so stewart.yaml decides again [APP=porch-light]
+	$(SERVER) run --rm --no-deps stewart stewart app:reset $(call required,APP,porch-light)
+
+.PHONY: worker-restart
+worker-restart: ## Restart a worker of the running daemon [WORKER=0]
+	$(SERVER) run --rm --no-deps stewart stewart worker:restart $(call required,WORKER,0)

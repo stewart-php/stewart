@@ -21,7 +21,9 @@ STEWART_CONTROL__TOKEN=…      # openssl rand -hex 16 makes a new one
 Stewart refuses to start without a token while the socket is on. To run without the socket, set
 `STEWART_CONTROL__LISTEN=off` (the word: an empty variable means "not set").
 
-The other commands on this page run inside the Stewart container:
+In a project from the skeleton, `make app-pause APP=…`, `make app-resume APP=…`, `make app-reset APP=…` and
+`make worker-restart WORKER=…` reach the running Stewart the way `make status` does. Otherwise, the commands on this
+page run inside the Stewart container:
 
 | Where Stewart runs | Prefix |
 |---|---|
