@@ -394,6 +394,16 @@ Thrown as `DeployException`.
 | `CommandFailed` | {command} failed with exit code {exitCode}: {detail} |  |
 | `PrepareOutputUnexpected` | release-prepare printed "{output}" instead of a commit and its state. |  |
 
+## ScaffoldError
+
+Thrown as `ScaffoldException`.
+
+| Reason | Message | What to do |
+| --- | --- | --- |
+| `ClassNameInvalid` | "{name}" is not a class name; use letters and digits starting with a capital, such as PorchLight. |  |
+| `FileExists` | {path} already exists. | Choose another class name, or remove the existing file and its test first. |
+| `IdTaken` | An automation already has the ID "{appId}". | Pass another ID with `--id`, or rename the class. |
+
 ## TransportError
 
 Thrown as `TransportException`.

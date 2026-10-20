@@ -29,6 +29,8 @@ return [
     'HaClientError::UrlInvalid' => 'For example `ws://homeassistant.local:8123/api/websocket` in `STEWART_HOME_ASSISTANT__URL`.',
     'IdentifierError::EntityNotGenerated' => 'Fix the ID, or run `make generate` for a new entity.',
     'MqttError::NotConfigured' => 'Set `STEWART_MQTT__URL`.',
+    'ScaffoldError::FileExists' => 'Choose another class name, or remove the existing file and its test first.',
+    'ScaffoldError::IdTaken' => 'Pass another ID with `--id`, or rename the class.',
     'ScheduleError::SunLocationUnknown' => 'Set a location in Home Assistant under Settings → System → General, then restart Stewart.',
     'ServiceCallError::Rejected' => 'Try the same call under Developer tools → Actions in Home Assistant.',
     'ServiceCallError::Overloaded' => 'Call fewer services at once, for example one call with several targets.',

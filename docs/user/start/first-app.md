@@ -12,7 +12,7 @@ You need a project from [Install Stewart](install.md).
 
 ## 1. Write the app
 
-Create `apps/PorchLight.php`:
+`make app NAME=PorchLight` creates `apps/PorchLight.php` and a test for it in `tests/`. Replace the app with:
 
 ```php file=../../examples/apps/PorchLight.php
 ```
@@ -52,8 +52,8 @@ The keys under `options` are the names of the constructor parameters. Each one r
 
 ## 3. Test it
 
-Waiting for sunset to check your app is slow. A test runs the app on a virtual clock instead. Create
-`tests/PorchLightTest.php`:
+Waiting for sunset to check your app is slow. A test runs the app on a virtual clock instead. Replace
+`tests/PorchLightTest.php` with:
 
 ```php file=../../examples/tests/PorchLightTest.php
 ```

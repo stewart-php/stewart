@@ -23,6 +23,7 @@ Your project runs these commands with `make`. The `stewart` commands below run i
 | `make upgrade` | Move to another Stewart release line, then pull its images and install it [VERSION=2.0] |
 | `make sh` | Shell in the development container |
 | `make doctor` | Check the container can run Stewart |
+| `make app` | Create an app in apps/ and its test in tests/ [NAME=PorchLight] |
 | `make generate` | Write typed entity and service classes from Home Assistant into generated/ [ARGS=--allow-shrink] |
 | `make run` | Run in the foreground [ONLY="hello porch" to run only those apps, DRY_RUN=1 to send no service calls] |
 | `make debug` | Run in the foreground with Xdebug |
@@ -156,6 +157,22 @@ stewart generate [options]
 | `--snapshot-out=…` | Write what was read to this file |  |
 | `--check` | Report what would change and fail if anything would |  |
 | `--allow-shrink` | Write even if that deletes more than half of the generated files |  |
+
+### make:app
+
+Create an app in apps/ and its test in tests/
+
+```
+stewart make:app [options] [--] <name>
+```
+
+| Argument | Meaning |
+| --- | --- |
+| `name` | The class name, such as PorchLight |
+
+| Option | Meaning | Default |
+| --- | --- | --- |
+| `--id=…` | The automation ID; derived from the name when left out, such as porch-light |  |
 
 ### run
 
