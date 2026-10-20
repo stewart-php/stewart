@@ -27,15 +27,6 @@ final class ConfigurationException extends StewartException
         );
     }
 
-    public static function appUnknown(AppId $appId, AppIdCollection $knownAppIds): self
-    {
-        return self::createForReasonWithAppendedText(
-            ConfigurationError::AppUnknown,
-            ['appId' => $appId->value, 'knownAppIds' => $knownAppIds->toStrings()],
-            self::describeKnownApps($knownAppIds),
-        );
-    }
-
     public static function appSelectionUnknown(AppId $appId, AppIdCollection $knownAppIds): self
     {
         return self::createForReasonWithAppendedText(

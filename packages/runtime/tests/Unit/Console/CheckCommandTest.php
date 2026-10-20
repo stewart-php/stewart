@@ -92,13 +92,15 @@ final class CheckCommandTest extends TestCase
         self::assertStringContainsString('home_assistant', $tester->getErrorOutput());
     }
 
-    public function testOverrideForUnknownAppFails(): void
+    public function testOverrideForUnknownAppWarnsAndPasses(): void
     {
         $this->apps->writeClass('Porch', self::LOADABLE_APP_SOURCE);
 
         $tester = $this->runCheck(self::VALID_CONFIG . "apps:\n  missing:\n    enabled: false\n");
 
-        self::assertSame(Command::FAILURE, $tester->getStatusCode());
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertStringContainsString('were not found, so their settings are ignored: missing. Known automations: porch.', $tester->getErrorOutput());
+        self::assertStringContainsString('1 automations load; 1 enabled', $tester->getDisplay());
     }
 
     public function testEnvironmentOverrideReachesHyphenatedApp(): void

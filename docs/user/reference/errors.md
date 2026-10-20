@@ -324,7 +324,6 @@ Thrown as `ConfigurationException`.
 | `ControlTokenMissing` | control.token is required while control.listen is set; set STEWART_CONTROL__TOKEN or set control.listen to "off". |  |
 | `AdminTokenMissing` | http.admin.token is required while http.admin.listen is set; set STEWART_HTTP__ADMIN__TOKEN or set http.admin.listen to "off". |  |
 | `WorkerIndexOutOfRange` | App "{appId}" is pinned to worker {worker}, but the highest worker index is {highestIndex}. |  |
-| `AppUnknown` | stewart.yaml configures app "{appId}", but no automation has that ID. |  |
 | `AppSelectionUnknown` | --only names app "{appId}", but no automation has that ID. |  |
 | `EnvironmentVariableUnknown` | {variable} is not a Stewart setting; run `stewart config:reference` for all options. | Fix the variable name; keys are joined by two underscores. |
 | `EnvironmentVariableTooDeep` | {variable} is deeper than the configuration; {valuePath} is a value, not a section. |  |

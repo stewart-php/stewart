@@ -14,6 +14,8 @@ release could break; a release's "Upgrading" section says what to change.
 
 ### Fixed
 
+- An app ID in `stewart.yaml` or a `STEWART_APPS__*` variable that names no automation logs a warning and is ignored,
+  as documented, instead of stopping the daemon; `stewart check` prints the warning and passes
 - `stewart --help` lists the commands, instead of showing the help of `run`; `stewart run --help` still shows it
 - The CLI reference lists only each command's own arguments and options, instead of the console's global options
   under `config:reference`

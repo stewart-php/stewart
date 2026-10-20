@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Console;
 
 use Stewart\Contracts\Exception\StewartException;
+use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\App\AppCatalogResolver;
 use Stewart\Runtime\App\AppDiscovery;
 use Stewart\Runtime\App\UnloadableAppFile;
@@ -52,9 +53,21 @@ final class CheckCommand extends StewartCommand
         }
 
         $this->writeMissingConfigFileNotice($output, $this->config->findMissingDefaultFile($this->findConfigOption($input)));
+        $this->writeUnmatchedOverridesNotice($output, $apps);
         $output->writeln(\sprintf('Configuration and %d automations load; %d enabled.', $discovered->apps->count(), $apps->enabled->count()));
 
         return Command::SUCCESS;
+    }
+
+    private function writeUnmatchedOverridesNotice(OutputInterface $output, AppCatalog $apps): void
+    {
+        if (!$apps->unmatchedOverrideIds->isEmpty()) {
+            $this->writeNotice($output, \sprintf(
+                'stewart.yaml or the environment configures automations that were not found, so their settings are ignored: %s. Known automations: %s.',
+                implode(', ', $apps->unmatchedOverrideIds->toStrings()),
+                $apps->knownIds->isEmpty() ? 'none' : implode(', ', $apps->knownIds->toStrings()),
+            ));
+        }
     }
 
     private function describeUnloadableFile(UnloadableAppFile $file): string

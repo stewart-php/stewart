@@ -25,18 +25,9 @@ final readonly class AppCatalogResolver
         }
 
         foreach ($overrides as $override) {
-            if ($knownIds->findFirstWhere(static fn(AppId $known): bool => $known->collidesWith($override->id)) !== null) {
-                continue;
-            }
-
-            // The app an unknown override names may live in a file that failed to load, which is reported instead.
-            if (!$discovered->unloadable->isEmpty()) {
+            if ($knownIds->findFirstWhere(static fn(AppId $known): bool => $known->collidesWith($override->id)) === null) {
                 $unmatchedOverrideIds[] = $override->id;
-
-                continue;
             }
-
-            throw ConfigurationException::appUnknown($override->id, $knownIds);
         }
 
         $enabled = [];

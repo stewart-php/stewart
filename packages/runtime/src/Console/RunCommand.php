@@ -126,9 +126,9 @@ final class RunCommand extends StewartCommand
         }
 
         if (!$apps->unmatchedOverrideIds->isEmpty()) {
-            $logger->warning('stewart.yaml configures automations that were not found, possibly because their file failed to load.', [
+            $logger->warning('stewart.yaml or the environment configures automations that were not found, so their settings are ignored.', [
                 'apps' => $apps->unmatchedOverrideIds->toStrings(),
-                'files' => $discovered->unloadable->listPaths(),
+                'known' => $apps->knownIds->toStrings(),
             ]);
         }
 
