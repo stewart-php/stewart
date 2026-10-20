@@ -5,7 +5,10 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
-## [Unreleased]
+## [1.3.0] - 2026-10-20
+
+Home Assistant can delete the devices of a daemon that is gone, an unknown app ID in the configuration warns
+instead of stopping Stewart, and status reports the memory each process really uses.
 
 ### Added
 
@@ -16,9 +19,7 @@ release could break; a release's "Upgrading" section says what to change.
 
 - The Helm chart rolls the pod when `homeAssistant.token` or `persistence.url` changes, instead of keeping the
   old value until the next restart
-- `host.docker.internal` reaches the host with `make up` and the deploy compose files too, not only with `make run`;
-  in an existing project, add `extra_hosts: ["host.docker.internal:host-gateway"]` to the `stewart` service in
-  `compose.yaml`
+- `host.docker.internal` reaches the host with `make up` and the deploy compose files too, not only with `make run`
 - `stewart status` and the `stewart_broker_memory_bytes` and `stewart_worker_memory_bytes` metrics report each
   process's resident memory, instead of the PHP heap, which left out opcache and extensions; expect higher values
 - An app ID in `stewart.yaml` or a `STEWART_APPS__*` variable that names no automation logs a warning and is ignored,
@@ -30,6 +31,15 @@ release could break; a release's "Upgrading" section says what to change.
   `stewart_worker_restart_due_timestamp_seconds`, instead of none
 - The error reference says what to do for the errors a first run or an upgrade hits: Home Assistant connection and
   token, configuration files and tokens, control and worker protocol versions, and the store
+
+### Upgrading
+
+1. Run `make upgrade VERSION=1.3`. Protocols are unchanged, so a 1.2 daemon, `stewart` CLI and Home Assistant
+   integration work with 1.3.
+2. For `host.docker.internal` with `make up`, add `extra_hosts: ["host.docker.internal:host-gateway"]` to the
+   `stewart` service in `compose.yaml`, and in any deploy compose file you copied.
+3. Memory now reads higher, since it counts the whole process; raise alerts on `stewart_broker_memory_bytes` and
+   `stewart_worker_memory_bytes` to match.
 
 ## [1.2.1] - 2026-10-19
 

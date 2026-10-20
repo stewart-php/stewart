@@ -25,6 +25,15 @@ release asks you to do something.
 
 ## Upgrade notes
 
+### 1.3
+
+1. Run `make upgrade VERSION=1.3`. Protocols are unchanged, so a 1.2 daemon, `stewart` CLI and Home Assistant
+   integration work with 1.3.
+2. For `host.docker.internal` with `make up`, add `extra_hosts: ["host.docker.internal:host-gateway"]` to the
+   `stewart` service in `compose.yaml`, and in any deploy compose file you copied.
+3. Memory now reads higher, since it counts the whole process; raise alerts on `stewart_broker_memory_bytes` and
+   `stewart_worker_memory_bytes` to match.
+
 ### 1.0
 
 1. Run `make upgrade VERSION=1.0`. Protocols are unchanged, so a 0.11 daemon, `stewart` CLI and Home Assistant
