@@ -14,7 +14,9 @@ no access to your repository; what runs is exactly what CI built.
 1. Push your project to GitHub. The **Image** workflow publishes `ghcr.io/<owner>/<repository>`.
 2. If the repository is private, the image is private too. Log the server in to the registry with a token that can
    read packages: `docker login ghcr.io`.
-3. Copy `deploy/compose.image.yaml` and a filled-in `.env` to the server, and set the image in the file:
+3. Copy `deploy/compose.image.yaml` and a filled-in `.env` to the server, and set the image in the file. The
+   `.env` line `COMPOSE_PROFILES=store` starts Valkey next to Stewart; drop it and the store URL when no app takes a
+   `Store`.
 
    ```yaml
    services:

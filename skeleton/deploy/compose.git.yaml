@@ -21,6 +21,7 @@ services:
     depends_on:
       valkey:
         condition: service_healthy
+        required: false
     restart: unless-stopped
     stop_grace_period: 15s
     healthcheck:
@@ -30,8 +31,10 @@ services:
       start_period: 3m
       retries: 3
 
+  # Starts while COMPOSE_PROFILES in .env includes store.
   valkey:
     image: valkey/valkey:8-alpine
+    profiles: [store]
     command: ["valkey-server", "--appendonly", "yes"]
     volumes:
       - valkey-data:/data

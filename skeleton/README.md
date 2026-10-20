@@ -11,10 +11,14 @@ the whole framework source.
 ## Start
 
 ```bash
-composer create-project stewart-php/skeleton my-home   # or "Use this template" on GitHub, then clone
+docker run --rm -u "$(id -u):$(id -g)" -e COMPOSER_HOME=/tmp/composer -v "$PWD:/work" -w /work \
+  ghcr.io/stewart-php/runtime:1 composer create-project stewart-php/skeleton my-home
 cd my-home
 make setup        # pull the images, create .env with a control token, install, verify
 ```
+
+With Composer on your machine, `composer create-project stewart-php/skeleton my-home` does the same; "Use this
+template" on GitHub works too. On Windows, run all of this inside WSL2.
 
 Fill in `STEWART_HOME_ASSISTANT__URL` and `STEWART_HOME_ASSISTANT__TOKEN` in `.env`, then:
 

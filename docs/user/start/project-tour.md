@@ -76,7 +76,8 @@ To see every setting with its default, run `make config-reference`. To see what 
 ## Running
 
 **`compose.yaml`** runs two containers: `stewart`, from the `ghcr.io/stewart-php/runtime` image with your project
-mounted into it, and `valkey`, which stores what apps must remember across restarts. The runtime image holds PHP
+mounted into it, and `valkey`, which stores what apps must remember across restarts. Valkey starts only while `.env`
+sets `COMPOSE_PROFILES=store`. The runtime image holds PHP
 and Stewart's start-up script. Your code and the Stewart version come from your project.
 
 **`compose.dev.yaml`** is added for development commands such as `make run` and `make test`. It uses the image

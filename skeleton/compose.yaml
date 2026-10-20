@@ -15,6 +15,7 @@ services:
     depends_on:
       valkey:
         condition: service_healthy
+        required: false
     restart: unless-stopped
     stop_grace_period: 15s
     healthcheck:
@@ -24,9 +25,11 @@ services:
       start_period: 2m
       retries: 3
 
-  # Append-only, so a power cut loses no recent writes; reachable only from the services in this file.
+  # Starts while COMPOSE_PROFILES in .env includes store. Append-only, so a power cut loses no recent writes; reachable
+  # only from the services in this file.
   valkey:
     image: valkey/valkey:8-alpine
+    profiles: [store]
     command: ["valkey-server", "--appendonly", "yes"]
     volumes:
       - valkey-data:/data
