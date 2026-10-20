@@ -19,7 +19,7 @@ grep -Eq '^STEWART_CONTROL__TOKEN=[0-9a-f]{32}$' .env
 export STEWART_HOME_ASSISTANT__URL=ws://homeassistant.invalid:8123/api/websocket
 export STEWART_HOME_ASSISTANT__TOKEN=unused
 
-vendor/bin/stewart doctor
+vendor/bin/stewart doctor --offline
 vendor/bin/stewart list --raw | grep -q '^generate '
 vendor/bin/stewart config:dump > /dev/null
 vendor/bin/stewart generate --snapshot-in="$snapshot"

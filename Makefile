@@ -46,7 +46,7 @@ sh: ## Interactive shell in the dev container
 
 .PHONY: doctor
 doctor: ## Verify the container has what Stewart needs
-	$(RUN) php vendor/bin/stewart doctor
+	$(RUN) php vendor/bin/stewart doctor --offline
 
 .PHONY: loop-driver
 loop-driver: ## Print the event loop driver Revolt picks; REVOLT_DRIVER=<class> forces one

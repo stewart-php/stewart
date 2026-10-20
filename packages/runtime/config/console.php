@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Amp\Socket\DnsSocketConnector;
+use Stewart\Client\HaClientFactory;
 use Stewart\Runtime\App\AppCatalogResolver;
 use Stewart\Runtime\App\AppDiscovery;
 use Stewart\Runtime\Broker\AppPlacement;
@@ -14,6 +15,8 @@ use Stewart\Runtime\Health\ReadinessCheck;
 use Stewart\Runtime\Kernel\BrokerKernel;
 use Stewart\Runtime\Kernel\ProfileCompiler;
 use Stewart\Runtime\Logging\LoggerFactory;
+use Stewart\Store\StoreBackendConnector;
+use Stewart\Store\StoreBackendRegistry;
 use Stewart\Support\Text\ClosestNameFinder;
 use Stewart\Support\Time\Deadlines;
 use Stewart\Support\Time\RevoltTimers;
@@ -25,6 +28,7 @@ use Symfony\Component\Filesystem\Filesystem;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\inline_service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
 
 return static function (ContainerConfigurator $container, ContainerBuilder $builder): void {
     $services = $container->services()->defaults()->autowire()->autoconfigure();
@@ -46,6 +50,9 @@ return static function (ContainerConfigurator $container, ContainerBuilder $buil
     $services->set(AppPlacement::class)->factory([service(AppPlacementFactory::class), 'createPlacementForHost']);
     $services->set(LoggerFactory::class);
     $services->set(Filesystem::class);
+    $services->set(HaClientFactory::class);
+    $services->set(StoreBackendRegistry::class)->arg('$factories', tagged_iterator('stewart.store_backend'));
+    $services->set(StoreBackendConnector::class);
     $services->set(RevoltTimers::class);
     $services->alias(Deadlines::class, RevoltTimers::class);
 

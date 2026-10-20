@@ -232,11 +232,15 @@ final class HaClient
     }
 
     /** @throws HaClientException */
+    public function fetchCurrentUser(): HaUser
+    {
+        return HaUser::fromCurrentUserResult($this->connection->send(new GetCurrentUser()));
+    }
+
+    /** @throws HaClientException */
     public function getCurrentUserId(): string
     {
-        $id = $this->connection->send(new GetCurrentUser())['id'] ?? null;
-
-        return \is_string($id) && $id !== '' ? $id : throw HaClientException::protocolViolation('a current user without an id');
+        return $this->fetchCurrentUser()->id;
     }
 
     public function getConfig(): HaConfig

@@ -19,6 +19,7 @@ use Stewart\Client\Connection\HomeAssistantUrl;
 use Stewart\Client\Event\EventDecoder;
 use Stewart\Client\Exception\HaClientError;
 use Stewart\Client\HaClient;
+use Stewart\Client\HaUser;
 use Stewart\Client\Registry\RegistryDecoder;
 use Stewart\Client\State\EntityStateDecoder;
 use Stewart\Contracts\Entity\EntityId;
@@ -48,6 +49,7 @@ use Stewart\Testing\Websocket\FakeWebsocketConnector;
 use function Amp\async;
 
 #[CoversClass(HaClient::class)]
+#[CoversClass(HaUser::class)]
 final class HaClientTest extends TestCase
 {
     use AssertsReason;
@@ -279,6 +281,32 @@ final class HaClientTest extends TestCase
         $socket->replyWhenSent('auth/current_user', ['type' => 'result', 'success' => true, 'result' => ['id' => 'stewart-user', 'name' => 'Stewart', 'is_admin' => true]]);
 
         self::assertSame('stewart-user', $client->getCurrentUserId());
+    }
+
+    public function testCurrentUserCarriesItsAdministratorFlag(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('auth/current_user', ['type' => 'result', 'success' => true, 'result' => ['id' => 'stewart-user', 'name' => 'Stewart', 'is_admin' => true]]);
+
+        $user = $client->fetchCurrentUser();
+
+        self::assertSame('Stewart', $user->name);
+        self::assertTrue($user->isAdmin);
+    }
+
+    public function testCurrentUserWithoutAdministratorFlagIsNoAdministrator(): void
+    {
+        $socket = FakeWebsocketConnector::createAuthenticatedConnection();
+        $client = self::connect($socket);
+
+        $socket->replyWhenSent('auth/current_user', ['type' => 'result', 'success' => true, 'result' => ['id' => 'guest']]);
+
+        $user = $client->fetchCurrentUser();
+
+        self::assertNull($user->name);
+        self::assertFalse($user->isAdmin);
     }
 
     public function testCurrentUserWithoutIdIsProtocolViolation(): void
