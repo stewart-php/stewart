@@ -11,6 +11,8 @@ release could break; a release's "Upgrading" section says what to change.
 
 - The Helm chart creates a Service for the admin API once `adminApi.host` is reachable from other pods, so other
   workloads reach it at `http://<release>-stewart.<namespace>.svc:8081`
+- `stewart check` lists every app with its class, the worker it runs on and whether it is enabled, paused or
+  disabled
 
 ### Changed
 

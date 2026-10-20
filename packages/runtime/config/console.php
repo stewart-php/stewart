@@ -5,6 +5,9 @@ declare(strict_types=1);
 use Amp\Socket\DnsSocketConnector;
 use Stewart\Runtime\App\AppCatalogResolver;
 use Stewart\Runtime\App\AppDiscovery;
+use Stewart\Runtime\Broker\AppPlacement;
+use Stewart\Runtime\Broker\AppPlacementFactory;
+use Stewart\Runtime\Broker\CpuCountDetector;
 use Stewart\Runtime\Config\EnvironmentVariables;
 use Stewart\Runtime\Control\Client\ControlClient;
 use Stewart\Runtime\Health\ReadinessCheck;
@@ -20,6 +23,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\inline_service;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $container, ContainerBuilder $builder): void {
     $services = $container->services()->defaults()->autowire()->autoconfigure();
@@ -36,6 +40,9 @@ return static function (ContainerConfigurator $container, ContainerBuilder $buil
     $services->set(EnvironmentVariables::class)->factory([EnvironmentVariables::class, 'fromGlobals']);
     $services->set(AppDiscovery::class);
     $services->set(AppCatalogResolver::class);
+    $services->set(CpuCountDetector::class);
+    $services->set(AppPlacementFactory::class);
+    $services->set(AppPlacement::class)->factory([service(AppPlacementFactory::class), 'createPlacementForHost']);
     $services->set(LoggerFactory::class);
     $services->set(RevoltTimers::class);
     $services->alias(Deadlines::class, RevoltTimers::class);
