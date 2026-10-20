@@ -48,8 +48,7 @@ underscores. A single underscore belongs to a key's name.
 | `apps.porch-light.options.offAt` | `STEWART_APPS__PORCH_LIGHT__OPTIONS__OFF_AT` |
 
 - An app option written in camelCase (`offAt`) becomes `OFF_AT`.
-- An app whose ID contains `-` needs an entry in `stewart.yaml`, even an empty one (`porch-light: ~`), before an
-  environment variable can reach it.
+- An app ID's `-` becomes `_`, so `porch-light` is `PORCH_LIGHT`; the app needs no entry in `stewart.yaml`.
 - A variable that starts with `STEWART_` but names no setting stops Stewart with an error, so a typo does not go
   unnoticed.
 - An empty variable counts as not set, so the default applies.

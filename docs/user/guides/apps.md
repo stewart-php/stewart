@@ -66,7 +66,7 @@ apps:
 - Each key under `options` is the name of a constructor parameter, and its value replaces that parameter's default.
 - A parameter without a default must be set, or the app does not start.
 - An option that matches no parameter is an error that names the app and the class.
-- Options can also come from the environment: `STEWART_APPS__BATTERY_ALERT__OPTIONS__THRESHOLD=15` (this needs the app's entry in `stewart.yaml`, as above). See
+- Options can also come from the environment: `STEWART_APPS__BATTERY_ALERT__OPTIONS__THRESHOLD=15`. See
   [Configuration](configuration.md).
 
 Next to `options`, an app's entry takes three more settings:
@@ -79,7 +79,8 @@ apps:
     worker: 1        # run it on this worker
 ```
 
-If an entry names an ID that no app has, Stewart logs a warning at start, so a typo does not go unnoticed.
+If an entry names an ID that no app has, Stewart logs a warning at start and ignores the entry, so a typo does not go
+unnoticed. `stewart check` prints the same warning and still passes.
 
 ## Your own classes (services.php)
 

@@ -102,9 +102,8 @@ In the schema, `normalizeKeys(false)` on `apps` is load-bearing: Symfony would o
 - `DiscoveredAppCollection::fromApps()` sorts by ID, so worker placement does not depend on the filesystem.
 
 `App/AppCatalogResolver::resolveCatalog()` merges discovery with `apps:` from the config. Discovery is the source of
-truth: an override naming no discovered app is an error, unless some file failed to load, in which case it is kept
-as unmatched and only warned about. `--only` admits an app even when `enabled: false`. A pinned worker beyond
-`workers` is an error. The result is an `AppCatalog` of `AppDefinition`s (ID, class, options, worker, starts paused).
+truth: an override naming no discovered app is kept as unmatched, and `run` and `check` warn about it. `--only`
+admits an app even when `enabled: false`. A pinned worker beyond `workers` is an error. The result is an `AppCatalog` of `AppDefinition`s (ID, class, options, worker, starts paused).
 
 ## The run command
 

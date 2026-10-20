@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Tests\Unit\App;
 
-use ParseError;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\App\AppId;
@@ -18,7 +17,6 @@ use Stewart\Runtime\App\Collection\UnloadableAppFileCollection;
 use Stewart\Runtime\App\Collection\UnmarkedAppCollection;
 use Stewart\Runtime\App\DiscoveredApp;
 use Stewart\Runtime\App\DiscoveryResult;
-use Stewart\Runtime\App\UnloadableAppFile;
 use Stewart\Runtime\Config\AppOverride;
 use Stewart\Runtime\Config\Collection\AppOverrideCollection;
 use Stewart\Runtime\Exception\ConfigurationError;
@@ -90,11 +88,12 @@ final class AppCatalogResolverTest extends TestCase
         self::assertSame(['demo'], $e->context['knownAppIds'] ?? null);
     }
 
-    public function testOverrideForNoAutomationIsRejected(): void
+    public function testOverrideForNoAutomationIsKeptAsUnmatched(): void
     {
-        $e = $this->assertThrowsReason(ConfigurationError::AppUnknown, fn() => new AppCatalogResolver()->resolveCatalog(self::createDiscoveryResult('demo'), AppOverrideCollection::keyedByAppId([self::createOverride('ghost')]), workers: 0));
+        $catalog = new AppCatalogResolver()->resolveCatalog(self::createDiscoveryResult('demo'), AppOverrideCollection::keyedByAppId([self::createOverride('ghost')]), workers: 0);
 
-        self::assertStringContainsString('Known automations: demo.', $e->getMessage());
+        self::assertSame(['demo'], self::listEnabledIds($catalog));
+        self::assertSame(['ghost'], $catalog->unmatchedOverrideIds->toStrings());
     }
 
     public function testUnderscoreSpellingTunesHyphenatedApp(): void
@@ -113,17 +112,9 @@ final class AppCatalogResolverTest extends TestCase
         self::assertSame(['room' => 'hall'], $catalog->enabled->find(new AppId('hall-light'))?->options);
     }
 
-    public function testUnmatchedOverrideIsKeptWhenAFileFailed(): void
+    public function testUnderscoreSpellingIsNotUnmatched(): void
     {
-        $catalog = new AppCatalogResolver()->resolveCatalog(self::createDiscoveryResultWithUnloadableFile('demo'), AppOverrideCollection::keyedByAppId([self::createOverride('porch')]), workers: 0);
-
-        self::assertSame(['demo'], self::listEnabledIds($catalog));
-        self::assertSame(['porch'], $catalog->unmatchedOverrideIds->toStrings());
-    }
-
-    public function testUnderscoreSpellingIsMatchedWhenAFileFailed(): void
-    {
-        $catalog = new AppCatalogResolver()->resolveCatalog(self::createDiscoveryResultWithUnloadableFile('hall-light'), AppOverrideCollection::keyedByAppId([self::createOverride('hall_light')]), workers: 0);
+        $catalog = new AppCatalogResolver()->resolveCatalog(self::createDiscoveryResult('hall-light'), AppOverrideCollection::keyedByAppId([self::createOverride('hall_light')]), workers: 0);
 
         self::assertSame([], $catalog->unmatchedOverrideIds->toStrings());
     }
@@ -155,18 +146,6 @@ final class AppCatalogResolverTest extends TestCase
             DiscoveredAppCollection::fromApps(array_map(static fn(string $id): DiscoveredApp => new DiscoveredApp(Demo::class, new AppId($id)), array_values($ids))),
             UnmarkedAppCollection::empty(),
             UnloadableAppFileCollection::empty(),
-        );
-    }
-
-    /** @param non-empty-string ...$ids */
-    private static function createDiscoveryResultWithUnloadableFile(string ...$ids): DiscoveryResult
-    {
-        $discovered = self::createDiscoveryResult(...$ids);
-
-        return new DiscoveryResult(
-            $discovered->apps,
-            $discovered->unmarked,
-            UnloadableAppFileCollection::fromList([new UnloadableAppFile('/apps/Broken.php', new ParseError('syntax error'))]),
         );
     }
 
