@@ -110,6 +110,10 @@ admits an app even when `enabled: false`. A pinned worker beyond `workers` is an
 console profile registers with its `CpuCountDetector`. With `workers: 0` the pool size is the CPU count where `check`
 runs, which matches the daemon's in Compose and in a Git-deploy pod.
 
+`Console/Scaffold/AppScaffold` backs `make:app`. It finds the apps namespace the way discovery does (the PSR-4 root
+holding `$appsDirectory`), puts the test under that namespace plus `Tests\`, renders the stubs in
+`resources/scaffold/`, and refuses an existing file or an ID that collides with a discovered app.
+
 ## The run command
 
 `Console/RunCommand::prepareDaemon()` does, in order: load the config; require `home_assistant` (before a logger

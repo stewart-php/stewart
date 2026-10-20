@@ -54,6 +54,10 @@ sh: ## Shell in the development container
 doctor: ## Check the container can run Stewart
 	$(RUN) stewart doctor
 
+.PHONY: app
+app: ## Create an app in apps/ and its test in tests/ [NAME=PorchLight]
+	$(RUN) stewart make:app $(call required,NAME,PorchLight)
+
 .PHONY: generate
 generate: ## Write typed entity and service classes from Home Assistant into generated/ [ARGS=--allow-shrink]
 	$(RUN) stewart generate $(ARGS)

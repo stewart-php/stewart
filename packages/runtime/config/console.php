@@ -21,6 +21,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\DependencyInjection\AddConsoleCommandPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\Filesystem\Filesystem;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\inline_service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
@@ -44,6 +45,7 @@ return static function (ContainerConfigurator $container, ContainerBuilder $buil
     $services->set(AppPlacementFactory::class);
     $services->set(AppPlacement::class)->factory([service(AppPlacementFactory::class), 'createPlacementForHost']);
     $services->set(LoggerFactory::class);
+    $services->set(Filesystem::class);
     $services->set(RevoltTimers::class);
     $services->alias(Deadlines::class, RevoltTimers::class);
 

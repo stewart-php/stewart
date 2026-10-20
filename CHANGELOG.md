@@ -15,6 +15,8 @@ release could break; a release's "Upgrading" section says what to change.
   disabled
 - New projects get `make check`, `make app-pause APP=…`, `make app-resume APP=…`, `make app-reset APP=…` and
   `make worker-restart WORKER=…`
+- `stewart make:app PorchLight` (`make app NAME=PorchLight` in a project) creates an app in `apps/` and its test in
+  `tests/`, deriving the ID `porch-light` unless `--id` sets one
 
 ### Changed
 

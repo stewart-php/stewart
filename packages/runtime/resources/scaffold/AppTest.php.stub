@@ -1,0 +1,21 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{testNamespace}};
+
+use {{namespace}}\{{class}};
+use PHPUnit\Framework\TestCase;
+use Stewart\Testing\App\AppHarness;
+
+final class {{class}}Test extends TestCase
+{
+    public function testItStarts(): void
+    {
+        $harness = new AppHarness();
+
+        $harness->startApp({{class}}::class);
+
+        self::assertContains('{{class}} started', $harness->logger->listMessagesAt('info'));
+    }
+}
