@@ -65,6 +65,7 @@ use Stewart\Runtime\Tests\Fixtures\Protocol\Scheduled;
 use Stewart\Runtime\Tests\Fixtures\Protocol\SerialHandler;
 use Stewart\Runtime\Tests\Fixtures\Protocol\SlowStarter;
 use Stewart\Runtime\Tests\Fixtures\Protocol\SubscribesThenCalls;
+use Stewart\Runtime\Tests\Fixtures\Protocol\SwitchOnWatcher;
 use Stewart\Runtime\Tests\Fixtures\Protocol\TopicEcho;
 use Stewart\Runtime\Tests\Fixtures\Protocol\WorkerHarness;
 use Stewart\Runtime\Tests\Fixtures\Worker\InMemoryWorkerSpawner;
@@ -286,6 +287,40 @@ final class WorkerProtocolTest extends TestCase
         $this->send(new Ping(nonce: 1, sentAt: SystemClock::inUtc()->getNow()));
 
         self::assertSame(2, $this->receiveUntil(Pong::class)->apps[0]->schedules);
+    }
+
+    public function testPongReportsWhatEachSubscriptionReceivedAndHandled(): void
+    {
+        $this->start([new WorkerApp(id: new AppId('switch-on-watcher'), class: SwitchOnWatcher::class, options: ['watch' => self::WATCHED])]);
+        $this->receiveUntil(WorkerReady::class);
+
+        $this->sendUpdates(self::createUpdate(self::WATCHED, 'off'));
+        $this->sendToggle();
+        $this->receiveUntil(LogRecord::class, static fn(LogRecord $log): bool => $log->message === 'Switched on');
+        $this->send(new Ping(nonce: 3, sentAt: SystemClock::inUtc()->getNow()));
+        $report = $this->receiveUntil(Pong::class)->apps[0];
+
+        self::assertSame(1, $report->handled);
+        self::assertNotNull($report->lastHandledAt);
+        self::assertCount(1, $report->subscriptionReports);
+        $subscription = $report->subscriptionReports[0];
+        self::assertSame([SubscriptionKind::StateChange, 'exact:' . self::WATCHED, true], [$subscription->kind, $subscription->match, $subscription->exact]);
+        self::assertSame([2, 1, 0], [$subscription->received, $subscription->handled, $subscription->dropped], 'The off change was received but stopped by the filter.');
+    }
+
+    public function testPongReportsTheNextRunOfEachSchedule(): void
+    {
+        $this->start([new WorkerApp(id: new AppId('scheduled'), class: Scheduled::class, options: [])], timeZone: 'Europe/Budapest');
+        $this->receiveUntil(WorkerReady::class);
+        $this->receiveUntil(Publish::class, static fn(Publish $publish): bool => $publish->topic === 'schedule.fired');
+
+        $this->send(new Ping(nonce: 4, sentAt: SystemClock::inUtc()->getNow()));
+        $report = $this->receiveUntil(Pong::class)->apps[0];
+
+        self::assertCount(2, $report->scheduleReports);
+        self::assertNotNull($report->scheduleReports[0]->lastRunAt, 'The 50 ms schedule has run.');
+        self::assertNull($report->scheduleReports[1]->lastRunAt, 'The daily one has not.');
+        self::assertEquals($report->scheduleReports[0]->nextRunAt, $report->nextRunAt, 'The app\'s next run is its earliest schedule.');
     }
 
     public function testScheduleFiresAndWorkerExits(): void

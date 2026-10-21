@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Http\Admin\Response;
 
+use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\Control\Protocol\Status\AppPauseStatus;
 use Stewart\Runtime\Control\Protocol\Status\AppStatus;
 use Stewart\Runtime\Lifecycle\AppState;
@@ -16,10 +17,12 @@ final readonly class AdminAppView
         public bool $paused,
         public ?AppPauseStatus $pause,
         public ?AppPauseStatus $configPauseOverride,
+        public ?Instant $lastHandledAt,
+        public ?Instant $nextRunAt,
     ) {}
 
     public static function fromAppStatus(AppStatus $status): self
     {
-        return new self($status->id, $status->state, $status->pause !== null, $status->pause, $status->configPauseOverride);
+        return new self($status->id, $status->state, $status->pause !== null, $status->pause, $status->configPauseOverride, $status->lastHandledAt, $status->nextRunAt);
     }
 }

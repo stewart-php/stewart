@@ -15,6 +15,11 @@ release could break; a release's "Upgrading" section says what to change.
   one app at any log level: each event that reaches one of its subscriptions, each call of its handler, what a pause
   skipped, its schedule runs, and its service calls with the outcome and how long they took. An event received but
   never handled was stopped by an operator such as `filter()`. In JSON logs, trace records have `level_name` `TRACE`
+- `stewart status --json` lists every subscription, now including state changes, with how many events it received
+  and handled, how many it dropped, and when it last received and handled one; and every schedule and timer with its
+  next and last run. Each app gains `last_handled_at`, `next_run_at` and `counters.handled`, also in the admin API's
+  `GET /api/apps`, and `stewart_app_events_handled_total`, `stewart_app_last_handled_timestamp_seconds` and
+  `stewart_app_next_run_timestamp_seconds` expose them
 
 ### Changed
 
@@ -25,6 +30,7 @@ release could break; a release's "Upgrading" section says what to change.
 - The broker's routing debug lines (`Home Assistant event routed`, `Topic published`, `MQTT message routed`,
   `Home Assistant trigger routed`) name the matched apps instead of worker numbers, and the `service_calls.dry_run`
   lines carry the tag of the app that made the call
+- The control protocol is 31, so `stewart status` and the other control commands need the same release as the daemon
 
 ## [1.6.0] - 2026-10-21
 

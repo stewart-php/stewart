@@ -14,6 +14,7 @@ final readonly class RuntimeSnapshot
      * @param list<WorkerStatus> $workers
      * @param list<AppStatus> $apps
      * @param list<RegistrationInfo> $subscriptions
+     * @param list<ScheduleStatus> $schedules
      */
     public function __construct(
         public Instant $takenAt,
@@ -30,5 +31,7 @@ final readonly class RuntimeSnapshot
         public ?DeployStatus $deploy = null,
         public ?ComponentStatus $component = null,
         public ?ReloadStatus $reload = null,
+        #[ListOf(ScheduleStatus::class)]
+        public array $schedules = [],
     ) {}
 }

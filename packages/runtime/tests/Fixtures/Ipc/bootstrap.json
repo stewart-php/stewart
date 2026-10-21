@@ -1,7 +1,7 @@
 {
     "t": "bootstrap",
     "m": {
-        "protocol": 32,
+        "protocol": 33,
         "worker_id": 1,
         "time_zone": "Europe/Budapest",
         "location": {

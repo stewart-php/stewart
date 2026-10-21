@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Control;
 
 use Stewart\Contracts\Time\Clock;
-use Stewart\Runtime\Broker\BrokerSubscription;
 use Stewart\Runtime\Broker\Component\ComponentTracker;
 use Stewart\Runtime\Broker\ConnectionTracker;
 use Stewart\Runtime\Broker\DaemonStartTime;
@@ -17,14 +16,15 @@ use Stewart\Runtime\Broker\SubscriptionRegistry;
 use Stewart\Runtime\Broker\WorkerSlotRegistry;
 use Stewart\Runtime\Config\ExposeConfig;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
+use Stewart\Runtime\Control\Assembler\ScheduleStatusBuilder;
 use Stewart\Runtime\Control\Assembler\StoreHealthBuilder;
+use Stewart\Runtime\Control\Assembler\SubscriptionInfoBuilder;
 use Stewart\Runtime\Control\Assembler\WorkerStatusBuilder;
 use Stewart\Runtime\Control\Protocol\Status\BrokerStats;
 use Stewart\Runtime\Control\Protocol\Status\ComponentStatus;
 use Stewart\Runtime\Control\Protocol\Status\DaemonInfo;
 use Stewart\Runtime\Control\Protocol\Status\DeployFailure;
 use Stewart\Runtime\Control\Protocol\Status\DeployStatus;
-use Stewart\Runtime\Control\Protocol\Status\RegistrationInfo;
 use Stewart\Runtime\Control\Protocol\Status\ReloadAttempt;
 use Stewart\Runtime\Control\Protocol\Status\ReloadStatus;
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
@@ -49,6 +49,8 @@ final readonly class SnapshotAssembler implements SnapshotSource
         private WorkerStatusBuilder $workerStatuses,
         private AppStatusBuilder $appStatuses,
         private StoreHealthBuilder $storeHealth,
+        private SubscriptionInfoBuilder $subscriptionInfos,
+        private ScheduleStatusBuilder $scheduleStatuses,
         private ProcessMemory $processMemory,
         private Clock $clock,
     ) {}
@@ -62,11 +64,12 @@ final readonly class SnapshotAssembler implements SnapshotSource
             broker: $this->buildBrokerStats(),
             workers: $this->workerStatuses->buildWorkerStatuses(),
             apps: $this->appStatuses->buildAppStatuses(),
-            subscriptions: array_map($this->buildRegistrationInfo(...), $this->registry->listSubscriptions()),
+            subscriptions: $this->subscriptionInfos->buildSubscriptionInfos(),
             store: $this->storeHealth->buildStoreHealth(),
             deploy: $this->buildDeployStatus(),
             component: $this->buildComponentStatus(),
             reload: $this->buildReloadStatus(),
+            schedules: $this->scheduleStatuses->buildScheduleStatuses(),
         );
     }
 
@@ -91,18 +94,6 @@ final readonly class SnapshotAssembler implements SnapshotSource
             inFlightServiceCalls: $this->callSlots->inFlight,
             refusedServiceCalls: $this->callSlots->refusedCalls,
             routing: $this->registry->getRoutingStats(),
-        );
-    }
-
-    private function buildRegistrationInfo(BrokerSubscription $subscription): RegistrationInfo
-    {
-        return new RegistrationInfo(
-            subscriptionId: $subscription->subscriptionId->value,
-            workerId: $subscription->workerId->value,
-            appId: $subscription->scope->wireValue(),
-            kind: $subscription->kind,
-            selector: $subscription->selector->toCanonicalKey(),
-            exact: $subscription->selector->findExactPattern() !== null,
         );
     }
 

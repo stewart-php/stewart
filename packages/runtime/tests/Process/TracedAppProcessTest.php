@@ -13,6 +13,8 @@ use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Runtime\Broker\ProcessWorkerSpawner;
 use Stewart\Runtime\Ipc\Message\LogRecord;
+use Stewart\Runtime\Ipc\Message\Ping;
+use Stewart\Runtime\Ipc\Message\Pong;
 use Stewart\Runtime\Ipc\Message\WorkerReady;
 use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
 use Stewart\Runtime\Ipc\Wire\IpcCodec;
@@ -22,6 +24,7 @@ use Stewart\Runtime\Model\LogLevel;
 use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Stewart\Runtime\Tests\Fixtures\Protocol\SwitchOnWatcher;
 use Stewart\Runtime\Tests\Fixtures\Protocol\WorkerHarness;
+use Stewart\Runtime\Time\SystemClock;
 use Stewart\Support\State\StateUpdate;
 
 #[CoversNothing]
@@ -37,7 +40,7 @@ final class TracedAppProcessTest extends TestCase
         $this->worker = null;
     }
 
-    public function testTraceShowsWhichChangeTheFilterStopped(): void
+    public function testTraceAndPongShowWhichChangeTheFilterStopped(): void
     {
         $worker = $this->start(new WorkerApp(
             id: new AppId('switch-on-watcher'),
@@ -57,6 +60,10 @@ final class TracedAppProcessTest extends TestCase
         });
 
         self::assertSame([['Event received', 'on → off'], ['Event received', 'off → on'], ['Handler called', null]], $traces, 'The off change was received, then stopped by the filter.');
+
+        $worker->send(new Ping(nonce: 1, sentAt: SystemClock::inUtc()->getNow()));
+        $subscription = $worker->receiveUntil(Pong::class)->apps[0]->subscriptionReports[0] ?? self::fail('The worker reported no subscription.');
+        self::assertSame([2, 1], [$subscription->received, $subscription->handled]);
 
         $worker->shutDown('traced');
         $this->worker = null;

@@ -51,7 +51,7 @@ final class QueuedStreamFixture
         $this->scopes->activateScope($this->scope);
 
         $registry = new RegistryCache();
-        $this->dispatcher = new LocalDispatcher(new WorkerId(0), TestBootstrap::createWorkerSettings(subscriptionBuffer: $subscriptionQueueLimit), $this->listener, $this->listener, $this->scopes, $registry);
+        $this->dispatcher = new LocalDispatcher(new WorkerId(0), TestBootstrap::createWorkerSettings(subscriptionBuffer: $subscriptionQueueLimit), $this->listener, $this->listener, $this->scopes, $registry, $this->timers->clock);
         $this->streams = new DispatchStreams($this->dispatcher, $this->timers, $this->states, $registry);
     }
 

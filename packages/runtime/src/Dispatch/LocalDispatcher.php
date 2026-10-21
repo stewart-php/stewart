@@ -15,6 +15,7 @@ use Stewart\Contracts\Registry\EntityFilter;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Subscription;
+use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Topic\TopicEvent;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Runtime\Ipc\WorkerSettings;
@@ -52,6 +53,7 @@ final class LocalDispatcher
         private readonly SubscriptionListener $subscriptions,
         private readonly ScopeLifecycle $scopes,
         RegistryCache $registry,
+        private readonly Clock $clock,
     ) {
         $this->subscriptionIdPrefix = $workerId->toProcessIdPrefix();
         $this->subscriptionQueueLimit = $workerSettings->subscriptionBuffer;
@@ -95,7 +97,7 @@ final class LocalDispatcher
             $entityFilter,
         );
 
-        $queue = new SubscriptionQueue($subscription, $this->subscriptionQueueLimit, $this->listener, $scopeState);
+        $queue = new SubscriptionQueue($subscription, $this->subscriptionQueueLimit, $this->listener, $scopeState, $this->clock);
 
         $this->queues[$subscription->id->value] = $queue;
         $subscriptionScope->deliverVia($queue->emit(...));
@@ -240,6 +242,12 @@ final class LocalDispatcher
     public function countFor(ResourceScope $scope): int
     {
         return \count($this->listQueuesOf($scope));
+    }
+
+    /** @return list<SubscriptionActivity> */
+    public function listActivitiesOf(ResourceScope $scope): array
+    {
+        return array_values(array_map(static fn(SubscriptionQueue $queue): SubscriptionActivity => $queue->activity, $this->listQueuesOf($scope)));
     }
 
     private function refusedSubscription(SubscriptionId $id, SubscriptionScope $subscriptionScope): Subscription

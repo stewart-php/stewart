@@ -129,6 +129,15 @@ stewart_app_exposed_entities{app="porch",worker="0"} 3
 # HELP stewart_app_events_delivered_total Events delivered to the app handlers.
 # TYPE stewart_app_events_delivered_total counter
 stewart_app_events_delivered_total{app="porch",worker="0"} 30
+# HELP stewart_app_events_handled_total Events that got through the operators and reached the app's own handler.
+# TYPE stewart_app_events_handled_total counter
+stewart_app_events_handled_total{app="porch",worker="0"} 12
+# HELP stewart_app_last_handled_timestamp_seconds Unix time the app's own handler last ran for an event.
+# TYPE stewart_app_last_handled_timestamp_seconds gauge
+stewart_app_last_handled_timestamp_seconds{app="porch",worker="0"} 1790420220
+# HELP stewart_app_next_run_timestamp_seconds Unix time the app's next schedule or timer is due.
+# TYPE stewart_app_next_run_timestamp_seconds gauge
+stewart_app_next_run_timestamp_seconds{app="porch",worker="0"} 1790449200
 # HELP stewart_app_subscription_dropped_total Events dropped because a subscription queue was full.
 # TYPE stewart_app_subscription_dropped_total counter
 stewart_app_subscription_dropped_total{app="porch",worker="0"} 1

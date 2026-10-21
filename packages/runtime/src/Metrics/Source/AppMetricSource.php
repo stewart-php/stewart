@@ -28,6 +28,9 @@ final readonly class AppMetricSource implements RuntimeMetricSource
         $schedules = new MetricFamily('stewart_app_schedules', 'Schedules the app holds.', MetricType::Gauge, $appLabels);
         $exposedEntities = new MetricFamily('stewart_app_exposed_entities', 'Home Assistant entities the app exposes, unavailable ones included.', MetricType::Gauge, $appLabels);
         $delivered = new MetricFamily('stewart_app_events_delivered_total', 'Events delivered to the app handlers.', MetricType::Counter, $appLabels);
+        $handled = new MetricFamily('stewart_app_events_handled_total', 'Events that got through the operators and reached the app\'s own handler.', MetricType::Counter, $appLabels);
+        $lastHandled = new MetricFamily('stewart_app_last_handled_timestamp_seconds', 'Unix time the app\'s own handler last ran for an event.', MetricType::Gauge, $appLabels);
+        $nextRun = new MetricFamily('stewart_app_next_run_timestamp_seconds', 'Unix time the app\'s next schedule or timer is due.', MetricType::Gauge, $appLabels);
         $subscriptionDropped = new MetricFamily('stewart_app_subscription_dropped_total', 'Events dropped because a subscription queue was full.', MetricType::Counter, $appLabels);
         $scheduleRuns = new MetricFamily('stewart_app_schedule_runs_total', 'Scheduled handler runs.', MetricType::Counter, $appLabels);
         $publishes = new MetricFamily('stewart_app_publishes_total', 'Messages the app published.', MetricType::Counter, $appLabels);
@@ -55,11 +58,20 @@ final readonly class AppMetricSource implements RuntimeMetricSource
             $schedules->recordSample($labels, $app->schedules);
             $exposedEntities->recordSample($labels, $app->exposedEntities);
             $delivered->recordSample($labels, $app->counters->delivered);
+            $handled->recordSample($labels, $app->counters->handled);
             $subscriptionDropped->recordSample($labels, $app->counters->subscriptionDropped);
             $scheduleRuns->recordSample($labels, $app->counters->scheduleRuns);
             $publishes->recordSample($labels, $app->counters->publishes);
             $failures->recordSample($labels, $app->counters->failures);
             $suppressed->recordSample($labels, $app->counters->suppressed);
+
+            if ($app->lastHandledAt !== null) {
+                $lastHandled->recordSample($labels, PrometheusNumber::convertToEpochSeconds($app->lastHandledAt));
+            }
+
+            if ($app->nextRunAt !== null) {
+                $nextRun->recordSample($labels, PrometheusNumber::convertToEpochSeconds($app->nextRunAt));
+            }
 
             if ($app->lastFailure !== null) {
                 $lastFailure->recordSample($labels, PrometheusNumber::convertToEpochSeconds($app->lastFailure->at));
@@ -80,8 +92,8 @@ final readonly class AppMetricSource implements RuntimeMetricSource
         }
 
         return [
-            $info, $states, $paused, $subscriptions, $schedules, $exposedEntities, $delivered, $subscriptionDropped, $scheduleRuns, $publishes,
-            $failures, $suppressed, $lastFailure, $serviceCalls, $serviceCallDuration, $exposedCommands,
+            $info, $states, $paused, $subscriptions, $schedules, $exposedEntities, $delivered, $handled, $lastHandled, $nextRun, $subscriptionDropped,
+            $scheduleRuns, $publishes, $failures, $suppressed, $lastFailure, $serviceCalls, $serviceCallDuration, $exposedCommands,
         ];
     }
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Tests\Fixtures\Worker;
 
+use Stewart\Contracts\Time\Clock;
+use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\Dispatch\DispatchListener;
 use Stewart\Runtime\Dispatch\LocalDispatcher;
 use Stewart\Runtime\Dispatch\RegisteredSubscription;
@@ -12,6 +14,7 @@ use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\Scope\ScopeLifecycle;
 use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
+use Stewart\Testing\Time\VirtualClock;
 use Throwable;
 
 final class RecordingDispatchListener implements DispatchListener, SubscriptionListener
@@ -43,11 +46,11 @@ final class RecordingDispatchListener implements DispatchListener, SubscriptionL
     /** @var list<?object> */
     public array $suppressedEvents = [];
 
-    public static function createDispatcher(int $queueLimit, RegistryCache $registry = new RegistryCache(), ScopeLifecycle $scopes = new ScopeLifecycle()): LocalDispatcher
+    public static function createDispatcher(int $queueLimit, RegistryCache $registry = new RegistryCache(), ScopeLifecycle $scopes = new ScopeLifecycle(), Clock $clock = new VirtualClock()): LocalDispatcher
     {
         $listener = new self();
 
-        return new LocalDispatcher(new WorkerId(0), TestBootstrap::createWorkerSettings(subscriptionBuffer: $queueLimit), $listener, $listener, $scopes, $registry);
+        return new LocalDispatcher(new WorkerId(0), TestBootstrap::createWorkerSettings(subscriptionBuffer: $queueLimit), $listener, $listener, $scopes, $registry, $clock);
     }
 
     public function subscriptionRegistered(RegisteredSubscription $subscription): void
@@ -75,7 +78,7 @@ final class RecordingDispatchListener implements DispatchListener, SubscriptionL
         $this->received[] = $event;
     }
 
-    public function handlerCalled(RegisteredSubscription $subscription): void
+    public function handlerCalled(RegisteredSubscription $subscription, Instant $calledAt): void
     {
         $this->handlerCalls[] = $subscription->id->value;
     }

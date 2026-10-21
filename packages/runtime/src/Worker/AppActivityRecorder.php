@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Worker;
 use Stewart\Contracts\Exception\WaitError;
 use Stewart\Contracts\Exception\WaitException;
 use Stewart\Contracts\Schedule\ScheduledRun;
+use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\Dispatch\DispatchListener;
 use Stewart\Runtime\Dispatch\RegisteredSubscription;
 use Stewart\Runtime\Lifecycle\AppFailurePhase;
@@ -47,8 +48,9 @@ final readonly class AppActivityRecorder implements DispatchListener, ScheduleLi
         $this->tracer->traceEventReceived($subscription, $event);
     }
 
-    public function handlerCalled(RegisteredSubscription $subscription): void
+    public function handlerCalled(RegisteredSubscription $subscription, Instant $calledAt): void
     {
+        $this->activityCounters->findOrCreateActivityForScope($subscription->scope)->recordHandledEvent($calledAt);
         $this->tracer->traceHandlerCalled($subscription);
     }
 

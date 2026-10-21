@@ -131,6 +131,20 @@ final class AppMetricsTest extends TestCase
         self::assertSame('boom', $demo->lastFailure?->message);
     }
 
+    public function testHandledEventsAndTheLastOneOutliveAWorkerRestart(): void
+    {
+        $handledAt = Instant::fromEpochMicroseconds(1_000_000);
+        $nextRunAt = Instant::fromEpochMicroseconds(9_000_000);
+        $this->metrics->recordActivityReports(self::createHandle(0), new Pong(1, Duration::zero(), 0, [self::createHandledReport(3, $handledAt, $nextRunAt)]));
+        $this->metrics->recordActivityReports(self::createHandle(0), new Pong(1, Duration::zero(), 0, [self::createHandledReport(0, null, null)]));
+
+        $demo = $this->listAppStatuses()[0];
+
+        self::assertSame(3, $demo->counters->handled, 'The respawned worker counts from zero again.');
+        self::assertEquals($handledAt, $demo->lastHandledAt);
+        self::assertNull($demo->nextRunAt, 'The next run is whatever the latest report says.');
+    }
+
     public function testPausedAppReportsSuppressedDelta(): void
     {
         $handle = self::createHandle(0);
@@ -175,6 +189,11 @@ final class AppMetricsTest extends TestCase
     private function listAppStatuses(): array
     {
         return new AppStatusBuilder($this->metrics, $this->pausedApps, FakeHomeAssistant::createUnreachable()->exposures)->buildAppStatuses();
+    }
+
+    private static function createHandledReport(int $handled, ?Instant $lastHandledAt, ?Instant $nextRunAt): AppActivityReport
+    {
+        return new AppActivityReport(ResourceScope::forApp(new AppId('demo')), AppState::Running, 1, 0, 0, 0, 0, 0, 0, 0, handled: $handled, lastHandledAt: $lastHandledAt, nextRunAt: $nextRunAt);
     }
 
     private static function createHandle(int $workerId): WorkerHandle

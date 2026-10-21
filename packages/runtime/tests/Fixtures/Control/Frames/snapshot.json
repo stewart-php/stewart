@@ -78,7 +78,8 @@
                     "schedule_runs": 4,
                     "publishes": 2,
                     "failures": 1,
-                    "suppressed": 6
+                    "suppressed": 6,
+                    "handled": 12
                 },
                 "service_calls": [
                     {
@@ -113,7 +114,9 @@
                     "reason": "entity_not_found",
                     "at": "2026-09-26T10:30:00.000000Z"
                 },
-                "exposed_commands": []
+                "exposed_commands": [],
+                "last_handled_at": "2026-09-26T10:57:00.000000Z",
+                "next_run_at": "2026-09-26T19:00:00.000000Z"
             }
         ],
         "subscriptions": [
@@ -123,7 +126,25 @@
                 "app_id": "porch",
                 "kind": "event",
                 "selector": "doorbell",
-                "exact": true
+                "exact": true,
+                "received": 0,
+                "handled": 0,
+                "dropped": 0,
+                "last_received_at": null,
+                "last_handled_at": null
+            },
+            {
+                "subscription_id": "w0:1",
+                "worker_id": 0,
+                "app_id": "porch",
+                "kind": "state_change",
+                "selector": "exact:binary_sensor.porch_motion",
+                "exact": true,
+                "received": 18,
+                "handled": 12,
+                "dropped": 1,
+                "last_received_at": "2026-09-26T10:58:30.000000Z",
+                "last_handled_at": "2026-09-26T10:57:00.000000Z"
             }
         ],
         "store": {
@@ -161,6 +182,16 @@
                     "mqtt"
                 ]
             }
-        }
+        },
+        "schedules": [
+            {
+                "app_id": "porch",
+                "worker_id": 0,
+                "task_id": "w0:2",
+                "description": "every day at 19:00",
+                "next_run_at": "2026-09-26T19:00:00.000000Z",
+                "last_run_at": "2026-09-25T19:00:00.000000Z"
+            }
+        ]
     }
 }

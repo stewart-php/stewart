@@ -63,6 +63,9 @@ use Stewart\Support\Wire\TriggerSpec;
 use Stewart\Testing\Async\Latch;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
+use Stewart\Testing\Time\VirtualClock;
+
+use function Amp\async;
 
 #[CoversClass(LocalDispatcher::class)]
 #[CoversClass(SubscriptionQueue::class)]
@@ -78,8 +81,11 @@ final class LocalDispatcherTest extends TestCase
 
     private RegistryCache $registry;
 
+    private VirtualClock $clock;
+
     protected function setUp(): void
     {
+        $this->clock = new VirtualClock();
         $this->listener = new RecordingDispatchListener();
         $this->scopes = new ScopeLifecycle();
         $this->registry = new RegistryCache();
@@ -95,7 +101,7 @@ final class LocalDispatcherTest extends TestCase
 
             public function subscriptionCancelled(RegisteredSubscription $subscription): void {}
         };
-        $dispatcher = new LocalDispatcher(new WorkerId(0), TestBootstrap::createWorkerSettings(subscriptionBuffer: 100), $this->listener, $refusing, $this->scopes, $this->registry);
+        $dispatcher = new LocalDispatcher(new WorkerId(0), TestBootstrap::createWorkerSettings(subscriptionBuffer: 100), $this->listener, $refusing, $this->scopes, $this->registry, $this->clock);
         $scope = new SubscriptionScope();
 
         try {
@@ -803,9 +809,7 @@ final class LocalDispatcherTest extends TestCase
     {
         $dispatcher = $this->createDispatcher();
         $handled = new ArrayObject();
-        /** @var OperatorStream<StateChange> $changes */
-        $changes = new OperatorStream(new DispatchSource($dispatcher, self::createScope('app'), SubscriptionKind::StateChange, Selector::exact('light.hall')), new ManualTimers());
-        $changes
+        $this->watchHallLight($dispatcher, new ManualTimers())
             ->filter(static fn(StateChange $change): bool => $change->to?->state === 'on')
             ->subscribe(static function (StateChange $change) use ($handled): void {
                 $handled->append($change->to?->state);
@@ -819,6 +823,60 @@ final class LocalDispatcherTest extends TestCase
         self::assertSame(['on'], $handled->getArrayCopy());
         self::assertCount(2, $this->listener->received);
         self::assertCount(1, $this->listener->handlerCalls, 'The filter stopped the first change before the handler.');
+    }
+
+    public function testActivityCountsWhatTheSubscriptionReceivedAndHandled(): void
+    {
+        $dispatcher = $this->createDispatcher();
+        $this->watchHallLight($dispatcher, new ManualTimers())
+            ->filter(static fn(StateChange $change): bool => $change->to?->state === 'on')
+            ->subscribe(static function (): void {});
+        $this->goLive($dispatcher, 'app');
+
+        $dispatcher->dispatchStateChange(self::createChangeTo('light.hall', 'on'));
+        EventLoopTicks::settle();
+        $handledAt = $this->clock->getNow();
+        $this->clock->skip(Duration::minutes(1));
+        $dispatcher->dispatchStateChange(self::createChangeTo('light.hall', 'off'));
+        EventLoopTicks::settle();
+
+        $activity = $dispatcher->listActivitiesOf(self::createScope('app'))[0] ?? self::fail('No activity was kept.');
+        self::assertSame([2, 1, 0], [$activity->received, $activity->handled, $activity->dropped]);
+        self::assertEquals($this->clock->getNow(), $activity->lastReceivedAt);
+        self::assertEquals($handledAt, $activity->lastHandledAt);
+    }
+
+    public function testDebouncedEmissionIsHandledOnceForSeveralReceivedChanges(): void
+    {
+        $dispatcher = $this->createDispatcher();
+        $timers = new ManualTimers($this->clock);
+        $this->watchHallLight($dispatcher, $timers)->debounce(Duration::seconds(1))->subscribe(static function (): void {});
+        $this->goLive($dispatcher, 'app');
+
+        $dispatcher->dispatchStateChange(self::createChangeTo('light.hall', 'on'));
+        $dispatcher->dispatchStateChange(self::createChangeTo('light.hall', 'off'));
+        EventLoopTicks::settle();
+        $timers->delay(Duration::seconds(2));
+        EventLoopTicks::settle();
+
+        $activity = $dispatcher->listActivitiesOf(self::createScope('app'))[0] ?? self::fail('No activity was kept.');
+        self::assertSame([2, 1], [$activity->received, $activity->handled]);
+    }
+
+    public function testWaitForNextCountsAsAHandlerCall(): void
+    {
+        $dispatcher = $this->createDispatcher();
+        $changes = $this->watchHallLight($dispatcher, new ManualTimers());
+        $this->goLive($dispatcher, 'app');
+        $next = async(static fn(): ?StateChange => $changes->waitForNext());
+        EventLoopTicks::settle();
+
+        $dispatcher->dispatchStateChange(self::createChangeTo('light.hall', 'on'));
+
+        $change = $next->await();
+        self::assertInstanceOf(StateChange::class, $change);
+        self::assertSame('on', $change->to?->state);
+        self::assertCount(1, $this->listener->handlerCalls);
     }
 
     public function testSubscriptionOfPausedAppStartsPaused(): void
@@ -908,7 +966,7 @@ final class LocalDispatcherTest extends TestCase
 
     private function createDispatcher(int $queueLimit = 100): LocalDispatcher
     {
-        return new LocalDispatcher(new WorkerId(0), TestBootstrap::createWorkerSettings(subscriptionBuffer: $queueLimit), $this->listener, $this->listener, $this->scopes, $this->registry);
+        return new LocalDispatcher(new WorkerId(0), TestBootstrap::createWorkerSettings(subscriptionBuffer: $queueLimit), $this->listener, $this->listener, $this->scopes, $this->registry, $this->clock);
     }
 
     private function pause(LocalDispatcher $dispatcher, string $appId): void
@@ -984,6 +1042,15 @@ final class LocalDispatcherTest extends TestCase
     private static function createTransition(string $entityId, string $from, string $to): StateChange
     {
         return new StateChange(new EntityId($entityId), new EntityState(new EntityId($entityId), $from), new EntityState(new EntityId($entityId), $to));
+    }
+
+    /** @return OperatorStream<StateChange> */
+    private function watchHallLight(LocalDispatcher $dispatcher, ManualTimers $timers): OperatorStream
+    {
+        /** @var OperatorStream<StateChange> $changes */
+        $changes = new OperatorStream(new DispatchSource($dispatcher, self::createScope('app'), SubscriptionKind::StateChange, Selector::exact('light.hall')), $timers);
+
+        return $changes;
     }
 
     private static function createChange(string $entityId): StateChange

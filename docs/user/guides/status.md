@@ -107,8 +107,20 @@ directories the project's `composer.json` autoloads (not `autoload-dev`, so edit
 docker compose exec stewart stewart status --json | jq '.snapshot.apps[] | {id, state, counters}'
 ```
 
-The JSON holds everything the tables show, and every entity and event each app listens to. The command exits with 1
-when Stewart is down or the token is wrong, so it also works as a health check.
+The JSON holds everything the tables show, and more. The command exits with 1 when Stewart is down or the token is
+wrong, so it also works as a health check.
+
+| Key | Holds |
+|---|---|
+| `apps[]` | Each app, with `last_handled_at` (when its own handler last ran for an event) and `next_run_at` (its earliest schedule or timer); `counters.handled` counts events that got through the operators |
+| `subscriptions[]` | Every entity, event, topic, MQTT filter and trigger each app listens to, with `received` (reached the subscription), `handled` (reached the handler), `dropped`, `last_received_at` and `last_handled_at` |
+| `schedules[]` | Every schedule and timer, with its `description`, `next_run_at` and `last_run_at` |
+
+`received` without `handled` means an operator such as `filter()` stopped the events; [tracing](logging.md#tracing-an-app)
+shows which ones. The figures come from each worker's last answer to its liveness probe, so they trail by up to
+`supervision.ping_interval`, and with `ping_interval: off` they never arrive. A subscription's figures start again when
+its worker restarts, because it subscribes again under a new ID; the app's own figures keep adding up. A
+[`runAtEntityTime()`](scheduling.md#schedules) shows up as one subscription, which follows the entity, and one schedule.
 
 ## Health checks
 
@@ -151,7 +163,7 @@ refuses to start without one.
 
 | Request | Answer |
 |---|---|
-| `GET /api/apps` | `{"apps":[{"id","state","paused","pause","config_pause_override"}, …]}` |
+| `GET /api/apps` | `{"apps":[{"id","state","paused","pause","config_pause_override","last_handled_at","next_run_at"}, …]}` |
 | `GET /api/apps/{id}` | One app, same shape |
 | `POST /api/apps/{id}/pause`, `/resume`, `/reset` | `{"changed","message","warning"}`, as `app:pause`, `app:resume`, `app:reset` |
 | `POST /api/workers/{id}/restart` | The same shape, as `worker:restart` |

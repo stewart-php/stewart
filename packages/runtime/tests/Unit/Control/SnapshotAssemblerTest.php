@@ -20,12 +20,17 @@ use Stewart\Runtime\Broker\Deploy\DeployState;
 use Stewart\Runtime\Broker\Deploy\ReleaseFailure;
 use Stewart\Runtime\Broker\Reload\ReloadResult;
 use Stewart\Runtime\Broker\Reload\ReloadState;
+use Stewart\Runtime\Control\Assembler\ScheduleStatusBuilder;
+use Stewart\Runtime\Control\Assembler\SubscriptionInfoBuilder;
 use Stewart\Runtime\Control\Protocol\Status\DaemonInfo;
 use Stewart\Runtime\Control\Protocol\Status\RegistrationInfo;
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
+use Stewart\Runtime\Control\Protocol\Status\ScheduleStatus;
 use Stewart\Runtime\Control\SnapshotAssembler;
 use Stewart\Runtime\Ipc\Message\AppActivityReport;
 use Stewart\Runtime\Ipc\Message\Pong;
+use Stewart\Runtime\Ipc\Message\ScheduleActivityReport;
+use Stewart\Runtime\Ipc\Message\SubscriptionActivityReport;
 use Stewart\Runtime\Lifecycle\AppState;
 use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
@@ -41,6 +46,8 @@ use Stewart\Runtime\Tests\Fixtures\Control\BrokerStateFixture;
 #[CoversClass(RuntimeSnapshot::class)]
 #[CoversClass(DaemonInfo::class)]
 #[CoversClass(RegistrationInfo::class)]
+#[CoversClass(SubscriptionInfoBuilder::class)]
+#[CoversClass(ScheduleStatusBuilder::class)]
 final class SnapshotAssemblerTest extends TestCase
 {
     private BrokerStateFixture $broker;
@@ -105,6 +112,42 @@ final class SnapshotAssemblerTest extends TestCase
         self::assertNull($snapshot->store, 'Without persistence there is no store to report.');
         self::assertNull($snapshot->deploy, 'Without polling there is no deploy to report.');
         self::assertSame(ComponentState::Unchecked, $snapshot->component?->state);
+    }
+
+    public function testSubscriptionsAndSchedulesComeFromTheWorkerReports(): void
+    {
+        $this->broker->startWorker(0);
+        $this->broker->registry->add(new BrokerSubscription(new SubscriptionId('w0:0'), new WorkerId(0), ResourceScope::forApp(new AppId('demo')), SubscriptionKind::Event, Selector::exact('doorbell')));
+        $handledAt = Instant::fromIso('2026-10-21T10:00:00Z');
+        $nextRunAt = Instant::fromIso('2026-10-21T19:00:00Z');
+        $this->broker->reportActivity(0, new AppActivityReport(
+            ResourceScope::forApp(new AppId('demo')),
+            AppState::Running,
+            subscriptions: 2,
+            schedules: 1,
+            delivered: 2,
+            subscriptionDropped: 0,
+            scheduleRuns: 0,
+            publishes: 0,
+            failures: 0,
+            suppressed: 0,
+            handled: 1,
+            lastHandledAt: $handledAt,
+            nextRunAt: $nextRunAt,
+            subscriptionReports: [new SubscriptionActivityReport(new SubscriptionId('w0:10'), SubscriptionKind::StateChange, 'exact:light.hall', true, 2, 1, 0, $handledAt, $handledAt)],
+            scheduleReports: [new ScheduleActivityReport('w0:2', 'every day at 19:00', $nextRunAt, null)],
+        ));
+
+        $snapshot = $this->createAssembler()->takeSnapshot();
+
+        self::assertSame(['w0:0', 'w0:10'], array_map(static fn(RegistrationInfo $r): string => $r->subscriptionId, $snapshot->subscriptions), 'Ordered naturally, with the routed one not yet reported.');
+        [$routed, $reported] = $snapshot->subscriptions;
+        self::assertSame([SubscriptionKind::Event, 0, 0], [$routed->kind, $routed->received, $routed->handled]);
+        self::assertSame([SubscriptionKind::StateChange, 'exact:light.hall', 2, 1], [$reported->kind, $reported->selector, $reported->received, $reported->handled]);
+        self::assertEquals($handledAt, $reported->lastHandledAt);
+        self::assertEquals([new ScheduleStatus('demo', 0, 'w0:2', 'every day at 19:00', $nextRunAt, null)], $snapshot->schedules);
+        self::assertSame(1, $snapshot->apps[0]->counters->handled);
+        self::assertEquals([$handledAt, $nextRunAt], [$snapshot->apps[0]->lastHandledAt, $snapshot->apps[0]->nextRunAt]);
     }
 
     public function testDeployStatusCarriesPollAndLastFailure(): void

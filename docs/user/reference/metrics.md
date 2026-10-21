@@ -13,11 +13,14 @@ token. [Status and control](../guides/status.md#metrics) explains how to turn th
 | Metric | Type | Labels | Meaning |
 | --- | --- | --- | --- |
 | `stewart_app_events_delivered_total` | counter | `app`, `worker` | Events delivered to the app handlers. |
+| `stewart_app_events_handled_total` | counter | `app`, `worker` | Events that got through the operators and reached the app's own handler. |
 | `stewart_app_exposed_commands_total` | counter | `app`, `worker`, `outcome` | Home Assistant commands on the app's exposed entities by outcome. |
 | `stewart_app_exposed_entities` | gauge | `app`, `worker` | Home Assistant entities the app exposes, unavailable ones included. |
 | `stewart_app_failures_total` | counter | `app`, `worker` | Handler failures of the app. |
 | `stewart_app_info` | gauge | `app`, `worker`, `class` | App class per app; always 1. |
 | `stewart_app_last_failure_timestamp_seconds` | gauge | `app`, `worker` | Unix time of the last app failure. |
+| `stewart_app_last_handled_timestamp_seconds` | gauge | `app`, `worker` | Unix time the app's own handler last ran for an event. |
+| `stewart_app_next_run_timestamp_seconds` | gauge | `app`, `worker` | Unix time the app's next schedule or timer is due. |
 | `stewart_app_paused` | gauge | `app`, `worker` | Whether the app is paused; 1 or 0. |
 | `stewart_app_publishes_total` | counter | `app`, `worker` | Messages the app published. |
 | `stewart_app_schedule_runs_total` | counter | `app`, `worker` | Scheduled handler runs. |

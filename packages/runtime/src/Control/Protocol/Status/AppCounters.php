@@ -13,5 +13,6 @@ final readonly class AppCounters
         public int $publishes = 0,
         public int $failures = 0,
         public int $suppressed = 0,
+        public int $handled = 0,
     ) {}
 }

@@ -164,9 +164,9 @@ final class ScheduleRegistry
         }
     }
 
-    /** @return array<string, ScheduleEntry> */
-    private function listEntriesOf(ResourceScope $scope): array
+    /** @return list<ScheduleEntry> */
+    public function listEntriesOf(ResourceScope $scope): array
     {
-        return array_filter($this->entries, static fn(ScheduleEntry $entry): bool => $entry->origin->scope->equals($scope));
+        return array_values(array_filter($this->entries, static fn(ScheduleEntry $entry): bool => $entry->origin->scope->equals($scope)));
     }
 }

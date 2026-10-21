@@ -92,6 +92,31 @@ final class ScheduleRegistryTest extends TestCase
         self::assertSame(0, $this->registry->countFor(self::createScope('demo')), 'A cancelled schedule is forgotten.');
     }
 
+    public function testEntryKeepsItsLastRunAndNextRun(): void
+    {
+        $this->scheduler->runEvery(Duration::seconds(10), $this->record(...));
+        $this->goLive('demo');
+        $entry = $this->registry->listEntriesOf(self::createScope('demo'))[0] ?? self::fail('The schedule was not kept.');
+
+        self::assertNull($entry->lastRunAt);
+
+        $this->advanceAndYield(Duration::seconds(10));
+
+        self::assertEquals($this->clock->getNow(), $entry->lastRunAt);
+        self::assertEquals($this->clock->getNow()->plus(Duration::seconds(10)), $entry->getNextRunAt());
+    }
+
+    public function testRunSkippedWhilePausedIsNotALastRun(): void
+    {
+        $this->scheduler->runEvery(Duration::seconds(10), $this->record(...));
+        $this->goLive('demo');
+        $this->pause('demo');
+
+        $this->advanceAndYield(Duration::seconds(10));
+
+        self::assertNull(($this->registry->listEntriesOf(self::createScope('demo'))[0] ?? null)?->lastRunAt);
+    }
+
     public function testNothingFiresBeforeTheAppGoesLive(): void
     {
         $task = $this->scheduler->runEvery(Duration::seconds(10), $this->record(...));
