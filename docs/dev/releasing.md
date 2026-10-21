@@ -57,7 +57,8 @@ minor release, after `make check` is green on that PHP in CI, and say so in the 
    `release.yml` refuses a tag that does not match.
 4. Set `version` in `integrations/home-assistant/custom_components/stewart/manifest.json` to `X.Y.Z`; `release.yml`
    refuses a tag that does not match.
-5. Commit and `git push origin main`, then wait for `CI` to pass on that commit.
+5. Commit and `git push origin main`, then wait for `CI` to pass on that commit. If GitHub starts no run for the push,
+   start one with `gh workflow run ci.yml --ref main`.
 6. Tag and push the tag: `git tag -s vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z`. `release.yml` refuses a commit
    without a passing `CI` run; once CI passes, re-run the failed jobs instead of moving the tag. It runs the
    `Distribution` checks before it builds the image, and the image is scanned before it is tagged and signed.
