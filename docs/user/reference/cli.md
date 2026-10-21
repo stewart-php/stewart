@@ -37,7 +37,7 @@ Your project runs these commands with `make`. The `stewart` commands below run i
 | `make down` | Stop everything |
 | `make deploy` | Pull, install and check the latest commit, then restart; a failed check keeps the running daemon |
 | `make logs` | Follow the daemon logs |
-| `make status` | One-shot status of the running daemon |
+| `make status` | Status of the running daemon [APP=porch-light for one app's subscriptions and schedules, WATCH=1 to redraw every 2s, WATCH=5s] |
 | `make app-pause` | Pause an app of the running daemon [APP=porch-light] |
 | `make app-resume` | Resume a paused app [APP=porch-light] |
 | `make app-reset` | Forget a stored pause or resume, so stewart.yaml decides again [APP=porch-light] |
@@ -215,11 +215,15 @@ stewart run [options]
 
 ### status
 
-Show what the running daemon is doing, once
+Show what the running daemon is doing
 
 ```
-stewart status [options]
+stewart status [options] [--] [<apps>...]
 ```
+
+| Argument | Meaning |
+| --- | --- |
+| `apps` | Show only these apps, with their subscriptions and schedules |
 
 | Option | Meaning | Default |
 | --- | --- | --- |
@@ -229,6 +233,7 @@ stewart status [options]
 | `--timeout=…` | How long to wait for the daemon, like 5s | `5s` |
 | `--json` | Print the snapshot as the wire JSON instead of tables |  |
 | `--probe=…` | liveness or readiness: print one line and exit 0 or 1, for health checks |  |
+| `--watch=…` | Redraw every interval, like 5s, until Ctrl-C; every 2s when given alone |  |
 
 ### worker:restart
 

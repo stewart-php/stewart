@@ -10,8 +10,10 @@ use Stewart\Runtime\Control\Protocol\Status\AppStatus;
 use Stewart\Runtime\Control\Protocol\Status\ComponentStatus;
 use Stewart\Runtime\Control\Protocol\Status\ConnectionState;
 use Stewart\Runtime\Control\Protocol\Status\DeployStatus;
+use Stewart\Runtime\Control\Protocol\Status\RegistrationInfo;
 use Stewart\Runtime\Control\Protocol\Status\ReloadStatus;
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
+use Stewart\Runtime\Control\Protocol\Status\ScheduleStatus;
 use Stewart\Runtime\Control\Protocol\Status\WorkerStatus;
 use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Model\ServiceCallOutcome;
@@ -27,7 +29,7 @@ final readonly class StatusRenderer
 
     public function __construct(private StatusFormatter $formatter) {}
 
-    public function render(OutputInterface $output, RuntimeSnapshot $snapshot): void
+    public function render(OutputInterface $output, RuntimeSnapshot $snapshot, StatusView $view = StatusView::Overview): void
     {
         // The daemon's clock, so skew between a remote daemon and this CLI does not distort ages.
         $now = $snapshot->takenAt;
@@ -35,6 +37,12 @@ final readonly class StatusRenderer
         $this->renderDaemonTable($output, $snapshot, $now);
         $this->renderWorkerTable($output, $snapshot, $now);
         $this->renderAppTable($output, $snapshot, $now);
+
+        if ($view === StatusView::AppDetail) {
+            $this->renderSubscriptionTable($output, $snapshot, $now);
+            $this->renderScheduleTable($output, $snapshot, $now);
+        }
+
         $this->renderFailureTable($output, $snapshot, $now);
     }
 
@@ -93,12 +101,14 @@ final readonly class StatusRenderer
         $this->renderTable(
             $output,
             'Apps',
-            ['app', 'worker', 'state', 'reported', 'subs', 'schedules', 'exposed', 'delivered', 'dropped', 'suppressed', 'runs', 'publishes', 'calls ok/failed', 'p95', 'failures'],
+            ['app', 'worker', 'state', 'reported', 'last handled', 'next run', 'subs', 'schedules', 'exposed', 'delivered', 'dropped', 'suppressed', 'runs', 'publishes', 'calls ok/failed', 'p95', 'failures'],
             array_map(fn(AppStatus $app): array => [
                 $app->id,
                 $app->workerId === null ? '-' : (string) $app->workerId,
                 $this->formatAppState($app, $now),
                 $this->formatter->formatTimeAgo($app->reportedAt, $now),
+                $this->formatter->formatTimeAgo($app->lastHandledAt, $now),
+                $this->formatter->formatNextRun($app->nextRunAt, $now),
                 (string) $app->subscriptions,
                 (string) $app->schedules,
                 (string) $app->exposedEntities,
@@ -111,6 +121,43 @@ final readonly class StatusRenderer
                 $this->formatLatency($app),
                 (string) $app->counters->failures,
             ], $snapshot->apps),
+        );
+    }
+
+    private function renderSubscriptionTable(OutputInterface $output, RuntimeSnapshot $snapshot, Instant $now): void
+    {
+        $namesApps = \count($snapshot->apps) > 1;
+
+        $this->renderTable(
+            $output,
+            'Subscriptions',
+            [...($namesApps ? ['app'] : []), 'kind', 'match', 'received', 'handled', 'dropped', 'last handled'],
+            array_map(fn(RegistrationInfo $subscription): array => [
+                ...($namesApps ? [$subscription->appId] : []),
+                $subscription->kind->value,
+                $subscription->selector,
+                (string) $subscription->received,
+                (string) $subscription->handled,
+                (string) $subscription->dropped,
+                $this->formatter->formatTimeAgo($subscription->lastHandledAt, $now),
+            ], $snapshot->subscriptions),
+        );
+    }
+
+    private function renderScheduleTable(OutputInterface $output, RuntimeSnapshot $snapshot, Instant $now): void
+    {
+        $namesApps = \count($snapshot->apps) > 1;
+
+        $this->renderTable(
+            $output,
+            'Schedules',
+            [...($namesApps ? ['app'] : []), 'schedule', 'next run', 'last run'],
+            array_map(fn(ScheduleStatus $schedule): array => [
+                ...($namesApps ? [$schedule->appId] : []),
+                $schedule->description,
+                $this->formatter->formatNextRun($schedule->nextRunAt, $now),
+                $this->formatter->formatTimeAgo($schedule->lastRunAt, $now),
+            ], $snapshot->schedules),
         );
     }
 

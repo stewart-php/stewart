@@ -28,7 +28,7 @@ make doctor       # the connection to Home Assistant, the token's rights and the
 make check        # the configuration loads and every app can be built; lists the apps and their workers
 make run          # run in the foreground; Ctrl-C stops it
 make watch        # the same, and every saved change reloads the apps
-make status       # from another terminal
+make status       # from another terminal; APP=hello for one app, WATCH=1 to keep it updated
 ```
 
 `make help` lists every target.

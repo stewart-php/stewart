@@ -15,6 +15,7 @@ use Stewart\Runtime\Console\StatusRenderer;
 use Stewart\Runtime\Control\Client\ControlClient;
 use Stewart\Runtime\Control\Protocol\Codec\FrameCodec;
 use Stewart\Runtime\Control\Protocol\Frame\SnapshotFrame;
+use Stewart\Runtime\Control\Protocol\Status\AppStatus;
 use Stewart\Runtime\Control\Request\ControlRequestDispatcher;
 use Stewart\Runtime\Control\Server\ControlServer;
 use Stewart\Runtime\Control\Server\UnixSocketFile;
@@ -173,6 +174,63 @@ final class StatusCommandTest extends TestCase
 
         self::assertSame(1, $exit);
         self::assertStringContainsString('"startup" is not liveness or readiness', $tester->getDisplay());
+    }
+
+    public function testNamedAppGetsItsSubscriptionsAndSchedules(): void
+    {
+        $this->listen();
+        $tester = $this->tester();
+
+        $exit = $tester->execute(['apps' => ['porch'], '--address' => 'unix://' . $this->path, '--token' => self::TOKEN]);
+
+        self::assertSame(0, $exit, $tester->getDisplay());
+        self::assertStringContainsString('Subscriptions', $tester->getDisplay());
+        self::assertStringContainsString('exact:binary_sensor.porch_motion', $tester->getDisplay());
+        self::assertStringContainsString('every day at 19:00', $tester->getDisplay());
+    }
+
+    public function testNamedAppNarrowsTheJson(): void
+    {
+        $this->listen();
+        $tester = $this->tester();
+
+        $tester->execute(['apps' => ['porch'], '--address' => 'unix://' . $this->path, '--token' => self::TOKEN, '--json' => true]);
+
+        $frame = new FrameCodec(FrameCodec::createControlWireMapper())->decodeServerFrame($tester->getDisplay());
+        self::assertInstanceOf(SnapshotFrame::class, $frame);
+        self::assertSame(['porch'], array_map(static fn(AppStatus $app): string => $app->id, $frame->snapshot->apps));
+        self::assertCount(2, $frame->snapshot->subscriptions);
+    }
+
+    public function testUnknownAppNamesTheClosestOne(): void
+    {
+        $this->listen();
+        $tester = $this->tester();
+
+        $exit = $tester->execute(['apps' => ['porhc'], '--address' => 'unix://' . $this->path, '--token' => self::TOKEN]);
+
+        self::assertSame(1, $exit);
+        self::assertStringContainsString('No automation with ID "porhc". Did you mean "porch"?', $tester->getDisplay());
+    }
+
+    public function testWatchIntervalOfZeroIsOneLineAndExitOne(): void
+    {
+        $tester = $this->tester();
+
+        $exit = $tester->execute(['--address' => 'unix://' . $this->path, '--token' => self::TOKEN, '--watch' => '0s']);
+
+        self::assertSame(1, $exit);
+        self::assertStringContainsString('"0s" is not a --watch interval longer than 0s', $tester->getDisplay());
+    }
+
+    public function testProbeTakesNoAppsAndNoWatch(): void
+    {
+        $tester = $this->tester();
+
+        $exit = $tester->execute(['apps' => ['porch'], '--address' => 'unix://' . $this->path, '--token' => self::TOKEN, '--probe' => 'readiness']);
+
+        self::assertSame(1, $exit);
+        self::assertStringContainsString('--probe cannot be combined with app IDs or --watch', $tester->getDisplay());
     }
 
     private function tester(): CommandTester

@@ -111,7 +111,7 @@ commands. These are the ones you use most:
 | `make sh` | Open a shell in the container |
 | `make up` / `make down` | Start Stewart in the background / stop it |
 | `make logs` | Follow the log of the background Stewart |
-| `make status` | Ask the running Stewart how its apps are doing |
+| `make status` | Ask the running Stewart how its apps are doing. `APP=porch-light` adds that app's subscriptions and schedules, `WATCH=1` redraws every 2s |
 | `make app-pause APP=…` / `make app-resume APP=…` | Pause or resume one app of the running Stewart; `make app-reset APP=…` forgets the choice |
 | `make worker-restart WORKER=…` | Restart one worker of the running Stewart |
 | `make update` | Update dependencies within your Stewart version |
