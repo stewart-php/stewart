@@ -25,6 +25,23 @@ release asks you to do something.
 
 ## Upgrade notes
 
+### 1.5
+
+1. Apps without `worker:` can move to another worker once, so the `worker` label of their metrics changes. If
+   dashboards or alerts rely on it, run `make check` before upgrading, note each app's worker, and pin it with
+   `apps.<id>.worker`.
+2. Run `make upgrade VERSION=1.5`. Protocols are unchanged, so a 1.4 daemon, `stewart` CLI and Home Assistant
+   integration work with 1.5.
+3. Run `make check`. It now builds every app, so it can name a problem that used to show only when the app started,
+   and a Git deploy rejects a commit until it passes.
+4. Delete the empty `dispose()` from your apps; `make check` names each app that still has one. Where `dispose()`
+   does something, add `implements Disposable` (`use Stewart\Contracts\Disposable;`). An app that marks `dispose()`
+   with `#[\Override]` does not load until you do one or the other.
+5. The new deploy and CI steps reach only new projects. To use them, copy the `deploy` target from the
+   [skeleton's Makefile](https://github.com/stewart-php/skeleton/blob/main/Makefile), and `ci.yml` and `image.yml`
+   from its [workflows](https://github.com/stewart-php/skeleton/tree/main/.github/workflows). CI checks the settings
+   in `.env.example`, so keep it listing every setting your apps need.
+
 ### 1.4
 
 1. Run `make upgrade VERSION=1.4`. Protocols are unchanged, so a 1.3 daemon, `stewart` CLI and Home Assistant
