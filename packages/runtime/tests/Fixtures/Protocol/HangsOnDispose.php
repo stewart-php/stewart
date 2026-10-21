@@ -7,9 +7,10 @@ namespace Stewart\Runtime\Tests\Fixtures\Protocol;
 use Amp\DeferredFuture;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
+use Stewart\Contracts\Disposable;
 
 #[Automation(id: 'hangs-on-dispose')]
-final readonly class HangsOnDispose implements App
+final readonly class HangsOnDispose implements App, Disposable
 {
     public function initialize(): void {}
 

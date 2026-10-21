@@ -27,6 +27,4 @@ final class WaitingInitializeApp implements App
         });
         $this->ready = $this->ha->waitForState('input_boolean.ready', 'on', Duration::seconds(10)) !== null;
     }
-
-    public function dispose(): void {}
 }

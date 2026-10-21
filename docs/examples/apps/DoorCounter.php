@@ -23,6 +23,4 @@ final class DoorCounter implements App
             $this->store->increment('opens');
         });
     }
-
-    public function dispose(): void {}
 }

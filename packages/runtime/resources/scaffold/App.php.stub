@@ -19,6 +19,4 @@ final readonly class {{class}} implements App
     {
         $this->logger->info('{{class}} started');
     }
-
-    public function dispose(): void {}
 }

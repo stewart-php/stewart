@@ -32,6 +32,4 @@ final readonly class RunCounter implements App
             $this->logger->info('Change counted', ['changes_seen' => $this->store->increment('changes_seen')]);
         });
     }
-
-    public function dispose(): void {}
 }

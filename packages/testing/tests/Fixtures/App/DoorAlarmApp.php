@@ -6,11 +6,12 @@ namespace Stewart\Testing\Tests\Fixtures\App;
 
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
+use Stewart\Contracts\Disposable;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\Time\Duration;
 
 #[Automation(id: 'door-alarm')]
-final class DoorAlarmApp implements App
+final class DoorAlarmApp implements App, Disposable
 {
     public private(set) bool $disposed = false;
 

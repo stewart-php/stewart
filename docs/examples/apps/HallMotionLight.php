@@ -34,6 +34,4 @@ final readonly class HallMotionLight implements App
                 $this->ha->callService('light', 'turn_off', target: ServiceTarget::forEntities($this->light));
             });
     }
-
-    public function dispose(): void {}
 }

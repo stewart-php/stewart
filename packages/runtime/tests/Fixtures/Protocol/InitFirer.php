@@ -25,6 +25,4 @@ final readonly class InitFirer implements App
 
         $this->logger->info('Initialize fire finished', ['context' => $context->id]);
     }
-
-    public function dispose(): void {}
 }

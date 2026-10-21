@@ -24,6 +24,4 @@ final class BreaksOnInitialize implements App
 
         throw new RuntimeException('initialize blew up');
     }
-
-    public function dispose(): void {}
 }

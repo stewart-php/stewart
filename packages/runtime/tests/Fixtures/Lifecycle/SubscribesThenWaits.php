@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Tests\Fixtures\Lifecycle;
 
 use Stewart\Contracts\App;
+use Stewart\Contracts\Disposable;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Testing\Async\Latch;
 
-final class SubscribesThenWaits implements App
+final class SubscribesThenWaits implements App, Disposable
 {
     public static ?Latch $latch = null;
 

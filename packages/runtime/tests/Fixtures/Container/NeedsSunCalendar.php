@@ -12,6 +12,4 @@ final readonly class NeedsSunCalendar implements App
     public function __construct(public SunCalendar $sunCalendar) {}
 
     public function initialize(): void {}
-
-    public function dispose(): void {}
 }

@@ -22,8 +22,8 @@ Here is what each part does:
 - **`#[Automation(id: 'porch-light')]`** marks the class as an app. Stewart finds every app in `apps/` by this
   attribute. The ID names the app in logs, in `stewart.yaml` and in stored data, so keep it once the app runs. It
   starts with a lowercase letter and uses only lowercase letters, digits, `-` and `_`.
-- **`implements App`** gives the app its two lifecycle methods. `initialize()` runs once, when the app starts.
-  `dispose()` runs when it stops; this app has nothing to clean up.
+- **`implements App`** gives the app its lifecycle method: `initialize()` runs once, when the app starts. What it
+  sets up ends on its own when the app stops.
 - **The constructor** asks for what the app needs, and Stewart passes it in:
   - `HaContext` talks to Home Assistant: reads states, watches changes, calls services.
   - `Scheduler` runs code at a time of day, at a sun event, or every few minutes.

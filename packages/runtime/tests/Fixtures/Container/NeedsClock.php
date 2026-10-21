@@ -16,6 +16,4 @@ final readonly class NeedsClock implements App
     ) {}
 
     public function initialize(): void {}
-
-    public function dispose(): void {}
 }

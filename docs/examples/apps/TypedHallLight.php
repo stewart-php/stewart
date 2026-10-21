@@ -40,6 +40,4 @@ final readonly class TypedHallLight implements App
             }
         });
     }
-
-    public function dispose(): void {}
 }

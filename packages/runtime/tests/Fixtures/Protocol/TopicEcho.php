@@ -26,6 +26,4 @@ final readonly class TopicEcho implements App
             $this->logger->info('Topic received', ['topic' => $event->topic, 'from' => $event->publisher?->value]);
         });
     }
-
-    public function dispose(): void {}
 }

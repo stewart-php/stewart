@@ -26,6 +26,4 @@ final readonly class HideBatteries implements App
                 ->withHidden(true));
         }
     }
-
-    public function dispose(): void {}
 }

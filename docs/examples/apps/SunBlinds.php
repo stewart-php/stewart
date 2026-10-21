@@ -42,8 +42,6 @@ final readonly class SunBlinds implements App
         });
     }
 
-    public function dispose(): void {}
-
     private function isSunOnTheFacade(): bool
     {
         $position = $this->sun->getCurrentPosition();

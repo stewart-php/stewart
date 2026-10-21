@@ -58,8 +58,6 @@ final class ChangeCounter implements App
         $this->ha->watchStateChanges($this->watch)->subscribe($this->countChange(...));
     }
 
-    public function dispose(): void {}
-
     private function exposeCountingSwitch(): ExposedSwitch
     {
         $counting = $this->entities->exposeSwitch('counting', new SwitchConfig(name: 'Counting', icon: 'mdi:counter'));

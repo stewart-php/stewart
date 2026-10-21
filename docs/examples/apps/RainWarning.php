@@ -29,8 +29,6 @@ final readonly class RainWarning implements App
         $this->scheduler->runDailyAt('07:00', $this->checkTheForecast(...));
     }
 
-    public function dispose(): void {}
-
     private function checkTheForecast(): void
     {
         try {

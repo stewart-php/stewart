@@ -14,6 +14,4 @@ final readonly class CamelCaseOptionsApp implements App
     ) {}
 
     public function initialize(): void {}
-
-    public function dispose(): void {}
 }

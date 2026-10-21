@@ -12,6 +12,4 @@ final readonly class NeedsUnregisteredService implements App
     public function __construct(public RecordingPoolListener $unregistered) {}
 
     public function initialize(): void {}
-
-    public function dispose(): void {}
 }

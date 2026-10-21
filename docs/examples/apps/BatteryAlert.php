@@ -34,6 +34,4 @@ final readonly class BatteryAlert implements App
                 ]);
             });
     }
-
-    public function dispose(): void {}
 }

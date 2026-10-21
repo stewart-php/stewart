@@ -21,6 +21,4 @@ final readonly class UnawaitedFailure implements App
             throw new RuntimeException(self::FAILURE);
         });
     }
-
-    public function dispose(): void {}
 }

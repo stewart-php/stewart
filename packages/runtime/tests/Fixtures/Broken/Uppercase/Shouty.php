@@ -11,6 +11,4 @@ use Stewart\Contracts\Automation;
 final class Shouty implements App
 {
     public function initialize(): void {}
-
-    public function dispose(): void {}
 }

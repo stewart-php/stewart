@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Tests\Fixtures\Lifecycle;
 
 use Stewart\Contracts\App;
+use Stewart\Contracts\Disposable;
 
-final class Healthy implements App
+final class Healthy implements App, Disposable
 {
     public bool $initialized = false;
 

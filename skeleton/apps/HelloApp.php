@@ -35,6 +35,4 @@ final readonly class HelloApp implements App
             $this->logger->info('State changed', ['entity' => $change->entityId->value, 'from' => $change->from?->state, 'to' => $change->to?->state]);
         });
     }
-
-    public function dispose(): void {}
 }

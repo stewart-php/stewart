@@ -32,6 +32,4 @@ final readonly class ChangeEdgeLogger implements App
             ]);
         });
     }
-
-    public function dispose(): void {}
 }

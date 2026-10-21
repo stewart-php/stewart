@@ -16,6 +16,4 @@ final readonly class NeedsStores implements App
     ) {}
 
     public function initialize(): void {}
-
-    public function dispose(): void {}
 }

@@ -23,6 +23,4 @@ final readonly class NeedsAttributedStores implements App
     ) {}
 
     public function initialize(): void {}
-
-    public function dispose(): void {}
 }

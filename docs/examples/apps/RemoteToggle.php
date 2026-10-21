@@ -28,6 +28,4 @@ final readonly class RemoteToggle implements App
                 $this->ha->callService('light', 'toggle', target: ServiceTarget::forEntities($this->light));
             });
     }
-
-    public function dispose(): void {}
 }

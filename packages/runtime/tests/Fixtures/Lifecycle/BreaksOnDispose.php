@@ -6,8 +6,9 @@ namespace Stewart\Runtime\Tests\Fixtures\Lifecycle;
 
 use RuntimeException;
 use Stewart\Contracts\App;
+use Stewart\Contracts\Disposable;
 
-final class BreaksOnDispose implements App
+final class BreaksOnDispose implements App, Disposable
 {
     public function initialize(): void {}
 

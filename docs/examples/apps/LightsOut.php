@@ -27,6 +27,4 @@ final readonly class LightsOut implements App
             }
         });
     }
-
-    public function dispose(): void {}
 }

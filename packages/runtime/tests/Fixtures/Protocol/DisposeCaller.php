@@ -7,10 +7,11 @@ namespace Stewart\Runtime\Tests\Fixtures\Protocol;
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
+use Stewart\Contracts\Disposable;
 use Stewart\Contracts\HaContext;
 
 #[Automation(id: 'dispose-caller')]
-final readonly class DisposeCaller implements App
+final readonly class DisposeCaller implements App, Disposable
 {
     public function __construct(
         private HaContext $ha,

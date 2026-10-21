@@ -12,6 +12,4 @@ final readonly class NeedsMissingClass implements App
     public function __construct(public NotGeneratedYet $entities) {}
 
     public function initialize(): void {}
-
-    public function dispose(): void {}
 }

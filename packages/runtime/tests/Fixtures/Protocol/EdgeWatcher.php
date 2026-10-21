@@ -37,8 +37,6 @@ final readonly class EdgeWatcher implements App
         $this->ha->watchStateChanges($this->watch)->whenChangedTo('on', Duration::milliseconds(10))->subscribe($this->recordChange(...));
     }
 
-    public function dispose(): void {}
-
     private function recordChange(StateChange $change): void
     {
         $this->logger->info('Watched entity changed', ['to' => $change->to?->state]);

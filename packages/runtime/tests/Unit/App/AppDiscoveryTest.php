@@ -43,8 +43,6 @@ final class AppDiscoveryTest extends TestCase
         final class Survivor implements App
         {
             public function initialize(): void {}
-
-            public function dispose(): void {}
         }
         PHP;
 

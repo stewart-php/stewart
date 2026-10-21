@@ -36,6 +36,4 @@ final readonly class ForgottenLight implements App
             }
         });
     }
-
-    public function dispose(): void {}
 }

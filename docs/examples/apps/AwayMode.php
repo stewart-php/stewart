@@ -30,6 +30,4 @@ final readonly class AwayMode implements App
             $this->house->set('mode', 'home');
         });
     }
-
-    public function dispose(): void {}
 }

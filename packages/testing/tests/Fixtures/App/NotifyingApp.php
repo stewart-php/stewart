@@ -16,6 +16,4 @@ final readonly class NotifyingApp implements App
     {
         $this->notifier->notify('started');
     }
-
-    public function dispose(): void {}
 }

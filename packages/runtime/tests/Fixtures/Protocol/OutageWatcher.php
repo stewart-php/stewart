@@ -34,6 +34,4 @@ final readonly class OutageWatcher implements App
             };
         });
     }
-
-    public function dispose(): void {}
 }

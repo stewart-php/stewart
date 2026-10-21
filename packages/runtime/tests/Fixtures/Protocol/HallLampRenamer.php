@@ -22,6 +22,4 @@ final readonly class HallLampRenamer implements App
     {
         $this->registry->updateEntity(self::ENTITY_ID, new EntityRegistryUpdate()->withName(self::NAME)->withAddedLabels('night'));
     }
-
-    public function dispose(): void {}
 }

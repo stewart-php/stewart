@@ -28,6 +28,4 @@ final readonly class SerialHandler implements App
             $this->logger->info('Handled', ['value' => $change->to?->state]);
         });
     }
-
-    public function dispose(): void {}
 }

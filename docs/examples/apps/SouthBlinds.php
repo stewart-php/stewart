@@ -33,6 +33,4 @@ final readonly class SouthBlinds implements App
             }
         });
     }
-
-    public function dispose(): void {}
 }

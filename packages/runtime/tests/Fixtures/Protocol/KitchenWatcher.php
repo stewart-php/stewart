@@ -23,6 +23,4 @@ final readonly class KitchenWatcher implements App
             $this->ha->callService('script', 'record', ['entity_id' => $change->entityId->value]);
         });
     }
-
-    public function dispose(): void {}
 }

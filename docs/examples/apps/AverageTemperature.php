@@ -44,6 +44,4 @@ final class AverageTemperature implements App
             $this->average->setValue($temperatures === [] ? null : array_sum($temperatures) / \count($temperatures), ['sources' => self::SOURCES]);
         });
     }
-
-    public function dispose(): void {}
 }

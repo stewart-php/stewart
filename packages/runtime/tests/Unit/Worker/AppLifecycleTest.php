@@ -22,6 +22,7 @@ use Stewart\Runtime\Lifecycle\AppFailurePhase;
 use Stewart\Runtime\Lifecycle\AppState;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
+use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Container\AppRuntimeServicesFixture;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsScalar;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsUnregisteredService;
@@ -34,6 +35,7 @@ use Stewart\Runtime\Tests\Fixtures\Lifecycle\CancelsOnInitialize;
 use Stewart\Runtime\Tests\Fixtures\Lifecycle\GatedDisposer;
 use Stewart\Runtime\Tests\Fixtures\Lifecycle\GatedInitializer;
 use Stewart\Runtime\Tests\Fixtures\Lifecycle\Healthy;
+use Stewart\Runtime\Tests\Fixtures\Lifecycle\LegacyDisposer;
 use Stewart\Runtime\Tests\Fixtures\Lifecycle\SchedulesOnConstruct;
 use Stewart\Runtime\Tests\Fixtures\Lifecycle\SubscribesThenWaits;
 use Stewart\Runtime\Tests\Fixtures\Worker\AppResourcesFixture;
@@ -66,6 +68,7 @@ final class AppLifecycleTest extends TestCase
 
         GatedInitializer::reset();
         GatedDisposer::reset();
+        LegacyDisposer::reset();
         SubscribesThenWaits::reset();
         SchedulesOnConstruct::reset();
     }
@@ -314,6 +317,29 @@ final class AppLifecycleTest extends TestCase
         $lifecycle->disposeAppsBefore(new NullCancellation());
 
         self::assertSame(AppFailurePhase::Dispose, $this->getOnlyFailure()->phase);
+    }
+
+    public function testDisposeWithoutDisposableStillRuns(): void
+    {
+        $lifecycle = $this->createLifecycle(new WorkerApp(id: new AppId('legacy'), class: LegacyDisposer::class, options: []));
+
+        $lifecycle->constructApps();
+        $lifecycle->initializeApps();
+        $lifecycle->disposeAppsBefore(new NullCancellation());
+
+        self::assertSame(1, LegacyDisposer::$disposals);
+    }
+
+    public function testAppWithoutDisposeIsDisposedQuietly(): void
+    {
+        $lifecycle = $this->createLifecycle(new WorkerApp(id: new AppId('demo'), class: Demo::class, options: []));
+
+        $lifecycle->constructApps();
+        $lifecycle->initializeApps();
+        $lifecycle->disposeAppsBefore(new NullCancellation());
+
+        self::assertSame(['demo'], $lifecycle->listAppIdsInState(AppState::Disposed)->toStrings());
+        self::assertSame([], array_filter($this->transport->sent, static fn(object $m): bool => $m instanceof AppFailed));
     }
 
     public function testSlowInitializeDoesNotDelayNeighbours(): void

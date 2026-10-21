@@ -12,6 +12,7 @@ use Stewart\Contracts\App;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Automation;
+use Stewart\Contracts\Disposable;
 use Stewart\Contracts\Exposure\EntityExposure;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\Mqtt\Mqtt;
@@ -148,7 +149,10 @@ final class AppHarness
         EventLoopTicks::settle();
         $this->timers->handlerFibers->rethrowFailuresExceptAbandonedWaits();
 
-        async($app->dispose(...))->await();
+        // Until 2.0, an app that still declares dispose() without Disposable is disposed too.
+        if ($app instanceof Disposable || \is_callable([$app, 'dispose'])) {
+            async($app->dispose(...))->await();
+        }
     }
 
     /** @return array<string, object> */

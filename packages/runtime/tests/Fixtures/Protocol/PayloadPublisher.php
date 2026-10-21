@@ -20,6 +20,4 @@ final readonly class PayloadPublisher implements App
     {
         $this->ha->publish('protocol.bad', ['nested' => [new TopicEvent('x', null, new AppId('y'), Instant::fromEpochMicroseconds(0))]]);
     }
-
-    public function dispose(): void {}
 }

@@ -18,6 +18,4 @@ final class Demo implements App
     ) {}
 
     public function initialize(): void {}
-
-    public function dispose(): void {}
 }

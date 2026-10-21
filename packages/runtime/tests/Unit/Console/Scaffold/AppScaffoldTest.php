@@ -106,8 +106,6 @@ final class AppScaffoldTest extends TestCase
             final class Lamp implements App
             {
                 public function initialize(): void {}
-
-                public function dispose(): void {}
             }
             PHP);
 
