@@ -49,8 +49,9 @@ The split buys three things:
 | **Blocking containment** | An app that blocks stalls its own worker's loop, not every automation in the house. |
 | **Cheap restarts** | The connection and state cache live in the broker, so restarting a worker costs no reconnect and no resync. A crashed worker is respawned with backoff, and quarantined if it will not stay up. |
 
-Apps are spread round-robin over `min(4, cpu_count)` workers by default; an app
-can pin itself to one with `worker:` in `stewart.yaml`. One process per app
+Apps are spread over `min(4, cpu_count)` workers by default, by a hash of their
+ID, so adding an app moves no other; an app can pin itself to one with `worker:`
+in `stewart.yaml`. One process per app
 would be the ideal, but at 15–30 MB RSS each it does not survive contact with a
 Raspberry Pi.
 
@@ -309,9 +310,13 @@ go out of scope. This is what allows a container
 inside a process running an event loop at all. Resolving a
 service per event would void it.
 
-**App discovery is sorted by ID.** `AppPlacement::planWorkerSlots()` spreads apps
-round-robin in array order, so an order left to the filesystem would move an
-automation between workers from one boot to the next.
+**Placement depends only on the app ID.** `AppPlacement::planWorkerSlots()` puts
+each unpinned app on the worker whose index scores highest with its ID
+(rendezvous hashing), so adding, removing or reordering apps never moves another
+one, and a bigger pool moves only the apps the new worker wins. The `worker`
+metric label stays put across deploys. The price is an uneven spread when there
+are few apps. Discovery is still sorted by ID, so listings and each worker's app
+order do not depend on the filesystem.
 
 **Apps are constructed at `Bootstrap` but initialized only after
 `StateSnapshot`.** Reading state inside `initialize()` is normal and must work.

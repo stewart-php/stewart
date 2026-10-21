@@ -269,7 +269,7 @@ apps:
         # Start loaded but paused: no events or schedule runs reach it until resumed.
         paused:               false
 
-        # Pin to a worker index. Omit to have it distributed round-robin.
+        # Pin to a worker index. Omit to place it by a hash of its ID, so adding other apps never moves it.
         worker:               null
 
         # Passed to the app constructor as named arguments.

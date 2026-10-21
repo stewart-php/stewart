@@ -30,7 +30,8 @@ when it drops, and keeps a copy of the state of every entity.
 app calls a service, the worker asks the broker to send it and waits for the answer. When a light changes state,
 the broker tells every worker.
 
-`workers` in `stewart.yaml` sets how many workers run. `apps.<id>.worker` puts an app on a chosen worker.
+`workers` in `stewart.yaml` sets how many workers run. `apps.<id>.worker` puts an app on a chosen worker; otherwise a
+hash of the app's ID picks one, so adding or removing an app never moves another.
 
 ## What this means for your apps
 

@@ -99,7 +99,8 @@ In the schema, `normalizeKeys(false)` on `apps` is load-bearing: Symfony would o
 - A file that throws while loading is recorded as unloadable. An instantiable `App` without `#[Automation]` is
   recorded as unmarked. A marked class that is not an `App`, not instantiable, or has an invalid ID throws, and two
   IDs that collide once `-` and `_` are equal throw `DuplicateId`.
-- `DiscoveredAppCollection::fromApps()` sorts by ID, so worker placement does not depend on the filesystem.
+- `DiscoveredAppCollection::fromApps()` sorts by ID, so listings and each worker's app order do not depend on the
+  filesystem.
 
 `App/AppCatalogResolver::resolveCatalog()` merges discovery with `apps:` from the config. Discovery is the source of
 truth: an override naming no discovered app is kept as unmatched, and `run` and `check` warn about it. `--only`
@@ -138,5 +139,5 @@ so there is no chicken-and-egg: two containers, each compiled once.
 container's entrypoint to switch to a staged Git release.
 
 Worker placement happens in the broker container: `config/broker.php` builds the `WorkerSlotCollection` with
-`Broker/AppPlacement::planWorkerSlots()`, round-robin over unpinned apps in ID order, with a pool of `workers` or
+`Broker/AppPlacement::planWorkerSlots()`, rendezvous hashing of each unpinned app's ID, with a pool of `workers` or
 `min(4, CpuCountDetector::detectCpuCount())` (which honours a cgroup CPU quota). Only workers with apps get a slot.

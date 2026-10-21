@@ -471,7 +471,7 @@ final class StewartConfigSchema implements ConfigurationInterface
                                 ->defaultFalse()
                             ->end()
                             ->integerNode('worker')
-                                ->info('Pin to a worker index. Omit to have it distributed round-robin.')
+                                ->info('Pin to a worker index. Omit to place it by a hash of its ID, so adding other apps never moves it.')
                                 ->min(0)
                                 ->defaultNull()
                             ->end()
