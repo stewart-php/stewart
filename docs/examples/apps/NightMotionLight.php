@@ -44,6 +44,4 @@ final readonly class NightMotionLight implements App
                 }
             });
     }
-
-    public function dispose(): void {}
 }

@@ -89,6 +89,7 @@ final class CheckCommand extends StewartCommand
         $this->writeMissingConfigFileNotice($output, $this->config->findMissingDefaultFile($this->findConfigOption($input)));
         $this->writeUnmatchedOverridesNotice($output, $apps);
         $this->writeUnmarkedAppNotices($output, $discovered->unmarked);
+        $this->writeDisposeDeprecationNotices($output, $discovered->apps);
         $this->writeAppTable($output, $discovered->apps, $apps, $slots);
         $output->writeln(\sprintf('Configuration and %d automations load; %d enabled.', $discovered->apps->count(), $apps->enabled->count()));
 
@@ -113,6 +114,18 @@ final class CheckCommand extends StewartCommand
     {
         foreach ($unmarked as $app) {
             $this->writeNotice($output, \sprintf('%s implements App but is not marked #[Automation], so it will not run.', $app->class));
+        }
+    }
+
+    private function writeDisposeDeprecationNotices(OutputInterface $output, DiscoveredAppCollection $apps): void
+    {
+        foreach ($apps as $app) {
+            if ($app->declaresDisposeWithoutDisposable()) {
+                $this->writeNotice($output, \sprintf(
+                    '%s declares dispose() without implementing Disposable; delete it if it is empty, or add "implements Disposable". Stewart 2.0 stops calling it.',
+                    $app->class,
+                ));
+            }
         }
     }
 

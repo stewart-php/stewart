@@ -39,6 +39,4 @@ final class HallLightApp implements App
             });
         });
     }
-
-    public function dispose(): void {}
 }

@@ -50,6 +50,4 @@ final readonly class BoostAction implements App
             });
         });
     }
-
-    public function dispose(): void {}
 }

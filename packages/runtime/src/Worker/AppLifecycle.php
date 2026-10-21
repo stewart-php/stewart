@@ -9,6 +9,7 @@ use Amp\CancelledException;
 use LogicException;
 use Stewart\Contracts\App;
 use Stewart\Contracts\App\Collection\AppIdCollection;
+use Stewart\Contracts\Disposable;
 use Stewart\Contracts\Exception\StewartException;
 use Stewart\Runtime\Container\AppContainerBlueprint;
 use Stewart\Runtime\Container\AppContainerBuilder;
@@ -235,12 +236,20 @@ final class AppLifecycle
         $this->resources->releaseScope($slot->scope());
 
         try {
-            $slot->app()->dispose();
+            $this->disposeAppInstance($slot->app());
         } catch (Throwable $e) {
             $this->failures->report($slot->scope(), AppFailurePhase::Dispose, $e);
         }
 
         $slot->markDisposed();
+    }
+
+    private function disposeAppInstance(App $app): void
+    {
+        // Until 2.0, an app that still declares dispose() without Disposable is disposed too.
+        if ($app instanceof Disposable || \is_callable([$app, 'dispose'])) {
+            $app->dispose();
+        }
     }
 
     private function failApp(AppSlot $slot, AppFailurePhase $phase, Throwable $error): void

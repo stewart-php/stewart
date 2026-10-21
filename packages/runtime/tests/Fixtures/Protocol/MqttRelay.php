@@ -25,6 +25,4 @@ final readonly class MqttRelay implements App
             $this->mqtt->publish(self::RELAY_TOPIC, ['from' => $message->topic, 'payload' => $message->payload], MqttQos::AtLeastOnce, true);
         });
     }
-
-    public function dispose(): void {}
 }

@@ -36,6 +36,4 @@ final readonly class HeaterSwitch implements App
             $this->ha->callService('switch', $command->isTurnOn() ? 'turn_on' : 'turn_off', target: ServiceTarget::forEntities($this->plug));
         });
     }
-
-    public function dispose(): void {}
 }

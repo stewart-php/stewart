@@ -25,6 +25,4 @@ final readonly class ConstructCaller implements App
     {
         $this->logger->info('Construct caller initialized');
     }
-
-    public function dispose(): void {}
 }

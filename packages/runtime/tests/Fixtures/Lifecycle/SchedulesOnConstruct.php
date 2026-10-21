@@ -25,6 +25,4 @@ final class SchedulesOnConstruct implements App
     }
 
     public function initialize(): void {}
-
-    public function dispose(): void {}
 }

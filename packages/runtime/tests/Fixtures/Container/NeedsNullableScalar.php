@@ -11,6 +11,4 @@ final readonly class NeedsNullableScalar implements App
     public function __construct(public ?string $entity) {}
 
     public function initialize(): void {}
-
-    public function dispose(): void {}
 }

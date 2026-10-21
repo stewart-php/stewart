@@ -24,6 +24,4 @@ final readonly class DoorbellAnnouncer implements App
                 $this->ha->fireEvent('doorbell_pressed', ['door' => 'front']);
             });
     }
-
-    public function dispose(): void {}
 }

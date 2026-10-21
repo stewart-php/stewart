@@ -23,6 +23,4 @@ final readonly class InitCaller implements App
 
         $this->logger->info('Initialize call finished', ['service' => 'light.turn_on']);
     }
-
-    public function dispose(): void {}
 }

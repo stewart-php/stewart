@@ -30,6 +30,4 @@ final readonly class NightLock implements App
             }
         });
     }
-
-    public function dispose(): void {}
 }

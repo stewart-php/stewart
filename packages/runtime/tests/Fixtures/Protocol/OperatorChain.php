@@ -31,6 +31,4 @@ final readonly class OperatorChain implements App
                 $this->ha->publish('operator.stable', ['entity' => $change->entityId]);
             });
     }
-
-    public function dispose(): void {}
 }

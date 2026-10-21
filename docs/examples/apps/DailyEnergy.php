@@ -44,8 +44,6 @@ final readonly class DailyEnergy implements App
         });
     }
 
-    public function dispose(): void {}
-
     private function createDayKey(int $daysAgo): string
     {
         $day = $this->clock->getNow()->minus(Duration::hours(24 * $daysAgo))->toDateTime($this->clock->getTimeZone());

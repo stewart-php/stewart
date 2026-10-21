@@ -13,6 +13,4 @@ final class CancelsOnInitialize implements App
     {
         throw new CancelledException();
     }
-
-    public function dispose(): void {}
 }

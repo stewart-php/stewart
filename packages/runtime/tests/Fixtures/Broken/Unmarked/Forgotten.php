@@ -9,6 +9,4 @@ use Stewart\Contracts\App;
 final class Forgotten implements App
 {
     public function initialize(): void {}
-
-    public function dispose(): void {}
 }

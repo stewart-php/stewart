@@ -25,6 +25,4 @@ final readonly class DoorAlarm implements App
                 $this->ha->callService('notify', 'notify', ['message' => 'The door has been open for 5 minutes.']);
             });
     }
-
-    public function dispose(): void {}
 }

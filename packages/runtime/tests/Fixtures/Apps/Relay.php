@@ -14,6 +14,4 @@ final class Relay implements App
     public function __construct(public readonly HaContext $ha) {}
 
     public function initialize(): void {}
-
-    public function dispose(): void {}
 }

@@ -40,6 +40,4 @@ final readonly class GuestMode implements App
             );
         });
     }
-
-    public function dispose(): void {}
 }

@@ -33,6 +33,4 @@ final readonly class HeaterSwitch implements App
         });
         $heater->setOff();
     }
-
-    public function dispose(): void {}
 }

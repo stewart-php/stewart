@@ -31,6 +31,4 @@ final class OwnChangeReporter implements App
 
         $this->lastCall = $this->ha->callService('light', 'turn_on', target: ServiceTarget::forEntities(self::LIGHT));
     }
-
-    public function dispose(): void {}
 }

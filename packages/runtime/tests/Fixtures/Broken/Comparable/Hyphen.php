@@ -11,6 +11,4 @@ use Stewart\Contracts\Automation;
 final class Hyphen implements App
 {
     public function initialize(): void {}
-
-    public function dispose(): void {}
 }

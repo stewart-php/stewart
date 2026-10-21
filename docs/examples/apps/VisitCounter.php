@@ -37,6 +37,4 @@ final readonly class VisitCounter implements App
             }
         });
     }
-
-    public function dispose(): void {}
 }

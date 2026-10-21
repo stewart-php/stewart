@@ -36,7 +36,7 @@ from its `#[Automation]` attribute. Each constructor parameter is filled from:
 
 An option that matches no parameter, a required option that is missing, and a parameter nothing can fill all fail
 with `HarnessException`, naming the parameter. One harness runs one app; `stopApp()` cancels its subscriptions and
-schedules, then calls `dispose()`.
+schedules, then calls `dispose()` if the app has one.
 
 Seed what the app reads at start (states, registry entries, store values, restored exposures) before `startApp()`.
 An entity's first state is not a change, so seed it before pushing the change you test:

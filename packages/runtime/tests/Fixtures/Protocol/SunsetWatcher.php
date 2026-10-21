@@ -24,6 +24,4 @@ final readonly class SunsetWatcher implements App
         });
         $this->ha->watchTrigger(self::REJECTED_TRIGGER)->subscribe(static function (): void {});
     }
-
-    public function dispose(): void {}
 }

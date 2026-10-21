@@ -31,6 +31,4 @@ final class PorchStatsApp implements App
         $this->shared->set('porch_ready', true);
         $this->notifier?->notify(\sprintf('%d motions in the hall', $motions));
     }
-
-    public function dispose(): void {}
 }

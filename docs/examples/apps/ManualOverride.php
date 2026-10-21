@@ -46,6 +46,4 @@ final class ManualOverride implements App
                 $this->ha->callService('light', 'turn_on', target: ServiceTarget::forEntities($this->light));
             });
     }
-
-    public function dispose(): void {}
 }

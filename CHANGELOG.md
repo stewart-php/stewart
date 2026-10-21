@@ -14,6 +14,8 @@ release could break; a release's "Upgrading" section says what to change.
   a `Store` without `persistence.url`, an `Mqtt` without `mqtt.url`, or a `#[PeerStore]` naming no app, with the
   closest ID
 - `stewart check` notes classes in `apps/` that implement `App` without `#[Automation]`, as `stewart run` does
+- `Stewart\Contracts\Disposable` for apps that release something when they stop; apps that open nothing need no
+  `dispose()` any more, and new projects, `make:app` and the examples have none
 
 ### Changed
 
@@ -25,6 +27,13 @@ release could break; a release's "Upgrading" section says what to change.
   first, so a commit that fails it gets no image
 - `make deploy` in new projects installs changed dependencies and runs `stewart check` in one-off containers before
   it restarts Stewart, so a deploy is down only for the restart, and a failed check leaves the running daemon up
+- `App` declares only `initialize()`; `dispose()` moved to `Disposable`. An app that marks `dispose()` with
+  `#[\Override]` must implement `Disposable`, or PHP refuses to load it
+
+### Deprecated
+
+- A public `dispose()` on an app that does not implement `Disposable`. Stewart still calls it until 2.0, and
+  `stewart check` names each such app
 
 ## [1.4.0] - 2026-10-20
 

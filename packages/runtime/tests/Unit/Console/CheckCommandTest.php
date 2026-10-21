@@ -193,7 +193,7 @@ final class CheckCommandTest extends TestCase
     public function testUnmarkedAppClassIsNoticed(): void
     {
         $this->apps->writeClass('Porch', self::createAppSource('Porch', 'porch'));
-        $this->apps->writeClass('Forgotten', "final class Forgotten implements \\Stewart\\Contracts\\App\n{\n    public function initialize(): void {}\n\n    public function dispose(): void {}\n}");
+        $this->apps->writeClass('Forgotten', "final class Forgotten implements \\Stewart\\Contracts\\App\n{\n    public function initialize(): void {}\n}");
 
         $tester = $this->runCheck(self::VALID_CONFIG);
 
@@ -201,7 +201,19 @@ final class CheckCommandTest extends TestCase
         self::assertStringContainsString($this->apps->namespace . '\\Forgotten implements App but is not marked #[Automation], so it will not run.', $tester->getErrorOutput());
     }
 
-    private static function createAppSource(string $class, string $id, string $constructorParameters = ''): string
+    public function testDisposeWithoutDisposableIsNoticed(): void
+    {
+        $this->apps->writeClass('Legacy', self::createAppSource('Legacy', 'legacy', body: 'public function dispose(): void {}'));
+        $this->apps->writeClass('Tidy', self::createAppSource('Tidy', 'tidy', body: 'public function dispose(): void {}', interfaces: ', \\Stewart\\Contracts\\Disposable'));
+
+        $tester = $this->runCheck(self::VALID_CONFIG);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertStringContainsString($this->apps->namespace . '\\Legacy declares dispose() without implementing Disposable;', $tester->getErrorOutput());
+        self::assertStringNotContainsString('Tidy declares', $tester->getErrorOutput());
+    }
+
+    private static function createAppSource(string $class, string $id, string $constructorParameters = '', string $body = '', string $interfaces = ''): string
     {
         $constructor = $constructorParameters === '' ? '' : "public function __construct({$constructorParameters}) {}\n\n    ";
 
@@ -210,11 +222,11 @@ final class CheckCommandTest extends TestCase
             use Stewart\\Contracts\\Automation;
 
             #[Automation(id: '{$id}')]
-            final class {$class} implements App
+            final class {$class} implements App{$interfaces}
             {
                 {$constructor}public function initialize(): void {}
 
-                public function dispose(): void {}
+                {$body}
             }
             PHP;
     }

@@ -37,6 +37,4 @@ final readonly class ZigbeeRemote implements App
             }
         });
     }
-
-    public function dispose(): void {}
 }

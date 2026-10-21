@@ -30,6 +30,4 @@ final readonly class SlowStarter implements App
 
         $this->ha->publish('init.done', null);
     }
-
-    public function dispose(): void {}
 }

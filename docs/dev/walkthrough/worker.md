@@ -75,7 +75,8 @@ event.
 activates its scope, which starts its queues and schedules. `failApp()` moves it to Failed, releases its scope, and
 reports through `AppFailureReporter`: an `AppFailed` with the phase (Construct, Initialize, Handler, Schedule,
 Dispose), the trace as text and the `ExceptionDetails`, sampled when it repeats, and written to stderr if the channel
-is gone.
+is gone. Disposing releases the scope first, then calls `dispose()` on a `Disposable` app, or, until 2.0, on any app
+that still declares a public `dispose()`; `AppHarness::stopApp()` does the same.
 
 ## HaContext
 

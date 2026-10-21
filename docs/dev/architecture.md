@@ -249,8 +249,8 @@ Things that look like dead code or an oversight, and are not:
 ![Contracts](diagrams/04-contracts.svg)
 
 An app is a class carrying `#[Automation(id: '…')]` and implementing `App`.
-`initialize()` registers subscriptions; `dispose()` releases anything that
-outlives them. It is found by scanning `apps/`, so adding one means writing a
+`initialize()` registers subscriptions; an app that also implements
+`Disposable` releases in `dispose()` anything that outlives them. It is found by scanning `apps/`, so adding one means writing a
 class rather than also editing YAML, and its constructor may take an `HaContext`,
 anything `options:` supplies, and any service registered in `services.php` —
 all by type, in any order.

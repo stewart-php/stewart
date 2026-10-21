@@ -32,8 +32,6 @@ final readonly class WelcomeHome implements App
         });
     }
 
-    public function dispose(): void {}
-
     private function createTriggers(): HaTriggerCollection
     {
         return HaTriggerCollection::fromList([

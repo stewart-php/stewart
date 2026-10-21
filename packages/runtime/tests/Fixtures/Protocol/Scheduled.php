@@ -31,6 +31,4 @@ final readonly class Scheduled implements App
         // A timer hours away must not keep the worker from exiting.
         $this->scheduler->runDailyAt('03:30', static function (): void {});
     }
-
-    public function dispose(): void {}
 }

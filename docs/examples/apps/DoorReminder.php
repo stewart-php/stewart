@@ -41,8 +41,6 @@ final class DoorReminder implements App
             });
     }
 
-    public function dispose(): void {}
-
     private function remind(): void
     {
         $name = $this->ha->getState($this->door)?->getFriendlyName() ?? $this->door;

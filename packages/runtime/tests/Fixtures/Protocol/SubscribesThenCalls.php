@@ -29,6 +29,4 @@ final readonly class SubscribesThenCalls implements App
         $this->ha->callService('light', 'turn_on');
         $this->logger->info('Initialize returned');
     }
-
-    public function dispose(): void {}
 }

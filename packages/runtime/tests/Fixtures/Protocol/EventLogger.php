@@ -26,6 +26,4 @@ final readonly class EventLogger implements App
             $this->logger->info('Event received', ['event_type' => $event->type, 'data' => json_encode($event->data)]);
         });
     }
-
-    public function dispose(): void {}
 }

@@ -11,6 +11,4 @@ use Stewart\Contracts\Automation;
 final class Second implements App
 {
     public function initialize(): void {}
-
-    public function dispose(): void {}
 }

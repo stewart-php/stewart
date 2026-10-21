@@ -20,6 +20,4 @@ final readonly class TankLevelExposer implements App
     {
         $this->entities->exposeSensor('level', new SensorConfig(unit: '%', name: 'Tank level'))->setValue(self::LEVEL);
     }
-
-    public function dispose(): void {}
 }

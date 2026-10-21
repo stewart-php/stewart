@@ -44,6 +44,4 @@ final readonly class WeekdayMorning implements App
             SunOffset::before(Duration::minutes(30)),
         );
     }
-
-    public function dispose(): void {}
 }

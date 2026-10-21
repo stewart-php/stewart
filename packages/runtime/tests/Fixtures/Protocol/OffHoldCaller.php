@@ -23,6 +23,4 @@ final readonly class OffHoldCaller implements App
                 $this->ha->callService('script', 'record', ['entity' => $change->entityId->value]);
             });
     }
-
-    public function dispose(): void {}
 }

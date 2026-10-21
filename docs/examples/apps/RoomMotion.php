@@ -26,6 +26,4 @@ final readonly class RoomMotion implements App
                 $this->ha->callService('light', 'turn_on', target: ServiceTarget::forAreas($this->area));
             });
     }
-
-    public function dispose(): void {}
 }

@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Tests\Fixtures\Lifecycle;
 
 use Stewart\Contracts\App;
+use Stewart\Contracts\Disposable;
 use Stewart\Testing\Async\Latch;
 
-final class GatedInitializer implements App
+final class GatedInitializer implements App, Disposable
 {
     public static ?Latch $latch = null;
 

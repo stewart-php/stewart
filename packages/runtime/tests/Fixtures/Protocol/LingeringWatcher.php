@@ -17,6 +17,4 @@ final readonly class LingeringWatcher implements App
     {
         EventLoop::delay(self::KEEPS_PROCESS_ALIVE_SECONDS, static function (): void {});
     }
-
-    public function dispose(): void {}
 }

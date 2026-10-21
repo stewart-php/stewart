@@ -26,7 +26,7 @@ weekdays, and closes the living room covers half an hour before sunset:
 | `runAt($moment, $handler)` | Once, at a `DateTimeImmutable` |
 
 Times are `'07:00'` or `'07:00:30'`. Each method returns a `ScheduledTask`; call `cancel()` on it to stop it. All
-schedules stop when the app stops, so `dispose()` has nothing to clean up.
+schedules stop when the app stops, so there is nothing to clean up.
 
 The handler may take a `ScheduledRun`, which tells it when it was due (`scheduledFor`), how late it started
 (`getLateness()`) and how many runs it missed (`missedOccurrences`). Most handlers do not need it.

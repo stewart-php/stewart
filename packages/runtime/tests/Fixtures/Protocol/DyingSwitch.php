@@ -21,6 +21,4 @@ final readonly class DyingSwitch implements App
         });
         $switch->setOff();
     }
-
-    public function dispose(): void {}
 }

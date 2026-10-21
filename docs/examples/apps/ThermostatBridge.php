@@ -30,6 +30,4 @@ final readonly class ThermostatBridge implements App
             $this->mqtt->publish('home/living_room/climate', ['state' => $change->to?->state], MqttQos::AtLeastOnce, retain: true);
         });
     }
-
-    public function dispose(): void {}
 }

@@ -29,6 +29,4 @@ final readonly class HistoryReporter implements App
             $this->logger->info('History read', ['changes' => $history->countChanges(), 'was_on' => $history->hasBeenIn('on')]);
         });
     }
-
-    public function dispose(): void {}
 }

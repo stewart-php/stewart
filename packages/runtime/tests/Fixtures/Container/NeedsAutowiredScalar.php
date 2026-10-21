@@ -15,6 +15,4 @@ final readonly class NeedsAutowiredScalar implements App
     ) {}
 
     public function initialize(): void {}
-
-    public function dispose(): void {}
 }

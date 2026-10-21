@@ -15,6 +15,7 @@ use Stewart\Testing\Exception\HarnessError;
 use Stewart\Testing\Exception\HarnessException;
 use Stewart\Testing\Tests\Fixtures\App\DoorAlarmApp;
 use Stewart\Testing\Tests\Fixtures\App\HallLightApp;
+use Stewart\Testing\Tests\Fixtures\App\LegacyDisposeApp;
 use Stewart\Testing\Tests\Fixtures\App\Notifier;
 use Stewart\Testing\Tests\Fixtures\App\NotifyingApp;
 use Stewart\Testing\Tests\Fixtures\App\PorchStatsApp;
@@ -134,6 +135,15 @@ final class AppHarnessTest extends TestCase
 
         self::assertTrue($app->disposed);
         self::assertCount(0, $this->harness->ha->calls);
+    }
+
+    public function testStopAppStillDisposesWithoutDisposable(): void
+    {
+        $app = $this->harness->startApp(LegacyDisposeApp::class);
+
+        $this->harness->stopApp();
+
+        self::assertTrue($app->disposed);
     }
 
     public function testUnknownOptionIsRefused(): void

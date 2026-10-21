@@ -27,8 +27,16 @@ cannot tell `-` from `_`, so `battery-alert` and `battery_alert` count as the sa
 `initialize()` runs once, when the app starts. Use it to start watching entities or events and to add schedules, then return.
 Stewart delivers nothing to the app until `initialize()` returns, so do not wait for anything in it.
 
-`dispose()` runs when the app stops. Subscriptions and schedules end on their own, so most apps leave it empty. Use it
-to close something the app opened itself, such as a file.
+Subscriptions and schedules end on their own when the app stops, so most apps need nothing more. An app that opens
+something itself, such as a file, also implements `Stewart\Contracts\Disposable`, whose `dispose()` runs when the
+app stops:
+
+```php file=../../examples/apps/EnergyLog.php
+```
+
+Before Stewart 1.5, `App` declared `dispose()` too, so older apps have an empty one. Delete it, or add
+`implements Disposable` when it does something. Until Stewart 2.0, a `dispose()` without `Disposable` still runs, and
+`stewart check` names the app.
 
 ## What the constructor can ask for
 
