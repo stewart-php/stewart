@@ -106,6 +106,12 @@ different subscriptions run concurrently. Nothing drains until the app's scope i
 `initialize()` returns" gate, and a paused scope holds its items. A handler that throws is reported, and the queue
 goes on.
 
+The queue tells its `DispatchListener` (`Worker/AppActivityRecorder`) when an event enters the operator chain
+(`eventReceived`) and when the app's own handler at the end of it runs (`handlerCalled`). The second comes from
+`ComposedStream::attachWithin()`, which wraps the handler with `SubscriptionScope::wrapHandlerToReportCalls()`; the
+dispatcher points the scope at its queue. A received event with no handler call was held or dropped by an operator.
+For a traced app, `Worker/AppTracer` turns both into `TRACE` lines.
+
 ## A service call, end to end
 
 1. `WorkerHaContext::callService()` → `Worker/Context/ServiceCaller::sendRequestAndAwait()`. While disconnected, it

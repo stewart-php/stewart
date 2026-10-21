@@ -21,6 +21,11 @@ final class LogVerbosityPolicy
         return !$level->isBelow($this->findLevelFor($scope));
     }
 
+    public function isTracing(ResourceScope $scope): bool
+    {
+        return $scope->appId !== null && ($this->appVerbosities[$scope->appId->value]->trace ?? false);
+    }
+
     /** @param array<string, AppVerbosity> $appVerbosities */
     public function replaceAppVerbosities(array $appVerbosities): void
     {

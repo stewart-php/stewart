@@ -19,6 +19,7 @@ final readonly class AppOverride
         public ?int $worker,
         public array $options,
         public ?LogLevel $logLevel = null,
+        public bool $trace = false,
     ) {}
 
     /**
@@ -36,6 +37,7 @@ final readonly class AppOverride
             worker: $app->findInt('worker'),
             options: $app->readMap('options'),
             logLevel: $logLevel === null ? null : LogLevel::from($logLevel),
+            trace: $app->readBool('trace'),
         );
     }
 }

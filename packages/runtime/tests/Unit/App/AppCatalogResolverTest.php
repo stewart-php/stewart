@@ -98,6 +98,27 @@ final class AppCatalogResolverTest extends TestCase
         self::assertSame(['demo'], $e->context['knownAppIds'] ?? null);
     }
 
+    public function testTraceComesFromTheOverrideOrTheSelection(): void
+    {
+        $catalog = new AppCatalogResolver()->resolveCatalog(
+            self::createDiscoveryResult('demo', 'porch', 'hall'),
+            AppOverrideCollection::keyedByAppId([self::createOverride('demo', trace: true)]),
+            workers: 0,
+            selection: new AppSelection(tracedIds: AppIdCollection::fromList([new AppId('porch')])),
+        );
+
+        self::assertSame(['demo' => true, 'hall' => false, 'porch' => true], array_map(static fn(AppVerbosity $verbosity): bool => $verbosity->trace, $catalog->enabled->listVerbositiesByAppId()));
+    }
+
+    public function testTraceOfUnknownAppIsRejected(): void
+    {
+        $selection = new AppSelection(tracedIds: AppIdCollection::fromList([new AppId('ghost')]));
+
+        $e = $this->assertThrowsReason(ConfigurationError::AppSelectionUnknown, fn() => new AppCatalogResolver()->resolveCatalog(self::createDiscoveryResult('demo'), AppOverrideCollection::empty(), workers: 0, selection: $selection));
+
+        self::assertSame('--trace', $e->context['option'] ?? null);
+    }
+
     public function testOverrideForNoAutomationIsKeptAsUnmatched(): void
     {
         $catalog = new AppCatalogResolver()->resolveCatalog(self::createDiscoveryResult('demo'), AppOverrideCollection::keyedByAppId([self::createOverride('ghost')]), workers: 0);
@@ -160,8 +181,8 @@ final class AppCatalogResolverTest extends TestCase
     }
 
     /** @param array<string, mixed> $options */
-    private static function createOverride(string $id, bool $enabled = true, ?int $worker = null, array $options = [], bool $paused = false, ?LogLevel $logLevel = null): AppOverride
+    private static function createOverride(string $id, bool $enabled = true, ?int $worker = null, array $options = [], bool $paused = false, ?LogLevel $logLevel = null, bool $trace = false): AppOverride
     {
-        return new AppOverride(new AppId($id), $enabled, $paused, $worker, $options, $logLevel);
+        return new AppOverride(new AppId($id), $enabled, $paused, $worker, $options, $logLevel, $trace);
     }
 }

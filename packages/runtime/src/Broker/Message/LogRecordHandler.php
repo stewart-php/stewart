@@ -29,7 +29,7 @@ final readonly class LogRecordHandler implements WorkerMessageHandler
             'app' => $message->scope->wireValue(),
             'worker' => $handle->id->value,
             ExceptionDetails::CONTEXT_KEY => $message->exception,
-            LogOrigin::CONTEXT_KEY => LogOrigin::forScope($message->scope),
+            LogOrigin::CONTEXT_KEY => LogOrigin::forScope($message->scope, traced: $message->trace),
         ]);
     }
 }

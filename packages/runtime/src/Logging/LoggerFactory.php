@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Logging;
 
 use Monolog\Formatter\FormatterInterface;
-use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\FallbackGroupHandler;
 use Monolog\Handler\HandlerInterface;
 use Monolog\Handler\StreamHandler;
@@ -64,7 +63,7 @@ final readonly class LoggerFactory
     private function createFormatter(LogFormat $format, string $lineFormat): FormatterInterface
     {
         return match ($format) {
-            LogFormat::Json => new JsonFormatter(),
+            LogFormat::Json => new TraceLabelJsonFormatter(),
             LogFormat::Line => new StackTraceLineFormatter(
                 format: $lineFormat,
                 dateFormat: self::LINE_DATE_FORMAT,

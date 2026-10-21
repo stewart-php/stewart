@@ -30,4 +30,9 @@ final class StackTraceLineFormatter extends LineFormatter
 
         return $record->with(context: $context, extra: $extra);
     }
+
+    protected function normalizeRecord(LogRecord $record): array
+    {
+        return LogOrigin::relabelTracedRecord(parent::normalizeRecord($record));
+    }
 }

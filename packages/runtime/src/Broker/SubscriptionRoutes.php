@@ -10,8 +10,14 @@ use Stewart\Runtime\Model\WorkerId;
 
 final readonly class SubscriptionRoutes
 {
-    /** @param array<int, SubscriptionIdCollection> $subscriptionIdsByWorker */
-    public function __construct(private array $subscriptionIdsByWorker = []) {}
+    /**
+     * @param array<int, SubscriptionIdCollection> $subscriptionIdsByWorker
+     * @param list<string> $appLabels
+     */
+    public function __construct(
+        private array $subscriptionIdsByWorker = [],
+        private array $appLabels = [],
+    ) {}
 
     public function listSubscriptionIdsForWorker(WorkerId $workerId): SubscriptionIdCollection
     {
@@ -21,6 +27,12 @@ final readonly class SubscriptionRoutes
     public function listWorkerIds(): WorkerIdCollection
     {
         return WorkerIdCollection::fromList(array_map(WorkerId::fromInt(...), array_keys($this->subscriptionIdsByWorker)));
+    }
+
+    /** @return list<string> */
+    public function listAppLabels(): array
+    {
+        return $this->appLabels;
     }
 
     public function isEmpty(): bool

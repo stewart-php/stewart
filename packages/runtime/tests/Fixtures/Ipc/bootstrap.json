@@ -1,7 +1,7 @@
 {
     "t": "bootstrap",
     "m": {
-        "protocol": 31,
+        "protocol": 32,
         "worker_id": 1,
         "time_zone": "Europe/Budapest",
         "location": {
@@ -17,7 +17,8 @@
                     "watch": "input_boolean.hall"
                 },
                 "verbosity": {
-                    "log_level": "debug"
+                    "log_level": "debug",
+                    "trace": true
                 }
             },
             {
@@ -25,7 +26,8 @@
                 "class": "Stewart\\Runtime\\Tests\\Fixtures\\Apps\\Relay",
                 "options": {},
                 "verbosity": {
-                    "log_level": null
+                    "log_level": null,
+                    "trace": false
                 }
             }
         ],

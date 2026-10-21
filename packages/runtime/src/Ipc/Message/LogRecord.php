@@ -18,5 +18,6 @@ final readonly class LogRecord implements WorkerMessage
         public string $message,
         public array $context,
         public ?ExceptionDetails $exception,
+        public bool $trace = false,
     ) {}
 }

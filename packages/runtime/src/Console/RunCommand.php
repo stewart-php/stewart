@@ -49,6 +49,7 @@ final class RunCommand extends StewartCommand
             ->addOption('log-level', 'l', InputOption::VALUE_REQUIRED, 'debug|info|notice|warning|error')
             ->addOption('json-logs', null, InputOption::VALUE_NONE, 'Emit logs as JSON')
             ->addOption('only', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Run only this automation, even if disabled; repeat for more')
+            ->addOption('trace', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Log TRACE lines for this automation at any log level; repeat for more')
             ->addOption('watch', null, InputOption::VALUE_NONE, 'Reload after every saved change to the apps, services.php or stewart.yaml');
     }
 
@@ -103,6 +104,10 @@ final class RunCommand extends StewartCommand
 
         if ($selection->onlyIds !== null) {
             $logger->notice('Running only the automations named by --only.', ['apps' => $selection->onlyIds->toStrings()]);
+        }
+
+        if ($selection->tracedIds !== null) {
+            $logger->notice('Tracing the automations named by --trace.', ['apps' => $selection->tracedIds->toStrings()]);
         }
 
         return new PreparedDaemon($this->brokers->createBroker($config, $apps, $logger, $verbosity, $launch), $logger);

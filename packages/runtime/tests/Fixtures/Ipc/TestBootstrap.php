@@ -35,6 +35,7 @@ final class TestBootstrap
         ?string $haUserId = null,
         ?GeoLocation $location = null,
         ?AppIdCollection $pausedAppIds = null,
+        LogLevel $logLevel = LogLevel::Debug,
     ): Bootstrap {
         return new Bootstrap(
             protocol: IpcCodec::PROTOCOL_VERSION,
@@ -42,7 +43,7 @@ final class TestBootstrap
             timeZone: $timeZone,
             location: $location,
             apps: WorkerAppsFragment::fromCollection(WorkerAppCollection::fromList($apps)),
-            settings: self::createWorkerSettings(callTimeout: $callTimeout ?? Duration::seconds(30), initializeTimeout: $initializeTimeout, servicesFile: $servicesFile, mqttEnabled: $mqttEnabled),
+            settings: self::createWorkerSettings(logLevel: $logLevel, callTimeout: $callTimeout ?? Duration::seconds(30), initializeTimeout: $initializeTimeout, servicesFile: $servicesFile, mqttEnabled: $mqttEnabled),
             store: $store,
             knownAppIds: AppIdsFragment::fromCollection(AppIdCollection::fromList(array_map(static fn(WorkerApp $app): AppId => $app->id, $apps))),
             pausedAppIds: AppIdsFragment::fromCollection($pausedAppIds ?? AppIdCollection::empty()),

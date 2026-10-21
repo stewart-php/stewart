@@ -11,6 +11,10 @@ release could break; a release's "Upgrading" section says what to change.
 
 - `apps.<id>.log_level` (`STEWART_APPS__<ID>__LOG_LEVEL`) gives one app a log level of its own, louder or quieter
   than `log_level`; a reload applies it. A new Logs guide explains the log line
+- `apps.<id>.trace` and `stewart run --trace=<id>` (`make run TRACE=…`, also `watch` and `debug`) log `TRACE` lines for
+  one app at any log level: each event that reaches one of its subscriptions, each call of its handler, what a pause
+  skipped, its schedule runs, and its service calls with the outcome and how long they took. An event received but
+  never handled was stopped by an operator such as `filter()`. In JSON logs, trace records have `level_name` `TRACE`
 
 ### Changed
 
@@ -18,6 +22,9 @@ release could break; a release's "Upgrading" section says what to change.
   `broker`, or `worker N` for text a worker printed outside the logger. Lines Stewart writes about an app, such as
   `App failed` or `App paused`, carry that app's tag and follow its log level, and the line no longer repeats the app
   ID in its trailing details. JSON logs keep `context.app` and add the tag as `extra.source`
+- The broker's routing debug lines (`Home Assistant event routed`, `Topic published`, `MQTT message routed`,
+  `Home Assistant trigger routed`) name the matched apps instead of worker numbers, and the `service_calls.dry_run`
+  lines carry the tag of the app that made the call
 
 ## [1.6.0] - 2026-10-21
 

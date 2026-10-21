@@ -62,18 +62,21 @@ final class SubscriptionRegistry
     public function findRoutes(SubscriptionKind $kind, string $key): SubscriptionRoutes
     {
         $idsByWorker = [];
+        $appLabels = [];
 
         foreach ($this->index->findMatching($kind, $key) as $subscriptionId) {
             $subscription = $this->subscriptions[$subscriptionId->value] ?? null;
 
             if ($subscription !== null) {
                 $idsByWorker[$subscription->workerId->value][] = $subscriptionId;
+                $appLabels[$subscription->scope->wireValue()] = true;
             }
         }
 
         ksort($idsByWorker);
+        ksort($appLabels);
 
-        return new SubscriptionRoutes(array_map(SubscriptionIdCollection::fromList(...), $idsByWorker));
+        return new SubscriptionRoutes(array_map(SubscriptionIdCollection::fromList(...), $idsByWorker), array_keys($appLabels));
     }
 
     /** @return list<BrokerSubscription> */

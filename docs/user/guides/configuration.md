@@ -122,6 +122,7 @@ other setting, and anything in `.env`, needs a restart.
 | `service_calls.dry_run` | `false` | Log service calls instead of sending them. See [Calling services](calling-services.md#dry-run) |
 | `apps.<id>.options` | none | An app's options. See [Anatomy of an app](apps.md#options) |
 | `apps.<id>.log_level` | `log_level` | One app's log level, louder or quieter than the rest. See [Logs](logging.md#one-apps-log-level) |
+| `apps.<id>.trace` | `false` | Log what reaches one app and what it does with it. See [Logs](logging.md#tracing-an-app) |
 
 ## Common problems
 

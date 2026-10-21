@@ -240,12 +240,15 @@ final class ConfigLoaderTest extends TestCase
         self::assertSame(2, $config->apps->find(new AppId('hall-light'))?->worker);
     }
 
-    public function testAppLogLevelIsReadFromTheFileAndTheEnvironment(): void
+    public function testAppLogLevelAndTraceAreReadFromTheFileAndTheEnvironment(): void
     {
-        $config = $this->loadConfig(self::CONNECTION . "\napps:\n  demo:\n    log_level: warning\n", ['STEWART_APPS__PORCH__LOG_LEVEL' => 'debug']);
+        $config = $this->loadConfig(self::CONNECTION . "\napps:\n  demo:\n    log_level: warning\n", ['STEWART_APPS__PORCH__LOG_LEVEL' => 'debug', 'STEWART_APPS__PORCH__TRACE' => 'true']);
 
         self::assertSame(LogLevel::Warning, $config->apps->find(new AppId('demo'))?->logLevel);
-        self::assertSame(LogLevel::Debug, $config->apps->find(new AppId('porch'))?->logLevel);
+        $porch = $config->apps->find(new AppId('porch'));
+        self::assertNotNull($porch);
+        self::assertSame(LogLevel::Debug, $porch->logLevel);
+        self::assertTrue($porch->trace);
     }
 
     public function testLoaderDoesNotLookForAutomations(): void

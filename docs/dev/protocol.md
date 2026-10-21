@@ -124,12 +124,13 @@ Forty-one messages, closed by the `BrokerMessage`, `CorrelatedReply` and
 | `RegistryEntityUpdateRequest` | An app edits an entity registry entry through `RegistryEditor`. |
 | `AppFailed` | An app threw, with the phase and a flattened trace. |
 | `Pong` | Answers `Ping`, carrying the worker's event-loop lag, memory, one activity report per app (state, subscription and schedule counts, and cumulative delivered, dropped, schedule-run and publish counts) and, when a store is configured, its health as the worker sees it. |
-| `LogRecord` | A log line, to be written by the broker, tagged with its app. |
+| `LogRecord` | A log line, to be written by the broker, tagged with its app. `trace` marks a line of a traced app, which passes whatever the log level says. |
 
 `Bootstrap` groups what a worker is told into `WorkerSettings`, with no
 defaults on the wire side, so a configured value always crosses as itself.
 `logLevel` is the worker's threshold for forwarding records; an app whose
-`WorkerApp.verbosity` names a level uses that one instead, louder or quieter.
+`WorkerApp.verbosity` names a level uses that one instead, louder or quieter, and
+`verbosity.trace` turns on its `TRACE` lines.
 The broker filters again by the record's app, so a reload that changes an
 app's level applies on both sides. `callTimeout` is
 `home_assistant.command_timeout` plus a fixed five seconds of IPC headroom, so

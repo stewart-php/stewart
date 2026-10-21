@@ -58,7 +58,7 @@ final class SubscriptionQueue
         }
 
         if ($this->scopeState->isPaused()) {
-            $this->listener->eventSuppressed($this->subscription);
+            $this->listener->eventSuppressed($this->subscription, null);
 
             return;
         }
@@ -84,8 +84,15 @@ final class SubscriptionQueue
         $this->pendingEvents = 0;
 
         foreach ($discarded as $work) {
-            $this->listener->eventSuppressed($this->subscription);
+            $this->listener->eventSuppressed($this->subscription, $work->event);
             $work->discard(QueueDiscardReason::Paused);
+        }
+    }
+
+    public function recordHandlerCall(): void
+    {
+        if (!$this->cancelled) {
+            $this->listener->handlerCalled($this->subscription);
         }
     }
 
@@ -121,7 +128,7 @@ final class SubscriptionQueue
         }
 
         if ($this->scopeState->isPaused()) {
-            $this->listener->eventSuppressed($this->subscription);
+            $this->listener->eventSuppressed($this->subscription, $event);
             $onDiscarded?->__invoke(QueueDiscardReason::Paused);
 
             return;
@@ -265,6 +272,10 @@ final class SubscriptionQueue
 
     private function runQueuedWork(QueuedWork $work): void
     {
+        if ($work->event !== null) {
+            $this->listener->eventReceived($this->subscription, $work->event);
+        }
+
         try {
             $work();
         } catch (Throwable $e) {

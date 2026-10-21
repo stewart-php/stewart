@@ -53,7 +53,7 @@ enum ConfigurationError: string implements ExceptionReason
             self::ControlTokenMissing => 'control.token is required while control.listen is set; set STEWART_CONTROL__TOKEN or set control.listen to "off".',
             self::AdminTokenMissing => 'http.admin.token is required while http.admin.listen is set; set STEWART_HTTP__ADMIN__TOKEN or set http.admin.listen to "off".',
             self::WorkerIndexOutOfRange => 'App "{appId}" is pinned to worker {worker}, but the highest worker index is {highestIndex}.',
-            self::AppSelectionUnknown => '--only names app "{appId}", but no automation has that ID.',
+            self::AppSelectionUnknown => '{option} names app "{appId}", but no automation has that ID.',
             self::EnvironmentVariableUnknown => '{variable} is not a Stewart setting; run `stewart config:reference` for all options.',
             self::EnvironmentVariableTooDeep => '{variable} is deeper than the configuration; {valuePath} is a value, not a section.',
             self::EnvironmentVariableNamesSection => '{variable} names a section; set the keys under it, such as {variable}{separator}KEY.',

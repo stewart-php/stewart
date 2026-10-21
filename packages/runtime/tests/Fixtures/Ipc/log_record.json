@@ -8,6 +8,7 @@
             "to": "on",
             "count": 3
         },
-        "exception": null
+        "exception": null,
+        "trace": false
     }
 }

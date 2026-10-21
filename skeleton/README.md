@@ -85,6 +85,7 @@ on, and keep service calls from reaching Home Assistant:
 ```bash
 make run ONLY=hello            # only these apps, even if disabled in stewart.yaml
 make run ONLY=hello DRY_RUN=1  # service calls are logged and answered as succeeded, never sent
+make run TRACE=hello           # log what reaches the app and what it does with it
 ```
 
 ## Configuration

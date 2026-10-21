@@ -64,16 +64,16 @@ generate: ## Write typed entity and service classes from Home Assistant into gen
 	$(RUN) stewart generate $(ARGS)
 
 .PHONY: run
-run: ## Run in the foreground [ONLY="hello porch" to run only those apps, DRY_RUN=1 to send no service calls]
-	$(RUN_APP) $(if $(DRY_RUN),-e STEWART_SERVICE_CALLS__DRY_RUN=true) stewart run $(addprefix --only=,$(ONLY))
+run: ## Run in the foreground [ONLY="hello porch" to run only those apps, TRACE=hello to trace one, DRY_RUN=1 to send no service calls]
+	$(RUN_APP) $(if $(DRY_RUN),-e STEWART_SERVICE_CALLS__DRY_RUN=true) stewart run $(addprefix --only=,$(ONLY)) $(addprefix --trace=,$(TRACE))
 
 .PHONY: watch
-watch: ## Run in the foreground and reload after every saved change [ONLY="hello porch", DRY_RUN=1]
-	$(RUN_APP) $(if $(DRY_RUN),-e STEWART_SERVICE_CALLS__DRY_RUN=true) stewart run --watch $(addprefix --only=,$(ONLY))
+watch: ## Run in the foreground and reload after every saved change [ONLY="hello porch", TRACE=hello, DRY_RUN=1]
+	$(RUN_APP) $(if $(DRY_RUN),-e STEWART_SERVICE_CALLS__DRY_RUN=true) stewart run --watch $(addprefix --only=,$(ONLY)) $(addprefix --trace=,$(TRACE))
 
 .PHONY: debug
-debug: ## Run in the foreground with Xdebug
-	$(RUN_APP) -e XDEBUG_MODE=debug,develop -e XDEBUG_TRIGGER=1 stewart run $(addprefix --only=,$(ONLY))
+debug: ## Run in the foreground with Xdebug [ONLY="hello porch", TRACE=hello]
+	$(RUN_APP) -e XDEBUG_MODE=debug,develop -e XDEBUG_TRIGGER=1 stewart run $(addprefix --only=,$(ONLY)) $(addprefix --trace=,$(TRACE))
 
 .PHONY: config
 config: ## Show the effective config, secrets masked
