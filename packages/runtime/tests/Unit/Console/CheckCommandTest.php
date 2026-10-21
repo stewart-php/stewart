@@ -64,8 +64,8 @@ final class CheckCommandTest extends TestCase
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getErrorOutput());
         self::assertMatchesRegularExpression('/^ *garden +\S+\\\\Garden +- +disabled *$/m', $tester->getDisplay());
-        self::assertMatchesRegularExpression('/^ *hall +\S+\\\\Hall +0 +paused *$/m', $tester->getDisplay());
-        self::assertMatchesRegularExpression('/^ *porch +\S+\\\\Porch +1 +enabled *$/m', $tester->getDisplay());
+        self::assertMatchesRegularExpression('/^ *hall +\S+\\\\Hall +1 +paused *$/m', $tester->getDisplay());
+        self::assertMatchesRegularExpression('/^ *porch +\S+\\\\Porch +0 +enabled *$/m', $tester->getDisplay());
     }
 
     public function testPinnedAppKeepsItsWorker(): void
@@ -75,7 +75,7 @@ final class CheckCommandTest extends TestCase
 
         $tester = $this->runCheck(self::VALID_CONFIG . "apps:\n  porch:\n    worker: 3\n");
 
-        self::assertMatchesRegularExpression('/^ *hall +\S+ +0 +enabled *$/m', $tester->getDisplay());
+        self::assertMatchesRegularExpression('/^ *hall +\S+ +1 +enabled *$/m', $tester->getDisplay());
         self::assertMatchesRegularExpression('/^ *porch +\S+ +3 +enabled *$/m', $tester->getDisplay());
     }
 

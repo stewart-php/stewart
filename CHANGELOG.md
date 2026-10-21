@@ -32,6 +32,9 @@ release could break; a release's "Upgrading" section says what to change.
   it restarts Stewart, so a deploy is down only for the restart, and a failed check leaves the running daemon up
 - `App` declares only `initialize()`; `dispose()` moved to `Disposable`. An app that marks `dispose()` with
   `#[\Override]` must implement `Disposable`, or PHP refuses to load it
+- An app without `worker:` is placed by a hash of its ID instead of round-robin, so adding or removing an app moves
+  no other. After the upgrade, apps and their `worker` metric label move once; the spread can be less even with few
+  apps, and `apps.<id>.worker` still pins one
 
 ### Deprecated
 
