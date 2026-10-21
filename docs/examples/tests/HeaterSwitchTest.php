@@ -7,9 +7,6 @@ namespace App\Tests;
 use App\HeaterSwitch;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Exception\CommandException;
-use Stewart\Contracts\Exposure\Command\SwitchAction;
-use Stewart\Contracts\Exposure\Command\SwitchCommand;
-use Stewart\Contracts\State\EventContext;
 use Stewart\Testing\App\AppHarness;
 
 final class HeaterSwitchTest extends TestCase
@@ -25,7 +22,7 @@ final class HeaterSwitchTest extends TestCase
 
     public function testTurningTheSwitchOnTurnsThePlugOn(): void
     {
-        $this->harness->entities->requireSwitch('heater')->pushCommand(new SwitchCommand(SwitchAction::TurnOn, new EventContext('ui')));
+        $this->harness->entities->requireSwitch('heater')->pushTurnOn();
 
         self::assertSame('switch.turn_on', $this->harness->ha->getLastCall()->getServiceName());
         self::assertTrue($this->harness->entities->requireSwitch('heater')->getValue());
@@ -36,6 +33,6 @@ final class HeaterSwitchTest extends TestCase
         $this->harness->ha->pushState('binary_sensor.living_room_window', 'on');
 
         $this->expectException(CommandException::class);
-        $this->harness->entities->requireSwitch('heater')->pushCommand(new SwitchCommand(SwitchAction::TurnOn, new EventContext('ui')));
+        $this->harness->entities->requireSwitch('heater')->pushTurnOn();
     }
 }

@@ -11,6 +11,7 @@ use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\ExposedText;
 use Stewart\Contracts\Exposure\TextConfig;
+use Stewart\Contracts\State\EventContext;
 
 /** @extends RecordingExposedEntity<TextConfig> */
 final class RecordingExposedText extends RecordingExposedEntity implements ExposedText
@@ -47,5 +48,11 @@ final class RecordingExposedText extends RecordingExposedEntity implements Expos
     public function pushCommand(TextCommand $command): void
     {
         $this->deliverCommand($command);
+    }
+
+    /** @throws CommandException */
+    public function pushValue(string $value, ?EventContext $context = null): void
+    {
+        $this->pushCommand(new TextCommand($value, $context ?? EventContext::unknown()));
     }
 }

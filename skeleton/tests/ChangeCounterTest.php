@@ -6,10 +6,6 @@ namespace App\Tests;
 
 use App\ChangeCounter;
 use PHPUnit\Framework\TestCase;
-use Stewart\Contracts\Exposure\Command\NumberCommand;
-use Stewart\Contracts\Exposure\Command\SwitchAction;
-use Stewart\Contracts\Exposure\Command\SwitchCommand;
-use Stewart\Contracts\State\EventContext;
 use Stewart\Testing\App\AppHarness;
 
 final class ChangeCounterTest extends TestCase
@@ -33,7 +29,7 @@ final class ChangeCounterTest extends TestCase
 
     public function testStepSetsHowMuchAChangeCounts(): void
     {
-        $this->harness->entities->requireNumber('step')->pushCommand(new NumberCommand(3, new EventContext('from-home-assistant')));
+        $this->harness->entities->requireNumber('step')->pushValue(3);
 
         $this->harness->ha->pushState('sun.sun', 'below_horizon');
 
@@ -42,7 +38,7 @@ final class ChangeCounterTest extends TestCase
 
     public function testTurningCountingOffStopsTheCount(): void
     {
-        $this->harness->entities->requireSwitch('counting')->pushCommand(new SwitchCommand(SwitchAction::TurnOff, new EventContext('from-home-assistant')));
+        $this->harness->entities->requireSwitch('counting')->pushTurnOff();
 
         $this->harness->ha->pushState('sun.sun', 'below_horizon');
 

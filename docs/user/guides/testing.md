@@ -49,7 +49,7 @@ Each fake is a public property of the harness:
 | Property | Injected as | What a test does with it |
 |---|---|---|
 | `ha` | `HaContext` | `seedState()`, `pushState()`, `pushEvent()`, `pushTrigger()`; read `calls`, `getLastCall()`, `firedEvents` |
-| `entities` | `EntityExposure` | `seedSnapshot()`; `requireSwitch('key')->pushCommand(...)`, `requireSensor('key')->getValue()` |
+| `entities` | `EntityExposure` | `seedSnapshot()`; `requireSwitch('key')->pushTurnOn()`, `requireSensor('key')->getValue()` |
 | `scheduler` | `Scheduler` | runs as `advanceTime()` passes each occurrence |
 | `stores` | `Store`, `ReadableStore` | `openAppStore(new AppId('…'))` and `openGlobalStore()` to seed and read |
 | `mqtt` | `Mqtt` | `pushMessage()`; read `published` |

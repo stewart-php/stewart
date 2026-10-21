@@ -6,11 +6,13 @@ namespace Stewart\Testing\Exposure;
 
 use Stewart\Contracts\EventStream;
 use Stewart\Contracts\Exception\CommandException;
+use Stewart\Contracts\Exposure\Command\SwitchAction;
 use Stewart\Contracts\Exposure\Command\SwitchCommand;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\ExposedSwitch;
 use Stewart\Contracts\Exposure\SwitchConfig;
+use Stewart\Contracts\State\EventContext;
 
 /** @extends RecordingExposedEntity<SwitchConfig> */
 final class RecordingExposedSwitch extends RecordingExposedEntity implements ExposedSwitch
@@ -52,5 +54,17 @@ final class RecordingExposedSwitch extends RecordingExposedEntity implements Exp
     public function pushCommand(SwitchCommand $command): void
     {
         $this->deliverCommand($command);
+    }
+
+    /** @throws CommandException */
+    public function pushTurnOn(?EventContext $context = null): void
+    {
+        $this->pushCommand(new SwitchCommand(SwitchAction::TurnOn, $context ?? EventContext::unknown()));
+    }
+
+    /** @throws CommandException */
+    public function pushTurnOff(?EventContext $context = null): void
+    {
+        $this->pushCommand(new SwitchCommand(SwitchAction::TurnOff, $context ?? EventContext::unknown()));
     }
 }
