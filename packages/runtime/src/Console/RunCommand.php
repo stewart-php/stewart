@@ -15,6 +15,7 @@ use Stewart\Runtime\Kernel\BrokerKernel;
 use Stewart\Runtime\Lifecycle\BrokerStopOutcome;
 use Stewart\Runtime\Logging\LogFormat;
 use Stewart\Runtime\Logging\LoggerFactory;
+use Stewart\Runtime\Logging\LogVerbosityPolicy;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -90,7 +91,8 @@ final class RunCommand extends StewartCommand
         $discovered = $this->discovery->discover();
         $selection = $launch->selection;
         $apps = $this->catalogs->resolveCatalog($discovered, $config->apps, $config->workers, $selection);
-        $logger = $this->loggers->createStdoutLogger($config->logLevel, $this->logFormatFromOptions($input, $config->logFormat));
+        $verbosity = new LogVerbosityPolicy($config->logLevel, $apps->enabled->listVerbositiesByAppId());
+        $logger = $this->loggers->createDaemonLogger($verbosity, $this->logFormatFromOptions($input, $config->logFormat));
 
         $this->noteMissingConfigFile($this->config->findMissingDefaultFile($launch->configFile), $logger);
         $this->catalogWarnings->logCatalogWarnings($discovered, $apps, $this->config->locateConfigFile($launch->configFile), $logger);
@@ -103,7 +105,7 @@ final class RunCommand extends StewartCommand
             $logger->notice('Running only the automations named by --only.', ['apps' => $selection->onlyIds->toStrings()]);
         }
 
-        return new PreparedDaemon($this->brokers->createBroker($config, $apps, $logger, $launch), $logger);
+        return new PreparedDaemon($this->brokers->createBroker($config, $apps, $logger, $verbosity, $launch), $logger);
     }
 
     private function noteMissingConfigFile(?string $missingConfigFile, LoggerInterface $logger): void

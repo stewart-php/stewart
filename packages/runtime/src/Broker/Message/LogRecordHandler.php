@@ -8,6 +8,7 @@ use Psr\Log\LoggerInterface;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Ipc\Message\LogRecord;
 use Stewart\Runtime\Ipc\Message\WorkerMessage;
+use Stewart\Runtime\Logging\LogOrigin;
 use Stewart\Runtime\Model\ExceptionDetails;
 
 /** @implements WorkerMessageHandler<LogRecord> */
@@ -28,6 +29,7 @@ final readonly class LogRecordHandler implements WorkerMessageHandler
             'app' => $message->scope->wireValue(),
             'worker' => $handle->id->value,
             ExceptionDetails::CONTEXT_KEY => $message->exception,
+            LogOrigin::CONTEXT_KEY => LogOrigin::forScope($message->scope),
         ]);
     }
 }

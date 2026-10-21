@@ -22,6 +22,8 @@ use Stewart\Runtime\Kernel\NamedArguments;
 use Stewart\Runtime\Kernel\NamedArgumentsPass;
 use Stewart\Runtime\Kernel\ProfileCompiler;
 use Stewart\Runtime\Kernel\SyntheticServices;
+use Stewart\Runtime\Logging\LogVerbosityPolicy;
+use Stewart\Runtime\Model\LogLevel;
 use Stewart\Runtime\Model\StewartVersion;
 use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Testing\Logging\RecordingLogger;
@@ -95,6 +97,7 @@ final class KernelCompileTest extends TestCase
             ConfigFixture::createStewartConfig($yaml),
             new AppCatalog(AppDefinitionCollection::keyedByAppId([]), AppIdCollection::fromList([]), AppIdCollection::fromList([])),
             $logger,
+            new LogVerbosityPolicy(LogLevel::Info),
         );
     }
 

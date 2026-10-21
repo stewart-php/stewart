@@ -16,6 +16,8 @@ use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
+use Stewart\Runtime\Model\AppVerbosity;
+use Stewart\Runtime\Model\LogLevel;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\AppTopologyFixture;
@@ -58,5 +60,24 @@ final class BootstrapMessageFactoryTest extends TestCase
 
         self::assertSame($servicesFile, $factory->createBootstrapMessage($handle, FakeHaSession::createOpened())->settings->servicesFile);
         self::assertSame(['demo'], $factory->createBootstrapMessage($handle, FakeHaSession::createOpened())->knownAppIds->collection->toStrings());
+    }
+
+    public function testWorkerAppsCarryTheirLogLevel(): void
+    {
+        $slot = new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([
+            new AppDefinition(new AppId('demo'), Demo::class, verbosity: new AppVerbosity(LogLevel::Debug)),
+            new AppDefinition(new AppId('hall'), Demo::class),
+        ]));
+        $factory = new BootstrapMessageFactory(
+            ConfigFixture::createStewartConfig(),
+            AppTopologyFixture::createTopologyForSlots($slot),
+            new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock())),
+            $this->project->getFilePath('services.php'),
+        );
+        $handle = new WorkerHandle($slot->workerId, new FakeWorkerProcess(), $slot, new NullLogger(), new OutboxLimits(10, 256));
+
+        $verbosities = $factory->createBootstrapMessage($handle, FakeHaSession::createOpened())->apps->collection->listVerbositiesByAppId();
+
+        self::assertEquals(['demo' => new AppVerbosity(LogLevel::Debug), 'hall' => new AppVerbosity()], $verbosities);
     }
 }

@@ -8,6 +8,7 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Collection\KeyedCollection;
 use Stewart\Runtime\App\AppDefinition;
+use Stewart\Runtime\Model\AppVerbosity;
 
 /** @extends KeyedCollection<string, AppDefinition> */
 final readonly class AppDefinitionCollection extends KeyedCollection
@@ -26,5 +27,11 @@ final readonly class AppDefinitionCollection extends KeyedCollection
     public function listAppIds(): AppIdCollection
     {
         return AppIdCollection::fromList($this->mapToList(static fn(AppDefinition $definition): AppId => $definition->id));
+    }
+
+    /** @return array<string, AppVerbosity> */
+    public function listVerbositiesByAppId(): array
+    {
+        return array_map(static fn(AppDefinition $definition): AppVerbosity => $definition->verbosity, $this->elements());
     }
 }

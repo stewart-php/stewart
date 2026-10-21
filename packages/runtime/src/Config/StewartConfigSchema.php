@@ -451,18 +451,14 @@ final class StewartConfigSchema implements ConfigurationInterface
                     ->info('Per-app overrides, keyed by the ID in the automation\'s #[Automation] attribute. Automations are found by scanning, not listed here.')
                     ->normalizeKeys(false)
                     ->arrayPrototype()
-                        // integerNode() rejects an explicit null, so `worker: ~` is removed before validation.
+                        // integerNode() and enumNode() reject an explicit null, so a `~` there is removed before validation.
                         ->beforeNormalization()
-                            ->ifTrue(static fn(mixed $app): bool => \is_array($app)
-                                && \array_key_exists('worker', $app)
-                                && $app['worker'] === null)
-                            ->then(static function (mixed $app): mixed {
-                                if (\is_array($app)) {
-                                    unset($app['worker']);
-                                }
-
-                                return $app;
-                            })
+                            ->ifArray()
+                            ->then(static fn(array $app): array => array_filter(
+                                $app,
+                                static fn(mixed $value, int|string $key): bool => $value !== null || !\in_array($key, ['worker', 'log_level'], true),
+                                \ARRAY_FILTER_USE_BOTH,
+                            ))
                         ->end()
                         ->children()
                             ->booleanNode('enabled')->defaultTrue()->end()
@@ -473,6 +469,11 @@ final class StewartConfigSchema implements ConfigurationInterface
                             ->integerNode('worker')
                                 ->info('Pin to a worker index. Omit to place it by a hash of its ID, so adding other apps never moves it.')
                                 ->min(0)
+                                ->defaultNull()
+                            ->end()
+                            ->enumNode('log_level')
+                                ->info('This app\'s log level, louder or quieter than the global log_level. Omit to use the global one.')
+                                ->values(array_map(static fn(LogLevel $level): string => $level->value, LogLevel::configurable()))
                                 ->defaultNull()
                             ->end()
                             ->arrayNode('options')

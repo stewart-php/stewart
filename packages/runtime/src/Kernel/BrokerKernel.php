@@ -22,6 +22,7 @@ use Stewart\Runtime\Config\ServiceCallPolicy;
 use Stewart\Runtime\Config\StewartConfig;
 use Stewart\Runtime\Config\SupervisionConfig;
 use Stewart\Runtime\Exception\ConfigurationException;
+use Stewart\Runtime\Logging\LogVerbosityPolicy;
 use Stewart\Runtime\Model\StewartVersion;
 
 final readonly class BrokerKernel
@@ -36,18 +37,18 @@ final readonly class BrokerKernel
     ) {}
 
     /** @throws ConfigurationException */
-    public function createBroker(StewartConfig $config, AppCatalog $apps, LoggerInterface $logger, DaemonLaunchOptions $launch = new DaemonLaunchOptions()): BrokerLifecycle
+    public function createBroker(StewartConfig $config, AppCatalog $apps, LoggerInterface $logger, LogVerbosityPolicy $verbosity, DaemonLaunchOptions $launch = new DaemonLaunchOptions()): BrokerLifecycle
     {
         $this->warnAboutSlowInitializeCalls($config, $logger);
         $this->warnAboutReadyTimeoutBelowInitialize($config, $logger);
 
         return $this->compiler
-            ->compileProfileContainer(ContainerProfile::Broker, $this->buildSyntheticServicesFor($config, $apps, $logger, $launch)->withOverrides($this->overrides), $this->buildNamedArguments())
+            ->compileProfileContainer(ContainerProfile::Broker, $this->buildSyntheticServicesFor($config, $apps, $logger, $verbosity, $launch)->withOverrides($this->overrides), $this->buildNamedArguments())
             ->resolveService(BrokerLifecycle::class);
     }
 
     /** @throws ConfigurationException */
-    private function buildSyntheticServicesFor(StewartConfig $config, AppCatalog $apps, LoggerInterface $logger, DaemonLaunchOptions $launch): SyntheticServices
+    private function buildSyntheticServicesFor(StewartConfig $config, AppCatalog $apps, LoggerInterface $logger, LogVerbosityPolicy $verbosity, DaemonLaunchOptions $launch): SyntheticServices
     {
         return new SyntheticServices()
             ->withService(StewartConfig::class, $config)
@@ -56,6 +57,7 @@ final readonly class BrokerKernel
             ->withService(AppCatalog::class, $apps)
             ->withService(AppDefinitionCollection::class, $apps->enabled)
             ->withService(LoggerInterface::class, $logger)
+            ->withService(LogVerbosityPolicy::class, $verbosity)
             ->withService(ConnectionConfig::class, $config->requireHomeAssistant())
             ->withService(SupervisionConfig::class, $config->supervision)
             ->withService(ServiceCallPolicy::class, $config->serviceCalls)

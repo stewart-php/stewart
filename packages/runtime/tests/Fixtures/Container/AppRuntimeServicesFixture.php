@@ -10,6 +10,8 @@ use Stewart\Contracts\Sun\SunCalendar;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Container\AppRuntimeServices;
 use Stewart\Runtime\Ipc\Transport;
+use Stewart\Runtime\Logging\LogVerbosityPolicy;
+use Stewart\Runtime\Model\LogLevel;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Registry\RegistryCache;
@@ -58,7 +60,7 @@ final class AppRuntimeServicesFixture
         ?SunCalendar $sunCalendar = null,
     ): AppRuntimeServices {
         $timers = $resources->timers;
-        $logger ??= new WorkerLogger($transport, new StderrFallback(new WorkerId(0)), ResourceScope::shared(), TestBootstrap::createWorkerSettings());
+        $logger ??= new WorkerLogger($transport, new StderrFallback(new WorkerId(0)), ResourceScope::shared(), new LogVerbosityPolicy(LogLevel::Debug));
         $sunCalendar ??= new LocatedSunCalendar(new GeoLocation(self::LATITUDE, 19.0402), $timers->clock, new NoaaSolarCalculator());
 
         return new AppRuntimeServices(

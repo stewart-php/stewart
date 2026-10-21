@@ -12,6 +12,7 @@ use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Ipc\Message\SubscribeTrigger;
 use Stewart\Runtime\Ipc\Message\SubscriptionAck;
 use Stewart\Runtime\Ipc\Message\WorkerMessage;
+use Stewart\Runtime\Logging\LogOrigin;
 use Stewart\Runtime\Model\SubscriptionKind;
 
 /** @implements WorkerMessageHandler<SubscribeTrigger> */
@@ -44,6 +45,7 @@ final readonly class SubscribeTriggerHandler implements WorkerMessageHandler
         $this->logger->debug('Trigger subscription registered', [
             'app' => $message->scope->wireValue(),
             'platforms' => $message->trigger->listPlatforms(),
+            LogOrigin::CONTEXT_KEY => LogOrigin::forScope($message->scope),
         ]);
     }
 }

@@ -20,6 +20,8 @@ use Stewart\Runtime\App\DiscoveryResult;
 use Stewart\Runtime\Config\AppOverride;
 use Stewart\Runtime\Config\Collection\AppOverrideCollection;
 use Stewart\Runtime\Exception\ConfigurationError;
+use Stewart\Runtime\Model\AppVerbosity;
+use Stewart\Runtime\Model\LogLevel;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Testing\Exception\AssertsReason;
 
@@ -39,6 +41,14 @@ final class AppCatalogResolverTest extends TestCase
         self::assertSame([], $demo->options);
         self::assertNull($demo->worker);
         self::assertFalse($demo->startsPaused);
+        self::assertNull($demo->verbosity->logLevel);
+    }
+
+    public function testOverrideSetsTheLogLevelOfItsApp(): void
+    {
+        $catalog = new AppCatalogResolver()->resolveCatalog(self::createDiscoveryResult('hall-light'), AppOverrideCollection::keyedByAppId([self::createOverride('hall_light', logLevel: LogLevel::Debug)]), workers: 0);
+
+        self::assertSame(['hall-light' => LogLevel::Debug], array_map(static fn(AppVerbosity $verbosity): ?LogLevel => $verbosity->logLevel, $catalog->enabled->listVerbositiesByAppId()));
     }
 
     public function testPausedOverrideStartsAppPaused(): void
@@ -150,8 +160,8 @@ final class AppCatalogResolverTest extends TestCase
     }
 
     /** @param array<string, mixed> $options */
-    private static function createOverride(string $id, bool $enabled = true, ?int $worker = null, array $options = [], bool $paused = false): AppOverride
+    private static function createOverride(string $id, bool $enabled = true, ?int $worker = null, array $options = [], bool $paused = false, ?LogLevel $logLevel = null): AppOverride
     {
-        return new AppOverride(new AppId($id), $enabled, $paused, $worker, $options);
+        return new AppOverride(new AppId($id), $enabled, $paused, $worker, $options, $logLevel);
     }
 }

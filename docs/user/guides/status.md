@@ -2,7 +2,7 @@
 title: Status and control
 description: See how Stewart and its apps are doing, pause an app, restart a worker, reload, and add health checks and metrics.
 sidebar:
-  order: 17
+  order: 18
 ---
 
 A running Stewart answers questions about itself through a **control socket**: a private connection that

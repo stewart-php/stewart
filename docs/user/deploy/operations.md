@@ -39,12 +39,15 @@ the details.
 
 ## Logs
 
-Stewart logs to standard output: `make logs`, `docker compose logs -f stewart`, or `kubectl logs`. For a log
-collector such as Loki or Elasticsearch, switch to one JSON object per line:
+Stewart logs to standard output: `make logs`, `docker compose logs -f stewart`, or `kubectl logs`. Each line names
+what it is about after the level, such as `[porch-light]` or `[broker]`. For a log collector such as Loki or
+Elasticsearch, switch to one JSON object per line:
 
 ```bash
 STEWART_LOG_FORMAT=json
 ```
+
+[Logs](../guides/logging.md) explains the line, the JSON fields and how to give one app its own log level.
 
 ## Backups
 

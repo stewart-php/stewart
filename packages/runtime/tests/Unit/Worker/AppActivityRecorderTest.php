@@ -12,6 +12,8 @@ use Stewart\Contracts\Exception\WaitException;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Runtime\Dispatch\RegisteredSubscription;
 use Stewart\Runtime\Ipc\Message\AppFailed;
+use Stewart\Runtime\Logging\LogVerbosityPolicy;
+use Stewart\Runtime\Model\LogLevel;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionId;
 use Stewart\Runtime\Model\SubscriptionKind;
@@ -19,7 +21,6 @@ use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Schedule\ScheduleOrigin;
 use Stewart\Runtime\Scope\ScopeLifecycle;
 use Stewart\Runtime\Tests\Fixtures\Ipc\NullTransport;
-use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Stewart\Runtime\Worker\AppActivityCounters;
 use Stewart\Runtime\Worker\AppActivityRecorder;
 use Stewart\Runtime\Worker\AppFailureReporter;
@@ -46,7 +47,7 @@ final class AppActivityRecorderTest extends TestCase
         $this->recorder = new AppActivityRecorder(
             new AppFailureReporter($this->transport, new StderrFallback(new WorkerId(0)), $counters, new HandlerFailureSampler()),
             $counters,
-            new WorkerLogger($this->transport, new StderrFallback(new WorkerId(0)), ResourceScope::shared(), TestBootstrap::createWorkerSettings()),
+            new WorkerLogger($this->transport, new StderrFallback(new WorkerId(0)), ResourceScope::shared(), new LogVerbosityPolicy(LogLevel::Debug)),
             $this->scopes,
         );
     }
