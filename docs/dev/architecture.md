@@ -308,7 +308,10 @@ one from.
 root; a worker's app container builds the apps and their services; then both
 go out of scope. This is what allows a container
 inside a process running an event loop at all. Resolving a
-service per event would void it.
+service per event would void it. A reload does not rebuild the broker's
+container either: the broker services read the catalog and the worker slots
+from `AppTopology`, which a reload replaces, and the workers it starts build
+their own containers as at boot.
 
 **Placement depends only on the app ID.** `AppPlacement::planWorkerSlots()` puts
 each unpinned app on the worker whose index scores highest with its ID

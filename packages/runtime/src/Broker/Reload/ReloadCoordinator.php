@@ -10,7 +10,6 @@ use Amp\DeferredCancellation;
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Runtime\Broker\BrokerRun;
-use Stewart\Runtime\Broker\WorkerPool;
 use Stewart\Runtime\Lifecycle\ReloadOutcome;
 use Throwable;
 
@@ -22,8 +21,9 @@ final class ReloadCoordinator
 
     public function __construct(
         private readonly ReloadCheck $check,
+        private readonly ReloadPlanner $planner,
+        private readonly ReloadApplier $applier,
         private readonly ReloadState $state,
-        private readonly WorkerPool $pool,
         private readonly BrokerRun $run,
         private readonly Clock $clock,
         private readonly LoggerInterface $logger,
@@ -53,15 +53,16 @@ final class ReloadCoordinator
         $this->state->beginReload();
         $this->logger->info('Reloading: checking the project first', ['trigger' => $trigger->value]);
         $cancellation = $this->accepting->getCancellation();
-        async(fn() => $this->reloadWorkers($cancellation))->ignore();
+        async(fn() => $this->reloadProject($cancellation))->ignore();
 
         return ReloadRequestOutcome::Started;
     }
 
-    private function reloadWorkers(Cancellation $cancellation): void
+    private function reloadProject(Cancellation $cancellation): void
     {
         try {
-            $failure = $this->check->findCheckFailure($cancellation);
+            $report = $this->check->runReloadCheck($cancellation);
+            $failure = $report->findFirstError();
 
             if ($failure !== null) {
                 $this->recordFailure($failure);
@@ -75,14 +76,27 @@ final class ReloadCoordinator
                 return;
             }
 
-            $this->pool->replaceEveryWorker();
-            $this->state->recordResult(new ReloadResult(ReloadOutcome::Applied, $this->clock->getNow()));
-            $this->logger->info('Reloaded: every worker restarted on the current code');
+            $plan = $this->planner->planReload($report);
+            $this->applier->applyReload($plan);
+            $this->recordApplied($plan);
         } catch (CancelledException) {
             $this->state->abandonReload();
         } catch (Throwable $e) {
             $this->recordFailure($e->getMessage());
         }
+    }
+
+    private function recordApplied(ReloadPlan $plan): void
+    {
+        $settings = $plan->settingsNeedingRestart;
+
+        if ($settings === []) {
+            $this->logger->info('Reloaded: every worker restarted on the current code and configuration', ['apps' => $plan->catalog->enabled->count()]);
+        } else {
+            $this->logger->warning('Reloaded, except for settings that only a restart applies', ['apps' => $plan->catalog->enabled->count(), 'settings' => $settings]);
+        }
+
+        $this->state->recordResult(new ReloadResult($settings === [] ? ReloadOutcome::Applied : ReloadOutcome::PartlyApplied, $this->clock->getNow(), null, $settings));
     }
 
     private function recordFailure(string $reason): void

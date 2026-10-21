@@ -107,7 +107,9 @@ truth: an override naming no discovered app is kept as unmatched, and `run` and 
 admits an app even when `enabled: false`. A pinned worker beyond `workers` is an error. The result is an
 `AppCatalog` of `AppDefinition`s (ID, class, options, worker, starts paused).
 
-`Console/CheckCommand` resolves the same catalog and plans worker slots with the broker's `AppPlacement`, which the
+`Console/Check/ProjectCheck` holds the check that `check` and the hidden `reload:check` share. `Console/CheckCommand`
+prints it; `reload:check` prints a `ReloadCheckReport` as one JSON line for the daemon. The check resolves the same
+catalog and plans worker slots with the broker's `AppPlacement`, which the
 console profile registers with its `CpuCountDetector`. With `workers: 0` the pool size is the CPU count where `check`
 runs, which matches the daemon's in Compose and in a Git-deploy pod. For each slot it calls
 `AppContainerBuilder::findAppBuildFailures()` with an `AppContainerBlueprint` made from the config, so the app

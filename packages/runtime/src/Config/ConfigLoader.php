@@ -12,6 +12,8 @@ use Symfony\Component\Config\Definition\Processor;
 
 final readonly class ConfigLoader
 {
+    private const string MISSING_FILE_FINGERPRINT = 'missing';
+
     private const string DEFAULT_CONFIG_FILE = 'stewart.yaml';
 
     public function __construct(
@@ -70,6 +72,13 @@ final readonly class ConfigLoader
     public function locateConfigFile(?string $path): string
     {
         return $path ?? $this->projectRoot->resolvePath(self::DEFAULT_CONFIG_FILE);
+    }
+
+    public function fingerprintConfigFile(?string $path): string
+    {
+        $file = $this->locateConfigFile($path);
+
+        return is_file($file) ? (string) hash_file('xxh128', $file) : self::MISSING_FILE_FINGERPRINT;
     }
 
     public function findMissingDefaultFile(?string $path): ?string

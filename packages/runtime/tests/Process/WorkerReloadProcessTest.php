@@ -13,6 +13,7 @@ use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
+use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\ProcessWorkerSpawner;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Ipc\Message\LogRecord;
@@ -85,7 +86,7 @@ final class WorkerReloadProcessTest extends TestCase
         $firstPid = $pools->slots->findHandleForWorker($slot->workerId)?->getPid();
 
         file_put_contents($script, "<?php return 'v2, edited';\n");
-        $pools->pool->replaceEveryWorker();
+        $pools->pool->applyWorkerSlots(WorkerSlotCollection::fromList([$slot]), $listener);
         self::waitUntil(static fn(): bool => self::listLoadedVersions($listener) === ['v1', 'v2, edited']);
 
         self::assertNotSame($firstPid, $pools->slots->findHandleForWorker($slot->workerId)?->getPid());

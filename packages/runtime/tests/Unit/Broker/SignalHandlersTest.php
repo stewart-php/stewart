@@ -58,7 +58,7 @@ final class SignalHandlersTest extends TestCase
         $this->run->start();
 
         $this->commands = new ScriptedCommandRunner();
-        $this->reloads = ReloadCoordinatorFixture::createReloadCoordinator($pools, $this->run, $this->commands, logger: $this->logger);
+        $this->reloads = ReloadCoordinatorFixture::createReloadCoordinator($pools, $this->run, $this->commands, logger: $this->logger)->coordinator;
         $this->signals = new SignalHandlers($this->run, $this->reloads, $this->logger);
     }
 

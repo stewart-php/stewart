@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\App\Collection;
 
 use Stewart\Contracts\App\AppId;
+use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Collection\KeyedCollection;
 use Stewart\Runtime\App\AppDefinition;
 
@@ -20,5 +21,10 @@ final readonly class AppDefinitionCollection extends KeyedCollection
     public function find(AppId $id): ?AppDefinition
     {
         return $this->elementAt($id->value);
+    }
+
+    public function listAppIds(): AppIdCollection
+    {
+        return AppIdCollection::fromList($this->mapToList(static fn(AppDefinition $definition): AppId => $definition->id));
     }
 }

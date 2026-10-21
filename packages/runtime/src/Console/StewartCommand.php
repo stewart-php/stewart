@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Console;
 
+use Stewart\Contracts\App\AppId;
+use Stewart\Contracts\App\Collection\AppIdCollection;
+use Stewart\Contracts\Exception\IdentifierException;
+use Stewart\Runtime\App\AppSelection;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -20,6 +24,18 @@ abstract class StewartCommand extends Command
     protected function findConfigOption(InputInterface $input): ?string
     {
         return $this->nonEmptyStringOption($input, 'config');
+    }
+
+    /** @throws IdentifierException */
+    protected function readAppSelectionOption(InputInterface $input): AppSelection
+    {
+        $only = $input->hasOption('only') ? $input->getOption('only') : null;
+
+        if (!\is_array($only) || $only === []) {
+            return new AppSelection();
+        }
+
+        return new AppSelection(AppIdCollection::fromList(array_map(static fn(string $id): AppId => new AppId($id), array_values(array_filter($only, \is_string(...))))));
     }
 
     protected function nonEmptyStringOption(InputInterface $input, string $name): ?string

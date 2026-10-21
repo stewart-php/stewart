@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker;
 
 use Psr\Log\LoggerInterface;
-use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\Exposure\ExposureReconciler;
 use Stewart\Runtime\Exception\BrokerError;
 use Stewart\Runtime\Exception\BrokerException;
@@ -17,7 +16,7 @@ use function Amp\Future\awaitAll;
 final readonly class WorkerStartup
 {
     public function __construct(
-        private WorkerSlotCollection $workerSlots,
+        private AppTopology $topology,
         private WorkerPool $pool,
         private WorkerSlotRegistry $slots,
         private WorkerWatchdog $watchdog,
@@ -38,8 +37,10 @@ final readonly class WorkerStartup
             return;
         }
 
-        if (!$this->workerSlots->isEmpty() && $this->slots->countLiveWorkers() === 0) {
-            throw BrokerException::createForReason(BrokerError::NoWorkersStarted, workers: $this->workerSlots->count());
+        $workerSlots = $this->topology->getWorkerSlots();
+
+        if (!$workerSlots->isEmpty() && $this->slots->countLiveWorkers() === 0) {
+            throw BrokerException::createForReason(BrokerError::NoWorkersStarted, workers: $workerSlots->count());
         }
 
         $this->watchdog->startProbing();
@@ -54,7 +55,7 @@ final readonly class WorkerStartup
     /** @throws Throwable */
     private function spawnEveryWorker(): void
     {
-        [$failures] = awaitAll($this->workerSlots->mapToList(
+        [$failures] = awaitAll($this->topology->getWorkerSlots()->mapToList(
             fn(WorkerSlot $slot) => async(fn(): bool => $this->pool->startWorker($slot, $this->workerEvents)),
         ));
 

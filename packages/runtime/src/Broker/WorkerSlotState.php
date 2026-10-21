@@ -28,10 +28,12 @@ final class WorkerSlotState
 
     private bool $replacementRequested = false;
 
+    private bool $retirementRequested = false;
+
     private OutboxStatus $retiredOutboxes;
 
     public function __construct(
-        public readonly WorkerSlot $slot,
+        public private(set) WorkerSlot $slot,
         public readonly WorkerPoolListener $listener,
     ) {
         $this->retiredOutboxes = OutboxStatus::zero();
@@ -109,9 +111,29 @@ final class WorkerSlotState
         return $this->handle ?? throw new LogicException(\sprintf('Worker %d is stopping without a process.', $this->slot->workerId->value));
     }
 
+    public function replaceSlot(WorkerSlot $slot): void
+    {
+        if (!$slot->workerId->equals($this->slot->workerId)) {
+            throw new LogicException(\sprintf('Worker %d cannot take the slot of worker %d.', $this->slot->workerId->value, $slot->workerId->value));
+        }
+
+        $this->slot = $slot;
+        $this->retirementRequested = false;
+    }
+
     public function requestReplacement(): void
     {
         $this->replacementRequested = true;
+    }
+
+    public function requestRetirement(): void
+    {
+        $this->retirementRequested = true;
+    }
+
+    public function isRetiring(): bool
+    {
+        return $this->retirementRequested;
     }
 
     public function takeReplacementRequest(): bool

@@ -9,7 +9,7 @@ use Stewart\Contracts\Exception\StoreException;
 use Stewart\Runtime\App\AppPauseOutcome;
 use Stewart\Runtime\App\AppPauseResetOutcome;
 use Stewart\Runtime\Broker\AppPauseService;
-use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
+use Stewart\Runtime\Broker\AppTopology;
 use Stewart\Runtime\Broker\Reload\ReloadCoordinator;
 use Stewart\Runtime\Broker\Reload\ReloadRequestOutcome;
 use Stewart\Runtime\Broker\Reload\ReloadTrigger;
@@ -29,7 +29,7 @@ final readonly class RuntimeAdmin
     public function __construct(
         private AppPauseService $pauses,
         private AppStatusBuilder $appStatuses,
-        private WorkerSlotCollection $workerSlots,
+        private AppTopology $topology,
         private WorkerPool $pool,
         private ReloadCoordinator $reloads,
     ) {}
@@ -77,7 +77,7 @@ final readonly class RuntimeAdmin
     /** @throws WorkerException */
     public function restartWorker(string $workerId): CommandResult
     {
-        $slot = $this->workerSlots->requireSlotById($workerId);
+        $slot = $this->topology->getWorkerSlots()->requireSlotById($workerId);
         $outcome = $this->pool->restartWorker($slot);
 
         return new CommandResult($outcome === WorkerRestartOutcome::Begun, $outcome->describeForWorker($slot->workerId), null);

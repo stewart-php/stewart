@@ -12,11 +12,15 @@ release could break; a release's "Upgrading" section says what to change.
 - `stewart reload` (`make reload`), `POST /api/reload` and `SIGHUP` run `stewart check`, then restart every worker on
   the current code while the Home Assistant session stays open; a failed check leaves everything running.
   `stewart status` shows the last reload on a `reload` row, and `stewart_reloads_total{outcome}` counts them
+- A reload also applies `stewart.yaml` and the app list: added and removed apps, `apps.<id>` options, `enabled`,
+  `paused` and `worker`, and `workers`. Any other changed setting keeps its value until a restart, and the `reload`
+  row says `partly applied` and names it
 
 ### Changed
 
 - In Git mode, the image entrypoint forwards `SIGHUP` to the daemon; before, it stopped the container
 - The control protocol is 30, so `stewart status` and the other control commands need the same release as the daemon
+- After a reload removes an app, its exposed entities are deleted after the usual grace when `expose.prune` is on
 
 ## [1.5.0] - 2026-10-21
 

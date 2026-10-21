@@ -39,6 +39,29 @@ final class AppMetrics
         }
     }
 
+    // Totals of an app that stays on its worker keep counting; a moved app starts again under its new worker.
+    public function replaceAppTotals(WorkerSlotCollection $workerSlots): void
+    {
+        $kept = [];
+
+        foreach ($workerSlots as $slot) {
+            foreach ($slot->apps as $app) {
+                $existing = $this->runningTotals[$app->id->value] ?? null;
+                $kept[$app->id->value] = $existing !== null && $existing->isPlacedOn($slot->workerId, $app->class)
+                    ? $existing
+                    : AppRunningTotals::forApp($app->id, $app->class, $slot->workerId);
+            }
+
+            $sharedKey = AppRunningTotals::buildMetricsKey(ResourceScope::shared(), $slot->workerId);
+
+            if (isset($this->runningTotals[$sharedKey])) {
+                $kept[$sharedKey] = $this->runningTotals[$sharedKey];
+            }
+        }
+
+        $this->runningTotals = $kept;
+    }
+
     public function recordActivityReports(WorkerHandle $handle, Pong $pong): void
     {
         // A respawned worker counts from zero, so its first report is all new activity.
@@ -48,7 +71,7 @@ final class AppMetrics
 
         foreach ($pong->apps as $report) {
             $scope = $report->scope->wireValue();
-            $this->findOrCreateRunningTotals($handle->id, $report->scope)->recordActivityReport($report, $previous[$scope] ?? null, $at);
+            $this->findOrCreateRunningTotals($handle->id, $report->scope)?->recordActivityReport($report, $previous[$scope] ?? null, $at);
             $latest[$scope] = $report;
         }
 
@@ -57,12 +80,12 @@ final class AppMetrics
 
     public function recordFinishedCall(WorkerId $workerId, ResourceScope $scope, ServiceCallOutcome $outcome, Duration $latency): void
     {
-        $this->findOrCreateRunningTotals($workerId, $scope)->recordCall($outcome, $latency);
+        $this->findOrCreateRunningTotals($workerId, $scope)?->recordCall($outcome, $latency);
     }
 
     public function recordRefusedCall(WorkerId $workerId, ResourceScope $scope): void
     {
-        $this->findOrCreateRunningTotals($workerId, $scope)->recordCall(ServiceCallOutcome::Refused, null);
+        $this->findOrCreateRunningTotals($workerId, $scope)?->recordCall(ServiceCallOutcome::Refused, null);
     }
 
     public function recordExposedCommand(AppId $appId, ExposedCommandOutcome $outcome): void
@@ -72,7 +95,7 @@ final class AppMetrics
 
     public function recordLastFailure(WorkerId $workerId, AppFailed $failure): void
     {
-        $this->findOrCreateRunningTotals($workerId, $failure->scope)->recordLastFailure(
+        $this->findOrCreateRunningTotals($workerId, $failure->scope)?->recordLastFailure(
             new FailureReport(
                 $failure->phase,
                 $failure->class,
@@ -95,8 +118,15 @@ final class AppMetrics
         return $this->runningTotals[$appId->value] ?? null;
     }
 
-    private function findOrCreateRunningTotals(WorkerId $workerId, ResourceScope $scope): AppRunningTotals
+    // An app a reload removed can still report from its retiring worker; its totals are gone for good.
+    private function findOrCreateRunningTotals(WorkerId $workerId, ResourceScope $scope): ?AppRunningTotals
     {
-        return $this->runningTotals[AppRunningTotals::buildMetricsKey($scope, $workerId)] ??= AppRunningTotals::forScope($scope, $workerId);
+        $key = AppRunningTotals::buildMetricsKey($scope, $workerId);
+
+        if (!$scope->isShared()) {
+            return $this->runningTotals[$key] ?? null;
+        }
+
+        return $this->runningTotals[$key] ??= AppRunningTotals::forScope($scope, $workerId);
     }
 }

@@ -32,9 +32,9 @@ The same goes for the admin port (`http.admin.listen`) and a TCP control socket 
 
 ## Reloading
 
-`make reload`, or `docker compose kill -s HUP stewart`, checks the project and restarts every worker on the code as it
-is now, while the connection to Home Assistant stays open. It is for edited apps, not for updates: a changed
-`composer.lock` or a new Stewart version needs a restart. [Status and control](../guides/status.md#reloading) has
+`make reload`, or `docker compose kill -s HUP stewart`, checks the project, then restarts every worker on the code
+and the `apps` and `workers` settings as they are now, while the connection to Home Assistant stays open. It is for
+edited apps and settings, not for updates: a changed `composer.lock` or a new Stewart version needs a restart. [Status and control](../guides/status.md#reloading) has
 the details.
 
 ## Logs

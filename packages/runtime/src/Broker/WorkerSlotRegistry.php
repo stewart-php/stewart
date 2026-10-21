@@ -17,6 +17,11 @@ final class WorkerSlotRegistry
         return $this->states[$slot->workerId->value] ??= new WorkerSlotState($slot, $listener);
     }
 
+    public function forgetSlotState(WorkerId $workerId): void
+    {
+        unset($this->states[$workerId->value]);
+    }
+
     public function findSlotState(WorkerId $workerId): ?WorkerSlotState
     {
         return $this->states[$workerId->value] ?? null;

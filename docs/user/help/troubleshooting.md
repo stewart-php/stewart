@@ -98,9 +98,9 @@ restarted after installing it. See [Exposed entities](../guides/exposed-entities
 **A pushed commit does not go live.** In Git mode, a commit that fails `stewart check` is rejected and the old one
 keeps running. `make status` shows it on the `deploy` row; the log says why.
 
-**A reload changed nothing.** The `reload` row in `make status` says `failed` with the first error of `stewart check`,
-and the workers kept running the code they had. Run `make check`, fix what it names, and reload again. A changed
-`stewart.yaml` needs a restart.
+**A reload changed nothing.** The `reload` row in `make status` says `failed` with the first error of the check, and
+the workers kept running the code they had. Run `make check`, fix what it names, and reload again. When it says
+`partly applied`, the settings it names wait for a restart; only `apps` and `workers` change on a reload.
 
 **`make status` cannot connect on Docker Desktop.** macOS and Windows cannot share the control socket with the host.
 Run it inside the container instead: `docker compose exec stewart stewart status`.

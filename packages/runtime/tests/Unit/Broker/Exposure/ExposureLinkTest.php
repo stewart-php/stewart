@@ -323,6 +323,17 @@ final class ExposureLinkTest extends TestCase
         self::assertSame(0, $this->link->countExposuresOfApp(new AppId('lights')));
     }
 
+    public function testForgottenAppIsNoLongerKept(): void
+    {
+        $this->exposeTemperature(21.4);
+        $this->link->orphanExposuresOfApp(new AppId('climate'));
+
+        $this->link->forgetExposuresOfApp(new AppId('climate'));
+
+        self::assertSame(0, $this->link->countExposuresOfApp(new AppId('climate')));
+        self::assertTrue($this->link->listKeptAddresses()->isEmpty());
+    }
+
     public function testDeletedEntityIsUpsertedAgain(): void
     {
         $this->activateComponent();

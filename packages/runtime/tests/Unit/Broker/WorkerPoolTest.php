@@ -12,6 +12,7 @@ use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
+use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\RestartDecision;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerPool;
@@ -594,13 +595,13 @@ final class WorkerPoolTest extends TestCase
         self::assertSame(WorkerPhase::Stopped, $this->getPhaseOf(0));
     }
 
-    public function testReplacingEveryWorkerCountsNoRestart(): void
+    public function testReplacingTheWorkersCountsNoRestart(): void
     {
         $pool = $this->createPool();
         $pool->startWorker(self::createSlot(0), $this->listener);
         $pool->startWorker(self::createSlot(1), $this->listener);
 
-        $pool->replaceEveryWorker();
+        $pool->applyWorkerSlots(WorkerSlotCollection::fromList([self::createSlot(0), self::createSlot(1)]), $this->listener);
         EventLoopTicks::settleUntil(fn(): bool => $this->spawner->countSpawnedProcesses() === 4 && $this->getPhaseOf(0) === WorkerPhase::Live && $this->getPhaseOf(1) === WorkerPhase::Live);
 
         self::assertEqualsCanonicalizing(['0: reload', '1: reload'], $this->listener->gone);
@@ -609,27 +610,27 @@ final class WorkerPoolTest extends TestCase
         self::assertNull($this->findLogged('Worker died'));
     }
 
-    public function testReplacingEveryWorkerRevivesAQuarantinedOne(): void
+    public function testReplacingTheWorkersRevivesAQuarantinedOne(): void
     {
         $pool = $this->createPool(self::createSupervisionConfig(restartAttempts: 0));
         $pool->startWorker(self::createSlot(0), $this->listener);
         $this->spawner->getLatestProcess(0)->crash();
         EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) === WorkerPhase::Quarantined);
 
-        $pool->replaceEveryWorker();
+        $pool->applyWorkerSlots(WorkerSlotCollection::fromList([self::createSlot(0)]), $this->listener);
         EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) === WorkerPhase::Live);
 
         self::assertSame(2, $this->spawner->countSpawnedProcesses());
     }
 
-    public function testReplacingEveryWorkerRunsAScheduledRestartAtOnce(): void
+    public function testReplacingTheWorkersRunsAScheduledRestartAtOnce(): void
     {
         $pool = $this->createPool();
         $pool->startWorker(self::createSlot(0), $this->listener);
         $this->spawner->getLatestProcess(0)->crash();
         EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) === WorkerPhase::RestartScheduled);
 
-        $pool->replaceEveryWorker();
+        $pool->applyWorkerSlots(WorkerSlotCollection::fromList([self::createSlot(0)]), $this->listener);
         EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) === WorkerPhase::Live);
 
         self::assertSame(2, $this->spawner->countSpawnedProcesses());
@@ -644,7 +645,7 @@ final class WorkerPoolTest extends TestCase
         async(fn(): bool => $pool->startWorker(self::createSlot(0), $this->listener));
         EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) === WorkerPhase::Spawning);
 
-        $pool->replaceEveryWorker();
+        $pool->applyWorkerSlots(WorkerSlotCollection::fromList([self::createSlot(0)]), $this->listener);
         $spawning->open();
         EventLoopTicks::settleUntil(fn(): bool => $this->spawner->countSpawnedProcesses() === 2 && $this->getPhaseOf(0) === WorkerPhase::Live);
 
@@ -657,9 +658,64 @@ final class WorkerPoolTest extends TestCase
         $pool = $this->createPool();
         $pool->shutdown('test', Duration::seconds(0.01));
 
-        $pool->replaceEveryWorker();
+        $pool->applyWorkerSlots(WorkerSlotCollection::fromList([self::createSlot(0)]), $this->listener);
 
         self::assertSame(0, $this->spawner->countSpawnedProcesses());
+    }
+
+    public function testAppliedSlotsStartNewWorkersAndRetireEmptyOnes(): void
+    {
+        $pool = $this->createPool();
+        $pool->startWorker(self::createSlot(0), $this->listener);
+        $pool->startWorker(self::createSlot(1), $this->listener);
+
+        $pool->applyWorkerSlots(WorkerSlotCollection::fromList([self::createSlot(0), self::createSlot(2)]), $this->listener);
+        EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) === WorkerPhase::Live && $this->getPhaseOf(2) === WorkerPhase::Live);
+
+        self::assertNull($this->slots->findSlotState(new WorkerId(1)));
+        self::assertTrue($this->spawner->getLatestProcess(1)->closed);
+        self::assertSame(4, $this->spawner->countSpawnedProcesses());
+    }
+
+    public function testAppliedSlotGivesTheRespawnedWorkerItsNewApps(): void
+    {
+        $pool = $this->createPool();
+        $pool->startWorker(self::createSlot(0), $this->listener);
+        $moved = new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(id: new AppId('porch'), class: Demo::class)]));
+
+        $pool->applyWorkerSlots(WorkerSlotCollection::fromList([$moved]), $this->listener);
+        EventLoopTicks::settleUntil(fn(): bool => $this->spawner->countSpawnedProcesses() === 2 && $this->getPhaseOf(0) === WorkerPhase::Live);
+
+        self::assertSame(['porch'], $this->slots->findHandleForWorker(new WorkerId(0))?->getAppIds()->toStrings());
+    }
+
+    public function testWorkerStillStartingIsRetiredOnceLive(): void
+    {
+        $spawning = new Latch();
+        $this->spawner = new FakeWorkerSpawner(spawnLatch: $spawning);
+        $pool = $this->createPool();
+        async(fn(): bool => $pool->startWorker(self::createSlot(0), $this->listener));
+        EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) === WorkerPhase::Spawning);
+
+        $pool->applyWorkerSlots(WorkerSlotCollection::empty(), $this->listener);
+        $spawning->open();
+        EventLoopTicks::settleUntil(fn(): bool => $this->slots->findSlotState(new WorkerId(0)) === null);
+
+        self::assertSame(1, $this->spawner->countSpawnedProcesses());
+        self::assertTrue($this->spawner->getLatestProcess(0)->closed);
+    }
+
+    public function testQuarantinedWorkerWithoutAppsIsRetiredAtOnce(): void
+    {
+        $pool = $this->createPool(self::createSupervisionConfig(restartAttempts: 0));
+        $pool->startWorker(self::createSlot(0), $this->listener);
+        $this->spawner->getLatestProcess(0)->crash();
+        EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) === WorkerPhase::Quarantined);
+
+        $pool->applyWorkerSlots(WorkerSlotCollection::empty(), $this->listener);
+
+        self::assertNull($this->slots->findSlotState(new WorkerId(0)));
+        self::assertSame(1, $this->spawner->countSpawnedProcesses());
     }
 
     private function createPool(?SupervisionConfig $supervision = null): WorkerPool

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker;
 
 use Stewart\Contracts\Time\Duration;
-use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\Config\PersistenceConfig;
 use Stewart\Runtime\Config\StewartConfig;
 use Stewart\Runtime\Exception\ConfigurationException;
@@ -21,27 +20,18 @@ final readonly class BootstrapMessageFactory
     // Headroom so a worker times out a call only after Home Assistant has.
     private const int CALL_TIMEOUT_GRACE_SECONDS = 5;
 
-    private WorkerSettings $workerSettings;
+    private Duration $callTimeout;
 
     private ?StoreSettings $storeSettings;
 
     /** @throws ConfigurationException */
     public function __construct(
-        StewartConfig $config,
-        private AppCatalog $apps,
+        private StewartConfig $config,
+        private AppTopology $topology,
         private AppPauseRegistry $pausedApps,
-        string $userServicesFile,
+        private string $userServicesFile,
     ) {
-        $this->workerSettings = new WorkerSettings(
-            logLevel: $config->logLevel,
-            callTimeout: $config->requireHomeAssistant()->commandTimeout->plus(Duration::seconds(self::CALL_TIMEOUT_GRACE_SECONDS)),
-            shutdownGrace: $config->shutdownGrace,
-            subscriptionBuffer: $config->subscriptionBuffer,
-            initializeTimeout: $config->supervision->initializeTimeout->findDuration(),
-            servicesFile: is_file($userServicesFile) ? $userServicesFile : null,
-            generatedNamespace: $config->codegen->namespace->value,
-            mqttEnabled: $config->mqtt !== null,
-        );
+        $this->callTimeout = $config->requireHomeAssistant()->commandTimeout->plus(Duration::seconds(self::CALL_TIMEOUT_GRACE_SECONDS));
         $this->storeSettings = $this->buildStoreSettings($config->persistence);
     }
 
@@ -53,11 +43,26 @@ final readonly class BootstrapMessageFactory
             timeZone: $session->getTimeZone()->getName(),
             location: $session->getLocation(),
             apps: WorkerAppsFragment::fromCollection($handle->slot->listWorkerApps()),
-            settings: $this->workerSettings,
+            settings: $this->buildWorkerSettings(),
             store: $this->storeSettings,
-            knownAppIds: AppIdsFragment::fromCollection($this->apps->knownIds),
+            knownAppIds: AppIdsFragment::fromCollection($this->topology->getCatalog()->knownIds),
             pausedAppIds: AppIdsFragment::fromCollection($this->pausedApps->listPausedAppIds()),
             haUserId: $session->getHaUserId(),
+        );
+    }
+
+    // services.php is looked for at every spawn, so one created after the start is used once the workers reload.
+    private function buildWorkerSettings(): WorkerSettings
+    {
+        return new WorkerSettings(
+            logLevel: $this->config->logLevel,
+            callTimeout: $this->callTimeout,
+            shutdownGrace: $this->config->shutdownGrace,
+            subscriptionBuffer: $this->config->subscriptionBuffer,
+            initializeTimeout: $this->config->supervision->initializeTimeout->findDuration(),
+            servicesFile: is_file($this->userServicesFile) ? $this->userServicesFile : null,
+            generatedNamespace: $this->config->codegen->namespace->value,
+            mqttEnabled: $this->config->mqtt !== null,
         );
     }
 

@@ -26,7 +26,6 @@ use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
-use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\Component\ComponentTracker;
 use Stewart\Runtime\Broker\Exposure\ExposureLink;
 use Stewart\Runtime\Broker\Exposure\ExposureReconciler;
@@ -35,6 +34,7 @@ use Stewart\Runtime\Config\ExposeConfig;
 use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
+use Stewart\Runtime\Tests\Fixtures\Broker\AppTopologyFixture;
 use Stewart\Testing\Time\ManualTimers;
 use Stewart\Testing\Websocket\FakeWebsocketConnection;
 use Stewart\Testing\Websocket\FakeWebsocketConnector;
@@ -177,6 +177,33 @@ final class ExposureReconcilerTest extends TestCase
         self::assertCount(1, $this->listReconciles());
     }
 
+    public function testRunsAgainOnceWorkersSettleAfterAReload(): void
+    {
+        $reconciler = $this->createReconciler();
+        $this->activateComponent();
+        $this->recordEveryWorkerReady($reconciler);
+        $this->timers->delay(Duration::seconds(30));
+
+        $this->socket->replyWhenSent('stewart/entity/reconcile', self::RECONCILED);
+        $reconciler->restartAfterReload();
+        $this->recordEveryWorkerReady($reconciler);
+        $this->timers->delay(Duration::seconds(30));
+
+        self::assertCount(2, $this->listReconciles());
+    }
+
+    public function testReloadCancelsAPendingGrace(): void
+    {
+        $reconciler = $this->createReconciler();
+        $this->activateComponent();
+        $this->recordEveryWorkerReady($reconciler);
+
+        $reconciler->restartAfterReload();
+        $this->timers->delay(Duration::seconds(30));
+
+        self::assertSame([], $this->listReconciles(), 'It waits for the reloaded workers.');
+    }
+
     public function testPruneOffSendsNothing(): void
     {
         $reconciler = $this->createReconciler(prune: false);
@@ -192,7 +219,7 @@ final class ExposureReconcilerTest extends TestCase
     public function testNoWorkersRunsAfterStartup(): void
     {
         $reconciler = new ExposureReconciler(
-            WorkerSlotCollection::fromList([]),
+            AppTopologyFixture::createTopology(),
             $this->exposures,
             $this->client,
             $this->tracker,
@@ -211,7 +238,7 @@ final class ExposureReconcilerTest extends TestCase
     private function createReconciler(bool $prune = true): ExposureReconciler
     {
         return new ExposureReconciler(
-            WorkerSlotCollection::fromList([self::createSlot(0, 'climate'), self::createSlot(1, 'lights')]),
+            AppTopologyFixture::createTopologyForSlots(self::createSlot(0, 'climate'), self::createSlot(1, 'lights')),
             $this->exposures,
             $this->client,
             $this->tracker,

@@ -4,20 +4,13 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Console;
 
-use Stewart\Contracts\Exception\StewartException;
 use Stewart\Runtime\App\AppCatalog;
-use Stewart\Runtime\App\AppCatalogResolver;
-use Stewart\Runtime\App\AppDiscovery;
 use Stewart\Runtime\App\Collection\DiscoveredAppCollection;
 use Stewart\Runtime\App\Collection\UnmarkedAppCollection;
 use Stewart\Runtime\App\DiscoveredApp;
-use Stewart\Runtime\App\UnloadableAppFile;
-use Stewart\Runtime\Broker\AppPlacement;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Config\ConfigLoader;
-use Stewart\Runtime\Container\AppContainerBlueprint;
-use Stewart\Runtime\Container\AppContainerBuilder;
-use Stewart\Runtime\Container\Collection\AppBuildFailureCollection;
+use Stewart\Runtime\Console\Check\ProjectCheck;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
@@ -32,82 +25,37 @@ final class CheckCommand extends StewartCommand
 
     public function __construct(
         private readonly ConfigLoader $config,
-        private readonly AppDiscovery $discovery,
-        private readonly AppCatalogResolver $catalogs,
-        private readonly AppPlacement $placement,
-        private readonly AppContainerBuilder $containers,
-        private readonly string $userServicesFile,
+        private readonly ProjectCheck $projects,
     ) {
         parent::__construct();
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $errors = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
+        $configFile = $this->findConfigOption($input);
+        $result = $this->projects->checkProject($configFile);
 
-        try {
-            $config = $this->config->loadConfig($this->findConfigOption($input));
-            $config->requireHomeAssistant();
-            $discovered = $this->discovery->discover();
-            $apps = $this->catalogs->resolveCatalog($discovered, $config->apps, $config->workers);
-        } catch (StewartException $e) {
-            $errors->writeln('<error>' . $e->getMessage() . '</error>');
+        if (!$result->hasPassed()) {
+            $errors = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
 
-            return Command::FAILURE;
-        }
-
-        if (!$discovered->unloadable->isEmpty()) {
-            foreach ($discovered->unloadable as $file) {
-                $errors->writeln('<error>' . $this->describeUnloadableFile($file) . '</error>');
+            foreach ($result->errors as $error) {
+                $errors->writeln('<error>' . $error . '</error>');
             }
 
             return Command::FAILURE;
         }
 
-        $slots = $this->placement->planWorkerSlots($apps->enabled, $config);
+        $discovered = $result->discovered;
+        $apps = $result->catalog;
 
-        try {
-            $failures = $this->findAppBuildFailures($slots, AppContainerBlueprint::fromProjectConfig($config, $apps->knownIds, $this->userServicesFile));
-        } catch (StewartException $e) {
-            $errors->writeln('<error>' . $e->getMessage() . '</error>');
-
-            return Command::FAILURE;
-        }
-
-        if (!$failures->isEmpty()) {
-            foreach ($apps->enabled as $app) {
-                $failure = $failures->find($app->id);
-
-                if ($failure !== null) {
-                    $errors->writeln('<error>' . $failure->error->getMessage() . '</error>');
-                }
-            }
-
-            return Command::FAILURE;
-        }
-
-        $this->writeMissingConfigFileNotice($output, $this->config->findMissingDefaultFile($this->findConfigOption($input)));
+        $this->writeMissingConfigFileNotice($output, $this->config->findMissingDefaultFile($configFile));
         $this->writeUnmatchedOverridesNotice($output, $apps);
         $this->writeUnmarkedAppNotices($output, $discovered->unmarked);
         $this->writeDisposeDeprecationNotices($output, $discovered->apps);
-        $this->writeAppTable($output, $discovered->apps, $apps, $slots);
+        $this->writeAppTable($output, $discovered->apps, $apps, $result->workerSlots);
         $output->writeln(\sprintf('Configuration and %d automations load; %d enabled.', $discovered->apps->count(), $apps->enabled->count()));
 
         return Command::SUCCESS;
-    }
-
-    /** @throws StewartException */
-    private function findAppBuildFailures(WorkerSlotCollection $slots, AppContainerBlueprint $blueprint): AppBuildFailureCollection
-    {
-        $failures = [];
-
-        foreach ($slots as $slot) {
-            foreach ($this->containers->findAppBuildFailures($slot->listWorkerApps(), $blueprint, $slot->workerId) as $failure) {
-                $failures[] = $failure;
-            }
-        }
-
-        return AppBuildFailureCollection::keyedByAppId($failures);
     }
 
     private function writeUnmarkedAppNotices(OutputInterface $output, UnmarkedAppCollection $unmarked): void
@@ -152,12 +100,5 @@ final class CheckCommand extends StewartCommand
         if ($rows !== []) {
             new Table($output)->setStyle('compact')->setHeaders(['app', 'class', 'worker', 'state'])->setRows($rows)->render();
         }
-    }
-
-    private function describeUnloadableFile(UnloadableAppFile $file): string
-    {
-        $cause = str_replace(["\r", "\n"], ' ', $file->cause->getMessage());
-
-        return \sprintf('%s failed to load: %s', $file->path, $cause);
     }
 }
