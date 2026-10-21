@@ -5,24 +5,42 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
-## [Unreleased]
+## [1.6.0] - 2026-10-21
+
+Edit apps and their settings without restarting: a reload restarts the workers on the current code and app settings
+while the Home Assistant session stays open, and `make watch` reloads on every save.
 
 ### Added
 
-- `stewart reload` (`make reload`), `POST /api/reload` and `SIGHUP` run `stewart check`, then restart every worker on
-  the current code while the Home Assistant session stays open; a failed check leaves everything running.
+- `stewart reload` (`make reload`), `POST /api/reload` and `SIGHUP` check the project as `stewart check` does, then
+  restart every worker on the current code while the Home Assistant session stays open; a failed check leaves
+  everything running. These restarts do not count toward a worker's `restarts`, and a quarantined worker comes back.
   `stewart status` shows the last reload on a `reload` row, and `stewart_reloads_total{outcome}` counts them
-- `stewart run --watch` (`make watch` in new projects) reloads once a saved change to the apps, `services.php` or
-  `stewart.yaml` settles; a changed `.env` or `composer.lock` is logged as needing a restart
+  ([#103](https://github.com/stewart-php/stewart/pull/103))
 - A reload also applies `stewart.yaml` and the app list: added and removed apps, `apps.<id>` options, `enabled`,
   `paused` and `worker`, and `workers`. Any other changed setting keeps its value until a restart, and the `reload`
-  row says `partly applied` and names it
+  row says `partly applied` and names it ([#104](https://github.com/stewart-php/stewart/pull/104))
+- `stewart run --watch` (`make watch` in new projects) reloads once a saved change to the apps, `services.php` or
+  `stewart.yaml` settles; a changed `.env` or `composer.lock` is logged as needing a restart
+  ([#105](https://github.com/stewart-php/stewart/pull/105))
 
 ### Changed
 
 - In Git mode, the image entrypoint forwards `SIGHUP` to the daemon; before, it stopped the container
+  ([#103](https://github.com/stewart-php/stewart/pull/103))
 - The control protocol is 30, so `stewart status` and the other control commands need the same release as the daemon
+  ([#103](https://github.com/stewart-php/stewart/pull/103))
 - After a reload removes an app, its exposed entities are deleted after the usual grace when `expose.prune` is on
+  ([#104](https://github.com/stewart-php/stewart/pull/104))
+
+### Upgrading
+
+1. Run `make upgrade VERSION=1.6`, then restart Stewart (`make up`, `make deploy` or a new image). The control
+   protocol is now 30: until the daemon runs 1.6, `make status` and the other control targets refuse to talk to it.
+   The Home Assistant integration's protocol is unchanged.
+2. The new targets reach only new projects. To use them, copy `reload` and `watch` from the
+   [skeleton's Makefile](https://github.com/stewart-php/skeleton/blob/main/Makefile).
+3. `docker compose kill -s HUP stewart` now reloads Stewart instead of stopping it, also in Git mode.
 
 ## [1.5.0] - 2026-10-21
 

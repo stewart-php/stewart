@@ -25,6 +25,15 @@ release asks you to do something.
 
 ## Upgrade notes
 
+### 1.6
+
+1. Run `make upgrade VERSION=1.6`, then restart Stewart (`make up`, `make deploy` or a new image). The control
+   protocol is now 30: until the daemon runs 1.6, `make status` and the other control targets refuse to talk to it.
+   The Home Assistant integration's protocol is unchanged.
+2. The new targets reach only new projects. To use them, copy `reload` and `watch` from the
+   [skeleton's Makefile](https://github.com/stewart-php/skeleton/blob/main/Makefile).
+3. `docker compose kill -s HUP stewart` now reloads Stewart instead of stopping it, also in Git mode.
+
 ### 1.5
 
 1. Apps without `worker:` can move to another worker once, so the `worker` label of their metrics changes. If
