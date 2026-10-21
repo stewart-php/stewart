@@ -14,6 +14,7 @@ use Stewart\Runtime\Metrics\Source\ComponentMetricSource;
 use Stewart\Runtime\Metrics\Source\ConnectionMetricSource;
 use Stewart\Runtime\Metrics\Source\DaemonMetricSource;
 use Stewart\Runtime\Metrics\Source\DeployMetricSource;
+use Stewart\Runtime\Metrics\Source\MqttMetricSource;
 use Stewart\Runtime\Metrics\Source\StoreMetricSource;
 use Stewart\Runtime\Metrics\Source\WorkerMetricSource;
 use Stewart\Runtime\Tests\Fixtures\Control\StubSnapshotSource;
@@ -25,6 +26,7 @@ use Stewart\Runtime\Tests\Fixtures\Control\StubSnapshotSource;
 #[CoversClass(ConnectionMetricSource::class)]
 #[CoversClass(DaemonMetricSource::class)]
 #[CoversClass(DeployMetricSource::class)]
+#[CoversClass(MqttMetricSource::class)]
 #[CoversClass(StoreMetricSource::class)]
 #[CoversClass(WorkerMetricSource::class)]
 // Set UPDATE_GOLDEN=1 to rewrite tests/Fixtures/Metrics/runtime-metrics.txt from the stub snapshot.
@@ -43,6 +45,7 @@ final class RuntimeMetricsCollectorTest extends TestCase
             new WorkerMetricSource(),
             new AppMetricSource(),
             new StoreMetricSource(),
+            new MqttMetricSource(),
         ]);
 
         $text = new PrometheusTextEncoder()->encodeFamilies($collector->collectMetrics(new StubSnapshotSource()->takeSnapshot()));
@@ -65,6 +68,7 @@ final class RuntimeMetricsCollectorTest extends TestCase
             new StoreMetricSource(),
             new ComponentMetricSource(),
             new DeployMetricSource(),
+            new MqttMetricSource(),
         ]);
 
         foreach ($collector->collectMetrics(new StubSnapshotSource()->takeSnapshot()) as $family) {

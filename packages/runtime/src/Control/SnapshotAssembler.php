@@ -16,6 +16,7 @@ use Stewart\Runtime\Broker\SubscriptionRegistry;
 use Stewart\Runtime\Broker\WorkerSlotRegistry;
 use Stewart\Runtime\Config\ExposeConfig;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
+use Stewart\Runtime\Control\Assembler\MqttStatusBuilder;
 use Stewart\Runtime\Control\Assembler\ScheduleStatusBuilder;
 use Stewart\Runtime\Control\Assembler\StoreHealthBuilder;
 use Stewart\Runtime\Control\Assembler\SubscriptionInfoBuilder;
@@ -51,6 +52,7 @@ final readonly class SnapshotAssembler implements SnapshotSource
         private StoreHealthBuilder $storeHealth,
         private SubscriptionInfoBuilder $subscriptionInfos,
         private ScheduleStatusBuilder $scheduleStatuses,
+        private MqttStatusBuilder $mqttStatus,
         private ProcessMemory $processMemory,
         private Clock $clock,
     ) {}
@@ -70,6 +72,7 @@ final readonly class SnapshotAssembler implements SnapshotSource
             component: $this->buildComponentStatus(),
             reload: $this->buildReloadStatus(),
             schedules: $this->scheduleStatuses->buildScheduleStatuses(),
+            mqtt: $this->mqttStatus->buildMqttStatus(),
         );
     }
 

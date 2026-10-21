@@ -61,6 +61,11 @@ final class RecordingMqttLink implements MqttLink
         $this->unsubscribedFilters[] = $topicFilter;
     }
 
+    public function countQueuedMessages(): int
+    {
+        return 0;
+    }
+
     public function close(): void
     {
         $this->closed = true;

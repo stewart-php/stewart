@@ -9,6 +9,7 @@ use Stewart\Contracts\Time\Clock;
 use Stewart\Mqtt\Connection\MqttConnector;
 use Stewart\Runtime\Broker\Mqtt\MqttLink;
 use Stewart\Runtime\Broker\Mqtt\MqttLinkFactory;
+use Stewart\Runtime\Broker\Mqtt\MqttLinkListener;
 use Stewart\Runtime\Config\MqttConfig;
 use Stewart\Support\Time\Deadlines;
 
@@ -19,10 +20,11 @@ final readonly class ReconnectingMqttLinkFactory implements MqttLinkFactory
         private Deadlines $deadlines,
         private Clock $clock,
         private LoggerInterface $logger,
+        private MqttLinkListener $mqttLinkListener,
     ) {}
 
     public function createMqttLink(MqttConfig $config): MqttLink
     {
-        return new ReconnectingMqttLink($config, $this->connector, new OutboundMqttQueue($config->outboundBuffer), $this->deadlines, $this->clock, $this->logger);
+        return new ReconnectingMqttLink($config, $this->connector, new OutboundMqttQueue($config->outboundBuffer), $this->deadlines, $this->clock, $this->logger, $this->mqttLinkListener);
     }
 }

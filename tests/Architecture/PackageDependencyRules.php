@@ -19,6 +19,7 @@ use Stewart\Runtime\Control\SnapshotAssembler;
 use Stewart\Runtime\Exception\ControlError;
 use Stewart\Runtime\Exception\ControlException;
 use Stewart\Runtime\Logging\LoggerFactory;
+use Stewart\Runtime\Model\MqttDropReason;
 use Stewart\Store\StoreHealth;
 
 final class PackageDependencyRules
@@ -93,6 +94,7 @@ final class PackageDependencyRules
                 Selector::classname(MqttConfig::class),
                 Selector::classname(MqttServerUrl::class),
                 Selector::classname(BackoffPolicy::class),
+                Selector::classname(MqttDropReason::class),
                 Selector::inNamespace('Stewart\Contracts'),
                 Selector::inNamespace('Stewart\Support'),
                 Selector::inNamespace('Amp'),

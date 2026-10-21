@@ -23,6 +23,8 @@ use Stewart\Runtime\Control\Protocol\Status\DeployFailure;
 use Stewart\Runtime\Control\Protocol\Status\DeployStatus;
 use Stewart\Runtime\Control\Protocol\Status\FailureReport;
 use Stewart\Runtime\Control\Protocol\Status\LatencyHistogram;
+use Stewart\Runtime\Control\Protocol\Status\MqttDropCount;
+use Stewart\Runtime\Control\Protocol\Status\MqttStatus;
 use Stewart\Runtime\Control\Protocol\Status\OutboxStatus;
 use Stewart\Runtime\Control\Protocol\Status\RegistrationInfo;
 use Stewart\Runtime\Control\Protocol\Status\ReloadAttempt;
@@ -38,6 +40,7 @@ use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Lifecycle\ReloadOutcome;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
+use Stewart\Runtime\Model\MqttDropReason;
 use Stewart\Runtime\Model\RoutingStats;
 use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\SubscriptionKind;
@@ -183,6 +186,15 @@ final class StatusRendererTest extends TestCase
                 last: new ReloadAttempt(ReloadOutcome::PartlyApplied, self::createInstantAt($now - 30.0), null, ['mqtt', 'log_level']),
             ),
             schedules: [new ScheduleStatus('demo', 0, 'w0:2', 'every 5m', self::createInstantAt($now + 240.0), self::createInstantAt($now - 60.0))],
+            mqtt: new MqttStatus(
+                ConnectionPhase::Reconnecting,
+                self::createInstantAt($now - 20.0),
+                2,
+                Duration::seconds(4),
+                'connection refused',
+                [new MqttDropCount(MqttDropReason::Disconnected, 3), new MqttDropCount(MqttDropReason::BufferFull, 0)],
+                5,
+            ),
         );
 
     }

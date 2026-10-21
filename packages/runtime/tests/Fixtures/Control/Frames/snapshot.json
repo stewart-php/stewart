@@ -192,6 +192,32 @@
                 "next_run_at": "2026-09-26T19:00:00.000000Z",
                 "last_run_at": "2026-09-25T19:00:00.000000Z"
             }
-        ]
+        ],
+        "mqtt": {
+            "phase": "connected",
+            "since": "2026-09-26T10:50:00.000000Z",
+            "reconnects": 1,
+            "last_outage_us": 3000000,
+            "last_error": null,
+            "dropped": [
+                {
+                    "reason": "disconnected",
+                    "count": 2
+                },
+                {
+                    "reason": "send_failed",
+                    "count": 0
+                },
+                {
+                    "reason": "buffer_full",
+                    "count": 0
+                },
+                {
+                    "reason": "gave_up",
+                    "count": 0
+                }
+            ],
+            "outbound_queued": 1
+        }
     }
 }

@@ -17,6 +17,8 @@ use Stewart\Runtime\Control\Protocol\Status\DeployFailure;
 use Stewart\Runtime\Control\Protocol\Status\DeployStatus;
 use Stewart\Runtime\Control\Protocol\Status\FailureReport;
 use Stewart\Runtime\Control\Protocol\Status\LatencyHistogram;
+use Stewart\Runtime\Control\Protocol\Status\MqttDropCount;
+use Stewart\Runtime\Control\Protocol\Status\MqttStatus;
 use Stewart\Runtime\Control\Protocol\Status\OutboxStatus;
 use Stewart\Runtime\Control\Protocol\Status\RegistrationInfo;
 use Stewart\Runtime\Control\Protocol\Status\ReloadAttempt;
@@ -33,6 +35,7 @@ use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Lifecycle\ReloadOutcome;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
+use Stewart\Runtime\Model\MqttDropReason;
 use Stewart\Runtime\Model\RoutingStats;
 use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\SubscriptionKind;
@@ -100,6 +103,15 @@ final class StubSnapshotSource implements SnapshotSource
                 last: new ReloadAttempt(ReloadOutcome::PartlyApplied, Instant::fromIso('2026-09-26T10:55:00Z'), null, ['mqtt']),
             ),
             schedules: [new ScheduleStatus('porch', 0, 'w0:2', 'every day at 19:00', Instant::fromIso('2026-09-26T19:00:00Z'), Instant::fromIso('2026-09-25T19:00:00Z'))],
+            mqtt: new MqttStatus(
+                phase: ConnectionPhase::Connected,
+                since: Instant::fromIso('2026-09-26T10:50:00Z'),
+                reconnects: 1,
+                lastOutage: Duration::seconds(3),
+                lastError: null,
+                dropped: array_map(static fn(MqttDropReason $reason): MqttDropCount => new MqttDropCount($reason, $reason === MqttDropReason::Disconnected ? 2 : 0), MqttDropReason::cases()),
+                outboundQueued: 1,
+            ),
         );
     }
 

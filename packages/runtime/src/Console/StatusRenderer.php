@@ -10,6 +10,7 @@ use Stewart\Runtime\Control\Protocol\Status\AppStatus;
 use Stewart\Runtime\Control\Protocol\Status\ComponentStatus;
 use Stewart\Runtime\Control\Protocol\Status\ConnectionState;
 use Stewart\Runtime\Control\Protocol\Status\DeployStatus;
+use Stewart\Runtime\Control\Protocol\Status\MqttStatus;
 use Stewart\Runtime\Control\Protocol\Status\RegistrationInfo;
 use Stewart\Runtime\Control\Protocol\Status\ReloadStatus;
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
@@ -61,6 +62,7 @@ final readonly class StatusRenderer
             ['reconnects', $this->describeReconnects($connection)],
             ['component', $this->describeComponent($snapshot->component, $now)],
             ['store', $this->describeStoreHealth($snapshot->store, $now)],
+            ['mqtt', $this->describeMqtt($snapshot->mqtt, $now)],
             ['deploy', $this->describeDeploy($snapshot->deploy, $now)],
             ['reload', $this->describeReload($snapshot->reload, $now)],
             ['entities', (string) $daemon->entities],
@@ -252,6 +254,39 @@ final readonly class StatusRenderer
         return $health->lastFailureAt === null
             ? \sprintf('%s, last failure: %s', $state, $health->lastFailure)
             : \sprintf('%s, last failure %s: %s', $state, $this->formatter->formatTimeAgo($health->lastFailureAt, $now), $health->lastFailure);
+    }
+
+    private function describeMqtt(?MqttStatus $mqtt, Instant $now): string
+    {
+        if ($mqtt === null) {
+            return 'not configured';
+        }
+
+        $description = $mqtt->phase->value;
+
+        if ($mqtt->since !== null) {
+            $description .= ' since ' . $this->formatter->formatTimeAgo($mqtt->since, $now);
+        }
+
+        if ($mqtt->lastError !== null) {
+            $description .= ': ' . $mqtt->lastError;
+        }
+
+        if ($mqtt->reconnects > 0) {
+            $description .= \sprintf(', %d %s', $mqtt->reconnects, $mqtt->reconnects === 1 ? 'reconnect' : 'reconnects');
+        }
+
+        if ($mqtt->lastOutage !== null) {
+            $description .= ', last outage ' . $this->formatter->formatDuration($mqtt->lastOutage);
+        }
+
+        if ($mqtt->outboundQueued > 0) {
+            $description .= \sprintf(', %d queued', $mqtt->outboundQueued);
+        }
+
+        $dropped = $mqtt->countDropped();
+
+        return $dropped === 0 ? $description : \sprintf('%s, %d dropped', $description, $dropped);
     }
 
     private function describeDeploy(?DeployStatus $deploy, Instant $now): string

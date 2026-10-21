@@ -23,7 +23,9 @@ use Stewart\Runtime\Broker\Http\Collection\HttpListenerCollection;
 use Stewart\Runtime\Broker\ManifestCheck;
 use Stewart\Runtime\Broker\Message\WorkerMessageDispatcher;
 use Stewart\Runtime\Broker\Message\WorkerMessageHandler;
+use Stewart\Runtime\Broker\Mqtt\MqttConnectionTracker;
 use Stewart\Runtime\Broker\Mqtt\MqttLink;
+use Stewart\Runtime\Broker\Mqtt\MqttLinkListener;
 use Stewart\Runtime\Broker\Mqtt\MqttLinkResolver;
 use Stewart\Runtime\Broker\Mqtt\MqttMessageRouter;
 use Stewart\Runtime\Broker\ProcessWorkerSpawner;
@@ -94,6 +96,7 @@ return static function (ContainerConfigurator $container): void {
     $services->set(SubscriptionRegistry::class)->arg('$brokerSubscriptionListeners', tagged_iterator('stewart.broker_subscription_listener'));
     $services->set(MqttLink::class)->factory([service(MqttLinkResolver::class), 'resolveMqttLink']);
     $services->alias(MqttMessageRouter::class, EventRouter::class);
+    $services->alias(MqttLinkListener::class, MqttConnectionTracker::class);
 
     $services->set(Filesystem::class);
     $services->set(ControlPlane::class)->factory([service(ControlPlaneFactory::class), 'createControlPlane']);

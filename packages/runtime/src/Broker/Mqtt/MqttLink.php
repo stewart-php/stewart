@@ -16,5 +16,7 @@ interface MqttLink
 
     public function unsubscribeFilter(string $topicFilter): void;
 
+    public function countQueuedMessages(): int;
+
     public function close(): void;
 }

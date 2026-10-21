@@ -15,8 +15,10 @@ use Stewart\Mqtt\Connection\MqttConnection;
 use Stewart\Mqtt\Connection\MqttConnector;
 use Stewart\Mqtt\Exception\MqttClientException;
 use Stewart\Runtime\Broker\Mqtt\MqttLink;
+use Stewart\Runtime\Broker\Mqtt\MqttLinkListener;
 use Stewart\Runtime\Broker\Mqtt\MqttMessageRouter;
 use Stewart\Runtime\Config\MqttConfig;
+use Stewart\Runtime\Model\MqttDropReason;
 use Stewart\Support\Time\Deadlines;
 use Throwable;
 
@@ -40,6 +42,7 @@ final class ReconnectingMqttLink implements MqttLink
         private readonly Deadlines $deadlines,
         private readonly Clock $clock,
         private readonly LoggerInterface $logger,
+        private readonly MqttLinkListener $listener,
     ) {
         $this->stop = new DeferredCancellation();
     }
@@ -63,15 +66,15 @@ final class ReconnectingMqttLink implements MqttLink
         }
 
         if ($this->connection === null) {
-            $this->logger->warning('MQTT message dropped while the server is unreachable', ['topic' => $message->topic]);
+            $this->listener->messageDropped(MqttDropReason::Disconnected, $message->topic);
 
             return;
         }
 
         try {
             $this->connection->publishMessage($message)->ignore();
-        } catch (MqttClientException $e) {
-            $this->logger->warning('MQTT message dropped', ['topic' => $message->topic, 'exception' => $e]);
+        } catch (MqttClientException) {
+            $this->listener->messageDropped(MqttDropReason::SendFailed, $message->topic);
         }
     }
 
@@ -93,6 +96,11 @@ final class ReconnectingMqttLink implements MqttLink
         } catch (MqttClientException) {
             // A lost connection drops every subscription with it.
         }
+    }
+
+    public function countQueuedMessages(): int
+    {
+        return $this->outbound->countPending();
     }
 
     public function close(): void
@@ -135,6 +143,7 @@ final class ReconnectingMqttLink implements MqttLink
                     'attempt' => $attempt,
                     'exception' => $e,
                 ]);
+                $this->listener->connectionLost($e->getMessage());
             }
 
             return null;
@@ -152,6 +161,7 @@ final class ReconnectingMqttLink implements MqttLink
     private function runSession(MqttConnection $connection): void
     {
         $this->connection = $connection;
+        $this->listener->connected();
         $this->logger->info('Connected to the MQTT server', ['server' => (string) $this->config->serverUrl, 'filters' => \count($this->activeFilters)]);
 
         foreach (array_keys($this->activeFilters) as $topicFilter) {
@@ -162,8 +172,8 @@ final class ReconnectingMqttLink implements MqttLink
             function (int $sequence, MqttMessage $message) use ($connection): void {
                 $this->sendAtLeastOnce($connection, $sequence, $message);
             },
-            function (MqttMessage $message, int $sendAttempts): void {
-                $this->logger->error('MQTT message dropped; the server never acknowledged it', ['topic' => $message->topic, 'attempts' => $sendAttempts]);
+            function (MqttMessage $message): void {
+                $this->listener->messageDropped(MqttDropReason::GaveUp, $message->topic);
             },
         );
 
@@ -172,13 +182,16 @@ final class ReconnectingMqttLink implements MqttLink
 
         if (!$this->stop->getCancellation()->isRequested()) {
             $this->logger->warning('Lost the MQTT connection', ['server' => (string) $this->config->serverUrl, 'exception' => $lostBecause]);
+            $this->listener->connectionLost($lostBecause?->getMessage() ?? 'the server closed the connection');
         }
     }
 
     private function publishAtLeastOnce(MqttMessage $message): void
     {
-        if ($this->outbound->isFull()) {
-            $this->logger->warning('MQTT outbound buffer is full; dropping the oldest message', ['buffered' => $this->outbound->countPending()]);
+        $evicted = $this->outbound->isFull() ? $this->outbound->findOldestMessage() : null;
+
+        if ($evicted !== null) {
+            $this->listener->messageDropped(MqttDropReason::BufferFull, $evicted->topic);
         }
 
         $sequence = $this->outbound->enqueueMessage($message);

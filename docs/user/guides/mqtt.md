@@ -50,6 +50,18 @@ match `$SYS/…` topics.
 QoS 0 and 1 are supported. A QoS 1 message published while the server is unreachable waits, up to
 `mqtt.outbound_buffer` messages, and is sent after the reconnect.
 
+## Watching the connection
+
+`make status` shows the connection on its `mqtt` row: `connected since 5m ago, 1 reconnect, last outage 3s`, or
+`reconnecting since 20s ago: Connection refused`, followed by the QoS 1 messages still waiting and how many messages
+were dropped. A message is dropped when it is QoS 0 and the server is unreachable, when sending it fails, when a full
+`mqtt.outbound_buffer` pushes out the oldest, or when the server keeps dropping the connection over it. The log warns
+about the first drop of each kind and then every 100th, with the count so far.
+
+The same figures are metrics: `stewart_mqtt_connection_phase{phase}`, `stewart_mqtt_reconnects_total`,
+`stewart_mqtt_messages_dropped_total{reason}` and `stewart_mqtt_outbound_queued`; the
+[metrics reference](../reference/metrics.md) lists them.
+
 ## Testing
 
 `$harness->mqtt` stands in for the server. `pushMessage()` sends a message to the app, and `published` lists what the

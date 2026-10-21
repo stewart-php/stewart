@@ -20,6 +20,8 @@ use Stewart\Runtime\Broker\ConnectionTracker;
 use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\Deploy\DeployState;
 use Stewart\Runtime\Broker\HaCallSlots;
+use Stewart\Runtime\Broker\Mqtt\DisabledMqttLink;
+use Stewart\Runtime\Broker\Mqtt\MqttConnectionTracker;
 use Stewart\Runtime\Broker\Reload\ReloadState;
 use Stewart\Runtime\Broker\SubscriptionRegistry;
 use Stewart\Runtime\Broker\WorkerHandle;
@@ -27,6 +29,7 @@ use Stewart\Runtime\Broker\WorkerPool;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Config\ExposeConfig;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
+use Stewart\Runtime\Control\Assembler\MqttStatusBuilder;
 use Stewart\Runtime\Control\Assembler\ScheduleStatusBuilder;
 use Stewart\Runtime\Control\Assembler\StoreHealthBuilder;
 use Stewart\Runtime\Control\Assembler\SubscriptionInfoBuilder;
@@ -173,6 +176,7 @@ final readonly class BrokerStateFixture
             storeHealth: new StoreHealthBuilder($pools->slots, ConfigFixture::createPersistenceConfig()),
             subscriptionInfos: new SubscriptionInfoBuilder($pools->slots, $this->registry),
             scheduleStatuses: new ScheduleStatusBuilder($pools->slots),
+            mqttStatus: new MqttStatusBuilder(ConfigFixture::createStewartConfig(), new MqttConnectionTracker($this->timers->clock, new NullLogger()), new DisabledMqttLink(new NullLogger())),
             processMemory: new ProcessMemory(),
             clock: $this->timers->clock,
         );

@@ -70,6 +70,13 @@ final class OutboundMqttQueue
         }
     }
 
+    public function findOldestMessage(): ?MqttMessage
+    {
+        $oldest = array_key_first($this->pendingBySequence);
+
+        return $oldest === null ? null : $this->pendingBySequence[$oldest]->message;
+    }
+
     public function countPending(): int
     {
         return \count($this->pendingBySequence);
