@@ -38,6 +38,7 @@ token. [Status and control](../guides/status.md#metrics) explains how to turn th
 | `stewart_ha_entities` | gauge |  | Entities in the Home Assistant state cache. |
 | `stewart_ha_last_outage_seconds` | gauge |  | Length of the last Home Assistant outage. |
 | `stewart_ha_reconnects_total` | counter |  | Home Assistant reconnects since the daemon started. |
+| `stewart_reloads_total` | counter | `outcome` | Reloads since the daemon started, by outcome. |
 | `stewart_routing_cache_hits_total` | counter |  | Routing lookups answered from the cache. |
 | `stewart_routing_cache_misses_total` | counter |  | Routing lookups that missed the cache. |
 | `stewart_routing_cached_keys` | gauge |  | Routing keys with a cached match. |

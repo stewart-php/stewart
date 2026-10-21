@@ -6,8 +6,10 @@ image="${RUNTIME_IMAGE:?set RUNTIME_IMAGE to the image under test}"
 user="$(id -u):$(id -g)"
 work=var/image-test
 volume="stewart-image-test-$$"
+container="stewart-image-test-$$"
 
 cleanup() {
+    docker rm -f "$container" > /dev/null 2>&1 || true
     docker volume rm -f "$volume" > /dev/null 2>&1 || true
 }
 trap cleanup EXIT
@@ -135,5 +137,20 @@ docker run --rm -v "$volume:/app" -v "$PWD:/monorepo:ro" "$image" git -c safe.di
 boot prepare
 [ "$(current_commit)" = "$(head_commit)" ] || fail_test 'the old checkout was not replaced by a release'
 ! boot test -e /app/.git || fail_test 'the old checkout was left behind'
+
+echo '--- SIGHUP reaches the daemon instead of stopping the container'
+docker run -d --name "$container" -v "$volume:/app" -v "$PWD:/monorepo:ro" \
+    -e STEWART_BOOT_GIT_URL="file:///monorepo/$work/project.git" -e STEWART_BOOT_GIT_REF=main \
+    -e STEWART_HOME_ASSISTANT__URL=ws://example.invalid/api/websocket -e STEWART_HOME_ASSISTANT__TOKEN=image-test \
+    -e STEWART_CONTROL__TOKEN=image-test "$image" > /dev/null
+for _ in $(seq 60); do
+    docker logs "$container" 2>&1 | grep -q 'Control socket listening' && break
+    sleep 0.5
+done
+docker kill -s HUP "$container" > /dev/null
+sleep 2
+[ "$(docker inspect -f '{{.State.Running}}' "$container")" = true ] || fail_test 'SIGHUP stopped the container'
+docker logs "$container" 2>&1 | grep -q 'Reload signal ignored' || fail_test 'the daemon never saw SIGHUP'
+docker rm -f "$container" > /dev/null
 
 echo 'runtime image: ok'

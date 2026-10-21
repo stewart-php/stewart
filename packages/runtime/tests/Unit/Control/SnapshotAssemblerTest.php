@@ -18,6 +18,8 @@ use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\Deploy\CommitId;
 use Stewart\Runtime\Broker\Deploy\DeployState;
 use Stewart\Runtime\Broker\Deploy\ReleaseFailure;
+use Stewart\Runtime\Broker\Reload\ReloadResult;
+use Stewart\Runtime\Broker\Reload\ReloadState;
 use Stewart\Runtime\Control\Protocol\Status\DaemonInfo;
 use Stewart\Runtime\Control\Protocol\Status\RegistrationInfo;
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
@@ -27,6 +29,7 @@ use Stewart\Runtime\Ipc\Message\Pong;
 use Stewart\Runtime\Lifecycle\AppState;
 use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
+use Stewart\Runtime\Lifecycle\ReloadOutcome;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionId;
@@ -119,6 +122,21 @@ final class SnapshotAssemblerTest extends TestCase
         self::assertSame(2, $status->failures);
         self::assertNotNull($status->lastFailure);
         self::assertSame([str_repeat('c', 40), 'second'], [$status->lastFailure->commit, $status->lastFailure->reason]);
+    }
+
+    public function testReloadStatusCarriesCountsAndTheLastResult(): void
+    {
+        $state = new ReloadState();
+        $state->recordResult(new ReloadResult(ReloadOutcome::Applied, Instant::fromIso('2026-10-08T11:00:00Z')));
+        $state->recordResult(new ReloadResult(ReloadOutcome::Failed, Instant::fromIso('2026-10-08T11:30:00Z'), 'apps/Porch.php failed to load'));
+        $state->beginReload();
+
+        $status = $this->broker->createSnapshotAssembler($this->startTime, new ConnectionTracker($this->broker->timers->clock), reloadState: $state)->takeSnapshot()->reload;
+
+        self::assertTrue($status?->underway);
+        self::assertSame([1, 0, 1], [$status->applied, $status->partlyApplied, $status->failed]);
+        self::assertSame(ReloadOutcome::Failed, $status->last?->outcome);
+        self::assertSame('apps/Porch.php failed to load', $status->last->error);
     }
 
     public function testComponentStatusCarriesDetectionAndInstance(): void

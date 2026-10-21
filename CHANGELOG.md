@@ -5,6 +5,19 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
+## [Unreleased]
+
+### Added
+
+- `stewart reload` (`make reload`), `POST /api/reload` and `SIGHUP` run `stewart check`, then restart every worker on
+  the current code while the Home Assistant session stays open; a failed check leaves everything running.
+  `stewart status` shows the last reload on a `reload` row, and `stewart_reloads_total{outcome}` counts them
+
+### Changed
+
+- In Git mode, the image entrypoint forwards `SIGHUP` to the daemon; before, it stopped the container
+- The control protocol is 30, so `stewart status` and the other control commands need the same release as the daemon
+
 ## [1.5.0] - 2026-10-21
 
 Mistakes surface before they reach the server: `stewart check` builds every app, and new projects run it in CI and

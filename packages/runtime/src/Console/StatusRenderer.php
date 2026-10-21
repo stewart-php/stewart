@@ -10,6 +10,7 @@ use Stewart\Runtime\Control\Protocol\Status\AppStatus;
 use Stewart\Runtime\Control\Protocol\Status\ComponentStatus;
 use Stewart\Runtime\Control\Protocol\Status\ConnectionState;
 use Stewart\Runtime\Control\Protocol\Status\DeployStatus;
+use Stewart\Runtime\Control\Protocol\Status\ReloadStatus;
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
 use Stewart\Runtime\Control\Protocol\Status\WorkerStatus;
 use Stewart\Runtime\Lifecycle\ComponentState;
@@ -53,6 +54,7 @@ final readonly class StatusRenderer
             ['component', $this->describeComponent($snapshot->component, $now)],
             ['store', $this->describeStoreHealth($snapshot->store, $now)],
             ['deploy', $this->describeDeploy($snapshot->deploy, $now)],
+            ['reload', $this->describeReload($snapshot->reload, $now)],
             ['entities', (string) $daemon->entities],
             ['time zone', $daemon->timeZone],
             ['workers', \sprintf('%d live of %d', $broker->liveWorkers, $broker->workers)],
@@ -229,6 +231,31 @@ final readonly class StatusRenderer
             $this->formatter->formatTimeAgo($deploy->lastFailure->failedAt, $now),
             $deploy->lastFailure->reason,
         );
+    }
+
+    private function describeReload(?ReloadStatus $reload, Instant $now): string
+    {
+        if ($reload?->underway === true) {
+            return 'underway';
+        }
+
+        $last = $reload?->last;
+
+        if ($last === null) {
+            return 'never';
+        }
+
+        $description = \sprintf('%s %s', $last->outcome->describeOutcome(), $this->formatter->formatTimeAgo($last->finishedAt, $now));
+
+        if ($last->error !== null) {
+            $description .= ': ' . $last->error;
+        }
+
+        if ($last->settingsNeedingRestart !== []) {
+            $description .= '; restart to apply ' . implode(', ', $last->settingsNeedingRestart);
+        }
+
+        return $description;
     }
 
     private function formatCalls(AppStatus $app): string

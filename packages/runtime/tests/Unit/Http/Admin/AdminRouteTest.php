@@ -37,6 +37,12 @@ final class AdminRouteTest extends TestCase
         self::assertSame(['POST'], AdminAction::RestartWorker->listAllowedMethods());
     }
 
+    public function testReloadPathReloads(): void
+    {
+        self::assertEquals(new AdminRoute(AdminAction::Reload, null), AdminRoute::fromPath('/api/reload'));
+        self::assertSame(['POST'], AdminAction::Reload->listAllowedMethods());
+    }
+
     public function testMetricsPathShowsMetrics(): void
     {
         self::assertEquals(new AdminRoute(AdminAction::ShowMetrics, null), AdminRoute::fromPath('/metrics'));
@@ -61,6 +67,7 @@ final class AdminRouteTest extends TestCase
         yield 'worker restart trailing slash' => ['/api/workers/1/restart/'];
         yield 'action trailing slash' => ['/api/apps/demo/pause/'];
         yield 'action on list' => ['/api/apps/pause/now'];
+        yield 'reload trailing slash' => ['/api/reload/'];
         yield 'metrics trailing slash' => ['/metrics/'];
         yield 'metrics nested' => ['/metrics/apps'];
     }

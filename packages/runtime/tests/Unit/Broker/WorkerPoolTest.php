@@ -594,6 +594,74 @@ final class WorkerPoolTest extends TestCase
         self::assertSame(WorkerPhase::Stopped, $this->getPhaseOf(0));
     }
 
+    public function testReplacingEveryWorkerCountsNoRestart(): void
+    {
+        $pool = $this->createPool();
+        $pool->startWorker(self::createSlot(0), $this->listener);
+        $pool->startWorker(self::createSlot(1), $this->listener);
+
+        $pool->replaceEveryWorker();
+        EventLoopTicks::settleUntil(fn(): bool => $this->spawner->countSpawnedProcesses() === 4 && $this->getPhaseOf(0) === WorkerPhase::Live && $this->getPhaseOf(1) === WorkerPhase::Live);
+
+        self::assertEqualsCanonicalizing(['0: reload', '1: reload'], $this->listener->gone);
+        self::assertSame(0, $this->slots->findSlotState(new WorkerId(0))?->restarts);
+        self::assertSame(0, $this->slots->findSlotState(new WorkerId(1))?->restarts);
+        self::assertNull($this->findLogged('Worker died'));
+    }
+
+    public function testReplacingEveryWorkerRevivesAQuarantinedOne(): void
+    {
+        $pool = $this->createPool(self::createSupervisionConfig(restartAttempts: 0));
+        $pool->startWorker(self::createSlot(0), $this->listener);
+        $this->spawner->getLatestProcess(0)->crash();
+        EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) === WorkerPhase::Quarantined);
+
+        $pool->replaceEveryWorker();
+        EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) === WorkerPhase::Live);
+
+        self::assertSame(2, $this->spawner->countSpawnedProcesses());
+    }
+
+    public function testReplacingEveryWorkerRunsAScheduledRestartAtOnce(): void
+    {
+        $pool = $this->createPool();
+        $pool->startWorker(self::createSlot(0), $this->listener);
+        $this->spawner->getLatestProcess(0)->crash();
+        EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) === WorkerPhase::RestartScheduled);
+
+        $pool->replaceEveryWorker();
+        EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) === WorkerPhase::Live);
+
+        self::assertSame(2, $this->spawner->countSpawnedProcesses());
+        self::assertSame(0, $this->timers->countPendingTimers(), 'The backoff timer is cancelled.');
+    }
+
+    public function testWorkerStillStartingIsReplacedOnceLive(): void
+    {
+        $spawning = new Latch();
+        $this->spawner = new FakeWorkerSpawner(spawnLatch: $spawning);
+        $pool = $this->createPool();
+        async(fn(): bool => $pool->startWorker(self::createSlot(0), $this->listener));
+        EventLoopTicks::settleUntil(fn(): bool => $this->getPhaseOf(0) === WorkerPhase::Spawning);
+
+        $pool->replaceEveryWorker();
+        $spawning->open();
+        EventLoopTicks::settleUntil(fn(): bool => $this->spawner->countSpawnedProcesses() === 2 && $this->getPhaseOf(0) === WorkerPhase::Live);
+
+        self::assertSame(['0: reload'], $this->listener->gone);
+        self::assertSame(0, $this->slots->findSlotState(new WorkerId(0))?->restarts);
+    }
+
+    public function testReplacingAfterShutdownSpawnsNothing(): void
+    {
+        $pool = $this->createPool();
+        $pool->shutdown('test', Duration::seconds(0.01));
+
+        $pool->replaceEveryWorker();
+
+        self::assertSame(0, $this->spawner->countSpawnedProcesses());
+    }
+
     private function createPool(?SupervisionConfig $supervision = null): WorkerPool
     {
         $pools = WorkerPoolFixture::createWorkerPool(

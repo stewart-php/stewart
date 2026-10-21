@@ -73,6 +73,11 @@ final class WorkerPool
 
         $this->attachHandle($state, $slot, $process, $listener);
 
+        // A reload asked for while this process started needs one that loads the code as it is now.
+        if ($state->takeReplacementRequest()) {
+            async(fn() => $this->replaceWorker($state))->ignore();
+        }
+
         return true;
     }
 
@@ -94,9 +99,25 @@ final class WorkerPool
         $this->restartPolicy->forgetRestarts($slot->workerId);
         $stopping = $state->phase === WorkerPhase::Live ? $state->beginStopping() : null;
 
-        async(fn() => $this->respawnOnRequest($state, $stopping))->ignore();
+        async(fn() => $this->respawnOnRequest($state, $stopping, 'restart requested'))->ignore();
 
         return WorkerRestartOutcome::Begun;
+    }
+
+    public function replaceEveryWorker(): void
+    {
+        if (!$this->running) {
+            return;
+        }
+
+        $replacements = [];
+
+        foreach ($this->slots->listSlotStates() as $state) {
+            $this->restartPolicy->forgetRestarts($state->slot->workerId);
+            $replacements[] = async(fn() => $this->replaceWorker($state));
+        }
+
+        awaitAll($replacements);
     }
 
     public function markReady(WorkerHandle $handle): void
@@ -305,12 +326,29 @@ final class WorkerPool
         );
     }
 
-    private function respawnOnRequest(WorkerSlotState $state, ?WorkerHandle $stopping): void
+    // Not counted as a restart: a reload replaces workers on purpose, and revives quarantined ones.
+    private function replaceWorker(WorkerSlotState $state): void
+    {
+        if ($state->isSpawning()) {
+            $state->requestReplacement();
+
+            return;
+        }
+
+        // A stopping worker's respawn already starts a process after the reload was asked for.
+        if ($state->isStopping()) {
+            return;
+        }
+
+        $this->respawnOnRequest($state, $state->phase === WorkerPhase::Live ? $state->beginReplacing() : null, 'reload');
+    }
+
+    private function respawnOnRequest(WorkerSlotState $state, ?WorkerHandle $stopping, string $reason): void
     {
         if ($stopping !== null) {
-            $stopping->sendShutdown(new Shutdown('restart requested', $this->config->shutdownGrace));
+            $stopping->sendShutdown(new Shutdown($reason, $this->config->shutdownGrace));
             $this->awaitWorkerExit($stopping, $this->timers->timeout($this->config->shutdownGrace->plus(Duration::milliseconds(self::JOIN_MARGIN_MILLISECONDS))));
-            $state->listener->workerGone($stopping, 'restart requested');
+            $state->listener->workerGone($stopping, $reason);
         }
 
         $this->respawnWorker($state);

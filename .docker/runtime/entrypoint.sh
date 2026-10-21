@@ -295,6 +295,7 @@ run_releases() {
         daemon_pid=$!
         trap 'kill -TERM "$daemon_pid" 2> /dev/null || true' TERM
         trap 'kill -INT "$daemon_pid" 2> /dev/null || true' INT
+        trap 'kill -HUP "$daemon_pid" 2> /dev/null || true' HUP
 
         status=0
         wait "$daemon_pid" || status=$?
@@ -303,7 +304,7 @@ run_releases() {
             status=0
             wait "$daemon_pid" || status=$?
         done
-        trap - TERM INT
+        trap - TERM INT HUP
 
         if [ "$status" -ne "$restart_exit_code" ] || [ ! -L "$next_link" ]; then
             exit "$status"

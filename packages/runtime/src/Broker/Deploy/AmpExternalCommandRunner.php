@@ -19,9 +19,10 @@ use function Amp\ByteStream\buffer;
 
 final readonly class AmpExternalCommandRunner implements ExternalCommandRunner
 {
-    public function runCommand(array $command, Duration $timeout, Cancellation $cancellation): ExternalCommandResult
+    public function runCommand(array $command, Duration $timeout, Cancellation $cancellation, array $environmentOverrides = []): ExternalCommandResult
     {
-        $process = Process::start($command);
+        // A non-empty environment replaces the inherited one, so the overrides go on top of it.
+        $process = Process::start($command, environment: $environmentOverrides === [] ? [] : [...getenv(), ...$environmentOverrides]);
         $process->getStdin()->close();
         // Both pipes drain while the command runs, so a chatty composer install cannot fill one and stall.
         /** @var Future<string> $output */

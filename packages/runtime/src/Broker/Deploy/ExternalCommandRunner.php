@@ -13,8 +13,9 @@ interface ExternalCommandRunner
 {
     /**
      * @param non-empty-list<string> $command
+     * @param array<string, string> $environmentOverrides
      * @throws DeployException
      * @throws CancelledException
      */
-    public function runCommand(array $command, Duration $timeout, Cancellation $cancellation): ExternalCommandResult;
+    public function runCommand(array $command, Duration $timeout, Cancellation $cancellation, array $environmentOverrides = []): ExternalCommandResult;
 }

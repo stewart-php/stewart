@@ -16,6 +16,7 @@ use Stewart\Contracts\Exception\ExceptionReason;
 use Stewart\Contracts\Exception\IdentifierError;
 use Stewart\Contracts\Exception\StewartException;
 use Stewart\Runtime\Admin\RuntimeAdmin;
+use Stewart\Runtime\Broker\Reload\ReloadTrigger;
 use Stewart\Runtime\Control\Protocol\Frame\CommandResult;
 use Stewart\Runtime\Control\Protocol\Frame\RequestFailed;
 use Stewart\Runtime\Exception\AppError;
@@ -88,6 +89,7 @@ final readonly class AdminRequestHandler implements RequestHandler
             AdminAction::ResumeApp => $this->admin->resumeApp(new AppId((string) $route->resourceId), AppPauseSource::Http),
             AdminAction::ResetApp => $this->admin->resetApp(new AppId((string) $route->resourceId), AppPauseSource::Http),
             AdminAction::RestartWorker => $this->admin->restartWorker((string) $route->resourceId),
+            AdminAction::Reload => $this->admin->reload(ReloadTrigger::Http),
             AdminAction::ShowMetrics => throw new LogicException('Metrics are answered before the JSON routes.'),
         };
     }

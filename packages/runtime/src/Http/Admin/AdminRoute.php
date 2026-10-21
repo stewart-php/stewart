@@ -8,6 +8,8 @@ final readonly class AdminRoute
 {
     private const string METRICS_PATH = '/metrics';
 
+    private const string RELOAD_PATH = '/api/reload';
+
     private const string APPS_PATH = '~\A/api/apps(?:/([^/]+)(?:/(pause|resume|reset))?)?\z~';
 
     private const string WORKER_RESTART_PATH = '~\A/api/workers/([^/]+)/restart\z~';
@@ -21,6 +23,10 @@ final readonly class AdminRoute
     {
         if ($path === self::METRICS_PATH) {
             return new self(AdminAction::ShowMetrics, null);
+        }
+
+        if ($path === self::RELOAD_PATH) {
+            return new self(AdminAction::Reload, null);
         }
 
         if (preg_match(self::WORKER_RESTART_PATH, $path, $matches) === 1) {

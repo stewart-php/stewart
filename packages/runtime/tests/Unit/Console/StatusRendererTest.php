@@ -23,6 +23,8 @@ use Stewart\Runtime\Control\Protocol\Status\DeployStatus;
 use Stewart\Runtime\Control\Protocol\Status\FailureReport;
 use Stewart\Runtime\Control\Protocol\Status\LatencyHistogram;
 use Stewart\Runtime\Control\Protocol\Status\OutboxStatus;
+use Stewart\Runtime\Control\Protocol\Status\ReloadAttempt;
+use Stewart\Runtime\Control\Protocol\Status\ReloadStatus;
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
 use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
 use Stewart\Runtime\Control\Protocol\Status\WorkerStatus;
@@ -31,6 +33,7 @@ use Stewart\Runtime\Lifecycle\AppPauseSource;
 use Stewart\Runtime\Lifecycle\AppState;
 use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
+use Stewart\Runtime\Lifecycle\ReloadOutcome;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
 use Stewart\Runtime\Model\RoutingStats;
 use Stewart\Runtime\Model\ServiceCallOutcome;
@@ -135,6 +138,12 @@ final class StatusRendererTest extends TestCase
                 new DeployFailure(str_repeat('b', 40), 'apps/Porch.php failed to load: syntax error', self::createInstantAt($now - 120.0)),
             ),
             component: $component,
+            reload: new ReloadStatus(
+                applied: 3,
+                partlyApplied: 1,
+                failed: 1,
+                last: new ReloadAttempt(ReloadOutcome::PartlyApplied, self::createInstantAt($now - 30.0), null, ['mqtt', 'log_level']),
+            ),
         );
 
     }

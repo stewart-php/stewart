@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Broker\Deploy;
 
 use Amp\Cancellation;
 use Amp\CancelledException;
+use Stewart\Runtime\Broker\DaemonLaunchOptions;
 use Stewart\Runtime\Config\GitDeployConfig;
 use Stewart\Runtime\Exception\DeployError;
 use Stewart\Runtime\Exception\DeployException;
@@ -19,7 +20,7 @@ final readonly class ReleaseScript
     public function __construct(
         private ExternalCommandRunner $commands,
         private GitDeployConfig $gitDeploy,
-        private ?string $releaseCheckConfigFile,
+        private DaemonLaunchOptions $launch,
     ) {}
 
     /**
@@ -39,8 +40,8 @@ final readonly class ReleaseScript
     {
         $arguments = ['release-check', $commit->value];
 
-        if ($this->releaseCheckConfigFile !== null) {
-            $arguments[] = '--config=' . $this->releaseCheckConfigFile;
+        if ($this->launch->configFile !== null) {
+            $arguments[] = '--config=' . $this->launch->configFile;
         }
 
         $result = $this->commands->runCommand([self::ENTRYPOINT, ...$arguments], $this->gitDeploy->prepareTimeout, $cancellation);

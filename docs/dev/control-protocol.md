@@ -31,6 +31,7 @@ A session is always:
 | `snapshot_request` | `snapshot` `{snapshot}`: the whole `RuntimeSnapshot` |
 | `pause_app`, `resume_app`, `reset_app` `{app_id}` | `command_result` `{changed, message, warning}` |
 | `restart_worker` `{worker_id}` | `command_result` |
+| `reload` | `command_result`, once the reload has begun |
 | (any request that fails) | `request_failed` `{reason, message}` |
 | | `bye` `{reason}` |
 

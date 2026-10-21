@@ -14,6 +14,7 @@ use Stewart\Runtime\App\AppCatalogResolver;
 use Stewart\Runtime\App\AppDiscovery;
 use Stewart\Runtime\App\AppSelection;
 use Stewart\Runtime\App\DiscoveryResult;
+use Stewart\Runtime\Broker\DaemonLaunchOptions;
 use Stewart\Runtime\Config\ConfigLoader;
 use Stewart\Runtime\Kernel\BrokerKernel;
 use Stewart\Runtime\Lifecycle\BrokerStopOutcome;
@@ -100,7 +101,7 @@ final class RunCommand extends StewartCommand
             $logger->notice('Running only the automations named by --only.', ['apps' => $selection->onlyIds->toStrings()]);
         }
 
-        return new PreparedDaemon($this->brokers->createBroker($config, $apps, $logger, $configOption), $logger);
+        return new PreparedDaemon($this->brokers->createBroker($config, $apps, $logger, new DaemonLaunchOptions($configOption)), $logger);
     }
 
     private function noteMissingConfigFile(?string $missingConfigFile, LoggerInterface $logger): void

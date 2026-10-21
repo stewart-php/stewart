@@ -32,6 +32,7 @@ use Stewart\Runtime\Metrics\Source\WorkerMetricSource;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
+use Stewart\Runtime\Tests\Fixtures\Broker\ReloadCoordinatorFixture;
 use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Runtime\Tests\Fixtures\Control\BrokerStateFixture;
 use Stewart\Testing\Store\InMemoryStoreBackend;
@@ -83,6 +84,7 @@ final readonly class AdminApiFixture
             new AppStatusBuilder($metrics, $this->registry, FakeHomeAssistant::createUnreachable()->exposures),
             WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), $apps)]),
             $this->broker->pools->pool,
+            ReloadCoordinatorFixture::createReloadCoordinator($this->broker->pools),
         );
         $this->metricsExporter = $this->createMetricsExporter($startTime, $metrics);
     }

@@ -49,6 +49,7 @@ final readonly class AdminApiPage implements ReferencePage
             AdminAction::ResumeApp => '/api/apps/{id}/resume',
             AdminAction::ResetApp => '/api/apps/{id}/reset',
             AdminAction::RestartWorker => '/api/workers/{id}/restart',
+            AdminAction::Reload => '/api/reload',
             AdminAction::ShowMetrics => '/metrics',
         };
 
@@ -68,6 +69,7 @@ final readonly class AdminApiPage implements ReferencePage
             AdminAction::ResumeApp => 'Resumes an app, like `stewart app:resume`',
             AdminAction::ResetApp => 'Forgets a stored pause or resume, like `stewart app:reset`',
             AdminAction::RestartWorker => 'Restarts a worker, like `stewart worker:restart`',
+            AdminAction::Reload => 'Checks the project, then restarts every worker on the current code, like `stewart reload`',
             AdminAction::ShowMetrics => 'Prometheus metrics; see the [metrics reference](metrics.md)',
         };
     }

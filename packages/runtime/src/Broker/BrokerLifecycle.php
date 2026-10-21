@@ -9,6 +9,7 @@ use Stewart\Runtime\Broker\Deploy\ReleasePoller;
 use Stewart\Runtime\Broker\Http\Collection\HttpListenerCollection;
 use Stewart\Runtime\Broker\Mqtt\MqttLink;
 use Stewart\Runtime\Broker\Mqtt\MqttMessageRouter;
+use Stewart\Runtime\Broker\Reload\ReloadCoordinator;
 use Stewart\Runtime\Lifecycle\BrokerStopOutcome;
 use Stewart\Runtime\Time\ProcessTimeZone;
 use Stewart\Store\StoreBackend;
@@ -32,6 +33,7 @@ final readonly class BrokerLifecycle
         private MqttMessageRouter $mqttRouter,
         private AppPauseService $pauses,
         private ReleasePoller $releases,
+        private ReloadCoordinator $reloads,
         private LoggerInterface $logger,
         private ?StoreBackend $store = null,
     ) {}
@@ -65,6 +67,7 @@ final readonly class BrokerLifecycle
                 $this->drift->warnIfGeneratedCodeDrifted();
                 $this->workers->startWorkers();
                 $this->releases->startPolling();
+                $this->reloads->startAccepting();
             }
 
             return $this->run->awaitStopped();
@@ -73,6 +76,7 @@ final readonly class BrokerLifecycle
 
             throw $e;
         } finally {
+            $this->reloads->stopAccepting();
             $this->releases->stopPolling();
             $this->stopHttpListeners();
             $this->stopControlPlane();

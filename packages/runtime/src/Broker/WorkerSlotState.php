@@ -26,6 +26,8 @@ final class WorkerSlotState
 
     public private(set) int $quarantines = 0;
 
+    private bool $replacementRequested = false;
+
     private OutboxStatus $retiredOutboxes;
 
     public function __construct(
@@ -61,6 +63,7 @@ final class WorkerSlotState
     {
         $this->moveTo(WorkerPhase::Spawning);
         $this->cancelRestart();
+        $this->replacementRequested = false;
     }
 
     public function markSpawnFailed(): void
@@ -92,11 +95,31 @@ final class WorkerSlotState
 
     public function beginStopping(): WorkerHandle
     {
-        $this->moveTo(WorkerPhase::Stopping);
-        $this->cancelReadyDeadline();
+        $handle = $this->beginReplacing();
         ++$this->restarts;
 
+        return $handle;
+    }
+
+    public function beginReplacing(): WorkerHandle
+    {
+        $this->moveTo(WorkerPhase::Stopping);
+        $this->cancelReadyDeadline();
+
         return $this->handle ?? throw new LogicException(\sprintf('Worker %d is stopping without a process.', $this->slot->workerId->value));
+    }
+
+    public function requestReplacement(): void
+    {
+        $this->replacementRequested = true;
+    }
+
+    public function takeReplacementRequest(): bool
+    {
+        $requested = $this->replacementRequested;
+        $this->replacementRequested = false;
+
+        return $requested;
     }
 
     public function recordScheduledRestart(TimerHandle $timer, Instant $dueAt): void

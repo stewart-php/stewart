@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Tests\Unit\Broker\Deploy;
 use Amp\NullCancellation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Stewart\Runtime\Broker\DaemonLaunchOptions;
 use Stewart\Runtime\Broker\Deploy\CommitId;
 use Stewart\Runtime\Broker\Deploy\ExternalCommandResult;
 use Stewart\Runtime\Broker\Deploy\PreparedRelease;
@@ -81,6 +82,6 @@ final class ReleaseScriptTest extends TestCase
 
     private function createScript(?string $configFile = null): ReleaseScript
     {
-        return new ReleaseScript($this->commands, ConfigFixture::createStewartConfig()->gitDeploy, $configFile);
+        return new ReleaseScript($this->commands, ConfigFixture::createStewartConfig()->gitDeploy, new DaemonLaunchOptions($configFile));
     }
 }

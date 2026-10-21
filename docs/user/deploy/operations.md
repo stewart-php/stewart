@@ -30,6 +30,13 @@ The same goes for the admin port (`http.admin.listen`) and a TCP control socket 
 
 [Status and control](../guides/status.md#health-checks) describes both answers.
 
+## Reloading
+
+`make reload`, or `docker compose kill -s HUP stewart`, checks the project and restarts every worker on the code as it
+is now, while the connection to Home Assistant stays open. It is for edited apps, not for updates: a changed
+`composer.lock` or a new Stewart version needs a restart. [Status and control](../guides/status.md#reloading) has
+the details.
+
 ## Logs
 
 Stewart logs to standard output: `make logs`, `docker compose logs -f stewart`, or `kubectl logs`. For a log

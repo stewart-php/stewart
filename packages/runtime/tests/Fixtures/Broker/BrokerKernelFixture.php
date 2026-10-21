@@ -66,7 +66,7 @@ final class BrokerKernelFixture
             ->withService(DaemonStartTime::class, $startTime)
             ->withOverrides($overrides);
 
-        $lifecycle = new BrokerKernel(new StewartVersion('test'), '/nonexistent/services.php', new ProjectRoot(sys_get_temp_dir()), $services)->createBroker(
+        $lifecycle = new BrokerKernel(new StewartVersion('test'), '/nonexistent/services.php', ReloadCoordinatorFixture::CONSOLE_SCRIPT, new ProjectRoot(sys_get_temp_dir()), $services)->createBroker(
             $config,
             new AppCatalog(self::listEnabledApps($workerSlots), $knownAppIds, AppIdCollection::fromList([])),
             $logger,

@@ -12,6 +12,7 @@ use Stewart\Runtime\Control\Protocol\Frame\CommandResult;
 use Stewart\Runtime\Control\Protocol\Frame\Hello;
 use Stewart\Runtime\Control\Protocol\Frame\PauseAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\Rejected;
+use Stewart\Runtime\Control\Protocol\Frame\ReloadRequest;
 use Stewart\Runtime\Control\Protocol\Frame\RequestFailed;
 use Stewart\Runtime\Control\Protocol\Frame\ResetAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\RestartWorkerRequest;
@@ -44,6 +45,7 @@ final readonly class FrameCodec
         'resume_app' => ResumeAppRequest::class,
         'reset_app' => ResetAppRequest::class,
         'restart_worker' => RestartWorkerRequest::class,
+        'reload' => ReloadRequest::class,
     ];
 
     private const array SERVER_FRAMES = [

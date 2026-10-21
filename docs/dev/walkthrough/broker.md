@@ -120,13 +120,19 @@ correlation ID.
   route a stale ID to a new handler.
 - **Restarts.** `WorkerRestartPolicy` spends a `RestartBudget` with backoff; an exhausted budget quarantines the slot.
   `worker:restart` resets the budget, stops the worker gracefully, and respawns it.
+- **Reload.** `Broker/Reload/ReloadCoordinator` accepts requests once the workers have started (SIGHUP, the `reload`
+  control frame, `POST /api/reload`). It runs `stewart check` through the project's `vendor/bin/stewart` in a child
+  process with Xdebug off, then calls `WorkerPool::replaceEveryWorker()`: every live worker stops gracefully and
+  respawns, a starting one is replaced once live, and a waiting or quarantined one starts at once. These restarts
+  reset the budget but are not counted. `ReloadState` feeds the `reload` row of the snapshot.
 - **Reconnect.** When the connection drops, `BrokerHaEvents` broadcasts `HaConnectionLost`. The session retries the
   same establish routine; on success every worker gets a `RegistrySnapshot` and a `StateResynced`.
 
 ## Shutdown
 
-`Broker/SignalHandlers` installs unreferenced SIGTERM and SIGINT watchers. The first signal stops the run; a second
-one while stopping kills the workers at once.
+`Broker/SignalHandlers` installs unreferenced SIGTERM, SIGINT and SIGHUP watchers. The first SIGTERM or SIGINT stops
+the run; a second one while stopping kills the workers at once. SIGHUP asks for a reload. In Git mode the entrypoint
+traps all three and forwards them to the daemon.
 
 `BrokerRun::stopRun()` moves to Stopping and runs each step even if an earlier one fails: stop the watchdog; shut down
 the pool (send `Shutdown` with the grace period, await exits for grace plus one second, kill the rest); close the Home

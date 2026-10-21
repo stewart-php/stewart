@@ -10,6 +10,9 @@ use Stewart\Runtime\App\AppPauseOutcome;
 use Stewart\Runtime\App\AppPauseResetOutcome;
 use Stewart\Runtime\Broker\AppPauseService;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
+use Stewart\Runtime\Broker\Reload\ReloadCoordinator;
+use Stewart\Runtime\Broker\Reload\ReloadRequestOutcome;
+use Stewart\Runtime\Broker\Reload\ReloadTrigger;
 use Stewart\Runtime\Broker\WorkerPool;
 use Stewart\Runtime\Broker\WorkerRestartOutcome;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
@@ -28,6 +31,7 @@ final readonly class RuntimeAdmin
         private AppStatusBuilder $appStatuses,
         private WorkerSlotCollection $workerSlots,
         private WorkerPool $pool,
+        private ReloadCoordinator $reloads,
     ) {}
 
     /** @return list<AppStatus> */
@@ -77,6 +81,13 @@ final readonly class RuntimeAdmin
         $outcome = $this->pool->restartWorker($slot);
 
         return new CommandResult($outcome === WorkerRestartOutcome::Begun, $outcome->describeForWorker($slot->workerId), null);
+    }
+
+    public function reload(ReloadTrigger $trigger): CommandResult
+    {
+        $outcome = $this->reloads->requestReload($trigger);
+
+        return new CommandResult($outcome === ReloadRequestOutcome::Started, $outcome->describeOutcome(), null);
     }
 
     private function findChangeWarning(AppPauseOutcome $outcome): ?string
