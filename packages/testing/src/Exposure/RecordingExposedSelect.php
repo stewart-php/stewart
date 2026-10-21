@@ -11,6 +11,7 @@ use Stewart\Contracts\Exposure\ExposedSelect;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\SelectConfig;
+use Stewart\Contracts\State\EventContext;
 
 /** @extends RecordingExposedEntity<SelectConfig> */
 final class RecordingExposedSelect extends RecordingExposedEntity implements ExposedSelect
@@ -47,5 +48,11 @@ final class RecordingExposedSelect extends RecordingExposedEntity implements Exp
     public function pushCommand(SelectCommand $command): void
     {
         $this->deliverCommand($command);
+    }
+
+    /** @throws CommandException */
+    public function pushOption(string $option, ?EventContext $context = null): void
+    {
+        $this->pushCommand(new SelectCommand($option, $context ?? EventContext::unknown()));
     }
 }

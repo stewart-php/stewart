@@ -9,6 +9,7 @@ use Stewart\Contracts\Exception\CommandException;
 use Stewart\Contracts\Exposure\ButtonConfig;
 use Stewart\Contracts\Exposure\Command\ButtonPress;
 use Stewart\Contracts\Exposure\ExposedButton;
+use Stewart\Contracts\State\EventContext;
 
 /** @extends RecordingExposedEntity<ButtonConfig> */
 final class RecordingExposedButton extends RecordingExposedEntity implements ExposedButton
@@ -33,5 +34,11 @@ final class RecordingExposedButton extends RecordingExposedEntity implements Exp
     public function pushCommand(ButtonPress $command): void
     {
         $this->deliverCommand($command);
+    }
+
+    /** @throws CommandException */
+    public function pushPress(?EventContext $context = null): void
+    {
+        $this->pushCommand(new ButtonPress($context ?? EventContext::unknown()));
     }
 }

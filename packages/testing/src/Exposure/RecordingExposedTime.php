@@ -13,6 +13,7 @@ use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\ExposedTime;
 use Stewart\Contracts\Exposure\TimeConfig;
 use Stewart\Contracts\Schedule\TimeOfDay;
+use Stewart\Contracts\State\EventContext;
 
 /** @extends RecordingExposedEntity<TimeConfig> */
 final class RecordingExposedTime extends RecordingExposedEntity implements ExposedTime
@@ -49,5 +50,11 @@ final class RecordingExposedTime extends RecordingExposedEntity implements Expos
     public function pushCommand(TimeCommand $command): void
     {
         $this->deliverCommand($command);
+    }
+
+    /** @throws CommandException */
+    public function pushValue(TimeOfDay $value, ?EventContext $context = null): void
+    {
+        $this->pushCommand(new TimeCommand($value, $context ?? EventContext::unknown()));
     }
 }

@@ -16,6 +16,9 @@ release could break; a release's "Upgrading" section says what to change.
 - `stewart check` notes classes in `apps/` that implement `App` without `#[Automation]`, as `stewart run` does
 - `Stewart\Contracts\Disposable` for apps that release something when they stop; apps that open nothing need no
   `dispose()` any more, and new projects, `make:app` and the examples have none
+- The test harness's recorded handles send commands without building them: `pushTurnOn()` and `pushTurnOff()` on a
+  switch, `pushPress()` on a button, `pushOption()` on a select, and `pushValue()` on a number, text, time, date or
+  date-time; the event context defaults to `EventContext::unknown()`
 
 ### Changed
 

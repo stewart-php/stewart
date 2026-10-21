@@ -14,6 +14,7 @@ use Stewart\Contracts\Exposure\DateConfig;
 use Stewart\Contracts\Exposure\ExposedDate;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
+use Stewart\Contracts\State\EventContext;
 
 /** @extends RecordingExposedEntity<DateConfig> */
 final class RecordingExposedDate extends RecordingExposedEntity implements ExposedDate
@@ -50,5 +51,11 @@ final class RecordingExposedDate extends RecordingExposedEntity implements Expos
     public function pushCommand(DateCommand $command): void
     {
         $this->deliverCommand($command);
+    }
+
+    /** @throws CommandException */
+    public function pushValue(DateTimeImmutable $value, ?EventContext $context = null): void
+    {
+        $this->pushCommand(new DateCommand($value, $context ?? EventContext::unknown()));
     }
 }

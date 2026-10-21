@@ -183,8 +183,11 @@ Every handle call waits for Stewart's main process and can throw `ExposureExcept
 ## Testing
 
 `$harness->entities` records what the app exposes. `requireSwitch('heater')`, `requireSensor()`, `requireNumber()`,
-`requireAction()` and the others return the recorded handle. `pushCommand()` and `pushCall()` run your handlers as
-Home Assistant would; a rejection is thrown into the test:
+`requireAction()` and the others return the recorded handle. Its shortcuts send a command as Home Assistant would:
+`pushTurnOn()` and `pushTurnOff()` on a switch, `pushPress()` on a button, `pushOption()` on a select, and
+`pushValue()` on a number, text, time, date or date-time. `pushCall()` calls an action. Each takes an optional
+`EventContext`, for a test about who sent the command, and `pushCommand()` takes a command you build yourself. A
+rejection is thrown into the test:
 
 ```php file=../../examples/tests/HeaterSwitchTest.php
 ```

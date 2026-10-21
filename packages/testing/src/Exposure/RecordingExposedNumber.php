@@ -11,6 +11,7 @@ use Stewart\Contracts\Exposure\ExposedNumber;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\NumberConfig;
+use Stewart\Contracts\State\EventContext;
 
 /** @extends RecordingExposedEntity<NumberConfig> */
 final class RecordingExposedNumber extends RecordingExposedEntity implements ExposedNumber
@@ -47,5 +48,11 @@ final class RecordingExposedNumber extends RecordingExposedEntity implements Exp
     public function pushCommand(NumberCommand $command): void
     {
         $this->deliverCommand($command);
+    }
+
+    /** @throws CommandException */
+    public function pushValue(int|float $value, ?EventContext $context = null): void
+    {
+        $this->pushCommand(new NumberCommand($value, $context ?? EventContext::unknown()));
     }
 }

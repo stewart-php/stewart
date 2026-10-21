@@ -181,6 +181,81 @@ final class RecordingEntityExposureTest extends TestCase
         self::assertSame('2026-10-15', $mowing->getValue()?->format('Y-m-d'));
     }
 
+    public function testSwitchShortcutsPushTurnOnAndOff(): void
+    {
+        $exposure = new RecordingEntityExposure();
+        $heater = $exposure->exposeSwitch('heater');
+        $received = [];
+        $heater->watchCommands()->subscribe(static function (SwitchCommand $command) use (&$received): void {
+            $received[] = $command->action;
+        });
+
+        $exposure->requireSwitch('heater')->pushTurnOn();
+        $exposure->requireSwitch('heater')->pushTurnOff();
+
+        self::assertSame([SwitchAction::TurnOn, SwitchAction::TurnOff], $received);
+        self::assertFalse($heater->getValue());
+    }
+
+    public function testButtonShortcutPushesAPress(): void
+    {
+        $exposure = new RecordingEntityExposure();
+        $presses = 0;
+        $exposure->exposeButton('doorbell')->watchCommands()->subscribe(static function () use (&$presses): void {
+            ++$presses;
+        });
+
+        $exposure->requireButton('doorbell')->pushPress();
+
+        self::assertSame(1, $presses);
+    }
+
+    public function testSelectShortcutPushesTheOption(): void
+    {
+        $exposure = new RecordingEntityExposure();
+        $mode = $exposure->exposeSelect('mode', new SelectConfig(['eco', 'comfort']));
+
+        $exposure->requireSelect('mode')->pushOption('comfort');
+
+        self::assertSame('comfort', $mode->getOption());
+    }
+
+    public function testValueShortcutsPushTheirCommand(): void
+    {
+        $exposure = new RecordingEntityExposure();
+        $exposure->exposeNumber('target_offset', new NumberConfig(min: -3, max: 3, step: 0.5));
+        $exposure->exposeText('greeting');
+        $exposure->exposeTime('alarm');
+        $exposure->exposeDate('next_mowing');
+        $exposure->exposeDateTime('last_watered');
+
+        $exposure->requireNumber('target_offset')->pushValue(1.5);
+        $exposure->requireText('greeting')->pushValue('Hello');
+        $exposure->requireTime('alarm')->pushValue(TimeOfDay::fromHourMinuteSecond(6, 45));
+        $exposure->requireDate('next_mowing')->pushValue(new DateTimeImmutable('2026-10-15'));
+        $exposure->requireDateTime('last_watered')->pushValue(new DateTimeImmutable('2026-10-09T07:15:00+02:00'));
+
+        self::assertSame(1.5, $exposure->requireNumber('target_offset')->getValue());
+        self::assertSame('Hello', $exposure->requireText('greeting')->getValue());
+        self::assertEquals(TimeOfDay::fromHourMinuteSecond(6, 45), $exposure->requireTime('alarm')->getValue());
+        self::assertSame('2026-10-15', $exposure->requireDate('next_mowing')->getValue()?->format('Y-m-d'));
+        self::assertSame('2026-10-09T07:15:00+02:00', $exposure->requireDateTime('last_watered')->getValue()?->format(DATE_ATOM));
+    }
+
+    public function testShortcutContextDefaultsToUnknown(): void
+    {
+        $exposure = new RecordingEntityExposure();
+        $contexts = [];
+        $exposure->exposeSwitch('heater')->watchCommands()->subscribe(static function (SwitchCommand $command) use (&$contexts): void {
+            $contexts[] = $command->context;
+        });
+
+        $exposure->requireSwitch('heater')->pushTurnOn();
+        $exposure->requireSwitch('heater')->pushTurnOff(new EventContext('from-the-ui'));
+
+        self::assertEquals([EventContext::unknown(), new EventContext('from-the-ui')], $contexts);
+    }
+
     public function testUpdatedConfigIsKept(): void
     {
         $exposure = new RecordingEntityExposure();
