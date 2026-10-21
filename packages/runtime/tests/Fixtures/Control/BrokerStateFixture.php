@@ -27,10 +27,13 @@ use Stewart\Runtime\Broker\WorkerPool;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Config\ExposeConfig;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
+use Stewart\Runtime\Control\Assembler\ScheduleStatusBuilder;
 use Stewart\Runtime\Control\Assembler\StoreHealthBuilder;
+use Stewart\Runtime\Control\Assembler\SubscriptionInfoBuilder;
 use Stewart\Runtime\Control\Assembler\WorkerStatusBuilder;
 use Stewart\Runtime\Control\SnapshotAssembler;
 use Stewart\Runtime\Health\ProcessMemory;
+use Stewart\Runtime\Ipc\Message\AppActivityReport;
 use Stewart\Runtime\Ipc\Message\Pong;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
@@ -117,6 +120,14 @@ final readonly class BrokerStateFixture
         EventLoopTicks::settle();
     }
 
+    public function reportActivity(int $workerId, AppActivityReport ...$reports): void
+    {
+        $handle = $this->getLiveHandleOf($workerId);
+        $pong = new Pong(nonce: 0, loopLag: Duration::zero(), memoryBytes: 0, apps: array_values($reports));
+        $this->pools->watchdog->recordPong($handle, $pong);
+        $this->metrics->recordActivityReports($handle, $pong);
+    }
+
     public function reportStoreHealth(int $workerId, StoreHealth $store): void
     {
         $this->pools->watchdog->recordPong($this->getLiveHandleOf($workerId), new Pong(nonce: 0, loopLag: Duration::zero(), memoryBytes: 0, store: $store));
@@ -160,6 +171,8 @@ final readonly class BrokerStateFixture
             workerStatuses: new WorkerStatusBuilder($pools->slots, $pools->watchdog, $pools->restartPolicy, $this->callSlots),
             appStatuses: $appStatuses ?? new AppStatusBuilder($this->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), $startTime), FakeHomeAssistant::createUnreachable()->exposures),
             storeHealth: new StoreHealthBuilder($pools->slots, ConfigFixture::createPersistenceConfig()),
+            subscriptionInfos: new SubscriptionInfoBuilder($pools->slots, $this->registry),
+            scheduleStatuses: new ScheduleStatusBuilder($pools->slots),
             processMemory: new ProcessMemory(),
             clock: $this->timers->clock,
         );

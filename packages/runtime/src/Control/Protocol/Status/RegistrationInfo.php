@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Control\Protocol\Status;
 
+use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\Model\SubscriptionKind;
 
 final readonly class RegistrationInfo
@@ -15,5 +16,10 @@ final readonly class RegistrationInfo
         public SubscriptionKind $kind,
         public string $selector,
         public bool $exact,
+        public int $received = 0,
+        public int $handled = 0,
+        public int $dropped = 0,
+        public ?Instant $lastReceivedAt = null,
+        public ?Instant $lastHandledAt = null,
     ) {}
 }

@@ -88,6 +88,7 @@ use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateResult;
 use Stewart\Runtime\Ipc\Message\RegistrySnapshot;
 use Stewart\Runtime\Ipc\Message\RemoveExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\RequestFailed;
+use Stewart\Runtime\Ipc\Message\ScheduleActivityReport;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Ipc\Message\Shutdown;
@@ -97,6 +98,7 @@ use Stewart\Runtime\Ipc\Message\StateUpdateBatch;
 use Stewart\Runtime\Ipc\Message\Subscribe;
 use Stewart\Runtime\Ipc\Message\SubscribeTrigger;
 use Stewart\Runtime\Ipc\Message\SubscriptionAck;
+use Stewart\Runtime\Ipc\Message\SubscriptionActivityReport;
 use Stewart\Runtime\Ipc\Message\TopicMessage;
 use Stewart\Runtime\Ipc\Message\TriggerFired;
 use Stewart\Runtime\Ipc\Message\Unsubscribe;
@@ -222,8 +224,32 @@ final class IpcMessageSamples
             )),
             'exposed_command_answered' => IpcMessageSample::createRoundTrip(new ExposedCommandAnswered('3f2b9c0e8d7a4f61', false, 'Night mode cannot start while the alarm is armed.')),
             'exposed_entity_synced' => IpcMessageSample::createRoundTrip(new ExposedEntitySynced($demo, new ExposedEntityKey('soil_moisture'), self::createExposedSnapshot())),
-            'pong' => IpcMessageSample::createRoundTrip(new Pong(42, Duration::microseconds(1_250), 12_345_678, [new AppActivityReport($demo, AppState::Running, 2, 1, 30, 1, 4, 2, 3, 5)], new StoreHealth(false, 'timed out', Instant::fromEpochMicroseconds(1_700_000_000_000_000)))),
+            'pong' => IpcMessageSample::createRoundTrip(new Pong(42, Duration::microseconds(1_250), 12_345_678, [self::createActivityReport($demo)], new StoreHealth(false, 'timed out', Instant::fromEpochMicroseconds(1_700_000_000_000_000)))),
         ];
+    }
+
+    private static function createActivityReport(ResourceScope $scope): AppActivityReport
+    {
+        $handledAt = Instant::fromEpochMicroseconds(1_700_000_000_000_000);
+        $nextRunAt = Instant::fromEpochMicroseconds(1_700_000_600_000_000);
+
+        return new AppActivityReport(
+            scope: $scope,
+            state: AppState::Running,
+            subscriptions: 1,
+            schedules: 1,
+            delivered: 30,
+            subscriptionDropped: 1,
+            scheduleRuns: 4,
+            publishes: 2,
+            failures: 3,
+            suppressed: 5,
+            handled: 12,
+            lastHandledAt: $handledAt,
+            nextRunAt: $nextRunAt,
+            subscriptionReports: [new SubscriptionActivityReport(SubscriptionId::fromString('w0:1'), SubscriptionKind::StateChange, 'exact:light.hall', true, 30, 12, 1, $handledAt, $handledAt)],
+            scheduleReports: [new ScheduleActivityReport('w0:2', 'every day at 07:00', $nextRunAt, null)],
+        );
     }
 
     private static function createExposedSnapshot(): ExposedEntitySnapshot

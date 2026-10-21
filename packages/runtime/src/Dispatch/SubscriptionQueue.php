@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Dispatch;
 use Closure;
 use SplQueue;
 use Stewart\Contracts\State\StateChange;
+use Stewart\Contracts\Time\Clock;
 use Stewart\Runtime\Scope\ScopeState;
 use Throwable;
 
@@ -23,15 +24,17 @@ final class SubscriptionQueue
 
     private bool $cancelled = false;
 
-    private int $dropped = 0;
+    public readonly SubscriptionActivity $activity;
 
     public function __construct(
         public readonly RegisteredSubscription $subscription,
         private readonly int $limit,
         private readonly DispatchListener $listener,
         private readonly ScopeState $scopeState,
+        private readonly Clock $clock,
     ) {
         $this->pending = new SplQueue();
+        $this->activity = new SubscriptionActivity($subscription);
     }
 
     /** @param ?Closure(QueueDiscardReason): void $onDiscarded */
@@ -91,9 +94,13 @@ final class SubscriptionQueue
 
     public function recordHandlerCall(): void
     {
-        if (!$this->cancelled) {
-            $this->listener->handlerCalled($this->subscription);
+        if ($this->cancelled) {
+            return;
         }
+
+        $calledAt = $this->clock->getNow();
+        $this->activity->recordHandled($calledAt);
+        $this->listener->handlerCalled($this->subscription, $calledAt);
     }
 
     public function cancel(): void
@@ -227,9 +234,9 @@ final class SubscriptionQueue
     private function recordOverflowDrop(QueuedWork $work): void
     {
         --$this->pendingEvents;
-        ++$this->dropped;
+        $this->activity->recordDropped();
 
-        $this->listener->eventDropped($this->subscription, $this->dropped);
+        $this->listener->eventDropped($this->subscription, $this->activity->dropped);
         $work->discard(QueueDiscardReason::Overflow);
     }
 
@@ -273,6 +280,7 @@ final class SubscriptionQueue
     private function runQueuedWork(QueuedWork $work): void
     {
         if ($work->event !== null) {
+            $this->activity->recordReceived($this->clock->getNow());
             $this->listener->eventReceived($this->subscription, $work->event);
         }
 

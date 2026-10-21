@@ -22,6 +22,7 @@ use Stewart\Runtime\Control\Protocol\Status\RegistrationInfo;
 use Stewart\Runtime\Control\Protocol\Status\ReloadAttempt;
 use Stewart\Runtime\Control\Protocol\Status\ReloadStatus;
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
+use Stewart\Runtime\Control\Protocol\Status\ScheduleStatus;
 use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
 use Stewart\Runtime\Control\Protocol\Status\WorkerStatus;
 use Stewart\Runtime\Control\SnapshotSource;
@@ -72,14 +73,19 @@ final class StubSnapshotSource implements SnapshotSource
                 subscriptions: 2,
                 schedules: 1,
                 exposedEntities: 3,
-                counters: new AppCounters(delivered: 30, subscriptionDropped: 1, scheduleRuns: 4, publishes: 2, failures: 1, suppressed: 6),
+                counters: new AppCounters(delivered: 30, subscriptionDropped: 1, scheduleRuns: 4, publishes: 2, failures: 1, suppressed: 6, handled: 12),
                 serviceCalls: [
                     new ServiceCallStats(ServiceCallOutcome::Succeeded, 10, new LatencyHistogram([5, 10, 25], [2, 9, 10], 10, Duration::milliseconds(80))),
                     new ServiceCallStats(ServiceCallOutcome::Refused, 2, null),
                 ],
                 lastFailure: new FailureReport(AppFailurePhase::Handler, 'RuntimeException', 'boom', 'subscription w0:1', 'entity_not_found', Instant::fromIso('2026-09-26T10:30:00Z')),
+                lastHandledAt: Instant::fromIso('2026-09-26T10:57:00Z'),
+                nextRunAt: Instant::fromIso('2026-09-26T19:00:00Z'),
             )],
-            subscriptions: [new RegistrationInfo('w0:0', 0, 'porch', SubscriptionKind::Event, 'doorbell', true)],
+            subscriptions: [
+                new RegistrationInfo('w0:0', 0, 'porch', SubscriptionKind::Event, 'doorbell', true),
+                new RegistrationInfo('w0:1', 0, 'porch', SubscriptionKind::StateChange, 'exact:binary_sensor.porch_motion', true, 18, 12, 1, Instant::fromIso('2026-09-26T10:58:30Z'), Instant::fromIso('2026-09-26T10:57:00Z')),
+            ],
             store: new StoreHealth(true, 'timed out', Instant::fromIso('2026-09-26T10:45:00Z')),
             deploy: new DeployStatus(
                 commit: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
@@ -93,6 +99,7 @@ final class StubSnapshotSource implements SnapshotSource
                 partlyApplied: 1,
                 last: new ReloadAttempt(ReloadOutcome::PartlyApplied, Instant::fromIso('2026-09-26T10:55:00Z'), null, ['mqtt']),
             ),
+            schedules: [new ScheduleStatus('porch', 0, 'w0:2', 'every day at 19:00', Instant::fromIso('2026-09-26T19:00:00Z'), Instant::fromIso('2026-09-25T19:00:00Z'))],
         );
     }
 

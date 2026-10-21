@@ -31,5 +31,7 @@ final readonly class AppStatus
         public ?FailureReport $lastFailure,
         #[ListOf(ExposedCommandStats::class)]
         public array $exposedCommands = [],
+        public ?Instant $lastHandledAt = null,
+        public ?Instant $nextRunAt = null,
     ) {}
 }

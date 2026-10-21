@@ -33,6 +33,12 @@ final class AppRunningTotals
 
     private int $delivered = 0;
 
+    private int $handled = 0;
+
+    private ?Instant $lastHandledAt = null;
+
+    private ?Instant $nextRunAt = null;
+
     private int $subscriptionDropped = 0;
 
     private int $scheduleRuns = 0;
@@ -91,6 +97,9 @@ final class AppRunningTotals
         $this->subscriptions = $report->subscriptions;
         $this->schedules = $report->schedules;
         $this->delivered += max(0, $report->delivered - ($previous->delivered ?? 0));
+        $this->handled += max(0, $report->handled - ($previous->handled ?? 0));
+        $this->lastHandledAt = $report->lastHandledAt ?? $this->lastHandledAt;
+        $this->nextRunAt = $report->nextRunAt;
         $this->subscriptionDropped += max(0, $report->subscriptionDropped - ($previous->subscriptionDropped ?? 0));
         $this->scheduleRuns += max(0, $report->scheduleRuns - ($previous->scheduleRuns ?? 0));
         $this->publishes += max(0, $report->publishes - ($previous->publishes ?? 0));
@@ -133,6 +142,7 @@ final class AppRunningTotals
             exposedEntities: $this->appId === null ? 0 : $exposures->countExposuresOfApp($this->appId),
             counters: new AppCounters(
                 delivered: $this->delivered,
+                handled: $this->handled,
                 subscriptionDropped: $this->subscriptionDropped,
                 scheduleRuns: $this->scheduleRuns,
                 publishes: $this->publishes,
@@ -142,6 +152,8 @@ final class AppRunningTotals
             serviceCalls: array_values(array_map(static fn(ServiceCallStatsRecorder $recorder): ServiceCallStats => $recorder->buildServiceCallStats(), $calls)),
             lastFailure: $this->lastFailure,
             exposedCommands: $this->buildExposedCommandStats(),
+            lastHandledAt: $this->lastHandledAt,
+            nextRunAt: $this->nextRunAt,
         );
     }
 

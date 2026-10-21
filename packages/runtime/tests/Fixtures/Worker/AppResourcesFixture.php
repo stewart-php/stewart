@@ -47,7 +47,7 @@ final readonly class AppResourcesFixture
         $this->scopes = new ScopeLifecycle();
         $registry = new RegistryCache();
         $this->states = new StateCache();
-        $this->dispatcher = RecordingDispatchListener::createDispatcher($subscriptionQueueLimit, $registry, $this->scopes);
+        $this->dispatcher = RecordingDispatchListener::createDispatcher($subscriptionQueueLimit, $registry, $this->scopes, $timers->clock);
         $this->schedules = new ScheduleRegistry(
             new WorkerId(0),
             new ScheduleContext($timers, $timers->clock, new InlineHandlerRunner(), $scheduleListener),

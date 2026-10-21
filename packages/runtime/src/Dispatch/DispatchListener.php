@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Dispatch;
 
+use Stewart\Contracts\Time\Instant;
 use Throwable;
 
 interface DispatchListener
@@ -14,7 +15,7 @@ interface DispatchListener
 
     public function eventReceived(RegisteredSubscription $subscription, object $event): void;
 
-    public function handlerCalled(RegisteredSubscription $subscription): void;
+    public function handlerCalled(RegisteredSubscription $subscription, Instant $calledAt): void;
 
     public function eventDelivered(RegisteredSubscription $subscription): void;
 

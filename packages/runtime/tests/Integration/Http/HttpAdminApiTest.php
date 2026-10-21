@@ -35,9 +35,9 @@ final class HttpAdminApiTest extends TestCase
 
     private const string NOT_SAVED = 'Not saved: persistence.url is not set, so this lasts until the daemon restarts.';
 
-    private const string DEMO_JSON = '{"id":"demo","state":null,"paused":false,"pause":null,"config_pause_override":null}';
+    private const string DEMO_JSON = '{"id":"demo","state":null,"paused":false,"pause":null,"config_pause_override":null,"last_handled_at":null,"next_run_at":null}';
 
-    private const string PORCH_JSON = '{"id":"porch","state":null,"paused":true,"pause":{"since":"%s","source":"config"},"config_pause_override":null}';
+    private const string PORCH_JSON = '{"id":"porch","state":null,"paused":true,"pause":{"since":"%s","source":"config"},"config_pause_override":null,"last_handled_at":null,"next_run_at":null}';
 
     private AdminApiFixture $fixture;
 

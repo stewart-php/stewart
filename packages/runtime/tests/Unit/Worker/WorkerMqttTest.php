@@ -34,6 +34,7 @@ use Stewart\Runtime\Worker\WorkerMqtt;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Logging\RecordingLogger;
 use Stewart\Testing\Time\ManualTimers;
+use Stewart\Testing\Time\VirtualClock;
 
 #[CoversClass(WorkerMqtt::class)]
 final class WorkerMqttTest extends TestCase
@@ -93,7 +94,7 @@ final class WorkerMqttTest extends TestCase
     private static function createMqtt(Transport $transport, bool $brokerMqttEnabled = true): WorkerMqtt
     {
         $listener = new RecordingDispatchListener();
-        $dispatcher = new LocalDispatcher(new WorkerId(0), TestBootstrap::createWorkerSettings(subscriptionBuffer: 10), $listener, new BrokerSubscriptions($transport, new RecordingLogger()), new ScopeLifecycle(), new RegistryCache());
+        $dispatcher = new LocalDispatcher(new WorkerId(0), TestBootstrap::createWorkerSettings(subscriptionBuffer: 10), $listener, new BrokerSubscriptions($transport, new RecordingLogger()), new ScopeLifecycle(), new RegistryCache(), new VirtualClock());
 
         return new WorkerMqtt(
             $transport,

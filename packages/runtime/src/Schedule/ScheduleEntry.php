@@ -22,6 +22,8 @@ final class ScheduleEntry
 
     public private(set) bool $started = false;
 
+    public private(set) ?Instant $lastRunAt = null;
+
     private bool $running = false;
 
     /** @var (Closure(ScheduledRun): void)|null */
@@ -213,6 +215,7 @@ final class ScheduleEntry
 
         $this->running = true;
         $this->overlapSkips = 0;
+        $this->lastRunAt = $run->firedAt;
         $this->context->listener->scheduledRunStarted($this->origin, $run);
 
         $this->context->runner->run(function () use ($handler, $run): void {

@@ -4,9 +4,15 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Worker;
 
+use Stewart\Contracts\Time\Instant;
+
 final class AppActivity
 {
     public private(set) int $delivered = 0;
+
+    public private(set) int $handled = 0;
+
+    public private(set) ?Instant $lastHandledAt = null;
 
     public private(set) int $dropped = 0;
 
@@ -21,6 +27,12 @@ final class AppActivity
     public function recordDeliveredEvent(): void
     {
         ++$this->delivered;
+    }
+
+    public function recordHandledEvent(Instant $at): void
+    {
+        ++$this->handled;
+        $this->lastHandledAt = $at;
     }
 
     public function recordDroppedEvent(): void
@@ -51,6 +63,7 @@ final class AppActivity
     public function isIdle(): bool
     {
         return $this->delivered === 0
+            && $this->handled === 0
             && $this->dropped === 0
             && $this->scheduleRuns === 0
             && $this->publishes === 0
