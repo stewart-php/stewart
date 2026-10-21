@@ -16,6 +16,7 @@ use Stewart\Runtime\Broker\Exposure\ExposureReconciler;
 use Stewart\Runtime\Broker\WorkerPool;
 use Stewart\Runtime\Broker\WorkerPoolListener;
 use Stewart\Runtime\Config\ConfigLoader;
+use Stewart\Runtime\Logging\LogVerbosityPolicy;
 
 final readonly class ReloadApplier
 {
@@ -30,6 +31,7 @@ final readonly class ReloadApplier
         private CatalogWarnings $catalogWarnings,
         private ConfigLoader $configs,
         private DaemonLaunchOptions $launch,
+        private LogVerbosityPolicy $verbosity,
         private LoggerInterface $logger,
     ) {}
 
@@ -39,6 +41,7 @@ final readonly class ReloadApplier
         $this->topology->replaceTopology($plan->catalog, $plan->workerSlots);
         $this->pauses->followReloadedCatalog($previous);
         $this->metrics->replaceAppTotals($plan->workerSlots);
+        $this->verbosity->replaceAppVerbosities($plan->catalog->enabled->listVerbositiesByAppId());
 
         foreach ($previous->enabled->filter(static fn(AppDefinition $app): bool => $plan->catalog->enabled->find($app->id) === null) as $removed) {
             $this->exposures->forgetExposuresOfApp($removed->id);

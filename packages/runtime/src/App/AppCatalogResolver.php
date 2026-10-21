@@ -9,6 +9,7 @@ use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Config\Collection\AppOverrideCollection;
 use Stewart\Runtime\Exception\ConfigurationException;
+use Stewart\Runtime\Model\AppVerbosity;
 
 final readonly class AppCatalogResolver
 {
@@ -51,6 +52,7 @@ final readonly class AppCatalogResolver
                 options: $override === null ? [] : $override->options,
                 worker: $worker,
                 startsPaused: $override !== null && $override->paused,
+                verbosity: new AppVerbosity($override?->logLevel),
             );
         }
 

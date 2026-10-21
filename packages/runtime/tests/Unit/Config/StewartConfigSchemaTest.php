@@ -87,6 +87,7 @@ final class StewartConfigSchemaTest extends TestCase
 
         self::assertTrue(self::getValueAt($processed, 'apps.demo.enabled'));
         self::assertNull(self::getValueAt($processed, 'apps.demo.worker'));
+        self::assertNull(self::getValueAt($processed, 'apps.demo.log_level'));
         self::assertSame([], self::getValueAt($processed, 'apps.demo.options'));
     }
 
@@ -97,6 +98,16 @@ final class StewartConfigSchemaTest extends TestCase
         ])]);
 
         self::assertNull(self::getValueAt($processed, 'apps.demo.worker'));
+    }
+
+    public function testExplicitlyNullLogLevelMeansTheGlobalOne(): void
+    {
+        $processed = self::processConfigs([self::addRequiredConnection([
+            'apps' => ['demo' => ['log_level' => null], 'porch' => ['log_level' => 'debug']],
+        ])]);
+
+        self::assertNull(self::getValueAt($processed, 'apps.demo.log_level'));
+        self::assertSame('debug', self::getValueAt($processed, 'apps.porch.log_level'));
     }
 
     public function testUrlIsNormalizedAsItIsRead(): void

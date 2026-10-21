@@ -23,6 +23,8 @@ use Stewart\Runtime\Broker\Reload\ReloadState;
 use Stewart\Runtime\Broker\Reload\ReloadTrigger;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Lifecycle\ReloadOutcome;
+use Stewart\Runtime\Model\LogLevel;
+use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\AppTopologyFixture;
@@ -160,6 +162,20 @@ final class ReloadCoordinatorTest extends TestCase
         self::assertSame(ReloadOutcome::PartlyApplied, $last->outcome);
         self::assertSame(['log_level', 'mqtt'], $last->settingsNeedingRestart);
         self::assertSame(['Reloaded, except for settings that only a restart applies'], $this->logger->listMessagesAt('warning'));
+    }
+
+    public function testReloadAppliesAnAppLogLevel(): void
+    {
+        $config = $this->project->getFilePath('stewart.yaml');
+        file_put_contents($config, "apps:\n  demo:\n    log_level: debug\n");
+        $this->reloads = $this->createReloads(new DaemonLaunchOptions($config));
+        $this->queueReport(['demo'], (string) hash_file('xxh128', $config));
+
+        $last = $this->reload();
+
+        self::assertSame(ReloadOutcome::Applied, $last->outcome);
+        self::assertTrue($this->reloads->verbosity->admitsLevel(LogLevel::Debug, ResourceScope::forApp(new AppId('demo'))));
+        self::assertFalse($this->reloads->verbosity->admitsLevel(LogLevel::Debug, null));
     }
 
     public function testRequestWhileAReloadRunsIsNotRepeated(): void

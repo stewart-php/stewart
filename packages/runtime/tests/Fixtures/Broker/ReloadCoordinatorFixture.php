@@ -31,6 +31,8 @@ use Stewart\Runtime\Broker\Reload\ReloadState;
 use Stewart\Runtime\Broker\WorkerPoolListener;
 use Stewart\Runtime\Config\ConfigLoader;
 use Stewart\Runtime\Config\EnvironmentVariables;
+use Stewart\Runtime\Logging\LogVerbosityPolicy;
+use Stewart\Runtime\Model\LogLevel;
 use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Runtime\Tests\Fixtures\Config\ConfigLoaderFixture;
 use Stewart\Runtime\Tests\Fixtures\Deploy\ScriptedCommandRunner;
@@ -53,6 +55,7 @@ final readonly class ReloadCoordinatorFixture
         public AppPauseRegistry $pauses,
         public AppMetrics $metrics,
         public FakeHomeAssistant $homeAssistant,
+        public LogVerbosityPolicy $verbosity,
     ) {}
 
     /** @param array<string, string> $environment */
@@ -72,6 +75,7 @@ final readonly class ReloadCoordinatorFixture
         $homeAssistant = FakeHomeAssistant::createUnreachable();
         $pauses = new AppPauseRegistry($topology->getCatalog()->enabled, new DaemonStartTime($pools->clock));
         $metrics = new AppMetrics($topology->getWorkerSlots(), $pools->clock);
+        $verbosity = new LogVerbosityPolicy(LogLevel::Info, $topology->getCatalog()->enabled->listVerbositiesByAppId());
 
         return new self(
             new ReloadCoordinator(
@@ -88,6 +92,7 @@ final readonly class ReloadCoordinatorFixture
                     new CatalogWarnings(),
                     $configs,
                     $launch,
+                    $verbosity,
                     $logger,
                 ),
                 $state,
@@ -99,6 +104,7 @@ final readonly class ReloadCoordinatorFixture
             $pauses,
             $metrics,
             $homeAssistant,
+            $verbosity,
         );
     }
 

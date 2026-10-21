@@ -9,6 +9,7 @@ use Stewart\Runtime\Broker\AppMetrics;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Ipc\Message\AppFailed;
 use Stewart\Runtime\Ipc\Message\WorkerMessage;
+use Stewart\Runtime\Logging\LogOrigin;
 use Stewart\Runtime\Model\ExceptionDetails;
 
 /** @implements WorkerMessageHandler<AppFailed> */
@@ -37,6 +38,7 @@ final readonly class AppFailedHandler implements WorkerMessageHandler
             'error' => $message->message,
             'trace' => $message->trace,
             ExceptionDetails::CONTEXT_KEY => $message->details,
+            LogOrigin::CONTEXT_KEY => LogOrigin::forScope($message->scope),
         ]);
 
         $this->metrics->recordLastFailure($handle->id, $message);

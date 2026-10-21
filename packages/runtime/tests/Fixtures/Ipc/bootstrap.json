@@ -1,7 +1,7 @@
 {
     "t": "bootstrap",
     "m": {
-        "protocol": 30,
+        "protocol": 31,
         "worker_id": 1,
         "time_zone": "Europe/Budapest",
         "location": {
@@ -15,12 +15,18 @@
                 "class": "Stewart\\Runtime\\Tests\\Fixtures\\Apps\\Demo",
                 "options": {
                     "watch": "input_boolean.hall"
+                },
+                "verbosity": {
+                    "log_level": "debug"
                 }
             },
             {
                 "id": "echo",
                 "class": "Stewart\\Runtime\\Tests\\Fixtures\\Apps\\Relay",
-                "options": {}
+                "options": {},
+                "verbosity": {
+                    "log_level": null
+                }
             }
         ],
         "settings": {

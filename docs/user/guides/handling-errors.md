@@ -2,7 +2,7 @@
 title: Handling errors
 description: What happens when an app throws, which exceptions Stewart raises, and how to tell them apart by reason.
 sidebar:
-  order: 18
+  order: 19
 ---
 
 When something fails, Stewart throws an exception. You can let it go, or catch it where your app can do something

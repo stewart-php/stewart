@@ -8,10 +8,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Stewart\Contracts\App\AppId;
+use Stewart\Runtime\Logging\LogVerbosityPolicy;
+use Stewart\Runtime\Model\LogLevel;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Ipc\FailingTransport;
-use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Stewart\Runtime\Worker\StderrFallback;
 use Stewart\Runtime\Worker\WorkerLogger;
 
@@ -40,7 +41,7 @@ final class StderrFallbackTest extends TestCase
 
     public function testLoggerFallsBackWhenTransportFails(): void
     {
-        $logger = new WorkerLogger(new FailingTransport(new RuntimeException('closed')), new StderrFallback(new WorkerId(0), $this->stream), ResourceScope::shared(), TestBootstrap::createWorkerSettings());
+        $logger = new WorkerLogger(new FailingTransport(new RuntimeException('closed')), new StderrFallback(new WorkerId(0), $this->stream), ResourceScope::shared(), new LogVerbosityPolicy(LogLevel::Debug));
 
         $logger->warning('channel gone');
 

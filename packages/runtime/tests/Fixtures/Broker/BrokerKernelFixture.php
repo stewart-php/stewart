@@ -22,6 +22,7 @@ use Stewart\Runtime\Broker\WorkerWatchdog;
 use Stewart\Runtime\Config\ProjectRoot;
 use Stewart\Runtime\Kernel\BrokerKernel;
 use Stewart\Runtime\Kernel\SyntheticServices;
+use Stewart\Runtime\Logging\LogVerbosityPolicy;
 use Stewart\Runtime\Model\StewartVersion;
 use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Runtime\Tests\Fixtures\Time\RecordingProcessTimeZone;
@@ -66,10 +67,12 @@ final class BrokerKernelFixture
             ->withService(DaemonStartTime::class, $startTime)
             ->withOverrides($overrides);
 
+        $enabledApps = self::listEnabledApps($workerSlots);
         $lifecycle = new BrokerKernel(new StewartVersion('test'), '/nonexistent/services.php', ReloadCoordinatorFixture::CONSOLE_SCRIPT, new ProjectRoot(sys_get_temp_dir()), $services)->createBroker(
             $config,
-            new AppCatalog(self::listEnabledApps($workerSlots), $knownAppIds, AppIdCollection::fromList([])),
+            new AppCatalog($enabledApps, $knownAppIds, AppIdCollection::fromList([])),
             $logger,
+            new LogVerbosityPolicy($config->logLevel, $enabledApps->listVerbositiesByAppId()),
         );
 
         return new BootedBroker($lifecycle, $run, $startTime, $homeAssistant);

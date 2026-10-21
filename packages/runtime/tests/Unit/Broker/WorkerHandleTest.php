@@ -19,6 +19,7 @@ use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\Ping;
 use Stewart\Runtime\Ipc\Message\Shutdown;
+use Stewart\Runtime\Logging\LogOrigin;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerProcess;
@@ -38,7 +39,7 @@ final class WorkerHandleTest extends TestCase
         EventLoopTicks::settleUntil(static fn(): bool => \count($logger->listMessagesAt('notice')) === 2);
 
         self::assertSame(['first line', 'second line'], $logger->listMessagesAt('notice'));
-        self::assertSame(['worker' => 0, 'stream' => 'stdout'], $logger->records->getFirst()?->context);
+        self::assertEquals(['worker' => 0, 'stream' => 'stdout', LogOrigin::CONTEXT_KEY => LogOrigin::forWorkerOutput(new WorkerId(0))], $logger->records->getFirst()?->context);
     }
 
     public function testFailedSendTerminatesHandle(): void

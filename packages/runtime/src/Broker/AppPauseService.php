@@ -19,6 +19,7 @@ use Stewart\Runtime\Ipc\Message\PausedAppsChanged;
 use Stewart\Runtime\Ipc\Wire\AppIdsFragment;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
 use Stewart\Runtime\Lifecycle\AppStateAfterReset;
+use Stewart\Runtime\Logging\LogOrigin;
 
 final readonly class AppPauseService
 {
@@ -96,7 +97,7 @@ final readonly class AppPauseService
         }
 
         if ($removed) {
-            $this->logger->info('App pause override removed', ['app' => $appId->value, 'source' => $source->value, 'paused' => $paused]);
+            $this->logger->info('App pause override removed', ['app' => $appId->value, 'source' => $source->value, 'paused' => $paused, LogOrigin::CONTEXT_KEY => LogOrigin::forApp($appId)]);
         }
 
         $persistence = $this->overrides->removeOverride($appId);
@@ -120,7 +121,7 @@ final readonly class AppPauseService
         }
 
         $persistence = $this->overrides->removeOverride($appId);
-        $this->logger->info('App pause override removed', ['app' => $appId->value, 'source' => $source->value]);
+        $this->logger->info('App pause override removed', ['app' => $appId->value, 'source' => $source->value, LogOrigin::CONTEXT_KEY => LogOrigin::forApp($appId)]);
 
         return new AppPauseResetOutcome(true, AppStateAfterReset::NotLoaded, $persistence);
     }
@@ -134,7 +135,7 @@ final readonly class AppPauseService
 
         if ($changed) {
             $this->broadcastPausedApps();
-            $this->logger->info($paused ? 'App paused' : 'App resumed', ['app' => $appId->value, 'source' => $source->value]);
+            $this->logger->info($paused ? 'App paused' : 'App resumed', ['app' => $appId->value, 'source' => $source->value, LogOrigin::CONTEXT_KEY => LogOrigin::forApp($appId)]);
         }
 
         $persistence = $this->overrides->saveOverride($override);

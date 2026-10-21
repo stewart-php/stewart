@@ -20,6 +20,7 @@ use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Ipc\Wire\EncodedStateUpdate;
 use Stewart\Runtime\Lifecycle\WorkerHandleState;
 use Stewart\Runtime\Logging\EveryNthOccurrence;
+use Stewart\Runtime\Logging\LogOrigin;
 use Stewart\Runtime\Model\WorkerId;
 use Throwable;
 
@@ -193,7 +194,7 @@ final class WorkerHandle
             try {
                 foreach (ByteStream\splitLines($stream) as $line) {
                     if ($line !== '') {
-                        $this->logger->notice($line, ['worker' => $this->id->value, 'stream' => $name]);
+                        $this->logger->notice($line, ['worker' => $this->id->value, 'stream' => $name, LogOrigin::CONTEXT_KEY => LogOrigin::forWorkerOutput($this->id)]);
                     }
                 }
             } catch (Throwable $e) {

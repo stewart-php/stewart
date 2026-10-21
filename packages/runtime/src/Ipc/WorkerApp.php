@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Ipc;
 
 use Stewart\Contracts\App\AppId;
+use Stewart\Runtime\Model\AppVerbosity;
 
 final readonly class WorkerApp
 {
@@ -13,5 +14,6 @@ final readonly class WorkerApp
         public AppId $id,
         public string $class,
         public array $options,
+        public AppVerbosity $verbosity = new AppVerbosity(),
     ) {}
 }

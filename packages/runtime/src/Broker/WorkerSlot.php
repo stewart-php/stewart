@@ -26,7 +26,7 @@ final readonly class WorkerSlot
     public function listWorkerApps(): WorkerAppCollection
     {
         return WorkerAppCollection::fromList($this->apps->mapToList(
-            static fn(AppDefinition $app): WorkerApp => new WorkerApp($app->id, $app->class, $app->options),
+            static fn(AppDefinition $app): WorkerApp => new WorkerApp($app->id, $app->class, $app->options, $app->verbosity),
         ));
     }
 }

@@ -9,7 +9,7 @@ use Psr\Log\InvalidArgumentException;
 use Stewart\Contracts\App\AppId;
 use Stewart\Runtime\Ipc\Message\LogRecord;
 use Stewart\Runtime\Ipc\Transport;
-use Stewart\Runtime\Ipc\WorkerSettings;
+use Stewart\Runtime\Logging\LogVerbosityPolicy;
 use Stewart\Runtime\Model\ExceptionDetails;
 use Stewart\Runtime\Model\LogLevel;
 use Stewart\Runtime\Model\ResourceScope;
@@ -22,7 +22,7 @@ final class WorkerLogger extends AbstractLogger
         private readonly Transport $transport,
         private readonly StderrFallback $stderr,
         private readonly ResourceScope $resourceScope,
-        private readonly WorkerSettings $workerSettings,
+        private readonly LogVerbosityPolicy $verbosity,
     ) {}
 
     public function forApp(AppId $appId): self
@@ -32,7 +32,7 @@ final class WorkerLogger extends AbstractLogger
 
     public function forScope(ResourceScope $resourceScope): self
     {
-        return new self($this->transport, $this->stderr, $resourceScope, $this->workerSettings);
+        return new self($this->transport, $this->stderr, $resourceScope, $this->verbosity);
     }
 
     /**
@@ -52,7 +52,7 @@ final class WorkerLogger extends AbstractLogger
             ));
         }
 
-        if ($severity->isBelow($this->workerSettings->logLevel)) {
+        if (!$this->verbosity->admitsLevel($severity, $this->resourceScope)) {
             return;
         }
 

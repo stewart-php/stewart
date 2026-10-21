@@ -5,6 +5,20 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
+## [Unreleased]
+
+### Added
+
+- `apps.<id>.log_level` (`STEWART_APPS__<ID>__LOG_LEVEL`) gives one app a log level of its own, louder or quieter
+  than `log_level`; a reload applies it. A new Logs guide explains the log line
+
+### Changed
+
+- Every log line names what it is about after the level: the app ID, `@shared` for Stewart's code inside a worker,
+  `broker`, or `worker N` for text a worker printed outside the logger. Lines Stewart writes about an app, such as
+  `App failed` or `App paused`, carry that app's tag and follow its log level, and the line no longer repeats the app
+  ID in its trailing details. JSON logs keep `context.app` and add the tag as `extra.source`
+
 ## [1.6.0] - 2026-10-21
 
 Edit apps and their settings without restarting: a reload restarts the workers on the current code and app settings

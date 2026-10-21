@@ -15,6 +15,7 @@ use Stewart\Runtime\Ipc\Message\HaCallRequest;
 use Stewart\Runtime\Ipc\Message\RefusableHaCallRequest;
 use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Logging\EveryNthOccurrence;
+use Stewart\Runtime\Logging\LogOrigin;
 use Stewart\Runtime\Model\ServiceCallOutcome;
 use Throwable;
 use WeakMap;
@@ -134,6 +135,7 @@ final class HaCallSlots
                 'app' => $request->scope->wireValue(),
                 'refused' => $this->refusedCalls,
                 'in_flight' => $this->inFlight,
+                LogOrigin::CONTEXT_KEY => LogOrigin::forScope($request->scope),
             ]);
         }
 

@@ -10,6 +10,7 @@ use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Ipc\Message\Bootstrap;
 use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Ipc\WorkerSettings;
+use Stewart\Runtime\Logging\LogVerbosityPolicy;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Time\ProcessTimeZone;
 use Stewart\Runtime\Time\SystemClock;
@@ -49,6 +50,7 @@ final readonly class WorkerKernel
             ->withService(Transport::class, $transport)
             ->withService(Bootstrap::class, $bootstrap)
             ->withService(WorkerSettings::class, $bootstrap->settings)
+            ->withService(LogVerbosityPolicy::class, new LogVerbosityPolicy($bootstrap->settings->logLevel, $bootstrap->apps->collection->listVerbositiesByAppId()))
             ->withService(WorkerId::class, $bootstrap->workerId)
             ->withService(Clock::class, $clock)
             ->withService(StewartIdentity::class, new StewartIdentity($bootstrap->haUserId));

@@ -259,6 +259,9 @@ apps:
         # Pin to a worker index. Omit to place it by a hash of its ID, so adding other apps never moves it.
         worker:               null
 
+        # This app's log level, louder or quieter than the global log_level. Omit to use the global one.
+        log_level:            null # One of "debug"; "info"; "notice"; "warning"; "error"
+
         # Passed to the app constructor as named arguments.
         options:              []
 

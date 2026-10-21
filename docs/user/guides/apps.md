@@ -78,14 +78,15 @@ apps:
 - Options can also come from the environment: `STEWART_APPS__BATTERY_ALERT__OPTIONS__THRESHOLD=15`. See
   [Configuration](configuration.md).
 
-Next to `options`, an app's entry takes three more settings:
+Next to `options`, an app's entry takes four more settings:
 
 ```yaml
 apps:
   battery-alert:
-    enabled: false   # do not load the app at all
-    paused: true     # load it, but deliver nothing to it until it is resumed
-    worker: 1        # run it on this worker
+    enabled: false     # do not load the app at all
+    paused: true       # load it, but deliver nothing to it until it is resumed
+    worker: 1          # run it on this worker
+    log_level: debug   # log more, or less, for this app than log_level says; see Logs
 ```
 
 If an entry names an ID that no app has, Stewart logs a warning at start and ignores the entry, so a typo does not go
