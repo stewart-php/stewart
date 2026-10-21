@@ -12,6 +12,7 @@ final readonly class DaemonLaunchOptions
         public ?string $configFile = null,
         public AppSelection $selection = new AppSelection(),
         public ?string $logLevel = null,
+        public bool $watch = false,
     ) {}
 
     /** @return array<string, mixed> */

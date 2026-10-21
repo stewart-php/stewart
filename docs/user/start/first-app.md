@@ -84,6 +84,11 @@ make run ONLY=porch-light DRY_RUN=1
 Stewart warns that dry run is on. When a schedule fires, you see the app's log line, followed by
 `Service call not sent: service_calls.dry_run is on` with the service and the target.
 
+While you work on the app, use `make watch` instead of `make run`, with the same `ONLY` and `DRY_RUN`. Every time you
+save a file in `apps/`, `services.php` or `stewart.yaml`, it checks the project and restarts the apps on the new code,
+without reconnecting to Home Assistant. A save that breaks something keeps the apps running as they were and logs
+why.
+
 ## 5. Run it for real
 
 ```bash

@@ -26,6 +26,7 @@ Your project runs these commands with `make`. The `stewart` commands below run i
 | `make app` | Create an app in apps/ and its test in tests/ [NAME=PorchLight] |
 | `make generate` | Write typed entity and service classes from Home Assistant into generated/ [ARGS=--allow-shrink] |
 | `make run` | Run in the foreground [ONLY="hello porch" to run only those apps, DRY_RUN=1 to send no service calls] |
+| `make watch` | Run in the foreground and reload after every saved change [ONLY="hello porch", DRY_RUN=1] |
 | `make debug` | Run in the foreground with Xdebug |
 | `make config` | Show the effective config, secrets masked |
 | `make config-reference` | Show every supported config option |
@@ -209,6 +210,7 @@ stewart run [options]
 | `-l, --log-level=…` | debug\|info\|notice\|warning\|error |  |
 | `--json-logs` | Emit logs as JSON |  |
 | `--only=…` | Run only this automation, even if disabled; repeat for more |  |
+| `--watch` | Reload after every saved change to the apps, services.php or stewart.yaml |  |
 
 ### status
 
