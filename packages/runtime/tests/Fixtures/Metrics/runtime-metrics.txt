@@ -174,3 +174,20 @@ stewart_store_available 1
 # HELP stewart_store_last_failure_timestamp_seconds Unix time of the last store failure.
 # TYPE stewart_store_last_failure_timestamp_seconds gauge
 stewart_store_last_failure_timestamp_seconds 1790419500
+# HELP stewart_mqtt_connection_phase MQTT connection phase; 1 for the current one.
+# TYPE stewart_mqtt_connection_phase gauge
+stewart_mqtt_connection_phase{phase="connecting"} 0
+stewart_mqtt_connection_phase{phase="connected"} 1
+stewart_mqtt_connection_phase{phase="reconnecting"} 0
+# HELP stewart_mqtt_reconnects_total MQTT reconnects since the daemon started.
+# TYPE stewart_mqtt_reconnects_total counter
+stewart_mqtt_reconnects_total 1
+# HELP stewart_mqtt_messages_dropped_total MQTT messages dropped by reason.
+# TYPE stewart_mqtt_messages_dropped_total counter
+stewart_mqtt_messages_dropped_total{reason="disconnected"} 2
+stewart_mqtt_messages_dropped_total{reason="send_failed"} 0
+stewart_mqtt_messages_dropped_total{reason="buffer_full"} 0
+stewart_mqtt_messages_dropped_total{reason="gave_up"} 0
+# HELP stewart_mqtt_outbound_queued QoS 1 messages waiting for the server to acknowledge them.
+# TYPE stewart_mqtt_outbound_queued gauge
+stewart_mqtt_outbound_queued 1

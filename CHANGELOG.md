@@ -24,6 +24,10 @@ release could break; a release's "Upgrading" section says what to change.
   handled, dropped, last handled) and a Schedules table (next and last run); an unknown ID names the closest one, and
   `--json` narrows the same way. `--watch[=2s]` (`make status WATCH=1`) redraws until Ctrl-C and keeps trying while
   Stewart is down. The Apps table shows `last handled` and `next run`
+- `stewart status` shows the MQTT connection on an `mqtt` row: its phase and since when, reconnects, the last outage
+  and error, QoS 1 messages waiting and messages dropped. `stewart_mqtt_connection_phase{phase}`,
+  `stewart_mqtt_reconnects_total`, `stewart_mqtt_messages_dropped_total{reason}` and `stewart_mqtt_outbound_queued`
+  expose the same
 
 ### Changed
 
@@ -34,7 +38,9 @@ release could break; a release's "Upgrading" section says what to change.
 - The broker's routing debug lines (`Home Assistant event routed`, `Topic published`, `MQTT message routed`,
   `Home Assistant trigger routed`) name the matched apps instead of worker numbers, and the `service_calls.dry_run`
   lines carry the tag of the app that made the call
-- The control protocol is 31, so `stewart status` and the other control commands need the same release as the daemon
+- Warnings about dropped MQTT messages come for the first drop of each kind and then every 100th, with the count so
+  far, instead of one per message
+- The control protocol is 32, so `stewart status` and the other control commands need the same release as the daemon
 
 ## [1.6.0] - 2026-10-21
 

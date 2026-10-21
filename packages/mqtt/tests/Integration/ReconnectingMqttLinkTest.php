@@ -25,10 +25,12 @@ use Stewart\Mqtt\ReconnectingMqttLink;
 use Stewart\Mqtt\Tests\Fixtures\FakeMqttServer;
 use Stewart\Mqtt\Tests\Fixtures\FakeMqttServerEvent;
 use Stewart\Mqtt\Tests\Fixtures\RecordingDeadlines;
+use Stewart\Mqtt\Tests\Fixtures\RecordingMqttLinkListener;
 use Stewart\Mqtt\Tests\Fixtures\RecordingMqttRouter;
 use Stewart\Runtime\Config\BackoffPolicy;
 use Stewart\Runtime\Config\MqttConfig;
 use Stewart\Runtime\Config\MqttServerUrl;
+use Stewart\Runtime\Model\MqttDropReason;
 use Stewart\Runtime\Time\SystemClock;
 use Stewart\Support\Time\RevoltTimers;
 use Stewart\Testing\Logging\RecordedLog;
@@ -48,6 +50,8 @@ final class ReconnectingMqttLinkTest extends TestCase
 
     private RecordingMqttRouter $router;
 
+    private RecordingMqttLinkListener $listener;
+
     private ?ReconnectingMqttLink $link = null;
 
     private RecordingDeadlines $deadlines;
@@ -57,6 +61,7 @@ final class ReconnectingMqttLinkTest extends TestCase
         $this->server = FakeMqttServer::startListening();
         $this->logger = new RecordingLogger();
         $this->router = new RecordingMqttRouter();
+        $this->listener = new RecordingMqttLinkListener();
     }
 
     protected function tearDown(): void
@@ -121,7 +126,21 @@ final class ReconnectingMqttLinkTest extends TestCase
 
         self::assertSame(['home/#', 'home/#'], $this->server->subscribedFilters);
         self::assertSame(['out/buffered'], $this->server->received->mapToList(static fn(MqttMessage $message): string => $message->topic));
-        self::assertContains('MQTT message dropped while the server is unreachable', $this->logger->listMessagesAt(LogLevel::WARNING));
+        self::assertEquals([[MqttDropReason::Disconnected, 'out/dropped']], $this->listener->drops);
+        self::assertSame(2, $this->listener->connects);
+        self::assertCount(1, $this->listener->losses);
+    }
+
+    public function testFullBufferReportsTheOldestMessageAsDropped(): void
+    {
+        $link = $this->createLink(outboundBuffer: 2);
+
+        foreach (['out/first', 'out/second', 'out/third'] as $topic) {
+            $link->publishMessage(new MqttMessage($topic, '1', MqttQos::AtLeastOnce));
+        }
+
+        self::assertEquals([[MqttDropReason::BufferFull, 'out/first']], $this->listener->drops);
+        self::assertSame(2, $link->countQueuedMessages());
     }
 
     public function testSilentServerFailsTheKeepalive(): void
@@ -149,6 +168,8 @@ final class ReconnectingMqttLinkTest extends TestCase
         self::assertInstanceOf(MqttClientException::class, $reason);
         self::assertSame(MqttClientError::ConnectionRefused, $reason->reason);
         self::assertContains('Could not reach the MQTT server', $this->logger->listMessagesAt(LogLevel::ERROR));
+        self::assertSame([$reason->getMessage()], \array_slice($this->listener->losses, 0, 1), 'The status shows why it is not connected.');
+        self::assertSame(0, $this->listener->connects);
     }
 
     public function testShortSessionsKeepDoublingTheBackoff(): void
@@ -211,7 +232,7 @@ final class ReconnectingMqttLinkTest extends TestCase
         self::assertSame(MqttClientError::PacketUnexpected, $reason->reason);
     }
 
-    private function createLink(?Duration $keepalive = null, ?Duration $reconnectDelay = null, ?MqttMessage $will = null, ?Duration $maxReconnectDelay = null): ReconnectingMqttLink
+    private function createLink(?Duration $keepalive = null, ?Duration $reconnectDelay = null, ?MqttMessage $will = null, ?Duration $maxReconnectDelay = null, int $outboundBuffer = 10): ReconnectingMqttLink
     {
         $timers = new RevoltTimers();
         $this->deadlines = new RecordingDeadlines($timers);
@@ -222,7 +243,7 @@ final class ReconnectingMqttLinkTest extends TestCase
             keepalive: $keepalive ?? Duration::seconds(30),
             connectTimeout: Duration::seconds(2),
             reconnectBackoff: new BackoffPolicy($reconnectDelay, $maxReconnectDelay ?? $reconnectDelay),
-            outboundBuffer: 10,
+            outboundBuffer: $outboundBuffer,
             will: $will,
         );
 
@@ -233,6 +254,7 @@ final class ReconnectingMqttLinkTest extends TestCase
             $this->deadlines,
             SystemClock::inUtc(),
             $this->logger,
+            $this->listener,
         );
     }
 

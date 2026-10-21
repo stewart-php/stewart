@@ -8,6 +8,7 @@ home assistant connected since 30s ago, version 2026.8.1
 reconnects     1, last outage 4s                                                                                         
 component      unknown                                                                                                   
 store          down, last failure 20s ago: connection refused                                                            
+mqtt           reconnecting since 20s ago: connection refused, 2 reconnects, last outage 4s, 5 queued, 3 dropped         
 deploy         aaaaaaa, polled 15s ago, 2 rejected, last bbbbbbb 2m 00s ago: apps/Porch.php failed to load: syntax error 
 reload         partly applied 30s ago; restart to apply mqtt, log_level                                                  
 entities       2000                                                                                                      

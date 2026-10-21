@@ -16,6 +16,7 @@ use Stewart\Mqtt\OutboundMqttQueue;
 use Stewart\Mqtt\Packet\PacketEncoder;
 use Stewart\Mqtt\Packet\PacketReader;
 use Stewart\Mqtt\ReconnectingMqttLink;
+use Stewart\Mqtt\Tests\Fixtures\RecordingMqttLinkListener;
 use Stewart\Mqtt\Tests\Fixtures\RecordingMqttRouter;
 use Stewart\Runtime\Config\BackoffPolicy;
 use Stewart\Runtime\Config\MqttConfig;
@@ -102,6 +103,7 @@ final class MosquittoRoundTripTest extends TestCase
             $timers,
             SystemClock::inUtc(),
             $this->logger,
+            new RecordingMqttLinkListener(),
         );
     }
 

@@ -41,6 +41,10 @@ token. [Status and control](../guides/status.md#metrics) explains how to turn th
 | `stewart_ha_entities` | gauge |  | Entities in the Home Assistant state cache. |
 | `stewart_ha_last_outage_seconds` | gauge |  | Length of the last Home Assistant outage. |
 | `stewart_ha_reconnects_total` | counter |  | Home Assistant reconnects since the daemon started. |
+| `stewart_mqtt_connection_phase` | gauge | `phase` | MQTT connection phase; 1 for the current one. |
+| `stewart_mqtt_messages_dropped_total` | counter | `reason` | MQTT messages dropped by reason. |
+| `stewart_mqtt_outbound_queued` | gauge |  | QoS 1 messages waiting for the server to acknowledge them. |
+| `stewart_mqtt_reconnects_total` | counter |  | MQTT reconnects since the daemon started. |
 | `stewart_reloads_total` | counter | `outcome` | Reloads since the daemon started, by outcome. |
 | `stewart_routing_cache_hits_total` | counter |  | Routing lookups answered from the cache. |
 | `stewart_routing_cache_misses_total` | counter |  | Routing lookups that missed the cache. |

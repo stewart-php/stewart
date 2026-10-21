@@ -22,5 +22,10 @@ final readonly class DisabledMqttLink implements MqttLink
 
     public function unsubscribeFilter(string $topicFilter): void {}
 
+    public function countQueuedMessages(): int
+    {
+        return 0;
+    }
+
     public function close(): void {}
 }
