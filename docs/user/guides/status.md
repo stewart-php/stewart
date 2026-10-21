@@ -81,16 +81,20 @@ docker compose exec stewart stewart reload    # Reload started; stewart status s
 ```
 
 A reload restarts every worker on the code as it is now, so edited apps, `services.php` and regenerated classes take
-effect. The connection to Home Assistant stays open, and no states are fetched again. Exposed entities are briefly
-unavailable while their worker restarts, as on `worker:restart`.
+effect. It also applies `stewart.yaml`: apps added to or removed from `apps/`, and `apps.<id>` options, `enabled`,
+`paused` and `worker`, as well as `workers`. The connection to Home Assistant stays open, and no states are fetched
+again. Exposed entities are briefly unavailable while their worker restarts, as on `worker:restart`; those of a
+removed app are deleted after the usual grace when `expose.prune` is on.
 
-It first runs `stewart check` in a separate process. If that fails, nothing changes, and the `reload` row in
-`stewart status` shows the first error. Restarts a reload makes do not count toward a worker's `restarts`, and a
-quarantined worker comes back. A second reload while one runs is refused.
+It first checks the project in a separate process, as `stewart check` does. If that fails, nothing changes, and the
+`reload` row in `stewart status` shows the first error. Restarts a reload makes do not count toward a worker's
+`restarts`, and a quarantined worker comes back. A second reload while one runs is refused.
 
-A reload keeps what Stewart started with: changes to `stewart.yaml`, new or removed apps, a changed `composer.lock`
-and a new Stewart version need a restart. `docker compose kill -s HUP stewart` (or `kill -HUP` on the Stewart
-process) reloads as well, and so does `POST /api/reload` on the [admin API](#admin-api).
+Every other setting, such as `home_assistant`, `persistence`, `mqtt` or `log_level`, keeps the value Stewart started
+with: the reload still applies the rest, and the `reload` row says `partly applied` and names what needs a restart.
+`.env`, a changed `composer.lock` and a new Stewart version need a restart too. `docker compose kill -s HUP stewart`
+(or `kill -HUP` on the Stewart process) reloads as well, and so does `POST /api/reload` on the
+[admin API](#admin-api).
 
 ## Scripting
 

@@ -61,7 +61,8 @@ Parameters with a scalar or array type (`int`, `string`, `array`, …) are **opt
 
 ## Options
 
-Options let you change an app without editing its code. Set them in `stewart.yaml`, under the app's ID:
+Options let you change an app without editing its code, and `make reload` applies them to a running Stewart. Set
+them in `stewart.yaml`, under the app's ID:
 
 ```yaml
 apps:

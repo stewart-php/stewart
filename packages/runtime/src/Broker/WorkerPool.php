@@ -11,6 +11,7 @@ use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\TimerHandle;
 use Stewart\Contracts\Time\Timers;
+use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Config\StewartConfig;
 use Stewart\Runtime\Config\SupervisionConfig;
 use Stewart\Runtime\Exception\BrokerError;
@@ -73,8 +74,10 @@ final class WorkerPool
 
         $this->attachHandle($state, $slot, $process, $listener);
 
-        // A reload asked for while this process started needs one that loads the code as it is now.
-        if ($state->takeReplacementRequest()) {
+        // A reload asked for while this process started needs one that loads the code as it is now, or none at all.
+        if ($state->isRetiring()) {
+            async(fn() => $this->retireWorker($state))->ignore();
+        } elseif ($state->takeReplacementRequest()) {
             async(fn() => $this->replaceWorker($state))->ignore();
         }
 
@@ -104,20 +107,36 @@ final class WorkerPool
         return WorkerRestartOutcome::Begun;
     }
 
-    public function replaceEveryWorker(): void
+    // Every worker is replaced, retired or started at once; the existing ones keep their slot state.
+    public function applyWorkerSlots(WorkerSlotCollection $workerSlots, WorkerPoolListener $listener): void
     {
         if (!$this->running) {
             return;
         }
 
-        $replacements = [];
+        $changes = [];
 
         foreach ($this->slots->listSlotStates() as $state) {
             $this->restartPolicy->forgetRestarts($state->slot->workerId);
-            $replacements[] = async(fn() => $this->replaceWorker($state));
+            $slot = $workerSlots->findSlot($state->slot->workerId);
+
+            if ($slot === null) {
+                $changes[] = async(fn() => $this->retireWorker($state));
+
+                continue;
+            }
+
+            $state->replaceSlot($slot);
+            $changes[] = async(fn() => $this->replaceWorker($state));
         }
 
-        awaitAll($replacements);
+        foreach ($workerSlots as $slot) {
+            if ($this->slots->findSlotState($slot->workerId) === null) {
+                $changes[] = async(fn(): bool => $this->startWorker($slot, $listener));
+            }
+        }
+
+        awaitAll($changes);
     }
 
     public function markReady(WorkerHandle $handle): void
@@ -343,19 +362,52 @@ final class WorkerPool
         $this->respawnOnRequest($state, $state->phase === WorkerPhase::Live ? $state->beginReplacing() : null, 'reload');
     }
 
+    private function retireWorker(WorkerSlotState $state): void
+    {
+        if ($state->isSpawning() || $state->isStopping()) {
+            $state->requestRetirement();
+
+            return;
+        }
+
+        if ($state->phase === WorkerPhase::Live) {
+            $this->stopForReplacement($state, $state->beginReplacing(), 'reload');
+        }
+
+        $this->forgetWorker($state);
+    }
+
+    private function forgetWorker(WorkerSlotState $state): void
+    {
+        $state->stop();
+        $this->slots->forgetSlotState($state->slot->workerId);
+        $this->logger->info('Worker retired; the reload left it no apps', ['worker' => $state->slot->workerId->value]);
+    }
+
     private function respawnOnRequest(WorkerSlotState $state, ?WorkerHandle $stopping, string $reason): void
     {
         if ($stopping !== null) {
-            $stopping->sendShutdown(new Shutdown($reason, $this->config->shutdownGrace));
-            $this->awaitWorkerExit($stopping, $this->timers->timeout($this->config->shutdownGrace->plus(Duration::milliseconds(self::JOIN_MARGIN_MILLISECONDS))));
-            $state->listener->workerGone($stopping, $reason);
+            $this->stopForReplacement($state, $stopping, $reason);
         }
 
         $this->respawnWorker($state);
     }
 
+    private function stopForReplacement(WorkerSlotState $state, WorkerHandle $stopping, string $reason): void
+    {
+        $stopping->sendShutdown(new Shutdown($reason, $this->config->shutdownGrace));
+        $this->awaitWorkerExit($stopping, $this->timers->timeout($this->config->shutdownGrace->plus(Duration::milliseconds(self::JOIN_MARGIN_MILLISECONDS))));
+        $state->listener->workerGone($stopping, $reason);
+    }
+
     private function respawnWorker(WorkerSlotState $state): void
     {
+        if ($state->isRetiring()) {
+            $this->forgetWorker($state);
+
+            return;
+        }
+
         try {
             $this->startWorker($state->slot, $state->listener);
         } catch (Throwable $e) {

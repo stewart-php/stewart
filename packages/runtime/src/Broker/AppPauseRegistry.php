@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Broker;
 
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
+use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\AppPause;
 use Stewart\Runtime\App\AppPauseOverride;
@@ -18,6 +19,9 @@ final class AppPauseRegistry
     /** @var array<string, AppId> */
     private array $configPausedAppIds = [];
 
+    /** @var array<string, Instant> */
+    private array $configPausedSince = [];
+
     /** @var array<string, AppPauseOverride> */
     private array $overrides = [];
 
@@ -28,6 +32,31 @@ final class AppPauseRegistry
         foreach ($enabledApps->filter(static fn(AppDefinition $app): bool => $app->startsPaused) as $app) {
             $this->configPausedAppIds[$app->id->value] = $app->id;
         }
+    }
+
+    // A config pause a reload adds holds from then; one held since the start keeps its start.
+    public function replaceConfigPauses(AppDefinitionCollection $enabledApps, Instant $since): void
+    {
+        $pausedAppIds = [];
+        $pausedSince = [];
+
+        foreach ($enabledApps->filter(static fn(AppDefinition $app): bool => $app->startsPaused) as $app) {
+            $id = $app->id->value;
+            $pausedAppIds[$id] = $app->id;
+            $kept = isset($this->configPausedAppIds[$id]) ? $this->configPausedSince[$id] ?? null : $since;
+
+            if ($kept !== null) {
+                $pausedSince[$id] = $kept;
+            }
+        }
+
+        $this->configPausedAppIds = $pausedAppIds;
+        $this->configPausedSince = $pausedSince;
+    }
+
+    public function forgetOverridesExcept(AppIdCollection $appIds): void
+    {
+        $this->overrides = array_filter($this->overrides, static fn(AppPauseOverride $override): bool => $appIds->containsId($override->appId));
     }
 
     public function restoreOverrides(AppPauseOverrideCollection $overrides): void
@@ -78,7 +107,7 @@ final class AppPauseRegistry
 
         if (isset($this->configPausedAppIds[$appId->value])) {
             // A config pause holds from daemon start, which is recorded after this registry is built.
-            return new AppPause($appId, $this->startTime->getStartedAt(), AppPauseSource::Config);
+            return new AppPause($appId, $this->configPausedSince[$appId->value] ?? $this->startTime->getStartedAt(), AppPauseSource::Config);
         }
 
         return null;

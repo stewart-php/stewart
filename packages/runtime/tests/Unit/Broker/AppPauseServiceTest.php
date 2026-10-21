@@ -21,6 +21,8 @@ use Stewart\Runtime\Broker\AppPauseOverrideCodec;
 use Stewart\Runtime\Broker\AppPauseOverrideStore;
 use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\AppPauseService;
+use Stewart\Runtime\Broker\AppTopology;
+use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\WorkerSlotRegistry;
 use Stewart\Runtime\Exception\AppError;
@@ -120,7 +122,7 @@ final class AppPauseServiceTest extends TestCase
     public function testWithoutStoreOutcomeSaysNotConfigured(): void
     {
         $service = new AppPauseService(
-            self::createCatalog(),
+            new AppTopology(self::createCatalog(), WorkerSlotCollection::empty()),
             $this->createRegistry(),
             new AppPauseOverrideStore(new AppPauseOverrideCodec(AppPauseOverrideCodec::createOverrideWireMapper()), new NullLogger(), ConfigFixture::createPersistenceConfig()),
             new WorkerSlotRegistry(),
@@ -145,6 +147,22 @@ final class AppPauseServiceTest extends TestCase
         self::assertSame(['demo'], $registry->listPausedAppIds()->toStrings());
         self::assertSame(['Stored pause overrides name apps that no longer exist; stewart app:reset <app> removes them'], $this->logger->listMessagesAt('warning'));
         self::assertSame('ghost', $this->logger->records->getFirst()?->context['apps']);
+    }
+
+    public function testReloadRestoresStoredOverridesOfNewlyEnabledApps(): void
+    {
+        $registry = $this->createRegistry();
+        $store = $this->createOverrideStore();
+        $store->saveOverride(new AppPauseOverride(new AppId('dormant'), true, $this->clock->getNow(), AppPauseSource::Control));
+        $previous = self::createCatalog();
+        $topology = new AppTopology($previous, WorkerSlotCollection::empty());
+        $service = new AppPauseService($topology, $registry, $store, new WorkerSlotRegistry(), $this->clock, $this->logger);
+        $enabled = AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class), new AppDefinition(new AppId('dormant'), Demo::class)]);
+
+        $topology->replaceTopology(new AppCatalog($enabled, $previous->knownIds, AppIdCollection::empty()), WorkerSlotCollection::empty());
+        $service->followReloadedCatalog($previous);
+
+        self::assertSame(['dormant'], $registry->listPausedAppIds()->toStrings());
     }
 
     public function testResetReturnsAppToConfigPause(): void
@@ -216,7 +234,7 @@ final class AppPauseServiceTest extends TestCase
     private function createService(AppPauseRegistry $registry): AppPauseService
     {
         return new AppPauseService(
-            self::createCatalog(),
+            new AppTopology(self::createCatalog(), WorkerSlotCollection::empty()),
             $registry,
             $this->createOverrideStore(),
             new WorkerSlotRegistry(),

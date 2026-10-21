@@ -77,6 +77,30 @@ final class AppMetricsTest extends TestCase
         self::assertSame([[0, 2], [1, 5]], array_map(static fn(AppStatus $app): array => [$app->workerId, $app->counters->delivered], $shared));
     }
 
+    public function testReplacedTotalsKeepAppsThatStayAndDropRemovedOnes(): void
+    {
+        $this->metrics->recordActivityReports(self::createHandle(0), new Pong(1, Duration::zero(), 0, [new AppActivityReport(ResourceScope::forApp(new AppId('demo')), AppState::Running, 1, 0, 7, 0, 0, 0, 0, 0)]));
+
+        $this->metrics->replaceAppTotals(WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([
+            new AppDefinition(new AppId('demo'), Demo::class),
+            new AppDefinition(new AppId('porch'), Demo::class),
+        ]))]));
+
+        self::assertSame(
+            [['demo', 0, 7], ['porch', 0, 0]],
+            array_map(static fn(AppStatus $app): array => [$app->id, $app->workerId, $app->counters->delivered], $this->listAppStatuses()),
+        );
+    }
+
+    public function testRemovedAppReportingFromItsRetiringWorkerIsIgnored(): void
+    {
+        $this->metrics->replaceAppTotals(WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)]))]));
+
+        $this->metrics->recordActivityReports(self::createHandle(1), new Pong(1, Duration::zero(), 0, [new AppActivityReport(ResourceScope::forApp(new AppId('echo')), AppState::Running, 1, 0, 3, 0, 0, 0, 0, 0)]));
+
+        self::assertSame(['demo'], array_map(static fn(AppStatus $app): string => $app->id, $this->listAppStatuses()));
+    }
+
     public function testHostedStatusesLeaveOutSharedScope(): void
     {
         $this->metrics->recordActivityReports(self::createHandle(0), new Pong(1, Duration::zero(), 0, [new AppActivityReport(ResourceScope::shared(), AppState::Running, 1, 0, 2, 0, 0, 0, 0, 0)]));

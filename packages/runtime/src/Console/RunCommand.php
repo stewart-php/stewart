@@ -5,15 +5,10 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Console;
 
 use Psr\Log\LoggerInterface;
-use Stewart\Contracts\App\AppId;
-use Stewart\Contracts\App\Collection\AppIdCollection;
-use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Exception\StewartException;
-use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\App\AppCatalogResolver;
 use Stewart\Runtime\App\AppDiscovery;
-use Stewart\Runtime\App\AppSelection;
-use Stewart\Runtime\App\DiscoveryResult;
+use Stewart\Runtime\App\CatalogWarnings;
 use Stewart\Runtime\Broker\DaemonLaunchOptions;
 use Stewart\Runtime\Config\ConfigLoader;
 use Stewart\Runtime\Kernel\BrokerKernel;
@@ -41,6 +36,7 @@ final class RunCommand extends StewartCommand
         private readonly AppCatalogResolver $catalogs,
         private readonly BrokerKernel $brokers,
         private readonly LoggerFactory $loggers,
+        private readonly CatalogWarnings $catalogWarnings,
     ) {
         parent::__construct();
     }
@@ -81,17 +77,17 @@ final class RunCommand extends StewartCommand
     /** @throws StewartException */
     private function prepareDaemon(InputInterface $input): PreparedDaemon
     {
-        $configOption = $this->findConfigOption($input);
-        $config = $this->config->loadConfig($configOption, $this->configOverridesFromOptions($input));
+        $launch = new DaemonLaunchOptions($this->findConfigOption($input), $this->readAppSelectionOption($input), $this->nonEmptyStringOption($input, 'log-level'));
+        $config = $this->config->loadConfig($launch->configFile, $launch->listConfigOverrides());
         // Validated before the logger exists, so a missing home_assistant section fails as a config error.
         $config->requireHomeAssistant();
         $discovered = $this->discovery->discover();
-        $selection = $this->selectAppsFromOptions($input);
+        $selection = $launch->selection;
         $apps = $this->catalogs->resolveCatalog($discovered, $config->apps, $config->workers, $selection);
         $logger = $this->loggers->createStdoutLogger($config->logLevel, $this->logFormatFromOptions($input, $config->logFormat));
 
-        $this->noteMissingConfigFile($this->config->findMissingDefaultFile($configOption), $logger);
-        $this->warnAboutDiscovery($discovered, $apps, $this->config->locateConfigFile($configOption), $logger);
+        $this->noteMissingConfigFile($this->config->findMissingDefaultFile($launch->configFile), $logger);
+        $this->catalogWarnings->logCatalogWarnings($discovered, $apps, $this->config->locateConfigFile($launch->configFile), $logger);
 
         if ($config->serviceCalls->dryRun) {
             $logger->warning('service_calls.dry_run is on: service calls are logged, not sent to Home Assistant.');
@@ -101,7 +97,7 @@ final class RunCommand extends StewartCommand
             $logger->notice('Running only the automations named by --only.', ['apps' => $selection->onlyIds->toStrings()]);
         }
 
-        return new PreparedDaemon($this->brokers->createBroker($config, $apps, $logger, new DaemonLaunchOptions($configOption)), $logger);
+        return new PreparedDaemon($this->brokers->createBroker($config, $apps, $logger, $launch), $logger);
     }
 
     private function noteMissingConfigFile(?string $missingConfigFile, LoggerInterface $logger): void
@@ -109,56 +105,6 @@ final class RunCommand extends StewartCommand
         if ($missingConfigFile !== null) {
             $logger->info('No config file found; using the environment only.', ['config' => $missingConfigFile]);
         }
-    }
-
-    private function warnAboutDiscovery(DiscoveryResult $discovered, AppCatalog $apps, string $configPath, LoggerInterface $logger): void
-    {
-        foreach ($discovered->unmarked as $unmarked) {
-            $logger->warning('A class in apps/ implements App but is not marked #[Automation], so it will not run.', [
-                'class' => $unmarked->class,
-            ]);
-        }
-
-        foreach ($discovered->unloadable as $file) {
-            $logger->error('A file in apps/ failed to load, so the automation it declares will not run.', [
-                'file' => $file->path,
-                'exception' => $file->cause,
-            ]);
-        }
-
-        if (!$apps->unmatchedOverrideIds->isEmpty()) {
-            $logger->warning('stewart.yaml or the environment configures automations that were not found, so their settings are ignored.', [
-                'apps' => $apps->unmatchedOverrideIds->toStrings(),
-                'known' => $apps->knownIds->toStrings(),
-            ]);
-        }
-
-        if ($apps->enabled->isEmpty()) {
-            $logger->warning('No automations to run; Stewart will connect and do nothing.', [
-                'config' => $configPath,
-                'found' => $discovered->apps->count(),
-            ]);
-        }
-    }
-
-    /** @return array<string, mixed> */
-    private function configOverridesFromOptions(InputInterface $input): array
-    {
-        $level = $this->nonEmptyStringOption($input, 'log-level');
-
-        return $level === null ? [] : ['log_level' => $level];
-    }
-
-    /** @throws IdentifierException */
-    private function selectAppsFromOptions(InputInterface $input): AppSelection
-    {
-        $only = $input->getOption('only');
-
-        if (!\is_array($only) || $only === []) {
-            return new AppSelection();
-        }
-
-        return new AppSelection(AppIdCollection::fromList(array_map(static fn(string $id): AppId => new AppId($id), array_values(array_filter($only, \is_string(...))))));
     }
 
     private function logFormatFromOptions(InputInterface $input, LogFormat $configured): LogFormat

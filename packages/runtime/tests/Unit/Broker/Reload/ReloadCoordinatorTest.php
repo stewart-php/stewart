@@ -9,7 +9,14 @@ use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\App\AppId;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
+use Stewart\Runtime\Broker\DaemonLaunchOptions;
+use Stewart\Runtime\Broker\Reload\ConfigChangeClassifier;
+use Stewart\Runtime\Broker\Reload\ReloadApplier;
+use Stewart\Runtime\Broker\Reload\ReloadCheckApp;
+use Stewart\Runtime\Broker\Reload\ReloadCheckReport;
+use Stewart\Runtime\Broker\Reload\ReloadCheckReportCodec;
 use Stewart\Runtime\Broker\Reload\ReloadCoordinator;
+use Stewart\Runtime\Broker\Reload\ReloadPlanner;
 use Stewart\Runtime\Broker\Reload\ReloadRequestOutcome;
 use Stewart\Runtime\Broker\Reload\ReloadResult;
 use Stewart\Runtime\Broker\Reload\ReloadState;
@@ -18,22 +25,29 @@ use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Lifecycle\ReloadOutcome;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
+use Stewart\Runtime\Tests\Fixtures\Broker\AppTopologyFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerSpawner;
 use Stewart\Runtime\Tests\Fixtures\Broker\RecordingPoolListener;
 use Stewart\Runtime\Tests\Fixtures\Broker\ReloadCoordinatorFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\WorkerPoolFixture;
 use Stewart\Runtime\Tests\Fixtures\Deploy\ScriptedCommandRunner;
 use Stewart\Testing\Async\Latch;
+use Stewart\Testing\Filesystem\TempDirectory;
 use Stewart\Testing\Logging\RecordingLogger;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
 
 #[CoversClass(ReloadCoordinator::class)]
+#[CoversClass(ReloadPlanner::class)]
+#[CoversClass(ReloadApplier::class)]
+#[CoversClass(ConfigChangeClassifier::class)]
 #[CoversClass(ReloadState::class)]
 #[CoversClass(ReloadResult::class)]
 #[CoversClass(ReloadRequestOutcome::class)]
 final class ReloadCoordinatorTest extends TestCase
 {
+    private const string NO_CONFIG_FILE = 'missing';
+
     private FakeWorkerSpawner $spawner;
 
     private WorkerPoolFixture $pools;
@@ -44,7 +58,13 @@ final class ReloadCoordinatorTest extends TestCase
 
     private RecordingLogger $logger;
 
-    private ReloadCoordinator $reloads;
+    private RecordingPoolListener $listener;
+
+    private ReloadCoordinatorFixture $reloads;
+
+    private ReloadCheckReportCodec $reports;
+
+    private TempDirectory $project;
 
     protected function setUp(): void
     {
@@ -53,52 +73,106 @@ final class ReloadCoordinatorTest extends TestCase
         $this->pools = WorkerPoolFixture::createWorkerPool($this->spawner, timers: new ManualTimers(), logger: $this->logger);
         $this->commands = new ScriptedCommandRunner();
         $this->state = new ReloadState();
-        $this->reloads = ReloadCoordinatorFixture::createReloadCoordinator($this->pools, commands: $this->commands, state: $this->state, logger: $this->logger);
-        $this->pools->pool->startWorker(new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)])), new RecordingPoolListener());
+        $this->listener = new RecordingPoolListener();
+        $this->reports = new ReloadCheckReportCodec(ReloadCheckReportCodec::createReportWireMapper());
+        $this->project = TempDirectory::createWithPrefix('stewart-reload-');
+        $this->reloads = $this->createReloads();
+        $this->pools->pool->startWorker(self::createSlot(0, 'demo'), $this->listener);
+    }
+
+    protected function tearDown(): void
+    {
+        $this->project->remove();
     }
 
     public function testReloadIsRefusedBeforeTheAppsRun(): void
     {
-        self::assertSame(ReloadRequestOutcome::NotAccepting, $this->reloads->requestReload(ReloadTrigger::Control));
+        self::assertSame(ReloadRequestOutcome::NotAccepting, $this->reloads->coordinator->requestReload(ReloadTrigger::Control));
         self::assertSame([], $this->commands->commands);
     }
 
-    public function testReloadChecksThenReplacesEveryWorker(): void
+    public function testReloadReplacesTheWorkersWithoutCountingRestarts(): void
     {
-        $this->reloads->startAccepting();
+        $this->queueReport(['demo']);
 
-        self::assertSame(ReloadRequestOutcome::Started, $this->reloads->requestReload(ReloadTrigger::Control));
-        $last = $this->awaitResult();
+        $last = $this->reload();
 
         self::assertSame(ReloadOutcome::Applied, $last->outcome);
-        self::assertCount(1, $this->commands->commands);
         self::assertSame(2, $this->spawner->countSpawnedProcesses());
         self::assertSame(0, $this->pools->slots->findSlotState(new WorkerId(0))?->restarts);
     }
 
-    public function testFailedCheckLeavesTheWorkersAlone(): void
+    public function testReloadStartsAnAddedApp(): void
     {
-        $this->commands->queueResult(ReloadCoordinatorFixture::CONSOLE_SCRIPT, 1, '', "apps/Porch.php failed to load: syntax error\n");
-        $this->reloads->startAccepting();
+        $this->queueReport(['demo', 'porch']);
 
-        $this->reloads->requestReload(ReloadTrigger::Signal);
-        $last = $this->awaitResult();
+        $this->reload();
+
+        self::assertSame(['demo', 'porch'], $this->reloads->topology->getCatalog()->enabled->listAppIds()->toStrings());
+        self::assertSame(['demo', 'porch'], $this->listRunningAppIds());
+    }
+
+    public function testReloadRetiresAWorkerLeftWithoutApps(): void
+    {
+        $this->queueReport([]);
+
+        $this->reload();
+
+        self::assertTrue($this->reloads->topology->getWorkerSlots()->isEmpty());
+        self::assertNull($this->pools->slots->findSlotState(new WorkerId(0)));
+        self::assertSame(['0: reload'], $this->listener->gone);
+    }
+
+    public function testFailedCheckLeavesEverythingAlone(): void
+    {
+        $this->commands->queueResult(ReloadCoordinatorFixture::CONSOLE_SCRIPT, 1, $this->reports->encodeReport(ReloadCheckReport::failed(['apps/Porch.php failed to load: syntax error'], self::NO_CONFIG_FILE)));
+
+        $last = $this->reload();
 
         self::assertSame(ReloadOutcome::Failed, $last->outcome);
         self::assertSame('apps/Porch.php failed to load: syntax error', $last->error);
         self::assertSame(1, $this->spawner->countSpawnedProcesses());
+        self::assertSame(['demo'], $this->reloads->topology->getCatalog()->knownIds->toStrings());
         self::assertSame(['Reload failed; the workers keep running as they were'], $this->logger->listMessagesAt('error'));
+    }
+
+    public function testConfigChangedAfterTheCheckIsNotApplied(): void
+    {
+        $this->queueReport(['demo', 'porch'], 'another-version');
+
+        $last = $this->reload();
+
+        self::assertSame(ReloadOutcome::Failed, $last->outcome);
+        self::assertStringContainsString('changed while the reload checked it', (string) $last->error);
+        self::assertSame(['demo'], $this->reloads->topology->getCatalog()->knownIds->toStrings());
+    }
+
+    public function testChangedSettingOutsideTheAppsWaitsForARestart(): void
+    {
+        $config = $this->project->getFilePath('stewart.yaml');
+        file_put_contents($config, "log_level: info\n");
+        $this->reloads = $this->createReloads(new DaemonLaunchOptions($config));
+        file_put_contents($config, "log_level: debug\nmqtt:\n  url: mqtt://broker.invalid:1883\n");
+        $this->queueReport(['demo'], (string) hash_file('xxh128', $config));
+
+        $last = $this->reload();
+
+        self::assertSame(ReloadOutcome::PartlyApplied, $last->outcome);
+        self::assertSame(['log_level', 'mqtt'], $last->settingsNeedingRestart);
+        self::assertSame(['Reloaded, except for settings that only a restart applies'], $this->logger->listMessagesAt('warning'));
     }
 
     public function testRequestWhileAReloadRunsIsNotRepeated(): void
     {
-        $this->commands->hold = new Latch();
-        $this->reloads->startAccepting();
+        $hold = new Latch();
+        $this->commands->hold = $hold;
+        $this->queueReport(['demo']);
+        $this->reloads->coordinator->startAccepting();
 
-        self::assertSame(ReloadRequestOutcome::Started, $this->reloads->requestReload(ReloadTrigger::Watch));
-        self::assertSame(ReloadRequestOutcome::AlreadyUnderway, $this->reloads->requestReload(ReloadTrigger::Http));
+        self::assertSame(ReloadRequestOutcome::Started, $this->reloads->coordinator->requestReload(ReloadTrigger::Watch));
+        self::assertSame(ReloadRequestOutcome::AlreadyUnderway, $this->reloads->coordinator->requestReload(ReloadTrigger::Http));
 
-        $this->commands->hold->open();
+        $hold->open();
         $this->awaitResult();
 
         self::assertSame(1, $this->state->countResults(ReloadOutcome::Applied));
@@ -108,17 +182,44 @@ final class ReloadCoordinatorTest extends TestCase
     public function testStoppingCancelsARunningCheck(): void
     {
         $this->commands->hold = new Latch();
-        $this->reloads->startAccepting();
-        $this->reloads->requestReload(ReloadTrigger::Control);
+        $this->reloads->coordinator->startAccepting();
+        $this->reloads->coordinator->requestReload(ReloadTrigger::Control);
         EventLoopTicks::settle();
 
-        $this->reloads->stopAccepting();
+        $this->reloads->coordinator->stopAccepting();
         EventLoopTicks::settleUntil(fn(): bool => !$this->state->isUnderway());
 
         self::assertTrue($this->commands->cancelled);
         self::assertNull($this->state->findLastResult());
         self::assertSame(1, $this->spawner->countSpawnedProcesses());
-        self::assertSame(ReloadRequestOutcome::NotAccepting, $this->reloads->requestReload(ReloadTrigger::Control));
+    }
+
+    private function createReloads(DaemonLaunchOptions $launch = new DaemonLaunchOptions()): ReloadCoordinatorFixture
+    {
+        return ReloadCoordinatorFixture::createReloadCoordinator(
+            $this->pools,
+            commands: $this->commands,
+            state: $this->state,
+            logger: $this->logger,
+            launch: $launch,
+            topology: AppTopologyFixture::createTopologyForSlots(self::createSlot(0, 'demo')),
+            listener: $this->listener,
+        );
+    }
+
+    /** @param list<string> $appIds */
+    private function queueReport(array $appIds, string $configFingerprint = self::NO_CONFIG_FILE): void
+    {
+        $apps = array_map(static fn(string $id): ReloadCheckApp => new ReloadCheckApp($id, Demo::class), $appIds);
+        $this->commands->queueResult(ReloadCoordinatorFixture::CONSOLE_SCRIPT, 0, $this->reports->encodeReport(new ReloadCheckReport($apps, [], [], $configFingerprint)));
+    }
+
+    private function reload(): ReloadResult
+    {
+        $this->reloads->coordinator->startAccepting();
+        self::assertSame(ReloadRequestOutcome::Started, $this->reloads->coordinator->requestReload(ReloadTrigger::Control));
+
+        return $this->awaitResult();
     }
 
     private function awaitResult(): ReloadResult
@@ -126,5 +227,26 @@ final class ReloadCoordinatorTest extends TestCase
         EventLoopTicks::settleUntil(fn(): bool => $this->state->findLastResult() !== null);
 
         return $this->state->findLastResult() ?? self::fail('The reload never finished.');
+    }
+
+    /** @return list<string> */
+    private function listRunningAppIds(): array
+    {
+        $appIds = [];
+
+        foreach ($this->pools->slots->listSlotStates() as $state) {
+            foreach ($state->handle?->getAppIds() ?? [] as $appId) {
+                $appIds[] = $appId->value;
+            }
+        }
+
+        sort($appIds);
+
+        return $appIds;
+    }
+
+    private static function createSlot(int $workerId, string ...$appIds): WorkerSlot
+    {
+        return new WorkerSlot(new WorkerId($workerId), AppDefinitionCollection::keyedByAppId(array_map(static fn(string $id): AppDefinition => new AppDefinition(new AppId($id), Demo::class), $appIds)));
     }
 }

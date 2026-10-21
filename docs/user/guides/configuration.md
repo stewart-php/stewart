@@ -106,6 +106,9 @@ naming no app. Otherwise it lists every app with its class, the worker it runs o
 or disabled. Run it in CI or before a deploy: `make check`. The [Git deploy mode](../deploy/git.md) runs it on every
 new commit.
 
+A running Stewart applies changes to `apps` and `workers` on a [reload](status.md#reloading) (`make reload`); every
+other setting, and anything in `.env`, needs a restart.
+
 ## Settings you are likely to change
 
 | Setting | Default | What it does |

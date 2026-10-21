@@ -74,6 +74,11 @@ final class AppRunningTotals
         return $scope->isShared() ? $scope->wireValue() . '#' . $workerId->value : $scope->wireValue();
     }
 
+    public function isPlacedOn(WorkerId $workerId, string $class): bool
+    {
+        return $this->workerId?->value === $workerId->value && $this->class === $class;
+    }
+
     public function isSharedScope(): bool
     {
         return $this->appId === null;

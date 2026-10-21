@@ -301,6 +301,7 @@ Thrown as `BrokerException`.
 | --- | --- | --- |
 | `NoWorkersStarted` | None of {workers} workers could be started. | The log lines above name why each worker failed; `stewart doctor` checks the PHP setup. |
 | `WorkerSpawnTimedOut` | Worker {worker} did not connect within {timeout}. |  |
+| `ReloadConfigChanged` | {path} changed while the reload checked it, so nothing was applied; reload again. |  |
 
 ## ConfigurationError
 

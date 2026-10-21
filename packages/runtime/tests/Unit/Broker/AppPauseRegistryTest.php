@@ -49,6 +49,35 @@ final class AppPauseRegistryTest extends TestCase
         self::assertEquals(new AppPause(new AppId('demo'), $startTime->getStartedAt(), AppPauseSource::Config), $registry->findPause(new AppId('demo')));
     }
 
+    public function testReloadedConfigPauseHoldsFromTheReload(): void
+    {
+        $clock = new VirtualClock();
+        $startTime = new DaemonStartTime($clock);
+        $registry = new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class, startsPaused: true)]), $startTime);
+        $startTime->recordStart();
+        $clock->skip(Duration::minutes(5));
+
+        $registry->replaceConfigPauses(AppDefinitionCollection::keyedByAppId([
+            new AppDefinition(new AppId('demo'), Demo::class, startsPaused: true),
+            new AppDefinition(new AppId('echo'), Demo::class, startsPaused: true),
+        ]), $clock->getNow());
+
+        self::assertEquals($startTime->getStartedAt(), $registry->findPause(new AppId('demo'))?->since, 'A pause kept across the reload keeps its start.');
+        self::assertEquals($clock->getNow(), $registry->findPause(new AppId('echo'))?->since);
+    }
+
+    public function testReloadedConfigDropsPausesOfAppsNoLongerPausedOrEnabled(): void
+    {
+        $registry = self::createRegistry(startsPaused: true);
+        $registry->recordOverride(self::createOverride('demo', true));
+
+        $registry->replaceConfigPauses(AppDefinitionCollection::keyedByAppId([]), Instant::fromIso('2026-10-21T10:00:00Z'));
+        $registry->forgetOverridesExcept(AppDefinitionCollection::keyedByAppId([])->listAppIds());
+
+        self::assertFalse($registry->isPaused(new AppId('demo')));
+        self::assertNull($registry->findOverride(new AppId('demo')));
+    }
+
     public function testResumeOverrideBeatsConfigPause(): void
     {
         $registry = self::createRegistry(startsPaused: true);

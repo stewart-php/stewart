@@ -16,6 +16,7 @@ use Stewart\Runtime\Broker\AppPauseOverrideCodec;
 use Stewart\Runtime\Broker\AppPauseOverrideStore;
 use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\AppPauseService;
+use Stewart\Runtime\Broker\AppTopology;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\ConnectionTracker;
 use Stewart\Runtime\Broker\DaemonStartTime;
@@ -64,12 +65,13 @@ final readonly class AdminApiFixture
             new AppDefinition(new AppId('porch'), Demo::class, startsPaused: true),
         ]);
         $catalog = new AppCatalog($apps, AppIdCollection::fromList([new AppId('demo'), new AppId('porch'), new AppId('retired')]), AppIdCollection::fromList([]));
+        $topology = new AppTopology($catalog, WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), $apps)]));
         $startTime = new DaemonStartTime($this->clock);
         $startTime->recordStart();
         $this->registry = new AppPauseRegistry($apps, $startTime);
         $this->overrides = $this->createOverrideStore($overrideBackend);
         $this->pauses = new AppPauseService(
-            $catalog,
+            $topology,
             $this->registry,
             $this->overrides,
             new WorkerSlotRegistry(),
@@ -82,9 +84,9 @@ final readonly class AdminApiFixture
         $this->admin = new RuntimeAdmin(
             $this->pauses,
             new AppStatusBuilder($metrics, $this->registry, FakeHomeAssistant::createUnreachable()->exposures),
-            WorkerSlotCollection::fromList([new WorkerSlot(new WorkerId(0), $apps)]),
+            $topology,
             $this->broker->pools->pool,
-            ReloadCoordinatorFixture::createReloadCoordinator($this->broker->pools),
+            ReloadCoordinatorFixture::createReloadCoordinator($this->broker->pools)->coordinator,
         );
         $this->metricsExporter = $this->createMetricsExporter($startTime, $metrics);
     }

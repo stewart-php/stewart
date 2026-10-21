@@ -27,7 +27,6 @@ use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\SensorConfig;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Trigger\HaTrigger;
-use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\Component\ComponentLink;
 use Stewart\Runtime\Broker\Component\ComponentSession;
 use Stewart\Runtime\Broker\Component\ComponentTracker;
@@ -42,6 +41,7 @@ use Stewart\Runtime\Model\StewartVersion;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\StateCache;
+use Stewart\Runtime\Tests\Fixtures\Broker\AppTopologyFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\RecordingSessionListener;
 use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Support\State\StateUpdate;
@@ -534,7 +534,7 @@ final class WebsocketHaSessionTest extends TestCase
             new ComponentSession(
                 new ComponentLink($client, new NullLogger(), $this->componentTracker, $expose, new StewartVersion('0.9.0')),
                 $exposures,
-                new ExposureReconciler(WorkerSlotCollection::fromList([]), $exposures, $client, $this->componentTracker, $expose, $this->timers, new NullLogger()),
+                new ExposureReconciler(AppTopologyFixture::createTopology(), $exposures, $client, $this->componentTracker, $expose, $this->timers, new NullLogger()),
                 $this->componentTracker,
                 $config,
                 $this->timers,

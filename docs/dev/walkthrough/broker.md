@@ -121,10 +121,16 @@ correlation ID.
 - **Restarts.** `WorkerRestartPolicy` spends a `RestartBudget` with backoff; an exhausted budget quarantines the slot.
   `worker:restart` resets the budget, stops the worker gracefully, and respawns it.
 - **Reload.** `Broker/Reload/ReloadCoordinator` accepts requests once the workers have started (SIGHUP, the `reload`
-  control frame, `POST /api/reload`). It runs `stewart check` through the project's `vendor/bin/stewart` in a child
-  process with Xdebug off, then calls `WorkerPool::replaceEveryWorker()`: every live worker stops gracefully and
-  respawns, a starting one is replaced once live, and a waiting or quarantined one starts at once. These restarts
-  reset the budget but are not counted. `ReloadState` feeds the `reload` row of the snapshot.
+  control frame, `POST /api/reload`). `ReloadCheck` runs the hidden `reload:check` command through the project's
+  `vendor/bin/stewart` in a child process with Xdebug off, because the broker cannot load app classes again; it
+  answers with a `ReloadCheckReport` (the discovered apps, unmarked classes, errors and a fingerprint of the config
+  file). `ReloadPlanner` reads the config again with the launch's `--config`, `--only` and `--log-level`, refuses a
+  config file changed since the check, resolves the catalog, plans the slots, and lets `ConfigChangeClassifier` name
+  every setting outside `apps` and `workers` that changed. `ReloadApplier` replaces `AppTopology`, the config pauses,
+  the app metrics, the exposures of removed apps and the reconciler's grace, then calls
+  `WorkerPool::applyWorkerSlots()`: every worker in the new plan is replaced (a starting one once live, a waiting or
+  quarantined one at once), a worker left without apps is retired, and a new one is started. These restarts reset
+  the budget but are not counted. `ReloadState` feeds the `reload` row of the snapshot.
 - **Reconnect.** When the connection drops, `BrokerHaEvents` broadcasts `HaConnectionLost`. The session retries the
   same establish routine; on success every worker gets a `RegistrySnapshot` and a `StateResynced`.
 

@@ -9,6 +9,7 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\StoreException;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Runtime\App\AppCatalog;
+use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\AppPauseOutcome;
 use Stewart\Runtime\App\AppPauseOverride;
 use Stewart\Runtime\App\AppPauseResetOutcome;
@@ -22,7 +23,7 @@ use Stewart\Runtime\Lifecycle\AppStateAfterReset;
 final readonly class AppPauseService
 {
     public function __construct(
-        private AppCatalog $apps,
+        private AppTopology $topology,
         private AppPauseRegistry $pausedApps,
         private AppPauseOverrideStore $overrides,
         private WorkerSlotRegistry $slots,
@@ -33,15 +34,38 @@ final readonly class AppPauseService
     /** @throws StoreException */
     public function restoreStoredOverrides(): void
     {
+        $catalog = $this->topology->getCatalog();
         $stored = $this->overrides->loadOverrides();
-        $this->pausedApps->restoreOverrides($stored->filter(fn(AppPauseOverride $override): bool => $this->apps->enabled->find($override->appId) !== null));
-        $unknown = $stored->filter(fn(AppPauseOverride $override): bool => !$this->apps->knownIds->containsId($override->appId));
+        $this->pausedApps->restoreOverrides($stored->filter(static fn(AppPauseOverride $override): bool => $catalog->enabled->find($override->appId) !== null));
+        $unknown = $stored->filter(static fn(AppPauseOverride $override): bool => !$catalog->knownIds->containsId($override->appId));
 
         if ($unknown->count() > 0) {
             $this->logger->warning('Stored pause overrides name apps that no longer exist; stewart app:reset <app> removes them', [
                 'apps' => implode(', ', $unknown->mapToList(static fn(AppPauseOverride $override): string => $override->appId->value)),
             ]);
         }
+    }
+
+    public function followReloadedCatalog(AppCatalog $previous): void
+    {
+        $enabled = $this->topology->getCatalog()->enabled;
+        $this->pausedApps->replaceConfigPauses($enabled, $this->clock->getNow());
+        $this->pausedApps->forgetOverridesExcept($enabled->listAppIds());
+        $newlyEnabled = $enabled->filter(static fn(AppDefinition $app): bool => $previous->enabled->find($app->id) === null);
+
+        if ($newlyEnabled->isEmpty()) {
+            return;
+        }
+
+        try {
+            $stored = $this->overrides->loadOverrides();
+        } catch (StoreException $e) {
+            $this->logger->warning('Could not read the stored pauses of newly enabled apps; they start as configured', ['exception' => $e]);
+
+            return;
+        }
+
+        $this->pausedApps->restoreOverrides($stored->filter(static fn(AppPauseOverride $override): bool => $newlyEnabled->find($override->appId) !== null));
     }
 
     /** @throws AppException */
@@ -59,7 +83,7 @@ final readonly class AppPauseService
     /** @throws AppException|StoreException */
     public function resetApp(AppId $appId, AppPauseSource $source): AppPauseResetOutcome
     {
-        if ($this->apps->enabled->find($appId) === null) {
+        if ($this->topology->getCatalog()->enabled->find($appId) === null) {
             return $this->resetStoredOnlyApp($appId, $source);
         }
 
@@ -83,7 +107,7 @@ final readonly class AppPauseService
     /** @throws AppException */
     public function assertAppLoaded(AppId $appId): void
     {
-        if ($this->apps->enabled->find($appId) === null) {
+        if ($this->topology->getCatalog()->enabled->find($appId) === null) {
             throw $this->createNotLoadedException($appId);
         }
     }
@@ -136,7 +160,7 @@ final readonly class AppPauseService
 
     private function createNotLoadedException(AppId $appId): AppException
     {
-        return $this->apps->knownIds->containsId($appId) ? AppException::createForReason(
+        return $this->topology->getCatalog()->knownIds->containsId($appId) ? AppException::createForReason(
             AppError::Disabled,
             appId: $appId->value,
         ) : AppException::unknown($appId);

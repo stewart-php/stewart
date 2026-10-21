@@ -212,6 +212,12 @@ final class ExposureLink
         $this->orphanExposures(static fn(LiveExposure $live): bool => $live->isOwnedBy($workerId));
     }
 
+    // A removed app's entities are left for the reconciler to prune.
+    public function forgetExposuresOfApp(AppId $appId): void
+    {
+        $this->exposuresByAddress = array_filter($this->exposuresByAddress, static fn(LiveExposure $live): bool => !$live->address->appId->equals($appId));
+    }
+
     public function countExposuresOfApp(AppId $appId): int
     {
         return \count(array_filter($this->exposuresByAddress, static fn(LiveExposure $live): bool => $live->address->appId->equals($appId)));

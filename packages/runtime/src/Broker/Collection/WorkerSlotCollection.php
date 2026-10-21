@@ -21,6 +21,11 @@ final readonly class WorkerSlotCollection extends ListCollection
             ?? throw WorkerException::createForReason(WorkerError::Unknown, workerId: $workerId);
     }
 
+    public function findSlot(WorkerId $workerId): ?WorkerSlot
+    {
+        return $this->findFirstWhere(static fn(WorkerSlot $slot): bool => $slot->workerId->equals($workerId));
+    }
+
     public function findWorkerOfApp(AppId $appId): ?WorkerId
     {
         return $this->findFirstWhere(static fn(WorkerSlot $slot): bool => $slot->apps->find($appId) !== null)?->workerId;

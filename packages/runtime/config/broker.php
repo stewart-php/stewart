@@ -5,6 +5,8 @@ declare(strict_types=1);
 use Amp\Parallel\Context\ProcessContextFactory;
 use Amp\Parallel\Ipc\LocalIpcHub;
 use Stewart\Client\HaClient;
+use Stewart\Runtime\App\AppCatalogResolver;
+use Stewart\Runtime\App\CatalogWarnings;
 use Stewart\Runtime\Broker\AppPauseOverrideCodec;
 use Stewart\Runtime\Broker\AppPlacement;
 use Stewart\Runtime\Broker\AppPlacementFactory;
@@ -25,9 +27,11 @@ use Stewart\Runtime\Broker\Mqtt\MqttLink;
 use Stewart\Runtime\Broker\Mqtt\MqttLinkResolver;
 use Stewart\Runtime\Broker\Mqtt\MqttMessageRouter;
 use Stewart\Runtime\Broker\ProcessWorkerSpawner;
+use Stewart\Runtime\Broker\Reload\ReloadCheckReportCodec;
 use Stewart\Runtime\Broker\SubscriptionRegistry;
 use Stewart\Runtime\Broker\WebsocketHaSession;
 use Stewart\Runtime\Broker\WorkerSpawner;
+use Stewart\Runtime\Config\EnvironmentVariables;
 use Stewart\Runtime\Control\ControlPlaneFactory;
 use Stewart\Runtime\Control\SnapshotAssembler;
 use Stewart\Runtime\Control\SnapshotSource;
@@ -58,6 +62,11 @@ return static function (ContainerConfigurator $container): void {
     $services->instanceof(RuntimeMetricSource::class)->tag('stewart.runtime_metric_source');
 
     $services->load('Stewart\\Runtime\\Admin\\', '../src/Admin/');
+    // A reload reads the config and resolves the catalog again, as the run command did at the start.
+    $services->load('Stewart\\Runtime\\Config\\', '../src/Config/');
+    $services->set(EnvironmentVariables::class)->factory([EnvironmentVariables::class, 'fromGlobals']);
+    $services->set(AppCatalogResolver::class);
+    $services->set(CatalogWarnings::class);
     $services->load('Stewart\\Runtime\\Broker\\', '../src/Broker/');
     $services->set(StateCache::class);
     $services->set(RegistryCache::class);
@@ -79,6 +88,7 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(GuardedStoreBackend::class)->factory([service(BrokerStoreBackendOpener::class), 'openConfiguredBackend']);
     $services->alias(StoreBackend::class, GuardedStoreBackend::class);
+    $services->set(ReloadCheckReportCodec::class)->arg('$reloadCheckReportWireMapper', inline_service(WireMapper::class)->factory([ReloadCheckReportCodec::class, 'createReportWireMapper']));
     $services->set(AppPauseOverrideCodec::class)->arg('$appPauseOverrideWireMapper', inline_service(WireMapper::class)->factory([AppPauseOverrideCodec::class, 'createOverrideWireMapper']));
 
     $services->set(SubscriptionRegistry::class)->arg('$brokerSubscriptionListeners', tagged_iterator('stewart.broker_subscription_listener'));

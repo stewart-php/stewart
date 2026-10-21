@@ -10,14 +10,16 @@ use Stewart\Client\Exception\HaClientException;
 use Stewart\Client\HaClient;
 use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Contracts\Time\TimerHandle;
 use Stewart\Contracts\Time\Timers;
-use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
+use Stewart\Runtime\Broker\AppTopology;
 use Stewart\Runtime\Broker\Component\ComponentTracker;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Config\ExposeConfig;
 use Stewart\Runtime\Model\WorkerId;
 
-// Once per run, removes this daemon's entities that no app exposed, keeping every entity of apps that are not running.
+// Once the workers settle after the start or a reload, removes this daemon's entities that no app exposed, keeping every
+// entity of apps that are not running.
 final class ExposureReconciler
 {
     private const int GRACE_SECONDS_AFTER_WORKERS_SETTLE = 30;
@@ -27,10 +29,12 @@ final class ExposureReconciler
 
     private bool $graceStarted = false;
 
+    private ?TimerHandle $grace = null;
+
     private bool $due = false;
 
     public function __construct(
-        private readonly WorkerSlotCollection $workerSlots,
+        private readonly AppTopology $topology,
         private readonly ExposureLink $exposures,
         private readonly HaClient $client,
         private readonly ComponentTracker $tracker,
@@ -58,10 +62,19 @@ final class ExposureReconciler
         }
 
         $this->graceStarted = true;
-        $this->timers->startTimer(Duration::seconds(self::GRACE_SECONDS_AFTER_WORKERS_SETTLE), function (): void {
+        $this->grace = $this->timers->startTimer(Duration::seconds(self::GRACE_SECONDS_AFTER_WORKERS_SETTLE), function (): void {
             $this->due = true;
             $this->reconcileIfDue();
         });
+    }
+
+    public function restartAfterReload(): void
+    {
+        $this->grace?->cancel();
+        $this->grace = null;
+        $this->runningAppsByWorker = [];
+        $this->graceStarted = false;
+        $this->due = false;
     }
 
     public function reconcileIfDue(): void
@@ -88,14 +101,14 @@ final class ExposureReconciler
 
     private function haveAllWorkersSettled(): bool
     {
-        return !$this->workerSlots->containsWhere(fn(WorkerSlot $slot): bool => !isset($this->runningAppsByWorker[$slot->workerId->value]));
+        return !$this->topology->getWorkerSlots()->containsWhere(fn(WorkerSlot $slot): bool => !isset($this->runningAppsByWorker[$slot->workerId->value]));
     }
 
     private function buildReconcile(): ExposedEntityReconcile
     {
         $keptApps = [];
 
-        foreach ($this->workerSlots as $slot) {
+        foreach ($this->topology->getWorkerSlots() as $slot) {
             $runningApps = $this->runningAppsByWorker[$slot->workerId->value] ?? AppIdCollection::empty();
 
             foreach ($slot->listAppIds() as $appId) {
