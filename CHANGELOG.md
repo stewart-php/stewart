@@ -5,41 +5,67 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
-## [Unreleased]
+## [1.5.0] - 2026-10-21
+
+Mistakes surface before they reach the server: `stewart check` builds every app, and new projects run it in CI and
+before every `make deploy`.
 
 ### Added
 
 - `stewart check` builds every enabled app's container the way its worker does, without running any app code, and
   fails naming each app that cannot be built: a missing or unknown option, a constructor argument nothing provides,
   a `Store` without `persistence.url`, an `Mqtt` without `mqtt.url`, or a `#[PeerStore]` naming no app, with the
-  closest ID
+  closest ID ([#96](https://github.com/stewart-php/stewart/pull/96))
 - `stewart check` notes classes in `apps/` that implement `App` without `#[Automation]`, as `stewart run` does
+  ([#96](https://github.com/stewart-php/stewart/pull/96))
 - `Stewart\Contracts\Disposable` for apps that release something when they stop; apps that open nothing need no
   `dispose()` any more, and new projects, `make:app` and the examples have none
+  ([#99](https://github.com/stewart-php/stewart/pull/99))
 - The test harness's recorded handles send commands without building them: `pushTurnOn()` and `pushTurnOff()` on a
   switch, `pushPress()` on a button, `pushOption()` on a select, and `pushValue()` on a number, text, time, date or
   date-time; the event context defaults to `EventContext::unknown()`
+  ([#100](https://github.com/stewart-php/stewart/pull/100))
 
 ### Changed
 
 - A Git deploy rejects a commit with an app that cannot be built, because `stewart check` now builds the apps; before,
-  the commit went out and that app failed on its own
+  the commit went out and that app failed on its own ([#96](https://github.com/stewart-php/stewart/pull/96))
 - An app that takes a `Store` or `Mqtt` that is not configured, or a `#[PeerStore]` naming no app, fails when its
   worker builds the container, with the reason `app_build_failed`, instead of when it is constructed
+  ([#96](https://github.com/stewart-php/stewart/pull/96))
 - New projects' CI also runs `make check` against the settings in `.env.example`, and the Image workflow runs CI
-  first, so a commit that fails it gets no image
+  first, so a commit that fails it gets no image ([#97](https://github.com/stewart-php/stewart/pull/97))
 - `make deploy` in new projects installs changed dependencies and runs `stewart check` in one-off containers before
   it restarts Stewart, so a deploy is down only for the restart, and a failed check leaves the running daemon up
+  ([#98](https://github.com/stewart-php/stewart/pull/98))
 - `App` declares only `initialize()`; `dispose()` moved to `Disposable`. An app that marks `dispose()` with
   `#[\Override]` must implement `Disposable`, or PHP refuses to load it
+  ([#99](https://github.com/stewart-php/stewart/pull/99))
 - An app without `worker:` is placed by a hash of its ID instead of round-robin, so adding or removing an app moves
   no other. After the upgrade, apps and their `worker` metric label move once; the spread can be less even with few
-  apps, and `apps.<id>.worker` still pins one
+  apps, and `apps.<id>.worker` still pins one ([#101](https://github.com/stewart-php/stewart/pull/101))
 
 ### Deprecated
 
 - A public `dispose()` on an app that does not implement `Disposable`. Stewart still calls it until 2.0, and
-  `stewart check` names each such app
+  `stewart check` names each such app ([#99](https://github.com/stewart-php/stewart/pull/99))
+
+### Upgrading
+
+1. Apps without `worker:` can move to another worker once, so the `worker` label of their metrics changes. If
+   dashboards or alerts rely on it, run `make check` before upgrading, note each app's worker, and pin it with
+   `apps.<id>.worker`.
+2. Run `make upgrade VERSION=1.5`. Protocols are unchanged, so a 1.4 daemon, `stewart` CLI and Home Assistant
+   integration work with 1.5.
+3. Run `make check`. It now builds every app, so it can name a problem that used to show only when the app started,
+   and a Git deploy rejects a commit until it passes.
+4. Delete the empty `dispose()` from your apps; `make check` names each app that still has one. Where `dispose()`
+   does something, add `implements Disposable` (`use Stewart\Contracts\Disposable;`). An app that marks `dispose()`
+   with `#[\Override]` does not load until you do one or the other.
+5. The new deploy and CI steps reach only new projects. To use them, copy the `deploy` target from the
+   [skeleton's Makefile](https://github.com/stewart-php/skeleton/blob/main/Makefile), and `ci.yml` and `image.yml`
+   from its [workflows](https://github.com/stewart-php/skeleton/tree/main/.github/workflows). CI checks the settings
+   in `.env.example`, so keep it listing every setting your apps need.
 
 ## [1.4.0] - 2026-10-20
 
