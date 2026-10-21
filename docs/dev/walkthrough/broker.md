@@ -131,6 +131,11 @@ correlation ID.
   `WorkerPool::applyWorkerSlots()`: every worker in the new plan is replaced (a starting one once live, a waiting or
   quarantined one at once), a worker left without apps is retired, and a new one is started. These restarts reset
   the budget but are not counted. `ReloadState` feeds the `reload` row of the snapshot.
+- **Watch.** With `run --watch`, `Broker/Reload/SourceWatcher` scans every second. `SourcePathFinder` lists the
+  project's `autoload` PSR-4 directories from `composer.json`, `services.php` and the config file; `SourceScanner`
+  fingerprints them by path, mtime, size and inode (no inotify: it does not cross Docker Desktop bind mounts).
+  `SourceChangeTracker` reports a change once two scans agree on it, and the watcher asks for a reload; a refused
+  request is asked again on the next scan. `.env` and `composer.lock` only log a warning.
 - **Reconnect.** When the connection drops, `BrokerHaEvents` broadcasts `HaConnectionLost`. The session retries the
   same establish routine; on success every worker gets a `RegistrySnapshot` and a `StateResynced`.
 

@@ -96,6 +96,11 @@ with: the reload still applies the rest, and the `reload` row says `partly appli
 (or `kill -HUP` on the Stewart process) reloads as well, and so does `POST /api/reload` on the
 [admin API](#admin-api).
 
+During development, `make watch` (`stewart run --watch`) reloads on its own. Every second it looks at the
+directories the project's `composer.json` autoloads (not `autoload-dev`, so editing a test changes nothing),
+`services.php` and `stewart.yaml`, and reloads once a change has stopped changing. A changed `.env` or
+`composer.lock` is only logged, since it needs a restart.
+
 ## Scripting
 
 ```bash

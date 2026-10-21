@@ -98,6 +98,10 @@ restarted after installing it. See [Exposed entities](../guides/exposed-entities
 **A pushed commit does not go live.** In Git mode, a commit that fails `stewart check` is rejected and the old one
 keeps running. `make status` shows it on the `deploy` row; the log says why.
 
+**`make watch` does not reload after a save.** It watches only the directories the `autoload` section of
+`composer.json` names, `services.php` and `stewart.yaml`, and reloads about two seconds after the last change. A file
+outside those, such as a test, or a `.env` change, needs `make run` again.
+
 **A reload changed nothing.** The `reload` row in `make status` says `failed` with the first error of the check, and
 the workers kept running the code they had. Run `make check`, fix what it names, and reload again. When it says
 `partly applied`, the settings it names wait for a restart; only `apps` and `workers` change on a reload.

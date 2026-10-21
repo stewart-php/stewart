@@ -27,6 +27,7 @@ make generate     # typed entity and service classes from your Home Assistant, i
 make doctor       # the connection to Home Assistant, the token's rights and the store
 make check        # the configuration loads and every app can be built; lists the apps and their workers
 make run          # run in the foreground; Ctrl-C stops it
+make watch        # the same, and every saved change reloads the apps
 make status       # from another terminal
 ```
 

@@ -12,6 +12,8 @@ release could break; a release's "Upgrading" section says what to change.
 - `stewart reload` (`make reload`), `POST /api/reload` and `SIGHUP` run `stewart check`, then restart every worker on
   the current code while the Home Assistant session stays open; a failed check leaves everything running.
   `stewart status` shows the last reload on a `reload` row, and `stewart_reloads_total{outcome}` counts them
+- `stewart run --watch` (`make watch` in new projects) reloads once a saved change to the apps, `services.php` or
+  `stewart.yaml` settles; a changed `.env` or `composer.lock` is logged as needing a restart
 - A reload also applies `stewart.yaml` and the app list: added and removed apps, `apps.<id>` options, `enabled`,
   `paused` and `worker`, and `workers`. Any other changed setting keeps its value until a restart, and the `reload`
   row says `partly applied` and names it

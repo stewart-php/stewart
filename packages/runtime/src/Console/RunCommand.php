@@ -47,7 +47,8 @@ final class RunCommand extends StewartCommand
         $this
             ->addOption('log-level', 'l', InputOption::VALUE_REQUIRED, 'debug|info|notice|warning|error')
             ->addOption('json-logs', null, InputOption::VALUE_NONE, 'Emit logs as JSON')
-            ->addOption('only', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Run only this automation, even if disabled; repeat for more');
+            ->addOption('only', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Run only this automation, even if disabled; repeat for more')
+            ->addOption('watch', null, InputOption::VALUE_NONE, 'Reload after every saved change to the apps, services.php or stewart.yaml');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -77,7 +78,12 @@ final class RunCommand extends StewartCommand
     /** @throws StewartException */
     private function prepareDaemon(InputInterface $input): PreparedDaemon
     {
-        $launch = new DaemonLaunchOptions($this->findConfigOption($input), $this->readAppSelectionOption($input), $this->nonEmptyStringOption($input, 'log-level'));
+        $launch = new DaemonLaunchOptions(
+            $this->findConfigOption($input),
+            $this->readAppSelectionOption($input),
+            $this->nonEmptyStringOption($input, 'log-level'),
+            $input->getOption('watch') === true,
+        );
         $config = $this->config->loadConfig($launch->configFile, $launch->listConfigOverrides());
         // Validated before the logger exists, so a missing home_assistant section fails as a config error.
         $config->requireHomeAssistant();

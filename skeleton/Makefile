@@ -67,6 +67,10 @@ generate: ## Write typed entity and service classes from Home Assistant into gen
 run: ## Run in the foreground [ONLY="hello porch" to run only those apps, DRY_RUN=1 to send no service calls]
 	$(RUN_APP) $(if $(DRY_RUN),-e STEWART_SERVICE_CALLS__DRY_RUN=true) stewart run $(addprefix --only=,$(ONLY))
 
+.PHONY: watch
+watch: ## Run in the foreground and reload after every saved change [ONLY="hello porch", DRY_RUN=1]
+	$(RUN_APP) $(if $(DRY_RUN),-e STEWART_SERVICE_CALLS__DRY_RUN=true) stewart run --watch $(addprefix --only=,$(ONLY))
+
 .PHONY: debug
 debug: ## Run in the foreground with Xdebug
 	$(RUN_APP) -e XDEBUG_MODE=debug,develop -e XDEBUG_TRIGGER=1 stewart run $(addprefix --only=,$(ONLY))

@@ -99,6 +99,7 @@ commands. These are the ones you use most:
 | `make setup` | First run: pull images, create `.env`, install dependencies, check the container |
 | `make doctor` | Check the settings and the connections to Home Assistant and the store |
 | `make run` | Run in the foreground; Ctrl-C stops it. `ONLY="porch-light"` runs only those apps, `DRY_RUN=1` sends no service calls |
+| `make watch` | Like `make run`, and reloads after every saved change to the apps, `services.php` or `stewart.yaml` |
 | `make debug` | Like `make run`, with Xdebug on |
 | `make app NAME=…` | Create an app in `apps/` and its test in `tests/` |
 | `make test` | Run the tests |
