@@ -326,6 +326,7 @@ Thrown as `ConfigurationException`.
 | `AdminTokenMissing` | http.admin.token is required while http.admin.listen is set; set STEWART_HTTP__ADMIN__TOKEN or set http.admin.listen to "off". | Create one with `openssl rand -hex 16` and set it as `STEWART_HTTP__ADMIN__TOKEN`. |
 | `WorkerIndexOutOfRange` | App "{appId}" is pinned to worker {worker}, but the highest worker index is {highestIndex}. |  |
 | `AppSelectionUnknown` | {option} names app "{appId}", but no automation has that ID. |  |
+| `OptionsConflict` | {option} cannot be combined with {conflicting}. |  |
 | `EnvironmentVariableUnknown` | {variable} is not a Stewart setting; run `stewart config:reference` for all options. | Fix the variable name; keys are joined by two underscores. |
 | `EnvironmentVariableTooDeep` | {variable} is deeper than the configuration; {valuePath} is a value, not a section. |  |
 | `EnvironmentVariableNamesSection` | {variable} names a section; set the keys under it, such as {variable}{separator}KEY. |  |

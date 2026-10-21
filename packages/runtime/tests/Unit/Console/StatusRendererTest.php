@@ -11,6 +11,7 @@ use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\Console\StatusFormatter;
 use Stewart\Runtime\Console\StatusRenderer;
+use Stewart\Runtime\Console\StatusView;
 use Stewart\Runtime\Control\Protocol\Status\AppCounters;
 use Stewart\Runtime\Control\Protocol\Status\AppPauseStatus;
 use Stewart\Runtime\Control\Protocol\Status\AppStatus;
@@ -23,9 +24,11 @@ use Stewart\Runtime\Control\Protocol\Status\DeployStatus;
 use Stewart\Runtime\Control\Protocol\Status\FailureReport;
 use Stewart\Runtime\Control\Protocol\Status\LatencyHistogram;
 use Stewart\Runtime\Control\Protocol\Status\OutboxStatus;
+use Stewart\Runtime\Control\Protocol\Status\RegistrationInfo;
 use Stewart\Runtime\Control\Protocol\Status\ReloadAttempt;
 use Stewart\Runtime\Control\Protocol\Status\ReloadStatus;
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
+use Stewart\Runtime\Control\Protocol\Status\ScheduleStatus;
 use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
 use Stewart\Runtime\Control\Protocol\Status\WorkerStatus;
 use Stewart\Runtime\Lifecycle\AppFailurePhase;
@@ -37,6 +40,7 @@ use Stewart\Runtime\Lifecycle\ReloadOutcome;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
 use Stewart\Runtime\Model\RoutingStats;
 use Stewart\Runtime\Model\ServiceCallOutcome;
+use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Store\StoreHealth;
 use Symfony\Component\Console\Output\BufferedOutput;
 
@@ -46,6 +50,8 @@ use Symfony\Component\Console\Output\BufferedOutput;
 final class StatusRendererTest extends TestCase
 {
     private const string GOLDEN = __DIR__ . '/../../Fixtures/Control/status.txt';
+
+    private const string APP_GOLDEN = __DIR__ . '/../../Fixtures/Control/status-app.txt';
 
     private const float NOW = 1700003600.0;
 
@@ -64,6 +70,29 @@ final class StatusRendererTest extends TestCase
         self::assertStringEqualsFile(self::GOLDEN, $text);
     }
 
+    public function testAppDetailAddsTheAppsSubscriptionsAndSchedules(): void
+    {
+        $snapshot = self::createSnapshot(null)->withOnlyApps(['demo']);
+
+        $output = new BufferedOutput();
+        new StatusRenderer(new StatusFormatter())->render($output, $snapshot, StatusView::AppDetail);
+        $text = $output->fetch();
+
+        if (getenv('UPDATE_GOLDEN') === '1') {
+            file_put_contents(self::APP_GOLDEN, $text);
+        }
+
+        self::assertStringEqualsFile(self::APP_GOLDEN, $text);
+    }
+
+    public function testSeveralAppsNameTheAppOfEachSubscription(): void
+    {
+        $output = new BufferedOutput();
+        new StatusRenderer(new StatusFormatter())->render($output, self::createSnapshot(null), StatusView::AppDetail);
+
+        self::assertMatchesRegularExpression('/^\s*app\s+kind\s+match/m', $output->fetch());
+    }
+
     public function testFormatHelpersRead(): void
     {
         self::assertSame('1.5 GiB', new StatusFormatter()->formatBytes(1_610_612_736));
@@ -74,6 +103,9 @@ final class StatusRendererTest extends TestCase
         self::assertSame('0.3 ms', new StatusFormatter()->formatElapsed(Duration::microseconds(300)));
         self::assertSame('never', new StatusFormatter()->formatTimeAgo(null, self::createInstantAt(10.0)));
         self::assertSame('2d 03h', new StatusFormatter()->formatDuration(Duration::seconds(2 * 86400 + 3 * 3600 + 5)));
+        self::assertSame('in 4m 00s', new StatusFormatter()->formatNextRun(self::createInstantAt(250.0), self::createInstantAt(10.0)));
+        self::assertSame('due', new StatusFormatter()->formatNextRun(self::createInstantAt(5.0), self::createInstantAt(10.0)), 'A run the last probe expected has passed.');
+        self::assertSame('-', new StatusFormatter()->formatNextRun(null, self::createInstantAt(10.0)));
     }
 
     #[DataProvider('provideComponentRows')]
@@ -126,10 +158,16 @@ final class StatusRendererTest extends TestCase
                         new ServiceCallStats(ServiceCallOutcome::TimedOut, 1, new LatencyHistogram([5, 10], [0, 0], 1, Duration::seconds(30))),
                     ],
                     lastFailure: new FailureReport(AppFailurePhase::Handler, 'RuntimeException', 'lamp offline', null, 'unreachable', self::createInstantAt($now - 60.0)),
+                    lastHandledAt: self::createInstantAt($now - 90.0),
+                    nextRunAt: self::createInstantAt($now + 240.0),
                 ),
                 new AppStatus('echo', 'Echo', 1, AppState::Running, null, new AppPauseStatus(self::createInstantAt($now - 300.0), AppPauseSource::Control), null, 0, 0, 0, new AppCounters(), [], null),
             ],
-            subscriptions: [],
+            subscriptions: [
+                new RegistrationInfo('w0:1', 0, 'demo', SubscriptionKind::StateChange, 'exact:light.hall', true, 14, 12, 1, self::createInstantAt($now - 95.0), self::createInstantAt($now - 90.0)),
+                new RegistrationInfo('w0:3', 0, 'demo', SubscriptionKind::Topic, 'exact:house.mode', true),
+                new RegistrationInfo('w1:1', 1, 'echo', SubscriptionKind::Topic, 'any', false),
+            ],
             store: new StoreHealth(false, 'connection refused', self::createInstantAt($now - 20.0)),
             deploy: new DeployStatus(
                 str_repeat('a', 40),
@@ -144,6 +182,7 @@ final class StatusRendererTest extends TestCase
                 failed: 1,
                 last: new ReloadAttempt(ReloadOutcome::PartlyApplied, self::createInstantAt($now - 30.0), null, ['mqtt', 'log_level']),
             ),
+            schedules: [new ScheduleStatus('demo', 0, 'w0:2', 'every 5m', self::createInstantAt($now + 240.0), self::createInstantAt($now - 60.0))],
         );
 
     }

@@ -37,11 +37,38 @@ page run inside the Stewart container:
 |---|---|
 | Daemon | Stewart's version, uptime and resident memory; the Home Assistant connection and its last outage; whether the store is up; the `component` row (the Stewart integration in Home Assistant); the `deploy` row (the running commit and the last rejected one, in Git mode); the `reload` row (the last reload and how it went); service calls waiting and refused. |
 | Workers | Whether each worker is running, how much resident memory it uses, how often it restarted, and whether it is falling behind (events waiting or dropped). |
-| Apps | Whether each app is running, paused (and by whom: `config`, `control` or `http`) or failed; how many events and schedule runs it handled or skipped while paused; its exposed entities; how its service calls went. |
+| Apps | Whether each app is running, paused (and by whom: `config`, `control` or `http`) or failed; when its handler last ran for an event (`last handled`) and when its next schedule or timer is due (`next run`); how many events and schedule runs it handled or skipped while paused; its exposed entities; how its service calls went. |
 | Failures | Each app's last failure: when, where, the reason and the message. |
 
 The worker and app figures are refreshed every `supervision.ping_interval` (10 seconds by default), and keep adding up
 across worker restarts until Stewart itself restarts. `stewart status --json` holds every field.
+
+### One app
+
+```bash
+make status APP=porch-light          # APP="porch-light hall" for two
+```
+
+Name one or more apps (`stewart status porch-light`), and the Apps and Failures tables show only those, followed by two
+more tables:
+
+| Table | Shows |
+|---|---|
+| Subscriptions | Each entity, event, topic, MQTT filter and trigger the app listens to: how many events reached it (`received`), how many got through its operators to the handler (`handled`), how many a full queue dropped, and when the handler last ran |
+| Schedules | Each schedule and timer: what it is, when it runs next (`due` if the last report expected it already) and when it last ran |
+
+A subscription that receives but never handles has an operator that stops its events; [trace](logging.md#tracing-an-app)
+the app to see which. An ID no app has fails, and names the closest one. `--json` narrows the same way.
+
+### Watching
+
+```bash
+make status WATCH=1                  # WATCH=5s for another interval; also with APP=
+```
+
+`stewart status --watch` redraws every 2 seconds (`--watch=5s` for another interval) until Ctrl-C. While Stewart is
+down or restarting, it says so and keeps trying. With `--json`, it prints one snapshot per line. The worker and app
+figures still change only once per `ping_interval`.
 
 ## Pausing an app
 

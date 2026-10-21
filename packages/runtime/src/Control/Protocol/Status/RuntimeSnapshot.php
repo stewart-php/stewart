@@ -34,4 +34,23 @@ final readonly class RuntimeSnapshot
         #[ListOf(ScheduleStatus::class)]
         public array $schedules = [],
     ) {}
+
+    /** @param list<string> $appIds */
+    public function withOnlyApps(array $appIds): self
+    {
+        return new self(
+            takenAt: $this->takenAt,
+            daemon: $this->daemon,
+            connection: $this->connection,
+            broker: $this->broker,
+            workers: $this->workers,
+            apps: array_values(array_filter($this->apps, static fn(AppStatus $app): bool => \in_array($app->id, $appIds, true))),
+            subscriptions: array_values(array_filter($this->subscriptions, static fn(RegistrationInfo $subscription): bool => \in_array($subscription->appId, $appIds, true))),
+            store: $this->store,
+            deploy: $this->deploy,
+            component: $this->component,
+            reload: $this->reload,
+            schedules: array_values(array_filter($this->schedules, static fn(ScheduleStatus $schedule): bool => \in_array($schedule->appId, $appIds, true))),
+        );
+    }
 }

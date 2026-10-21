@@ -117,8 +117,8 @@ logs: ## Follow the daemon logs
 	$(SERVER) logs -f stewart
 
 .PHONY: status
-status: ## One-shot status of the running daemon
-	$(SERVER) run --rm --no-deps stewart stewart status
+status: ## Status of the running daemon [APP=porch-light for one app's subscriptions and schedules, WATCH=1 to redraw every 2s, WATCH=5s]
+	$(SERVER) run --rm --no-deps stewart stewart status $(APP) $(if $(WATCH),--watch$(if $(filter-out 1,$(WATCH)),=$(WATCH)))
 
 .PHONY: app-pause
 app-pause: ## Pause an app of the running daemon [APP=porch-light]

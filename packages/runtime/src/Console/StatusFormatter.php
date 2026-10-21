@@ -59,6 +59,16 @@ final readonly class StatusFormatter
         return 'in ' . $this->formatDuration($at->elapsedSince($now));
     }
 
+    // The figures can be a probe interval old, so a run already past is shown as due rather than as a negative wait.
+    public function formatNextRun(?Instant $at, Instant $now): string
+    {
+        if ($at === null) {
+            return '-';
+        }
+
+        return $at->isAfter($now) ? $this->formatTimeUntil($at, $now) : 'due';
+    }
+
     public function formatDuration(Duration $duration): string
     {
         $seconds = (int) $duration->toSeconds();

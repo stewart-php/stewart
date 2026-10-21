@@ -56,13 +56,17 @@ The [error reference](../reference/errors.md) lists every message.
 
 ## An app does not react
 
-1. **Check the entity ID** under **Developer tools → States** in Home Assistant.
-2. **Check the app runs**: `make status` shows it as `running`, not `paused` or failed.
-3. **Check the operator.** `whenChangedTo('on')` ignores changes from `unavailable`, and a first state is not a
-   change. A `filter()` before a time window can hide the change the window needs; see
-   [Put time windows first](../guides/state-changes.md#put-time-windows-first).
-4. **Add a log line** at the start of the handler, and run with `make run ONLY=<app-id>`.
-5. **Write a test** that pushes the state you expect; it shows whether the app or the input is wrong.
+1. **Check the app runs**: `make status` shows it as `running`, not `paused` or failed.
+2. **Look at its subscriptions**: `make status APP=<app-id>` lists each one with how many events it `received` and
+   `handled`.
+   - Nothing received: the entity ID or the event type does not match. Check it under **Developer tools → States** in
+     Home Assistant.
+   - Received but not handled: an operator stopped the events. `whenChangedTo('on')` ignores changes from
+     `unavailable`, and a first state is not a change. A `filter()` before a time window can hide the change the
+     window needs; see [Put time windows first](../guides/state-changes.md#put-time-windows-first).
+3. **Trace it**: `make run TRACE=<app-id>` (or `make watch TRACE=…`) logs each event the app receives, each call of its
+   handler and each service call. See [Tracing an app](../guides/logging.md#tracing-an-app).
+4. **Write a test** that pushes the state you expect; it shows whether the app or the input is wrong.
 
 ## Service calls fail
 

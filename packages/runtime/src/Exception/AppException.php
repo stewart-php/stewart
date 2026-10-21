@@ -10,8 +10,12 @@ use Stewart\Contracts\Exception\StewartException;
 /** @extends StewartException<AppError> */
 final class AppException extends StewartException
 {
-    public static function unknown(AppId $appId): self
+    public static function unknown(AppId $appId, ?string $suggestion = null): self
     {
-        return self::createForReason(AppError::Unknown, appId: $appId->value);
+        return self::createForReasonWithAppendedText(
+            AppError::Unknown,
+            ['appId' => $appId->value, 'suggestion' => $suggestion],
+            $suggestion === null ? null : \sprintf('Did you mean "%s"?', $suggestion),
+        );
     }
 }

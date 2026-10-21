@@ -20,6 +20,10 @@ release could break; a release's "Upgrading" section says what to change.
   next and last run. Each app gains `last_handled_at`, `next_run_at` and `counters.handled`, also in the admin API's
   `GET /api/apps`, and `stewart_app_events_handled_total`, `stewart_app_last_handled_timestamp_seconds` and
   `stewart_app_next_run_timestamp_seconds` expose them
+- `stewart status <app>…` (`make status APP=…`) shows only those apps, and adds a Subscriptions table (received,
+  handled, dropped, last handled) and a Schedules table (next and last run); an unknown ID names the closest one, and
+  `--json` narrows the same way. `--watch[=2s]` (`make status WATCH=1`) redraws until Ctrl-C and keeps trying while
+  Stewart is down. The Apps table shows `last handled` and `next run`
 
 ### Changed
 
