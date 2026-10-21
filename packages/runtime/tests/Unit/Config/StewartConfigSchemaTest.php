@@ -88,6 +88,7 @@ final class StewartConfigSchemaTest extends TestCase
         self::assertTrue(self::getValueAt($processed, 'apps.demo.enabled'));
         self::assertNull(self::getValueAt($processed, 'apps.demo.worker'));
         self::assertNull(self::getValueAt($processed, 'apps.demo.log_level'));
+        self::assertFalse(self::getValueAt($processed, 'apps.demo.trace'));
         self::assertSame([], self::getValueAt($processed, 'apps.demo.options'));
     }
 

@@ -26,6 +26,7 @@ final readonly class AppActivityRecorder implements DispatchListener, ScheduleLi
         private AppActivityCounters $activityCounters,
         private WorkerLogger $logger,
         private ScopeLifecycle $scopes,
+        private AppTracer $tracer,
     ) {
         $this->dropReports = EveryNthOccurrence::forRepeatedWarnings();
     }
@@ -41,14 +42,25 @@ final readonly class AppActivityRecorder implements DispatchListener, ScheduleLi
         $this->failures->report($subscription->scope, AppFailurePhase::Handler, $error, $origin);
     }
 
+    public function eventReceived(RegisteredSubscription $subscription, object $event): void
+    {
+        $this->tracer->traceEventReceived($subscription, $event);
+    }
+
+    public function handlerCalled(RegisteredSubscription $subscription): void
+    {
+        $this->tracer->traceHandlerCalled($subscription);
+    }
+
     public function eventDelivered(RegisteredSubscription $subscription): void
     {
         $this->activityCounters->findOrCreateActivityForScope($subscription->scope)->recordDeliveredEvent();
     }
 
-    public function eventSuppressed(RegisteredSubscription $subscription): void
+    public function eventSuppressed(RegisteredSubscription $subscription, ?object $event): void
     {
         $this->activityCounters->findOrCreateActivityForScope($subscription->scope)->recordSuppressedWork();
+        $this->tracer->traceSkippedWhilePaused($subscription, $event);
     }
 
     public function eventDropped(RegisteredSubscription $subscription, int $droppedSoFar): void
@@ -69,11 +81,13 @@ final readonly class AppActivityRecorder implements DispatchListener, ScheduleLi
     public function scheduledRunStarted(ScheduleOrigin $origin, ScheduledRun $run): void
     {
         $this->activityCounters->findOrCreateActivityForScope($origin->scope)->recordScheduleRun();
+        $this->tracer->traceScheduleRun($origin, $run);
     }
 
     public function scheduledRunSuppressed(ScheduleOrigin $origin, ScheduledRun $run): void
     {
         $this->activityCounters->findOrCreateActivityForScope($origin->scope)->recordSuppressedWork();
+        $this->tracer->traceScheduleRunSkippedWhilePaused($origin, $run);
     }
 
     public function scheduledRunFailed(ScheduleOrigin $origin, Throwable $error): void

@@ -19,11 +19,8 @@ final readonly class AppCatalogResolver
         $knownIds = $discovered->apps->listAppIds();
         $unmatchedOverrideIds = [];
 
-        foreach ($selection->onlyIds ?? [] as $selectedId) {
-            if (!$knownIds->containsId($selectedId)) {
-                throw ConfigurationException::appSelectionUnknown($selectedId, $knownIds);
-            }
-        }
+        $this->assertSelectedAppsExist('--only', $selection->onlyIds, $knownIds);
+        $this->assertSelectedAppsExist('--trace', $selection->tracedIds, $knownIds);
 
         foreach ($overrides as $override) {
             if ($knownIds->findFirstWhere(static fn(AppId $known): bool => $known->collidesWith($override->id)) === null) {
@@ -52,10 +49,20 @@ final readonly class AppCatalogResolver
                 options: $override === null ? [] : $override->options,
                 worker: $worker,
                 startsPaused: $override !== null && $override->paused,
-                verbosity: new AppVerbosity($override?->logLevel),
+                verbosity: new AppVerbosity($override?->logLevel, ($override !== null && $override->trace) || $selection->tracesApp($app->id)),
             );
         }
 
         return new AppCatalog(AppDefinitionCollection::keyedByAppId($enabled), $knownIds, AppIdCollection::fromList($unmatchedOverrideIds));
+    }
+
+    /** @throws ConfigurationException */
+    private function assertSelectedAppsExist(string $option, ?AppIdCollection $selectedIds, AppIdCollection $knownIds): void
+    {
+        foreach ($selectedIds ?? [] as $selectedId) {
+            if (!$knownIds->containsId($selectedId)) {
+                throw ConfigurationException::appSelectionUnknown($option, $selectedId, $knownIds);
+            }
+        }
     }
 }

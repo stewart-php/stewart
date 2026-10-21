@@ -275,6 +275,9 @@ apps:
         # This app's log level, louder or quieter than the global log_level. Omit to use the global one.
         log_level:            null # One of "debug"; "info"; "notice"; "warning"; "error"
 
+        # Log a TRACE line for each event this app receives, each handler call, schedule run and service call, at any log_level.
+        trace:                false
+
         # Passed to the app constructor as named arguments.
         options:              []
 ```

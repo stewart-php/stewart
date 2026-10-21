@@ -52,17 +52,29 @@ final class WorkerLogger extends AbstractLogger
             ));
         }
 
-        if (!$this->verbosity->admitsLevel($severity, $this->resourceScope)) {
-            return;
+        if ($this->verbosity->admitsLevel($severity, $this->resourceScope)) {
+            $this->sendRecord($severity, (string) $message, $context, trace: false);
         }
+    }
 
+    // Callers check LogVerbosityPolicy::isTracing() first, so a trace passes whatever the level says.
+    /** @param array<mixed> $context */
+    public function recordTrace(string $message, array $context = []): void
+    {
+        $this->sendRecord(LogLevel::Debug, $message, $context, trace: true);
+    }
+
+    /** @param array<mixed> $context */
+    private function sendRecord(LogLevel $severity, string $message, array $context, bool $trace): void
+    {
         try {
             $this->transport->send(new LogRecord(
                 scope: $this->resourceScope,
                 level: $severity,
-                message: (string) $message,
+                message: $message,
                 context: self::serializableContext($context),
                 exception: ($context['exception'] ?? null) instanceof Throwable ? ExceptionDetails::fromThrowable($context['exception']) : null,
+                trace: $trace,
             ));
         } catch (Throwable) {
             $this->stderr->writeLine($this->resourceScope, \sprintf('%s %s', $severity->value, $message));

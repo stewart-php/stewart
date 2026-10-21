@@ -55,7 +55,7 @@ final readonly class EventRouter implements MqttMessageRouter
 
         $this->logger->debug('Home Assistant event routed', [
             'event_type' => $event->type,
-            'workers' => $routes->listWorkerIds()->toInts(),
+            'apps' => $routes->listAppLabels(),
         ]);
     }
 
@@ -78,7 +78,7 @@ final readonly class EventRouter implements MqttMessageRouter
         $this->logger->debug('Topic published', [
             'topic' => $message->topic,
             'from' => $message->publisherScope->wireValue(),
-            'workers' => $routes->listWorkerIds()->toInts(),
+            'apps' => $routes->listAppLabels(),
         ]);
     }
 
@@ -93,7 +93,7 @@ final readonly class EventRouter implements MqttMessageRouter
 
         $this->logger->debug('MQTT message routed', [
             'topic' => $message->topic,
-            'workers' => $routes->listWorkerIds()->toInts(),
+            'apps' => $routes->listAppLabels(),
         ]);
     }
 
@@ -108,7 +108,7 @@ final readonly class EventRouter implements MqttMessageRouter
 
         $this->logger->debug('Home Assistant trigger routed', [
             'platform' => $event->getPlatform(),
-            'workers' => $routes->listWorkerIds()->toInts(),
+            'apps' => $routes->listAppLabels(),
         ]);
     }
 

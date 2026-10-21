@@ -70,6 +70,21 @@ final class WorkerLoggerTest extends TestCase
         self::assertSame([LogLevel::Warning, LogLevel::Info], $this->listSentLevels($transport));
     }
 
+    public function testTracePassesWhateverTheLevelSays(): void
+    {
+        $transport = new NullTransport();
+        $logger = $this->createLogger($transport, new LogVerbosityPolicy(LogLevel::Error), 'porch');
+
+        $logger->recordTrace('Handler called', ['subscription' => 'state_change exact:light.porch']);
+        $logger->debug('not a trace');
+
+        $record = $transport->sent[0] ?? null;
+        self::assertCount(1, $transport->sent);
+        self::assertInstanceOf(LogRecord::class, $record);
+        self::assertTrue($record->trace);
+        self::assertSame(LogLevel::Debug, $record->level);
+    }
+
     public function testContextIsReducedToValuesThatCrossProcesses(): void
     {
         $transport = new NullTransport();

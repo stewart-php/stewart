@@ -8,13 +8,17 @@ use Psr\Log\LoggerInterface;
 use Stewart\Client\HaClient;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Service\ServiceResponse;
+use Stewart\Contracts\Time\Clock;
 use Stewart\Runtime\Broker\HaCallSlots;
 use Stewart\Runtime\Broker\HaSession;
+use Stewart\Runtime\Broker\ServiceCallTracer;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Config\ServiceCallPolicy;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Ipc\Message\WorkerMessage;
+use Stewart\Runtime\Logging\LogOrigin;
+use Throwable;
 
 /** @implements WorkerMessageHandler<ServiceCallRequest> */
 final readonly class ServiceCallRequestHandler implements WorkerMessageHandler
@@ -24,6 +28,8 @@ final readonly class ServiceCallRequestHandler implements WorkerMessageHandler
         private HaClient $client,
         private HaCallSlots $slots,
         private ServiceCallPolicy $policy,
+        private ServiceCallTracer $tracer,
+        private Clock $clock,
         private LoggerInterface $logger,
     ) {}
 
@@ -35,7 +41,26 @@ final readonly class ServiceCallRequestHandler implements WorkerMessageHandler
     /** @param ServiceCallRequest $message */
     public function handle(WorkerHandle $handle, WorkerMessage $message): void
     {
-        $this->slots->runBounded($handle, $message, fn(): ServiceCallResult => $this->callHomeAssistant($message));
+        $this->slots->runBounded($handle, $message, fn(): ServiceCallResult => $this->callTracingHomeAssistant($message));
+    }
+
+    /** @throws ServiceCallException */
+    private function callTracingHomeAssistant(ServiceCallRequest $request): ServiceCallResult
+    {
+        $this->tracer->traceCallSent($request);
+        $sentAt = $this->clock->getMonotonicTime();
+
+        try {
+            $result = $this->callHomeAssistant($request);
+        } catch (Throwable $e) {
+            $this->tracer->traceCallAnswered($request, $this->clock->getMonotonicTime()->elapsedSince($sentAt), $e);
+
+            throw $e;
+        }
+
+        $this->tracer->traceCallAnswered($request, $this->clock->getMonotonicTime()->elapsedSince($sentAt));
+
+        return $result;
     }
 
     /** @throws ServiceCallException */
@@ -47,6 +72,7 @@ final readonly class ServiceCallRequestHandler implements WorkerMessageHandler
                 'service' => $request->service,
                 'target' => $request->target,
                 'data' => $request->data,
+                LogOrigin::CONTEXT_KEY => LogOrigin::forScope($request->scope),
             ]);
 
             return new ServiceCallResult(

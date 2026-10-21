@@ -37,6 +37,7 @@ use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Topic\TopicEvent;
 use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Contracts\Trigger\TriggerEvent;
+use Stewart\Runtime\Dispatch\DispatchSource;
 use Stewart\Runtime\Dispatch\EntityFilterIndex;
 use Stewart\Runtime\Dispatch\LocalDispatcher;
 use Stewart\Runtime\Dispatch\LocalSubscription;
@@ -56,10 +57,12 @@ use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Stewart\Runtime\Tests\Fixtures\Worker\RecordingDispatchListener;
 use Stewart\Support\State\Collection\StateChangeCollection;
 use Stewart\Support\State\IndexedRegistry;
+use Stewart\Support\Stream\OperatorStream;
 use Stewart\Support\Stream\SubscriptionScope;
 use Stewart\Support\Wire\TriggerSpec;
 use Stewart\Testing\Async\Latch;
 use Stewart\Testing\Time\EventLoopTicks;
+use Stewart\Testing\Time\ManualTimers;
 
 #[CoversClass(LocalDispatcher::class)]
 #[CoversClass(SubscriptionQueue::class)]
@@ -730,6 +733,7 @@ final class LocalDispatcherTest extends TestCase
 
         self::assertSame([['other', 1]], $handled);
         self::assertSame([$paused->getId()], $this->listener->suppressed);
+        self::assertInstanceOf(TopicEvent::class, $this->listener->suppressedEvents[0]);
     }
 
     public function testPauseDiscardsQueuedEvents(): void
@@ -792,6 +796,29 @@ final class LocalDispatcherTest extends TestCase
 
         self::assertSame(0, $handled);
         self::assertSame([$subscription->getId()], $this->listener->suppressed);
+        self::assertSame([null], $this->listener->suppressedEvents, 'An emission has no event of its own.');
+    }
+
+    public function testFilteredEventIsReceivedButNeverReachesTheHandler(): void
+    {
+        $dispatcher = $this->createDispatcher();
+        $handled = new ArrayObject();
+        /** @var OperatorStream<StateChange> $changes */
+        $changes = new OperatorStream(new DispatchSource($dispatcher, self::createScope('app'), SubscriptionKind::StateChange, Selector::exact('light.hall')), new ManualTimers());
+        $changes
+            ->filter(static fn(StateChange $change): bool => $change->to?->state === 'on')
+            ->subscribe(static function (StateChange $change) use ($handled): void {
+                $handled->append($change->to?->state);
+            });
+        $this->goLive($dispatcher, 'app');
+
+        $dispatcher->dispatchStateChange(self::createChangeTo('light.hall', 'off'));
+        $dispatcher->dispatchStateChange(self::createChangeTo('light.hall', 'on'));
+        EventLoopTicks::settleUntil(static fn(): bool => $handled->count() === 1);
+
+        self::assertSame(['on'], $handled->getArrayCopy());
+        self::assertCount(2, $this->listener->received);
+        self::assertCount(1, $this->listener->handlerCalls, 'The filter stopped the first change before the handler.');
     }
 
     public function testSubscriptionOfPausedAppStartsPaused(): void
@@ -961,7 +988,12 @@ final class LocalDispatcherTest extends TestCase
 
     private static function createChange(string $entityId): StateChange
     {
-        return new StateChange(new EntityId($entityId), null, new EntityState(new EntityId($entityId), 'on'));
+        return self::createChangeTo($entityId, 'on');
+    }
+
+    private static function createChangeTo(string $entityId, string $state): StateChange
+    {
+        return new StateChange(new EntityId($entityId), null, new EntityState(new EntityId($entityId), $state));
     }
 
     /**

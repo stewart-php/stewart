@@ -16,6 +16,7 @@ use Stewart\Runtime\Config\ServiceCallPolicy;
 use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateRequest;
 use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateResult;
 use Stewart\Runtime\Ipc\Message\WorkerMessage;
+use Stewart\Runtime\Logging\LogOrigin;
 
 /** @implements WorkerMessageHandler<RegistryEntityUpdateRequest> */
 final readonly class RegistryEntityUpdateRequestHandler implements WorkerMessageHandler
@@ -80,7 +81,7 @@ final readonly class RegistryEntityUpdateRequestHandler implements WorkerMessage
     /** @throws RegistryEditException */
     private function previewUpdate(RegistryEntityUpdateRequest $request): RegisteredEntity
     {
-        $this->logger->info('Registry entry not updated: service_calls.dry_run is on', ['entity' => $request->entityId->value]);
+        $this->logger->info('Registry entry not updated: service_calls.dry_run is on', ['entity' => $request->entityId->value, LogOrigin::CONTEXT_KEY => LogOrigin::forScope($request->scope)]);
 
         return $request->update->applyTo($this->client->getEntityRegistryEntry($request->entityId)->toRegisteredEntity());
     }

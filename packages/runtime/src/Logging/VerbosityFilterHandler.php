@@ -35,9 +35,12 @@ final class VerbosityFilterHandler extends HandlerWrapper
         parent::handleBatch(array_map($this->labelWithSource(...), array_values(array_filter($records, $this->admitsRecord(...)))));
     }
 
+    // A trace record is built only for a traced app, so it passes whatever the level says.
     private function admitsRecord(LogRecord $record): bool
     {
-        return $this->verbosity->admitsLevel(LogLevel::from($record->level->toPsrLogLevel()), LogOrigin::findInContext($record->context)?->scope);
+        $origin = LogOrigin::findInContext($record->context);
+
+        return $origin?->traced === true || $this->verbosity->admitsLevel(LogLevel::from($record->level->toPsrLogLevel()), $origin?->scope);
     }
 
     private function labelWithSource(LogRecord $record): LogRecord
@@ -46,6 +49,12 @@ final class VerbosityFilterHandler extends HandlerWrapper
         $context = $record->context;
         unset($context[LogOrigin::CONTEXT_KEY]);
 
-        return $record->with(context: $context, extra: [...$record->extra, LogOrigin::SOURCE_KEY => $origin->label]);
+        $extra = [...$record->extra, LogOrigin::SOURCE_KEY => $origin->label];
+
+        if ($origin->traced) {
+            $extra[LogOrigin::TRACE_KEY] = true;
+        }
+
+        return $record->with(context: $context, extra: $extra);
     }
 }

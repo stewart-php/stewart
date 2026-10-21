@@ -6,5 +6,8 @@ namespace Stewart\Runtime\Model;
 
 final readonly class AppVerbosity
 {
-    public function __construct(public ?LogLevel $logLevel = null) {}
+    public function __construct(
+        public ?LogLevel $logLevel = null,
+        public bool $trace = false,
+    ) {}
 }

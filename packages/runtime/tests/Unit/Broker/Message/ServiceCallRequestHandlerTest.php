@@ -7,7 +7,7 @@ namespace Stewart\Runtime\Tests\Unit\Broker\Message;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
-use Psr\Log\LogLevel;
+use Psr\Log\LogLevel as PsrLogLevel;
 use Psr\Log\NullLogger;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\ServiceCallError;
@@ -21,6 +21,7 @@ use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\HaCallSlots;
 use Stewart\Runtime\Broker\Message\ServiceCallRequestHandler;
 use Stewart\Runtime\Broker\OutboxLimits;
+use Stewart\Runtime\Broker\ServiceCallTracer;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Config\ServiceCallPolicy;
@@ -29,7 +30,11 @@ use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
 use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
+use Stewart\Runtime\Logging\LogOrigin;
+use Stewart\Runtime\Logging\LogVerbosityPolicy;
+use Stewart\Runtime\Model\AppVerbosity;
 use Stewart\Runtime\Model\CorrelationId;
+use Stewart\Runtime\Model\LogLevel;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\WorkerId;
@@ -179,14 +184,60 @@ final class ServiceCallRequestHandlerTest extends TestCase
         self::assertStringStartsWith('dry-run:', (string) self::listSentResultsFor($worker)[0]->result->context?->id);
         self::assertCount(0, $this->homeAssistant->listReceivedCalls());
         self::assertSame(0, $this->slots->inFlight);
-        self::assertSame(['Service call not sent: service_calls.dry_run is on'], $logger->listMessagesAt(LogLevel::INFO));
+        self::assertSame(['Service call not sent: service_calls.dry_run is on'], $logger->listMessagesAt(PsrLogLevel::INFO));
     }
 
-    private function createHandler(ServiceCallPolicy $policy, LoggerInterface $logger): ServiceCallRequestHandler
+    private function createHandler(ServiceCallPolicy $policy, LoggerInterface $logger, LogVerbosityPolicy $verbosity = new LogVerbosityPolicy(LogLevel::Info)): ServiceCallRequestHandler
     {
         $this->slots = new HaCallSlots($policy, $this->metrics, $this->timers->clock, new NullLogger());
 
-        return new ServiceCallRequestHandler($this->session, $this->homeAssistant->client, $this->slots, $policy, $logger);
+        return new ServiceCallRequestHandler($this->session, $this->homeAssistant->client, $this->slots, $policy, new ServiceCallTracer($logger, $verbosity), $this->timers->clock, $logger);
+    }
+
+    public function testTracedAppLogsEachCallItSendsAndItsAnswer(): void
+    {
+        $logger = new RecordingLogger();
+        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0), $logger, new LogVerbosityPolicy(LogLevel::Info, ['demo' => new AppVerbosity(trace: true)]));
+        $worker = $this->createHandle(0);
+
+        $handler->handle($worker, self::createRequest('traced'));
+        $handler->handle($worker, self::createRequest('refused'));
+        EventLoopTicks::settle();
+        $this->timers->delay(Duration::milliseconds(30));
+        $this->finishCalls();
+
+        self::assertSame(['Service call sent', 'Service call answered'], $logger->listMessagesAt(PsrLogLevel::DEBUG), 'A refused call never reached Home Assistant.');
+        $answer = $logger->records->getLast()->context ?? [];
+        self::assertSame('light.turn_on', $answer['service'] ?? null);
+        self::assertSame('succeeded', $answer['outcome'] ?? null);
+        self::assertSame('30ms', $answer['took'] ?? null);
+        self::assertTrue(LogOrigin::findInContext($answer)?->traced);
+    }
+
+    public function testTracedCallThatFailsLogsTheReason(): void
+    {
+        $logger = new RecordingLogger();
+        $this->session->connected = false;
+        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0), $logger, new LogVerbosityPolicy(LogLevel::Info, ['demo' => new AppVerbosity(trace: true)]));
+
+        $handler->handle($this->createHandle(0), self::createRequest('offline'));
+        EventLoopTicks::settle();
+
+        $answer = $logger->records->getLast()->context ?? [];
+        self::assertSame('unreachable', $answer['outcome'] ?? null);
+        self::assertIsString($answer['error'] ?? null);
+        self::assertStringContainsString('Home Assistant is disconnected', $answer['error']);
+    }
+
+    public function testUntracedAppLogsNoCalls(): void
+    {
+        $logger = new RecordingLogger();
+        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0), $logger);
+
+        $handler->handle($this->createHandle(0), self::createRequest('quiet'));
+        $this->finishCalls();
+
+        self::assertSame([], $logger->listMessagesAt(PsrLogLevel::DEBUG));
     }
 
     private function finishCalls(): void

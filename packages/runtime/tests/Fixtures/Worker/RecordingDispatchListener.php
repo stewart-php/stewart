@@ -28,11 +28,20 @@ final class RecordingDispatchListener implements DispatchListener, SubscriptionL
     /** @var list<int> */
     public array $dropReports = [];
 
+    /** @var list<object> */
+    public array $received = [];
+
+    /** @var list<string> */
+    public array $handlerCalls = [];
+
     /** @var list<string> */
     public array $delivered = [];
 
     /** @var list<string> */
     public array $suppressed = [];
+
+    /** @var list<?object> */
+    public array $suppressedEvents = [];
 
     public static function createDispatcher(int $queueLimit, RegistryCache $registry = new RegistryCache(), ScopeLifecycle $scopes = new ScopeLifecycle()): LocalDispatcher
     {
@@ -61,13 +70,24 @@ final class RecordingDispatchListener implements DispatchListener, SubscriptionL
         $this->dropReports[] = $droppedSoFar;
     }
 
+    public function eventReceived(RegisteredSubscription $subscription, object $event): void
+    {
+        $this->received[] = $event;
+    }
+
+    public function handlerCalled(RegisteredSubscription $subscription): void
+    {
+        $this->handlerCalls[] = $subscription->id->value;
+    }
+
     public function eventDelivered(RegisteredSubscription $subscription): void
     {
         $this->delivered[] = $subscription->id->value;
     }
 
-    public function eventSuppressed(RegisteredSubscription $subscription): void
+    public function eventSuppressed(RegisteredSubscription $subscription, ?object $event): void
     {
         $this->suppressed[] = $subscription->id->value;
+        $this->suppressedEvents[] = $event;
     }
 }

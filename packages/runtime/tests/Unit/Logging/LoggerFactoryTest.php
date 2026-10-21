@@ -17,6 +17,7 @@ use Stewart\Runtime\Logging\LogOrigin;
 use Stewart\Runtime\Logging\LogVerbosityPolicy;
 use Stewart\Runtime\Logging\ProcessTimeZoneProcessor;
 use Stewart\Runtime\Logging\StackTraceLineFormatter;
+use Stewart\Runtime\Logging\TraceLabelJsonFormatter;
 use Stewart\Runtime\Logging\VerbosityFilterHandler;
 use Stewart\Runtime\Model\AppVerbosity;
 use Stewart\Runtime\Model\LogLevel;
@@ -30,6 +31,7 @@ use Stewart\Testing\Filesystem\TempDirectory;
 #[CoversClass(ProcessTimeZoneProcessor::class)]
 #[CoversClass(VerbosityFilterHandler::class)]
 #[CoversClass(LogOrigin::class)]
+#[CoversClass(TraceLabelJsonFormatter::class)]
 final class LoggerFactoryTest extends TestCase
 {
     private TempDirectory $temp;
@@ -151,6 +153,30 @@ final class LoggerFactoryTest extends TestCase
         $record = json_decode($this->readLog(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertIsArray($record);
         self::assertSame(['app' => 'porch', 'worker' => 0], $record['context'] ?? null);
+        self::assertSame(['source' => 'porch'], $record['extra'] ?? null);
+    }
+
+    public function testTraceRecordPrintsTraceAndPassesAnyLevel(): void
+    {
+        $logger = $this->createFactory()->createDaemonLogger(new LogVerbosityPolicy(LogLevel::Error));
+
+        $logger->debug('Handler called', ['id' => 'w0:1', LogOrigin::CONTEXT_KEY => LogOrigin::forScope(ResourceScope::forApp(new AppId('porch')), traced: true)]);
+        $logger->debug('porch detail', [LogOrigin::CONTEXT_KEY => LogOrigin::forApp(new AppId('porch'))]);
+
+        $log = $this->readLog();
+        self::assertSame(1, substr_count($log, "\n"));
+        self::assertMatchesRegularExpression('/ TRACE \[porch\] Handler called \{"id":"w0:1"\} *$/', trim($log));
+    }
+
+    public function testJsonTraceRecordKeepsTheDebugLevelUnderItsOwnName(): void
+    {
+        $this->createFactory()->createDaemonLogger(new LogVerbosityPolicy(LogLevel::Error), LogFormat::Json)
+            ->debug('Handler called', [LogOrigin::CONTEXT_KEY => LogOrigin::forScope(ResourceScope::forApp(new AppId('porch')), traced: true)]);
+
+        $record = json_decode($this->readLog(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($record);
+        self::assertSame('TRACE', $record['level_name'] ?? null);
+        self::assertSame(100, $record['level'] ?? null);
         self::assertSame(['source' => 'porch'], $record['extra'] ?? null);
     }
 

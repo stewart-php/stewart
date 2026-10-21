@@ -85,7 +85,7 @@ abstract readonly class ComposedStream implements EventStream
     /** @param Closure(T): void $handler */
     private function attachWithin(SubscriptionScope $scope, Closure $handler): Subscription
     {
-        $subscription = $this->source->attach($scope, $handler);
+        $subscription = $this->source->attach($scope, $scope->wrapHandlerToReportCalls($handler));
         $scope->attachedTo($subscription);
 
         return $subscription;

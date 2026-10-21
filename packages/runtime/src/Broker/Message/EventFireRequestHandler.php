@@ -14,6 +14,7 @@ use Stewart\Runtime\Config\ServiceCallPolicy;
 use Stewart\Runtime\Ipc\Message\EventFireRequest;
 use Stewart\Runtime\Ipc\Message\EventFireResult;
 use Stewart\Runtime\Ipc\Message\WorkerMessage;
+use Stewart\Runtime\Logging\LogOrigin;
 use Stewart\Support\Wire\EventPayload;
 
 /** @implements WorkerMessageHandler<EventFireRequest> */
@@ -45,6 +46,7 @@ final readonly class EventFireRequestHandler implements WorkerMessageHandler
             $this->logger->info('Event not fired: service_calls.dry_run is on', [
                 'event_type' => $request->eventType,
                 'data' => $request->data,
+                LogOrigin::CONTEXT_KEY => LogOrigin::forScope($request->scope),
             ]);
 
             return new EventFireResult($request->correlationId, $this->policy->createDryRunContext($request->correlationId));

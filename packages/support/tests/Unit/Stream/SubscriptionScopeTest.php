@@ -50,6 +50,21 @@ final class SubscriptionScopeTest extends TestCase
         self::assertSame(['queued'], $this->log);
     }
 
+    public function testWrappedHandlerReportsEachCallToTheObserverSetLater(): void
+    {
+        $handler = $this->scope->wrapHandlerToReportCalls(function (string $event): void {
+            $this->log[] = 'handled ' . $event;
+        });
+
+        $handler('before');
+        $this->scope->reportHandlerCallsTo(function (): void {
+            $this->log[] = 'reported';
+        });
+        $handler('after');
+
+        self::assertSame(['handled before', 'reported', 'handled after'], $this->log);
+    }
+
     public function testClosedScopeEmitsNothing(): void
     {
         $this->scope->close();

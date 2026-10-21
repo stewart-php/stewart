@@ -15,6 +15,9 @@ final class SubscriptionScope
     /** @var Closure(Closure(): void): void */
     private Closure $sink;
 
+    /** @var ?Closure(): void */
+    private ?Closure $handlerCallObserver = null;
+
     /** @var list<Closure(): void> */
     private array $teardowns = [];
 
@@ -43,6 +46,29 @@ final class SubscriptionScope
     public function deliverVia(Closure $sink): void
     {
         $this->sink = $sink;
+    }
+
+    /** @param Closure(): void $observer */
+    public function reportHandlerCallsTo(Closure $observer): void
+    {
+        $this->handlerCallObserver = $observer;
+    }
+
+    // The source sets the observer only once the stream attaches, so it is read at each call.
+    /**
+     * @template T
+     * @param Closure(T): void $handler
+     * @return Closure(T): void
+     */
+    public function wrapHandlerToReportCalls(Closure $handler): Closure
+    {
+        return function (mixed $event) use ($handler): void {
+            if ($this->handlerCallObserver !== null) {
+                ($this->handlerCallObserver)();
+            }
+
+            $handler($event);
+        };
     }
 
     /** @param Closure(): void $emission */

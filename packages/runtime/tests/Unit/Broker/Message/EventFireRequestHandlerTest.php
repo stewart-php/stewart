@@ -6,7 +6,7 @@ namespace Stewart\Runtime\Tests\Unit\Broker\Message;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LogLevel;
+use Psr\Log\LogLevel as PsrLogLevel;
 use Psr\Log\NullLogger;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\EventFireError;
@@ -20,6 +20,7 @@ use Stewart\Runtime\Broker\HaCallSlots;
 use Stewart\Runtime\Broker\Message\EventFireRequestHandler;
 use Stewart\Runtime\Broker\Message\ServiceCallRequestHandler;
 use Stewart\Runtime\Broker\OutboxLimits;
+use Stewart\Runtime\Broker\ServiceCallTracer;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Config\ServiceCallPolicy;
@@ -29,7 +30,9 @@ use Stewart\Runtime\Ipc\Message\EventFireRequest;
 use Stewart\Runtime\Ipc\Message\EventFireResult;
 use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
+use Stewart\Runtime\Logging\LogVerbosityPolicy;
 use Stewart\Runtime\Model\CorrelationId;
+use Stewart\Runtime\Model\LogLevel;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\WorkerId;
@@ -98,7 +101,7 @@ final class EventFireRequestHandlerTest extends TestCase
     {
         $policy = new ServiceCallPolicy(perWorker: 1, total: 0);
         $handler = $this->createHandler($policy);
-        $serviceCalls = new ServiceCallRequestHandler($this->session, $this->homeAssistant->client, $this->slots, $policy, new NullLogger());
+        $serviceCalls = new ServiceCallRequestHandler($this->session, $this->homeAssistant->client, $this->slots, $policy, new ServiceCallTracer(new NullLogger(), new LogVerbosityPolicy(LogLevel::Info)), new VirtualClock(), new NullLogger());
         $worker = $this->createHandle();
 
         $serviceCalls->handle($worker, new ServiceCallRequest(new CorrelationId('call'), ResourceScope::forApp(new AppId('demo')), 'light', 'turn_on', [], null, false));
@@ -151,7 +154,7 @@ final class EventFireRequestHandlerTest extends TestCase
 
         self::assertSame('dry-run:dry', self::listSentOfType($worker, EventFireResult::class)[0]->context->id);
         self::assertSame([], $this->homeAssistant->listReceivedEventFires());
-        self::assertSame(['Event not fired: service_calls.dry_run is on'], $logger->listMessagesAt(LogLevel::INFO));
+        self::assertSame(['Event not fired: service_calls.dry_run is on'], $logger->listMessagesAt(PsrLogLevel::INFO));
     }
 
     private function createHandler(ServiceCallPolicy $policy, ?RecordingLogger $logger = null): EventFireRequestHandler

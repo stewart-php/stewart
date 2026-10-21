@@ -29,13 +29,19 @@ abstract class StewartCommand extends Command
     /** @throws IdentifierException */
     protected function readAppSelectionOption(InputInterface $input): AppSelection
     {
-        $only = $input->hasOption('only') ? $input->getOption('only') : null;
+        return new AppSelection($this->findAppIdsOption($input, 'only'), $this->findAppIdsOption($input, 'trace'));
+    }
 
-        if (!\is_array($only) || $only === []) {
-            return new AppSelection();
+    /** @throws IdentifierException */
+    private function findAppIdsOption(InputInterface $input, string $name): ?AppIdCollection
+    {
+        $ids = $input->hasOption($name) ? $input->getOption($name) : null;
+
+        if (!\is_array($ids) || $ids === []) {
+            return null;
         }
 
-        return new AppSelection(AppIdCollection::fromList(array_map(static fn(string $id): AppId => new AppId($id), array_values(array_filter($only, \is_string(...))))));
+        return AppIdCollection::fromList(array_map(static fn(string $id): AppId => new AppId($id), array_values(array_filter($ids, \is_string(...)))));
     }
 
     protected function nonEmptyStringOption(InputInterface $input, string $name): ?string

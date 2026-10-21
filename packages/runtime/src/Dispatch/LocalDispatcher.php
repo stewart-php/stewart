@@ -99,6 +99,7 @@ final class LocalDispatcher
 
         $this->queues[$subscription->id->value] = $queue;
         $subscriptionScope->deliverVia($queue->emit(...));
+        $subscriptionScope->reportHandlerCallsTo($queue->recordHandlerCall(...));
 
         if ($entityFilter !== null) {
             $this->stateFilterIndex->add($subscription->id, $entityFilter);
