@@ -237,6 +237,15 @@ final class HttpAdminApiTest extends TestCase
         }
     }
 
+    public function testReloadIsAnsweredThroughTheRuntime(): void
+    {
+        $response = $this->sendRequest('POST', '/api/reload');
+
+        self::assertStringStartsWith('HTTP/1.1 200', $response);
+        self::assertJsonStringEqualsJsonString('{"changed":false,"message":"Stewart is not running its apps yet, so there is nothing to reload.","warning":null}', self::extractBody($response));
+        self::assertStringStartsWith('HTTP/1.1 405', $this->sendRequest('GET', '/api/reload'));
+    }
+
     public function testGetOnWorkerRestartIsNotAllowed(): void
     {
         self::assertStringStartsWith('HTTP/1.1 405', $this->sendRequest('GET', '/api/workers/0/restart'));

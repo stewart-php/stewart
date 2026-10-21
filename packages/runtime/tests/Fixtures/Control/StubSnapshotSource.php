@@ -19,6 +19,8 @@ use Stewart\Runtime\Control\Protocol\Status\FailureReport;
 use Stewart\Runtime\Control\Protocol\Status\LatencyHistogram;
 use Stewart\Runtime\Control\Protocol\Status\OutboxStatus;
 use Stewart\Runtime\Control\Protocol\Status\RegistrationInfo;
+use Stewart\Runtime\Control\Protocol\Status\ReloadAttempt;
+use Stewart\Runtime\Control\Protocol\Status\ReloadStatus;
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
 use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
 use Stewart\Runtime\Control\Protocol\Status\WorkerStatus;
@@ -28,6 +30,7 @@ use Stewart\Runtime\Lifecycle\AppPauseSource;
 use Stewart\Runtime\Lifecycle\AppState;
 use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
+use Stewart\Runtime\Lifecycle\ReloadOutcome;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
 use Stewart\Runtime\Model\RoutingStats;
 use Stewart\Runtime\Model\ServiceCallOutcome;
@@ -85,6 +88,11 @@ final class StubSnapshotSource implements SnapshotSource
                 lastFailure: new DeployFailure('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', 'apps/Porch.php failed to load: syntax error', Instant::fromIso('2026-09-26T10:50:00Z')),
             ),
             component: new ComponentStatus(ComponentState::Active, $startedAt, 'default', '0.9.0', 1),
+            reload: new ReloadStatus(
+                applied: 2,
+                partlyApplied: 1,
+                last: new ReloadAttempt(ReloadOutcome::PartlyApplied, Instant::fromIso('2026-09-26T10:55:00Z'), null, ['mqtt']),
+            ),
         );
     }
 

@@ -10,6 +10,7 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Runtime\Control\Protocol\Frame\CommandResult;
 use Stewart\Runtime\Control\Protocol\Frame\Hello;
 use Stewart\Runtime\Control\Protocol\Frame\PauseAppRequest;
+use Stewart\Runtime\Control\Protocol\Frame\ReloadRequest;
 use Stewart\Runtime\Control\Protocol\Frame\ResetAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\RestartWorkerRequest;
 use Stewart\Runtime\Control\Protocol\Frame\ResumeAppRequest;
@@ -64,6 +65,15 @@ final class ControlRequestDispatcherTest extends TestCase
         $this->admin->startWorker();
 
         self::assertTrue($this->answerCommand(new RestartWorkerRequest('0'))->changed);
+    }
+
+    public function testReloadIsPassedToTheRuntime(): void
+    {
+        $answer = $this->dispatcher->answerRequest(new ReloadRequest());
+
+        self::assertInstanceOf(CommandResult::class, $answer);
+        self::assertFalse($answer->changed);
+        self::assertSame('Stewart is not running its apps yet, so there is nothing to reload.', $answer->message);
     }
 
     public function testOtherFrameIsUnexpected(): void

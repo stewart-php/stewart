@@ -41,6 +41,7 @@ Your project runs these commands with `make`. The `stewart` commands below run i
 | `make app-resume` | Resume a paused app [APP=porch-light] |
 | `make app-reset` | Forget a stored pause or resume, so stewart.yaml decides again [APP=porch-light] |
 | `make worker-restart` | Restart a worker of the running daemon [WORKER=0] |
+| `make reload` | Check the project, then restart every worker on the current code; the Home Assistant session stays up |
 
 ## stewart
 
@@ -178,6 +179,21 @@ stewart make:app [options] [--] <name>
 | Option | Meaning | Default |
 | --- | --- | --- |
 | `--id=…` | The automation ID; derived from the name when left out, such as porch-light |  |
+
+### reload
+
+Check the project, then restart every worker on the current code, keeping the Home Assistant session
+
+```
+stewart reload [options]
+```
+
+| Option | Meaning | Default |
+| --- | --- | --- |
+| `-c, --config=…` | Path to stewart.yaml; defaults to stewart.yaml in the project root |  |
+| `--address=…` | Where the daemon listens, such as unix://var/run/stewart.sock or tcp://host:port; defaults to control.listen |  |
+| `--token=…` | The control token; defaults to control.token, usually STEWART_CONTROL__TOKEN |  |
+| `--timeout=…` | How long to wait for the daemon, like 5s | `5s` |
 
 ### run
 

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Kernel;
 
+use Composer\Autoload\ClassLoader;
 use Composer\InstalledVersions;
+use ReflectionClass;
 use Stewart\Runtime\Config\ProjectRoot;
 use Stewart\Runtime\Config\Psr4Map;
 use Stewart\Runtime\Console\StewartApplication;
@@ -17,6 +19,8 @@ final readonly class ConsoleKernel
     private const string APPS_DIRECTORY = '/apps';
 
     private const string SERVICES_FILE = '/services.php';
+
+    private const string CONSOLE_SCRIPT = '/bin/stewart';
 
     private const string RUNTIME_PACKAGE = 'stewart-php/runtime';
 
@@ -57,7 +61,16 @@ final readonly class ConsoleKernel
     {
         return new NamedArguments()
             ->withArgument('appsDirectory', $this->projectDir . self::APPS_DIRECTORY)
-            ->withArgument('userServicesFile', $this->projectDir . self::SERVICES_FILE);
+            ->withArgument('userServicesFile', $this->projectDir . self::SERVICES_FILE)
+            ->withArgument('stewartConsoleScript', $this->locateConsoleScript());
+    }
+
+    // The project's own bin proxy; a symlinked package's bin/stewart would load the autoloader next to the package.
+    private function locateConsoleScript(): string
+    {
+        $classLoaderFile = new ReflectionClass(ClassLoader::class)->getFileName();
+
+        return \dirname($classLoaderFile === false ? $this->projectDir . '/vendor/composer/ClassLoader.php' : $classLoaderFile, 2) . self::CONSOLE_SCRIPT;
     }
 
     private function detectInstalledVersion(): StewartVersion

@@ -16,6 +16,9 @@ final class ScriptedCommandRunner implements ExternalCommandRunner
     /** @var list<non-empty-list<string>> */
     public array $commands = [];
 
+    /** @var list<array<string, string>> */
+    public array $environmentOverrides = [];
+
     public bool $cancelled = false;
 
     public ?Latch $hold = null;
@@ -28,9 +31,10 @@ final class ScriptedCommandRunner implements ExternalCommandRunner
         $this->resultsBySubcommand[$subcommand][] = new ExternalCommandResult($exitCode, $output, $errorOutput);
     }
 
-    public function runCommand(array $command, Duration $timeout, Cancellation $cancellation): ExternalCommandResult
+    public function runCommand(array $command, Duration $timeout, Cancellation $cancellation, array $environmentOverrides = []): ExternalCommandResult
     {
         $this->commands[] = $command;
+        $this->environmentOverrides[] = $environmentOverrides;
 
         try {
             $this->hold?->waitUntilOpen($cancellation);

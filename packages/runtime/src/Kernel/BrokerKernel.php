@@ -9,6 +9,7 @@ use Stewart\Client\Connection\ConnectionConfig;
 use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\BrokerLifecycle;
+use Stewart\Runtime\Broker\DaemonLaunchOptions;
 use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Config\CodegenConfig;
 use Stewart\Runtime\Config\ControlConfig;
@@ -28,27 +29,29 @@ final readonly class BrokerKernel
     public function __construct(
         private StewartVersion $stewartVersion,
         private string $userServicesFile,
+        private string $stewartConsoleScript,
         private ProjectRoot $projectRoot,
         private SyntheticServices $overrides = new SyntheticServices(),
         private ProfileCompiler $compiler = new ProfileCompiler(),
     ) {}
 
     /** @throws ConfigurationException */
-    public function createBroker(StewartConfig $config, AppCatalog $apps, LoggerInterface $logger, ?string $configFileOption = null): BrokerLifecycle
+    public function createBroker(StewartConfig $config, AppCatalog $apps, LoggerInterface $logger, DaemonLaunchOptions $launch = new DaemonLaunchOptions()): BrokerLifecycle
     {
         $this->warnAboutSlowInitializeCalls($config, $logger);
         $this->warnAboutReadyTimeoutBelowInitialize($config, $logger);
 
         return $this->compiler
-            ->compileProfileContainer(ContainerProfile::Broker, $this->buildSyntheticServicesFor($config, $apps, $logger)->withOverrides($this->overrides), $this->buildNamedArgumentsFor($configFileOption))
+            ->compileProfileContainer(ContainerProfile::Broker, $this->buildSyntheticServicesFor($config, $apps, $logger, $launch)->withOverrides($this->overrides), $this->buildNamedArguments())
             ->resolveService(BrokerLifecycle::class);
     }
 
     /** @throws ConfigurationException */
-    private function buildSyntheticServicesFor(StewartConfig $config, AppCatalog $apps, LoggerInterface $logger): SyntheticServices
+    private function buildSyntheticServicesFor(StewartConfig $config, AppCatalog $apps, LoggerInterface $logger, DaemonLaunchOptions $launch): SyntheticServices
     {
         return new SyntheticServices()
             ->withService(StewartConfig::class, $config)
+            ->withService(DaemonLaunchOptions::class, $launch)
             ->withService(StewartVersion::class, $this->stewartVersion)
             ->withService(AppCatalog::class, $apps)
             ->withService(AppDefinitionCollection::class, $apps->enabled)
@@ -66,11 +69,11 @@ final readonly class BrokerKernel
             ->withService(OutboxLimits::class, new OutboxLimits($config->workerEventBuffer, $config->workerStateBatch));
     }
 
-    private function buildNamedArgumentsFor(?string $configFileOption): NamedArguments
+    private function buildNamedArguments(): NamedArguments
     {
         return new NamedArguments()
             ->withArgument('userServicesFile', $this->userServicesFile)
-            ->withArgument('releaseCheckConfigFile', $configFileOption);
+            ->withArgument('stewartConsoleScript', $this->stewartConsoleScript);
     }
 
     /** @throws ConfigurationException */

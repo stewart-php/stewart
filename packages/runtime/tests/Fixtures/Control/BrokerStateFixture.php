@@ -20,6 +20,7 @@ use Stewart\Runtime\Broker\ConnectionTracker;
 use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\Deploy\DeployState;
 use Stewart\Runtime\Broker\HaCallSlots;
+use Stewart\Runtime\Broker\Reload\ReloadState;
 use Stewart\Runtime\Broker\SubscriptionRegistry;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerPool;
@@ -139,6 +140,7 @@ final readonly class BrokerStateFixture
         ?AppStatusBuilder $appStatuses = null,
         DeployState $deployState = new DeployState(),
         ?ComponentTracker $componentTracker = null,
+        ReloadState $reloadState = new ReloadState(),
         string $componentInstance = 'default',
     ): SnapshotAssembler {
         $pools = $this->pools;
@@ -152,6 +154,7 @@ final readonly class BrokerStateFixture
             callSlots: $this->callSlots,
             registry: $this->registry,
             deployState: $deployState,
+            reloadState: $reloadState,
             componentTracker: $componentTracker ?? new ComponentTracker($this->timers->clock),
             expose: new ExposeConfig(ComponentInstance::parse($componentInstance), Duration::seconds(10)),
             workerStatuses: new WorkerStatusBuilder($pools->slots, $pools->watchdog, $pools->restartPolicy, $this->callSlots),

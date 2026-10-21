@@ -91,7 +91,7 @@ final class KernelCompileTest extends TestCase
     /** @param array<string, mixed> $yaml */
     private static function bootBroker(array $yaml, LoggerInterface $logger = new NullLogger()): BrokerLifecycle
     {
-        return new BrokerKernel(new StewartVersion('test'), self::EMPTY_SERVICES_FILE, new ProjectRoot(sys_get_temp_dir()))->createBroker(
+        return new BrokerKernel(new StewartVersion('test'), self::EMPTY_SERVICES_FILE, '/nonexistent/vendor/bin/stewart', new ProjectRoot(sys_get_temp_dir()))->createBroker(
             ConfigFixture::createStewartConfig($yaml),
             new AppCatalog(AppDefinitionCollection::keyedByAppId([]), AppIdCollection::fromList([]), AppIdCollection::fromList([])),
             $logger,

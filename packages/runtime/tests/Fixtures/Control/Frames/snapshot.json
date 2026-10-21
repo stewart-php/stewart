@@ -147,6 +147,20 @@
             "instance": "default",
             "version": "0.9.0",
             "protocol": 1
+        },
+        "reload": {
+            "underway": false,
+            "applied": 2,
+            "partly_applied": 1,
+            "failed": 0,
+            "last": {
+                "outcome": "partly_applied",
+                "finished_at": "2026-09-26T10:55:00.000000Z",
+                "error": null,
+                "settings_needing_restart": [
+                    "mqtt"
+                ]
+            }
         }
     }
 }

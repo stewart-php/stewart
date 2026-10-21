@@ -20,6 +20,7 @@ use Stewart\Runtime\Control\Protocol\Frame\CommandResult;
 use Stewart\Runtime\Control\Protocol\Frame\Hello;
 use Stewart\Runtime\Control\Protocol\Frame\PauseAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\Rejected;
+use Stewart\Runtime\Control\Protocol\Frame\ReloadRequest;
 use Stewart\Runtime\Control\Protocol\Frame\RequestFailed;
 use Stewart\Runtime\Control\Protocol\Frame\ResetAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\RestartWorkerRequest;
@@ -75,6 +76,12 @@ final readonly class ControlClient
     public function restartWorker(ControlTarget $target, string $workerId, Duration $timeout): CommandResult
     {
         return $this->sendRequest($target, new RestartWorkerRequest($workerId), CommandResult::class, $timeout);
+    }
+
+    /** @throws ControlException|Throwable */
+    public function requestReload(ControlTarget $target, Duration $timeout): CommandResult
+    {
+        return $this->sendRequest($target, new ReloadRequest(), CommandResult::class, $timeout);
     }
 
     /**

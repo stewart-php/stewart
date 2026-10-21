@@ -12,6 +12,7 @@ enum AdminAction: string
     case ResumeApp = 'resume';
     case ResetApp = 'reset';
     case RestartWorker = 'restart';
+    case Reload = 'reload';
     case ShowMetrics = 'metrics';
 
     /** @return non-empty-list<non-empty-string> */
@@ -19,7 +20,7 @@ enum AdminAction: string
     {
         return match ($this) {
             self::ListApps, self::ShowApp, self::ShowMetrics => ['GET', 'HEAD'],
-            self::PauseApp, self::ResumeApp, self::ResetApp, self::RestartWorker => ['POST'],
+            self::PauseApp, self::ResumeApp, self::ResetApp, self::RestartWorker, self::Reload => ['POST'],
         };
     }
 }

@@ -19,4 +19,5 @@ and status codes.
 | POST | `/api/apps/{id}/resume` | Resumes an app, like `stewart app:resume` |
 | POST | `/api/apps/{id}/reset` | Forgets a stored pause or resume, like `stewart app:reset` |
 | POST | `/api/workers/{id}/restart` | Restarts a worker, like `stewart worker:restart` |
+| POST | `/api/reload` | Checks the project, then restarts every worker on the current code, like `stewart reload` |
 | GET, HEAD | `/metrics` | Prometheus metrics; see the [metrics reference](metrics.md) |

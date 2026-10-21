@@ -13,6 +13,7 @@ use Stewart\Runtime\Control\Protocol\Frame\CommandResult;
 use Stewart\Runtime\Control\Protocol\Frame\Hello;
 use Stewart\Runtime\Control\Protocol\Frame\PauseAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\Rejected;
+use Stewart\Runtime\Control\Protocol\Frame\ReloadRequest;
 use Stewart\Runtime\Control\Protocol\Frame\RequestFailed;
 use Stewart\Runtime\Control\Protocol\Frame\ResetAppRequest;
 use Stewart\Runtime\Control\Protocol\Frame\RestartWorkerRequest;
@@ -39,6 +40,7 @@ final class ControlFrameGoldenTest extends TestCase
             new ResumeAppRequest('porch'),
             new ResetAppRequest('porch'),
             new RestartWorkerRequest('1'),
+            new ReloadRequest(),
             new Welcome(ControlProtocol::VERSION),
             new Rejected('the token does not match control.token'),
             new SnapshotFrame(new StubSnapshotSource()->takeSnapshot()),

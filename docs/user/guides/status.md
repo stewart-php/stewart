@@ -1,6 +1,6 @@
 ---
 title: Status and control
-description: See how Stewart and its apps are doing, pause an app, restart a worker, and add health checks and metrics.
+description: See how Stewart and its apps are doing, pause an app, restart a worker, reload, and add health checks and metrics.
 sidebar:
   order: 17
 ---
@@ -21,8 +21,8 @@ STEWART_CONTROL__TOKEN=…      # openssl rand -hex 16 makes a new one
 Stewart refuses to start without a token while the socket is on. To run without the socket, set
 `STEWART_CONTROL__LISTEN=off` (the word: an empty variable means "not set").
 
-In a project from the skeleton, `make app-pause APP=…`, `make app-resume APP=…`, `make app-reset APP=…` and
-`make worker-restart WORKER=…` reach the running Stewart the way `make status` does. Otherwise, the commands on this
+In a project from the skeleton, `make app-pause APP=…`, `make app-resume APP=…`, `make app-reset APP=…`,
+`make worker-restart WORKER=…` and `make reload` reach the running Stewart the way `make status` does. Otherwise, the commands on this
 page run inside the Stewart container:
 
 | Where Stewart runs | Prefix |
@@ -35,7 +35,7 @@ page run inside the Stewart container:
 
 | Table | Shows |
 |---|---|
-| Daemon | Stewart's version, uptime and resident memory; the Home Assistant connection and its last outage; whether the store is up; the `component` row (the Stewart integration in Home Assistant); the `deploy` row (the running commit and the last rejected one, in Git mode); service calls waiting and refused. |
+| Daemon | Stewart's version, uptime and resident memory; the Home Assistant connection and its last outage; whether the store is up; the `component` row (the Stewart integration in Home Assistant); the `deploy` row (the running commit and the last rejected one, in Git mode); the `reload` row (the last reload and how it went); service calls waiting and refused. |
 | Workers | Whether each worker is running, how much resident memory it uses, how often it restarted, and whether it is falling behind (events waiting or dropped). |
 | Apps | Whether each app is running, paused (and by whom: `config`, `control` or `http`) or failed; how many events and schedule runs it handled or skipped while paused; its exposed entities; how its service calls went. |
 | Failures | Each app's last failure: when, where, the reason and the message. |
@@ -73,6 +73,24 @@ The number comes from the Workers table. A running worker gets `shutdown_grace` 
 starts. A worker that Stewart gave up on after repeated crashes (`quarantined`), or one waiting to retry, starts at
 once, with its crash count reset. The command returns once the restart has begun; `stewart status` shows the worker
 `stopping`, then `spawning`.
+
+## Reloading
+
+```bash
+docker compose exec stewart stewart reload    # Reload started; stewart status shows how it went.
+```
+
+A reload restarts every worker on the code as it is now, so edited apps, `services.php` and regenerated classes take
+effect. The connection to Home Assistant stays open, and no states are fetched again. Exposed entities are briefly
+unavailable while their worker restarts, as on `worker:restart`.
+
+It first runs `stewart check` in a separate process. If that fails, nothing changes, and the `reload` row in
+`stewart status` shows the first error. Restarts a reload makes do not count toward a worker's `restarts`, and a
+quarantined worker comes back. A second reload while one runs is refused.
+
+A reload keeps what Stewart started with: changes to `stewart.yaml`, new or removed apps, a changed `composer.lock`
+and a new Stewart version need a restart. `docker compose kill -s HUP stewart` (or `kill -HUP` on the Stewart
+process) reloads as well, and so does `POST /api/reload` on the [admin API](#admin-api).
 
 ## Scripting
 
@@ -128,6 +146,7 @@ refuses to start without one.
 | `GET /api/apps/{id}` | One app, same shape |
 | `POST /api/apps/{id}/pause`, `/resume`, `/reset` | `{"changed","message","warning"}`, as `app:pause`, `app:resume`, `app:reset` |
 | `POST /api/workers/{id}/restart` | The same shape, as `worker:restart` |
+| `POST /api/reload` | The same shape, as `reload` |
 
 ```bash
 curl -X POST -H "Authorization: Bearer $TOKEN" localhost:8081/api/apps/porch/pause

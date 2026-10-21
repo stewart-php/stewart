@@ -131,3 +131,7 @@ app-reset: ## Forget a stored pause or resume, so stewart.yaml decides again [AP
 .PHONY: worker-restart
 worker-restart: ## Restart a worker of the running daemon [WORKER=0]
 	$(SERVER) run --rm --no-deps stewart stewart worker:restart $(call required,WORKER,0)
+
+.PHONY: reload
+reload: ## Check the project, then restart every worker on the current code; the Home Assistant session stays up
+	$(SERVER) run --rm --no-deps stewart stewart reload

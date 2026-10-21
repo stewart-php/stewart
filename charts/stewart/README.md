@@ -88,6 +88,7 @@ kubectl logs -f deployment/home-stewart
 kubectl exec deployment/home-stewart -- stewart status
 kubectl exec deployment/home-stewart -- stewart app:pause porch   # app:resume to undo, app:reset to let config decide; kept across restarts with persistence.url
 kubectl exec deployment/home-stewart -- stewart worker:restart 0  # also brings a quarantined worker back
+kubectl exec deployment/home-stewart -- stewart reload            # every worker on the current code; the session stays up
 ```
 
 In `git` mode the daemon fetches `code.git.ref` every `code.git.poll`. A new commit is installed beside the running

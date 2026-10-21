@@ -29,5 +29,6 @@ final readonly class RuntimeSnapshot
         public ?StoreHealth $store = null,
         public ?DeployStatus $deploy = null,
         public ?ComponentStatus $component = null,
+        public ?ReloadStatus $reload = null,
     ) {}
 }

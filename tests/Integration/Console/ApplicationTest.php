@@ -20,7 +20,7 @@ final class ApplicationTest extends TestCase
 
         $names = array_column($listing['commands'], 'name');
 
-        foreach (['run', 'check', 'config:dump', 'config:reference', 'status', 'app:pause', 'app:resume', 'app:reset', 'worker:restart', 'doctor', 'generate', 'make:app'] as $name) {
+        foreach (['run', 'check', 'config:dump', 'config:reference', 'status', 'app:pause', 'app:resume', 'app:reset', 'worker:restart', 'reload', 'doctor', 'generate', 'make:app'] as $name) {
             self::assertContains($name, $names);
         }
     }
