@@ -23,6 +23,8 @@ release could break; a release's "Upgrading" section says what to change.
   worker builds the container, with the reason `app_build_failed`, instead of when it is constructed
 - New projects' CI also runs `make check` against the settings in `.env.example`, and the Image workflow runs CI
   first, so a commit that fails it gets no image
+- `make deploy` in new projects installs changed dependencies and runs `stewart check` in one-off containers before
+  it restarts Stewart, so a deploy is down only for the restart, and a failed check leaves the running daemon up
 
 ## [1.4.0] - 2026-10-20
 

@@ -102,8 +102,10 @@ down: ## Stop everything
 	$(SERVER) down --remove-orphans
 
 .PHONY: deploy
-deploy: ## Pull the latest commit and restart; changed dependencies are installed on start
+deploy: ## Pull, install and check the latest commit, then restart; a failed check keeps the running daemon
 	git pull --ff-only
+	$(SERVER) run --rm --no-deps stewart prepare
+	$(SERVER) run --rm --no-deps stewart stewart check
 	$(SERVER) up -d --force-recreate stewart
 
 .PHONY: logs

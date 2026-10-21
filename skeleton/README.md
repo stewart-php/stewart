@@ -109,7 +109,7 @@ framework version always comes from your `composer.lock`.
 git clone <this repository> my-home && cd my-home
 cp .env.example .env    # fill it in
 make up                 # installs dependencies on start, then runs
-make deploy             # later: git pull, restart; changed dependencies are installed on start
+make deploy             # later: git pull, install, stewart check, then restart
 ```
 
 ### An image built by CI

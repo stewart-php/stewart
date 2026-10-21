@@ -35,8 +35,18 @@ Push your changes from your machine, then on the server:
 make deploy
 ```
 
-`make deploy` runs `git pull` and restarts Stewart. When `composer.lock` changed, the container installs the new
-dependencies before it starts.
+Stewart keeps running until the last of these steps:
+
+1. `git pull` fetches the new commit.
+2. A one-off container installs the dependencies, if `composer.lock` changed.
+3. `stewart check` loads the configuration and builds every app.
+4. Stewart restarts on the new commit, which takes a few seconds.
+
+If the check fails, `make deploy` stops before the restart, and Stewart keeps running the commit it started with.
+
+The dependencies are installed into the `vendor/` directory the running Stewart reads from. A worker that restarts
+during the install can load a mix of old and new packages. [Following a Git branch](git.md) installs every commit in
+a directory of its own instead.
 
 ## Stop it
 
@@ -50,6 +60,10 @@ Valkey keeps its data in a Docker volume, so stopping and starting loses nothing
 
 **`make deploy` refuses to pull.** The server's checkout has local changes. Run `git status` there and discard or
 commit them.
+
+**`make deploy` stops at `stewart check`.** The new commit has an error, and Stewart still runs the previous one. The
+checkout is already at the new commit, so a restart would start the broken code. Run `make check` on your machine to
+see the same error, push a fix, and run `make deploy` again.
 
 **Stewart cannot connect after the move.** The server reaches Home Assistant under another address than your
 machine. Fix `STEWART_HOME_ASSISTANT__URL` in the server's `.env`.

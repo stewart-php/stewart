@@ -34,7 +34,7 @@ Your project runs these commands with `make`. The `stewart` commands below run i
 | `make stan` | Static analysis |
 | `make up` | Start the daemon in the background |
 | `make down` | Stop everything |
-| `make deploy` | Pull the latest commit and restart; changed dependencies are installed on start |
+| `make deploy` | Pull, install and check the latest commit, then restart; a failed check keeps the running daemon |
 | `make logs` | Follow the daemon logs |
 | `make status` | One-shot status of the running daemon |
 | `make app-pause` | Pause an app of the running daemon [APP=porch-light] |
