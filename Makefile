@@ -31,8 +31,8 @@ help: ## Show this help
 setup: build ha-build install doctor ## First run: build the images, install dependencies, verify the container
 
 .PHONY: build
-build: ## Build the dev image
-	$(DC) build php
+build: ## Build the dev image, pulling the latest PHP patch
+	$(DC) build --pull php
 
 .PHONY: install
 install: ## composer install, including the isolated tools under tools/
@@ -219,8 +219,8 @@ test-packages: ## Run test-package for every package
 
 .PHONY: image
 image: ## Build the runtime image as published, and its -dev variant [RUNTIME_IMAGE=stewart-runtime:local]
-	$(DOCKER) build -f .docker/php/Dockerfile --target runtime -t $(RUNTIME_IMAGE) .
-	$(DOCKER) build -f .docker/php/Dockerfile --target runtime-dev -t $(RUNTIME_IMAGE)-dev .
+	$(DOCKER) build --pull -f .docker/php/Dockerfile --target runtime -t $(RUNTIME_IMAGE) .
+	$(DOCKER) build --pull -f .docker/php/Dockerfile --target runtime-dev -t $(RUNTIME_IMAGE)-dev .
 
 .PHONY: test-image
 test-image: image ## Smoke-test the runtime image: a skeleton project mounted, then cloned at boot

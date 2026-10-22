@@ -10,7 +10,7 @@
         "docs": "https://stewart-php.github.io/docs/"
     },
     "require": {
-        "php": ">=8.5",
+        "php": ">=8.5.12",
         "ext-ctype": "*",
         "ext-json": "*",
         "nette/php-generator": "^4.2.2",

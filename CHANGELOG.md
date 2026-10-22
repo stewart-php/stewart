@@ -48,6 +48,13 @@ release could break; a release's "Upgrading" section says what to change.
   when the difference changes, and an info line notes when the classes match again
 - The control protocol is 33, so `stewart status` and the other control commands need the same release as the daemon
 
+### Security
+
+- Every package and the skeleton require PHP 8.5.12, the security release that fixes the Core
+  advisories GHSA-w8hw-w9fx-j79w and GHSA-6wmf-4rv5-p3rp. The runtime images published since 2026-10-21, including
+  1.6.0, already run it; a project that runs Stewart outside the image needs PHP 8.5.12 before `composer install`
+  accepts it. `make build` and `make image` now always pull the latest PHP 8.5 base image
+
 ## [1.6.0] - 2026-10-21
 
 Edit apps and their settings without restarting: a reload restarts the workers on the current code and app settings
