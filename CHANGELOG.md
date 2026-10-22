@@ -5,32 +5,39 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
-## [Unreleased]
+## [1.7.0] - 2026-10-22
+
+Find out why an automation fired or did not: per-app log levels and traces, and a status that shows when each
+subscription last fired and when each schedule runs next.
 
 ### Added
 
 - `apps.<id>.log_level` (`STEWART_APPS__<ID>__LOG_LEVEL`) gives one app a log level of its own, louder or quieter
   than `log_level`; a reload applies it. A new Logs guide explains the log line
-- `apps.<id>.trace` and `stewart run --trace=<id>` (`make run TRACE=…`, also `watch` and `debug`) log `TRACE` lines for
-  one app at any log level: each event that reaches one of its subscriptions, each call of its handler, what a pause
-  skipped, its schedule runs, and its service calls with the outcome and how long they took. An event received but
-  never handled was stopped by an operator such as `filter()`. In JSON logs, trace records have `level_name` `TRACE`
+  ([#108](https://github.com/stewart-php/stewart/pull/108))
+- `apps.<id>.trace` and `stewart run --trace=<id>` (`make run TRACE=…`, also `watch` and `debug`) log `TRACE`
+  lines for one app at any log level: each event that reaches one of its subscriptions, each call of its handler,
+  what a pause skipped, its schedule runs, and its service calls with the outcome and how long they took. An event
+  received but never handled was stopped by an operator such as `filter()`. In JSON logs, trace records have
+  `level_name` `TRACE` ([#109](https://github.com/stewart-php/stewart/pull/109))
 - `stewart status --json` lists every subscription, now including state changes, with how many events it received
   and handled, how many it dropped, and when it last received and handled one; and every schedule and timer with its
   next and last run. Each app gains `last_handled_at`, `next_run_at` and `counters.handled`, also in the admin API's
   `GET /api/apps`, and `stewart_app_events_handled_total`, `stewart_app_last_handled_timestamp_seconds` and
-  `stewart_app_next_run_timestamp_seconds` expose them
+  `stewart_app_next_run_timestamp_seconds` expose them ([#110](https://github.com/stewart-php/stewart/pull/110))
 - `stewart status <app>…` (`make status APP=…`) shows only those apps, and adds a Subscriptions table (received,
   handled, dropped, last handled) and a Schedules table (next and last run); an unknown ID names the closest one, and
   `--json` narrows the same way. `--watch[=2s]` (`make status WATCH=1`) redraws until Ctrl-C and keeps trying while
   Stewart is down. The Apps table shows `last handled` and `next run`
+  ([#111](https://github.com/stewart-php/stewart/pull/111))
 - `stewart status` shows the MQTT connection on an `mqtt` row: its phase and since when, reconnects, the last outage
   and error, QoS 1 messages waiting and messages dropped. `stewart_mqtt_connection_phase{phase}`,
   `stewart_mqtt_reconnects_total`, `stewart_mqtt_messages_dropped_total{reason}` and `stewart_mqtt_outbound_queued`
-  expose the same
+  expose the same ([#112](https://github.com/stewart-php/stewart/pull/112))
 - `stewart status` shows on a `generated` row whether the generated classes still match Home Assistant: up to date,
   how many entities were added or removed since `stewart generate`, or an older format.
   `stewart_generated_entities_drift{change}` and `stewart_generated_format_current` expose the same
+  ([#113](https://github.com/stewart-php/stewart/pull/113))
 
 ### Changed
 
@@ -38,22 +45,40 @@ release could break; a release's "Upgrading" section says what to change.
   `broker`, or `worker N` for text a worker printed outside the logger. Lines Stewart writes about an app, such as
   `App failed` or `App paused`, carry that app's tag and follow its log level, and the line no longer repeats the app
   ID in its trailing details. JSON logs keep `context.app` and add the tag as `extra.source`
+  ([#108](https://github.com/stewart-php/stewart/pull/108))
 - The broker's routing debug lines (`Home Assistant event routed`, `Topic published`, `MQTT message routed`,
   `Home Assistant trigger routed`) name the matched apps instead of worker numbers, and the `service_calls.dry_run`
-  lines carry the tag of the app that made the call
+  lines carry the tag of the app that made the call ([#109](https://github.com/stewart-php/stewart/pull/109))
 - Warnings about dropped MQTT messages come for the first drop of each kind and then every 100th, with the count so
-  far, instead of one per message
+  far, instead of one per message ([#112](https://github.com/stewart-php/stewart/pull/112))
 - Generated classes are compared with Home Assistant again after each reconnect, after entities are added or removed,
   and after each reload, which compares against the classes `stewart generate` wrote last. The warning repeats only
   when the difference changes, and an info line notes when the classes match again
+  ([#113](https://github.com/stewart-php/stewart/pull/113))
 - The control protocol is 33, so `stewart status` and the other control commands need the same release as the daemon
+  ([#110](https://github.com/stewart-php/stewart/pull/110), [#112](https://github.com/stewart-php/stewart/pull/112),
+  [#113](https://github.com/stewart-php/stewart/pull/113))
 
 ### Security
 
-- Every package and the skeleton require PHP 8.5.12, the security release that fixes the Core
-  advisories GHSA-w8hw-w9fx-j79w and GHSA-6wmf-4rv5-p3rp. The runtime images published since 2026-10-21, including
-  1.6.0, already run it; a project that runs Stewart outside the image needs PHP 8.5.12 before `composer install`
-  accepts it. `make build` and `make image` now always pull the latest PHP 8.5 base image
+- Every package and the skeleton require PHP 8.5.12, the security release that fixes the Core advisories
+  GHSA-w8hw-w9fx-j79w and GHSA-6wmf-4rv5-p3rp. The runtime images published since 2026-10-21, including 1.6.0,
+  already run it; a project that runs Stewart outside the image needs PHP 8.5.12 before `composer install` accepts
+  it. `make build` and `make image` now always pull the latest PHP 8.5 base image
+  ([#114](https://github.com/stewart-php/stewart/pull/114))
+
+### Upgrading
+
+1. Run `make upgrade VERSION=1.7`, then restart Stewart (`make up`, `make deploy` or a new image). The control
+   protocol is now 33: until the daemon runs 1.7, `make status` and the other control targets refuse to talk to it.
+   The Home Assistant integration's protocol is unchanged.
+2. Stewart 1.7 needs PHP 8.5.12. The runtime image already runs it, so `make pull` is enough; a project that runs
+   Stewart outside the image updates PHP first.
+3. Log lines name their source after the level, such as `INFO [porch-light] …`. Anything that parses line logs needs
+   to allow for the tag; JSON logs only gain `extra.source`.
+4. The new Makefile variables reach only new projects. To use them, copy `TRACE` on `run`, `watch` and `debug`, and
+   `APP` and `WATCH` on `status`, from the
+   [skeleton's Makefile](https://github.com/stewart-php/skeleton/blob/main/Makefile).
 
 ## [1.6.0] - 2026-10-21
 
