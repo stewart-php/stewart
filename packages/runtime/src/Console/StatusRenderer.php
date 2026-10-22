@@ -10,6 +10,7 @@ use Stewart\Runtime\Control\Protocol\Status\AppStatus;
 use Stewart\Runtime\Control\Protocol\Status\ComponentStatus;
 use Stewart\Runtime\Control\Protocol\Status\ConnectionState;
 use Stewart\Runtime\Control\Protocol\Status\DeployStatus;
+use Stewart\Runtime\Control\Protocol\Status\GeneratedCodeStatus;
 use Stewart\Runtime\Control\Protocol\Status\MqttStatus;
 use Stewart\Runtime\Control\Protocol\Status\RegistrationInfo;
 use Stewart\Runtime\Control\Protocol\Status\ReloadStatus;
@@ -65,6 +66,7 @@ final readonly class StatusRenderer
             ['mqtt', $this->describeMqtt($snapshot->mqtt, $now)],
             ['deploy', $this->describeDeploy($snapshot->deploy, $now)],
             ['reload', $this->describeReload($snapshot->reload, $now)],
+            ['generated', $this->describeGeneratedCode($snapshot->generated, $now)],
             ['entities', (string) $daemon->entities],
             ['time zone', $daemon->timeZone],
             ['workers', \sprintf('%d live of %d', $broker->liveWorkers, $broker->workers)],
@@ -338,6 +340,23 @@ final readonly class StatusRenderer
         }
 
         return $description;
+    }
+
+    private function describeGeneratedCode(?GeneratedCodeStatus $generated, Instant $now): string
+    {
+        if ($generated === null) {
+            return 'not generated';
+        }
+
+        if (!$generated->hasCurrentFormat()) {
+            return \sprintf('format %d, expected %d; run stewart generate', $generated->format, $generated->expectedFormat);
+        }
+
+        if ($generated->hasDrift()) {
+            return \sprintf('%d added, %d removed; run stewart generate', \count($generated->added), \count($generated->removed));
+        }
+
+        return 'up to date, checked ' . $this->formatter->formatTimeAgo($generated->checkedAt, $now);
     }
 
     private function formatCalls(AppStatus $app): string

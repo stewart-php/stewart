@@ -11,6 +11,7 @@ store          down, last failure 20s ago: connection refused
 mqtt           reconnecting since 20s ago: connection refused, 2 reconnects, last outage 4s, 5 queued, 3 dropped         
 deploy         aaaaaaa, polled 15s ago, 2 rejected, last bbbbbbb 2m 00s ago: apps/Porch.php failed to load: syntax error 
 reload         partly applied 30s ago; restart to apply mqtt, log_level                                                  
+generated      2 added, 1 removed; run stewart generate                                                                  
 entities       2000                                                                                                      
 time zone      Europe/Budapest                                                                                           
 workers        1 live of 2                                                                                               

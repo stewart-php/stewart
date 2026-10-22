@@ -37,6 +37,8 @@ token. [Status and control](../guides/status.md#metrics) explains how to turn th
 | `stewart_component_state` | gauge | `state` | State of the stewart Home Assistant integration; 1 for the current one. |
 | `stewart_deploy_failures_total` | counter |  | New commits that failed stewart check and were not deployed. |
 | `stewart_deploy_info` | gauge | `commit` | Commit the daemon runs while it polls for new ones; always 1. |
+| `stewart_generated_entities_drift` | gauge | `change` | Home Assistant entities the generated classes miss (added) or still have (removed). |
+| `stewart_generated_format_current` | gauge |  | Whether stewart generate wrote the generated classes in the current format; 1 or 0. |
 | `stewart_ha_connection_phase` | gauge | `phase` | Home Assistant connection phase; 1 for the current one. |
 | `stewart_ha_entities` | gauge |  | Entities in the Home Assistant state cache. |
 | `stewart_ha_last_outage_seconds` | gauge |  | Length of the last Home Assistant outage. |

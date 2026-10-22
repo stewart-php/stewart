@@ -20,6 +20,7 @@ use Stewart\Runtime\Broker\DaemonLaunchOptions;
 use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\Deploy\ExternalCommandRunner;
 use Stewart\Runtime\Broker\Exposure\ExposureReconciler;
+use Stewart\Runtime\Broker\GeneratedCodeDrift;
 use Stewart\Runtime\Broker\Mqtt\DisabledMqttLink;
 use Stewart\Runtime\Broker\Reload\ConfigChangeClassifier;
 use Stewart\Runtime\Broker\Reload\ReloadApplier;
@@ -56,6 +57,7 @@ final readonly class ReloadCoordinatorFixture
         public AppMetrics $metrics,
         public FakeHomeAssistant $homeAssistant,
         public LogVerbosityPolicy $verbosity,
+        public GeneratedCodeDrift $drift,
     ) {}
 
     /** @param array<string, string> $environment */
@@ -69,13 +71,16 @@ final readonly class ReloadCoordinatorFixture
         ?AppTopology $topology = null,
         WorkerPoolListener $listener = new RecordingPoolListener(),
         array $environment = self::HOME_ASSISTANT,
+        ?FakeHaSession $session = null,
     ): self {
         $topology ??= AppTopologyFixture::createTopology();
+        $session ??= FakeHaSession::createOpened();
         $configs = ConfigLoaderFixture::createLoader(new EnvironmentVariables($environment));
         $homeAssistant = FakeHomeAssistant::createUnreachable();
         $pauses = new AppPauseRegistry($topology->getCatalog()->enabled, new DaemonStartTime($pools->clock));
         $metrics = new AppMetrics($topology->getWorkerSlots(), $pools->clock);
         $verbosity = new LogVerbosityPolicy(LogLevel::Info, $topology->getCatalog()->enabled->listVerbositiesByAppId());
+        $drift = new GeneratedCodeDrift($session, $pools->clock, $logger);
 
         return new self(
             new ReloadCoordinator(
@@ -93,6 +98,7 @@ final readonly class ReloadCoordinatorFixture
                     $configs,
                     $launch,
                     $verbosity,
+                    $drift,
                     $logger,
                 ),
                 $state,
@@ -105,6 +111,7 @@ final readonly class ReloadCoordinatorFixture
             $metrics,
             $homeAssistant,
             $verbosity,
+            $drift,
         );
     }
 

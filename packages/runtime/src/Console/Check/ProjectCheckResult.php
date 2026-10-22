@@ -9,6 +9,7 @@ use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\App\DiscoveryResult;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
+use Stewart\Runtime\Config\CodegenConfig;
 
 final readonly class ProjectCheckResult
 {
@@ -18,11 +19,12 @@ final readonly class ProjectCheckResult
         public DiscoveryResult $discovered,
         public AppCatalog $catalog,
         public WorkerSlotCollection $workerSlots,
+        public ?CodegenConfig $codegen = null,
     ) {}
 
-    public static function passed(DiscoveryResult $discovered, AppCatalog $catalog, WorkerSlotCollection $workerSlots): self
+    public static function passed(DiscoveryResult $discovered, AppCatalog $catalog, WorkerSlotCollection $workerSlots, CodegenConfig $codegen): self
     {
-        return new self([], $discovered, $catalog, $workerSlots);
+        return new self([], $discovered, $catalog, $workerSlots, $codegen);
     }
 
     /** @param list<string> $errors */

@@ -31,6 +31,7 @@ final readonly class BrokerHaEvents implements HaSessionListener
         private TriggerRejections $triggerRejections,
         private RegistryRefresher $registryRefresher,
         private ExposureCommandRouter $commandRouter,
+        private GeneratedCodeDrift $drift,
     ) {}
 
     public function stateUpdated(StateUpdate $update): void
@@ -79,6 +80,7 @@ final readonly class BrokerHaEvents implements HaSessionListener
         // The registry goes first so a resynced change is matched against the current areas and labels.
         $this->slots->broadcast($this->session->snapshotRegistry()->toRegistrySnapshot());
         $this->slots->broadcast(new StateResynced($snapshot->states, $snapshot->revision, $outage));
+        $this->drift->recheckGeneratedCode();
     }
 
     public function connectionFailed(Throwable $error): void

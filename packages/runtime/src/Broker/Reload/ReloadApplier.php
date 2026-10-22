@@ -13,6 +13,7 @@ use Stewart\Runtime\Broker\AppTopology;
 use Stewart\Runtime\Broker\DaemonLaunchOptions;
 use Stewart\Runtime\Broker\Exposure\ExposureLink;
 use Stewart\Runtime\Broker\Exposure\ExposureReconciler;
+use Stewart\Runtime\Broker\GeneratedCodeDrift;
 use Stewart\Runtime\Broker\WorkerPool;
 use Stewart\Runtime\Broker\WorkerPoolListener;
 use Stewart\Runtime\Config\ConfigLoader;
@@ -32,6 +33,7 @@ final readonly class ReloadApplier
         private ConfigLoader $configs,
         private DaemonLaunchOptions $launch,
         private LogVerbosityPolicy $verbosity,
+        private GeneratedCodeDrift $drift,
         private LoggerInterface $logger,
     ) {}
 
@@ -42,6 +44,8 @@ final readonly class ReloadApplier
         $this->pauses->followReloadedCatalog($previous);
         $this->metrics->replaceAppTotals($plan->workerSlots);
         $this->verbosity->replaceAppVerbosities($plan->catalog->enabled->listVerbositiesByAppId());
+        $this->drift->replaceGeneratedManifest($plan->generated);
+        $this->drift->recheckGeneratedCode();
 
         foreach ($previous->enabled->filter(static fn(AppDefinition $app): bool => $plan->catalog->enabled->find($app->id) === null) as $removed) {
             $this->exposures->forgetExposuresOfApp($removed->id);

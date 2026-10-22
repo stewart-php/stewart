@@ -54,7 +54,7 @@ final readonly class ProjectCheck
 
         $errors = $this->listBuildErrorsInAppOrder($catalog, $failures);
 
-        return $errors === [] ? ProjectCheckResult::passed($discovered, $catalog, $workerSlots) : ProjectCheckResult::failed($errors);
+        return $errors === [] ? ProjectCheckResult::passed($discovered, $catalog, $workerSlots, $config->codegen) : ProjectCheckResult::failed($errors);
     }
 
     /** @throws StewartException */

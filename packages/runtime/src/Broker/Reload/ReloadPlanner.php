@@ -43,6 +43,7 @@ final readonly class ReloadPlanner
             $catalog,
             $this->placement->planWorkerSlots($catalog->enabled, $config),
             $this->changes->listSettingsNeedingRestart($this->runningConfig, $config),
+            $report->generated,
         );
     }
 }

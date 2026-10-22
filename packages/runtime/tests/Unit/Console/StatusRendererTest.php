@@ -22,6 +22,7 @@ use Stewart\Runtime\Control\Protocol\Status\DaemonInfo;
 use Stewart\Runtime\Control\Protocol\Status\DeployFailure;
 use Stewart\Runtime\Control\Protocol\Status\DeployStatus;
 use Stewart\Runtime\Control\Protocol\Status\FailureReport;
+use Stewart\Runtime\Control\Protocol\Status\GeneratedCodeStatus;
 use Stewart\Runtime\Control\Protocol\Status\LatencyHistogram;
 use Stewart\Runtime\Control\Protocol\Status\MqttDropCount;
 use Stewart\Runtime\Control\Protocol\Status\MqttStatus;
@@ -45,6 +46,7 @@ use Stewart\Runtime\Model\RoutingStats;
 use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Store\StoreHealth;
+use Stewart\Support\Wire\GeneratedFormat;
 use Symfony\Component\Console\Output\BufferedOutput;
 
 #[CoversClass(StatusRenderer::class)]
@@ -60,7 +62,7 @@ final class StatusRendererTest extends TestCase
 
     public function testEverySectionIsRenderedFromTheSnapshot(): void
     {
-        $snapshot = self::createSnapshot(new ComponentStatus(ComponentState::Active, self::createInstantAt(self::NOW - 30.0), 'default', '0.9.0', 1));
+        $snapshot = self::createSnapshot(new ComponentStatus(ComponentState::Active, self::createInstantAt(self::NOW - 30.0), 'default', '0.9.0', 1), self::createDriftedCode());
 
         $output = new BufferedOutput();
         new StatusRenderer(new StatusFormatter())->render($output, $snapshot);
@@ -75,7 +77,7 @@ final class StatusRendererTest extends TestCase
 
     public function testAppDetailAddsTheAppsSubscriptionsAndSchedules(): void
     {
-        $snapshot = self::createSnapshot(null)->withOnlyApps(['demo']);
+        $snapshot = self::createSnapshot(null, self::createDriftedCode())->withOnlyApps(['demo']);
 
         $output = new BufferedOutput();
         new StatusRenderer(new StatusFormatter())->render($output, $snapshot, StatusView::AppDetail);
@@ -91,7 +93,7 @@ final class StatusRendererTest extends TestCase
     public function testSeveralAppsNameTheAppOfEachSubscription(): void
     {
         $output = new BufferedOutput();
-        new StatusRenderer(new StatusFormatter())->render($output, self::createSnapshot(null), StatusView::AppDetail);
+        new StatusRenderer(new StatusFormatter())->render($output, self::createSnapshot(null, self::createDriftedCode()), StatusView::AppDetail);
 
         self::assertMatchesRegularExpression('/^\s*app\s+kind\s+match/m', $output->fetch());
     }
@@ -115,9 +117,28 @@ final class StatusRendererTest extends TestCase
     public function testComponentRowExplainsState(ComponentStatus $component, string $expected): void
     {
         $output = new BufferedOutput();
-        new StatusRenderer(new StatusFormatter())->render($output, self::createSnapshot($component));
+        new StatusRenderer(new StatusFormatter())->render($output, self::createSnapshot($component, self::createDriftedCode()));
 
         self::assertStringContainsString('component      ' . $expected, $output->fetch());
+    }
+
+    #[DataProvider('provideGeneratedRows')]
+    public function testGeneratedRowSaysWhatToDo(?GeneratedCodeStatus $generated, string $expected): void
+    {
+        $output = new BufferedOutput();
+        new StatusRenderer(new StatusFormatter())->render($output, self::createSnapshot(null, $generated));
+
+        self::assertStringContainsString('generated      ' . $expected, $output->fetch());
+    }
+
+    /** @return iterable<string, array{?GeneratedCodeStatus, string}> */
+    public static function provideGeneratedRows(): iterable
+    {
+        $checkedAt = self::createInstantAt(self::NOW - 120.0);
+
+        yield 'up to date' => [new GeneratedCodeStatus(GeneratedFormat::VERSION, GeneratedFormat::VERSION, [], [], $checkedAt), 'up to date, checked 2m 00s ago'];
+        yield 'older format' => [new GeneratedCodeStatus(5, 6, [], [], $checkedAt), 'format 5, expected 6; run stewart generate'];
+        yield 'never generated' => [null, 'not generated'];
     }
 
     /** @return iterable<string, array{ComponentStatus, string}> */
@@ -130,7 +151,7 @@ final class StatusRendererTest extends TestCase
         yield 'replaced' => [new ComponentStatus(ComponentState::Replaced, $since, 'upstairs', '0.9.0', 1), 'replaced since 2m 00s ago, version 0.9.0, another Stewart uses expose.instance "upstairs"'];
     }
 
-    private static function createSnapshot(?ComponentStatus $component): RuntimeSnapshot
+    private static function createSnapshot(?ComponentStatus $component, ?GeneratedCodeStatus $generated): RuntimeSnapshot
     {
         $now = self::NOW;
 
@@ -195,8 +216,14 @@ final class StatusRendererTest extends TestCase
                 [new MqttDropCount(MqttDropReason::Disconnected, 3), new MqttDropCount(MqttDropReason::BufferFull, 0)],
                 5,
             ),
+            generated: $generated,
         );
 
+    }
+
+    private static function createDriftedCode(): GeneratedCodeStatus
+    {
+        return new GeneratedCodeStatus(GeneratedFormat::VERSION, GeneratedFormat::VERSION, ['light.landing', 'switch.fan'], ['light.old'], self::createInstantAt(self::NOW - 30.0));
     }
 
     private static function createInstantAt(float $epochSeconds): Instant

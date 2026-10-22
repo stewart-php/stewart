@@ -35,6 +35,7 @@ final class RegistryRefresher
         private readonly HaSession $session,
         private readonly WorkerSlotRegistry $slots,
         private readonly Timers $timers,
+        private readonly GeneratedCodeDrift $drift,
         private readonly LoggerInterface $logger,
     ) {}
 
@@ -78,6 +79,7 @@ final class RegistryRefresher
     {
         if ($this->session->refreshRegistry()) {
             $this->slots->broadcast($this->session->snapshotRegistry()->toRegistrySnapshot());
+            $this->drift->recheckGeneratedCode();
         }
     }
 }

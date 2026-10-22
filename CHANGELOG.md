@@ -28,6 +28,9 @@ release could break; a release's "Upgrading" section says what to change.
   and error, QoS 1 messages waiting and messages dropped. `stewart_mqtt_connection_phase{phase}`,
   `stewart_mqtt_reconnects_total`, `stewart_mqtt_messages_dropped_total{reason}` and `stewart_mqtt_outbound_queued`
   expose the same
+- `stewart status` shows on a `generated` row whether the generated classes still match Home Assistant: up to date,
+  how many entities were added or removed since `stewart generate`, or an older format.
+  `stewart_generated_entities_drift{change}` and `stewart_generated_format_current` expose the same
 
 ### Changed
 
@@ -40,7 +43,10 @@ release could break; a release's "Upgrading" section says what to change.
   lines carry the tag of the app that made the call
 - Warnings about dropped MQTT messages come for the first drop of each kind and then every 100th, with the count so
   far, instead of one per message
-- The control protocol is 32, so `stewart status` and the other control commands need the same release as the daemon
+- Generated classes are compared with Home Assistant again after each reconnect, after entities are added or removed,
+  and after each reload, which compares against the classes `stewart generate` wrote last. The warning repeats only
+  when the difference changes, and an info line notes when the classes match again
+- The control protocol is 33, so `stewart status` and the other control commands need the same release as the daemon
 
 ## [1.6.0] - 2026-10-21
 
