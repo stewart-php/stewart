@@ -25,6 +25,19 @@ release asks you to do something.
 
 ## Upgrade notes
 
+### 1.7
+
+1. Run `make upgrade VERSION=1.7`, then restart Stewart (`make up`, `make deploy` or a new image). The control
+   protocol is now 33: until the daemon runs 1.7, `make status` and the other control targets refuse to talk to it.
+   The Home Assistant integration's protocol is unchanged.
+2. Stewart 1.7 needs PHP 8.5.12. The runtime image already runs it, so `make pull` is enough; a project that runs
+   Stewart outside the image updates PHP first.
+3. Log lines name their source after the level, such as `INFO [porch-light] …`. Anything that parses line logs needs
+   to allow for the tag; JSON logs only gain `extra.source`.
+4. The new Makefile variables reach only new projects. To use them, copy `TRACE` on `run`, `watch` and `debug`, and
+   `APP` and `WATCH` on `status`, from the
+   [skeleton's Makefile](https://github.com/stewart-php/skeleton/blob/main/Makefile).
+
 ### 1.6
 
 1. Run `make upgrade VERSION=1.6`, then restart Stewart (`make up`, `make deploy` or a new image). The control
