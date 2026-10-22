@@ -10,6 +10,7 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\DaemonLaunchOptions;
+use Stewart\Runtime\Broker\GeneratedManifest;
 use Stewart\Runtime\Broker\Reload\ConfigChangeClassifier;
 use Stewart\Runtime\Broker\Reload\ReloadApplier;
 use Stewart\Runtime\Broker\Reload\ReloadCheckApp;
@@ -28,11 +29,13 @@ use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\AppTopologyFixture;
+use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerSpawner;
 use Stewart\Runtime\Tests\Fixtures\Broker\RecordingPoolListener;
 use Stewart\Runtime\Tests\Fixtures\Broker\ReloadCoordinatorFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\WorkerPoolFixture;
 use Stewart\Runtime\Tests\Fixtures\Deploy\ScriptedCommandRunner;
+use Stewart\Support\Wire\GeneratedFormat;
 use Stewart\Testing\Async\Latch;
 use Stewart\Testing\Filesystem\TempDirectory;
 use Stewart\Testing\Logging\RecordingLogger;
@@ -178,6 +181,18 @@ final class ReloadCoordinatorTest extends TestCase
         self::assertFalse($this->reloads->verbosity->admitsLevel(LogLevel::Debug, null));
     }
 
+    public function testReloadComparesAgainstTheManifestItBrings(): void
+    {
+        $session = FakeHaSession::createOpened();
+        $session->entityIds = ['light.hall', 'light.landing'];
+        $this->reloads = $this->createReloads(session: $session);
+        $this->queueReport(['demo'], generated: new GeneratedManifest(GeneratedFormat::VERSION, ['light.hall', 'light.landing'], []));
+
+        $this->reload();
+
+        self::assertFalse($this->reloads->drift->status?->hasDrift(), 'The regenerated classes know the new entity.');
+    }
+
     public function testRequestWhileAReloadRunsIsNotRepeated(): void
     {
         $hold = new Latch();
@@ -210,7 +225,7 @@ final class ReloadCoordinatorTest extends TestCase
         self::assertSame(1, $this->spawner->countSpawnedProcesses());
     }
 
-    private function createReloads(DaemonLaunchOptions $launch = new DaemonLaunchOptions()): ReloadCoordinatorFixture
+    private function createReloads(DaemonLaunchOptions $launch = new DaemonLaunchOptions(), ?FakeHaSession $session = null): ReloadCoordinatorFixture
     {
         return ReloadCoordinatorFixture::createReloadCoordinator(
             $this->pools,
@@ -220,14 +235,15 @@ final class ReloadCoordinatorTest extends TestCase
             launch: $launch,
             topology: AppTopologyFixture::createTopologyForSlots(self::createSlot(0, 'demo')),
             listener: $this->listener,
+            session: $session,
         );
     }
 
     /** @param list<string> $appIds */
-    private function queueReport(array $appIds, string $configFingerprint = self::NO_CONFIG_FILE): void
+    private function queueReport(array $appIds, string $configFingerprint = self::NO_CONFIG_FILE, ?GeneratedManifest $generated = null): void
     {
         $apps = array_map(static fn(string $id): ReloadCheckApp => new ReloadCheckApp($id, Demo::class), $appIds);
-        $this->commands->queueResult(ReloadCoordinatorFixture::CONSOLE_SCRIPT, 0, $this->reports->encodeReport(new ReloadCheckReport($apps, [], [], $configFingerprint)));
+        $this->commands->queueResult(ReloadCoordinatorFixture::CONSOLE_SCRIPT, 0, $this->reports->encodeReport(new ReloadCheckReport($apps, [], [], $configFingerprint, $generated)));
     }
 
     private function reload(): ReloadResult

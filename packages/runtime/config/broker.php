@@ -18,9 +18,9 @@ use Stewart\Runtime\Broker\ControlPlane;
 use Stewart\Runtime\Broker\Deploy\AmpExternalCommandRunner;
 use Stewart\Runtime\Broker\Deploy\ExternalCommandRunner;
 use Stewart\Runtime\Broker\EventRouter;
+use Stewart\Runtime\Broker\GeneratedManifest;
 use Stewart\Runtime\Broker\HaSession;
 use Stewart\Runtime\Broker\Http\Collection\HttpListenerCollection;
-use Stewart\Runtime\Broker\ManifestCheck;
 use Stewart\Runtime\Broker\Message\WorkerMessageDispatcher;
 use Stewart\Runtime\Broker\Message\WorkerMessageHandler;
 use Stewart\Runtime\Broker\Mqtt\MqttConnectionTracker;
@@ -85,7 +85,7 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(AppPlacement::class)->factory([service(AppPlacementFactory::class), 'createPlacementForHost']);
     $services->set(WorkerSlotCollection::class)->factory([service(AppPlacement::class), 'planWorkerSlots']);
-    $services->set(ManifestCheck::class)->factory([ManifestCheck::class, 'forGeneratedCode']);
+    $services->set(GeneratedManifest::class)->factory([GeneratedManifest::class, 'findForGeneratedCode']);
     $services->set(WorkerMessageDispatcher::class)->arg('$handlers', tagged_iterator('stewart.worker_message_handler'));
 
     $services->set(GuardedStoreBackend::class)->factory([service(BrokerStoreBackendOpener::class), 'openConfiguredBackend']);

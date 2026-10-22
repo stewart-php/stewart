@@ -9,6 +9,7 @@ use Stewart\Runtime\Broker\Component\ComponentTracker;
 use Stewart\Runtime\Broker\ConnectionTracker;
 use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\Deploy\DeployState;
+use Stewart\Runtime\Broker\GeneratedCodeDrift;
 use Stewart\Runtime\Broker\HaCallSlots;
 use Stewart\Runtime\Broker\HaSession;
 use Stewart\Runtime\Broker\Reload\ReloadState;
@@ -53,6 +54,7 @@ final readonly class SnapshotAssembler implements SnapshotSource
         private SubscriptionInfoBuilder $subscriptionInfos,
         private ScheduleStatusBuilder $scheduleStatuses,
         private MqttStatusBuilder $mqttStatus,
+        private GeneratedCodeDrift $drift,
         private ProcessMemory $processMemory,
         private Clock $clock,
     ) {}
@@ -73,6 +75,7 @@ final readonly class SnapshotAssembler implements SnapshotSource
             reload: $this->buildReloadStatus(),
             schedules: $this->scheduleStatuses->buildScheduleStatuses(),
             mqtt: $this->mqttStatus->buildMqttStatus(),
+            generated: $this->drift->status,
         );
     }
 

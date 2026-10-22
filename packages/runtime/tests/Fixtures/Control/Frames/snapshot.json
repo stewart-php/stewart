@@ -218,6 +218,15 @@
                 }
             ],
             "outbound_queued": 1
+        },
+        "generated": {
+            "format": 6,
+            "expected_format": 6,
+            "added": [
+                "light.landing"
+            ],
+            "removed": [],
+            "checked_at": "2026-09-26T10:59:00.000000Z"
         }
     }
 }

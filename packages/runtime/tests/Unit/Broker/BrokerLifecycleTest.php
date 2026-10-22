@@ -36,9 +36,10 @@ use Stewart\Runtime\Broker\ConnectionTracker;
 use Stewart\Runtime\Broker\ControlPlane;
 use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\EventRouter;
+use Stewart\Runtime\Broker\GeneratedCodeDrift;
+use Stewart\Runtime\Broker\GeneratedManifest;
 use Stewart\Runtime\Broker\Http\Collection\HttpListenerCollection;
 use Stewart\Runtime\Broker\LoopErrorLogger;
-use Stewart\Runtime\Broker\ManifestCheck;
 use Stewart\Runtime\Broker\Message\AppFailedHandler;
 use Stewart\Runtime\Broker\Message\EventFireRequestHandler;
 use Stewart\Runtime\Broker\Message\PongHandler;
@@ -123,7 +124,8 @@ use function Amp\async;
 #[CoversClass(EventRouter::class)]
 #[CoversClass(ServiceCallRequestHandler::class)]
 #[CoversClass(EventFireRequestHandler::class)]
-#[CoversClass(ManifestCheck::class)]
+#[CoversClass(GeneratedManifest::class)]
+#[CoversClass(GeneratedCodeDrift::class)]
 #[CoversClass(AppMetrics::class)]
 #[CoversClass(AppStatusBuilder::class)]
 #[CoversClass(AppRunningTotals::class)]
@@ -145,7 +147,7 @@ final class BrokerLifecycleTest extends TestCase
 
     private ?InMemoryStoreBackend $store = null;
 
-    private ?ManifestCheck $manifest = null;
+    private ?GeneratedManifest $manifest = null;
 
     private ?SupervisionConfig $supervision = null;
 
@@ -777,7 +779,7 @@ final class BrokerLifecycleTest extends TestCase
 
     public function testInstanceThatHasMovedOnGetsExactlyOneWarning(): void
     {
-        $this->manifest = new ManifestCheck(Manifest::class);
+        $this->manifest = GeneratedManifest::readFromClass(Manifest::class);
         $this->session->entityIds = [...Manifest::listEntityIds(), 'light.landing'];
         $this->broker = $this->createBroker();
 
@@ -792,7 +794,7 @@ final class BrokerLifecycleTest extends TestCase
 
     public function testMatchingInstanceSaysNothing(): void
     {
-        $this->manifest = new ManifestCheck(Manifest::class);
+        $this->manifest = GeneratedManifest::readFromClass(Manifest::class);
         $this->session->entityIds = Manifest::listEntityIds();
         $this->broker = $this->createBroker();
 
@@ -803,7 +805,7 @@ final class BrokerLifecycleTest extends TestCase
 
     public function testOlderGeneratedFormatGetsAWarning(): void
     {
-        $this->manifest = new ManifestCheck(UnversionedManifest::class);
+        $this->manifest = GeneratedManifest::readFromClass(UnversionedManifest::class);
         $this->session->entityIds = Manifest::listEntityIds();
         $this->broker = $this->createBroker();
 
@@ -816,9 +818,23 @@ final class BrokerLifecycleTest extends TestCase
         self::assertSame(0, $this->logger->records->getFirst()?->context['format']);
     }
 
+    public function testEntityAddedDuringAnOutageWarnsAfterTheReconnect(): void
+    {
+        $this->manifest = GeneratedManifest::readFromClass(Manifest::class);
+        $this->session->entityIds = Manifest::listEntityIds();
+        $this->broker = $this->createBroker();
+        $this->startBroker();
+
+        $this->session->entityIds = [...Manifest::listEntityIds(), 'light.landing'];
+        $this->session->listener?->connectionLost('gone', Instant::fromEpochMicroseconds(0));
+        $this->session->listener?->reconnected(Duration::seconds(1));
+
+        self::assertSame(['Generated entity classes no longer match Home Assistant; run stewart generate'], $this->logger->listMessagesAt('warning'));
+    }
+
     public function testEntityLeftOutOfGenerationIsNotDrift(): void
     {
-        $this->manifest = new ManifestCheck(Manifest::class);
+        $this->manifest = GeneratedManifest::readFromClass(Manifest::class);
         $this->session->entityIds = [...Manifest::listEntityIds(), ...Manifest::listIgnoredEntityIds()];
         $this->broker = $this->createBroker();
 
@@ -853,7 +869,7 @@ final class BrokerLifecycleTest extends TestCase
         }
 
         if ($this->manifest !== null) {
-            $overrides = $overrides->withService(ManifestCheck::class, $this->manifest);
+            $overrides = $overrides->withService(GeneratedManifest::class, $this->manifest);
         }
 
         if ($this->control !== null) {

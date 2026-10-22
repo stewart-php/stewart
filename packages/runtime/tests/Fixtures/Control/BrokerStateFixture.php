@@ -19,6 +19,7 @@ use Stewart\Runtime\Broker\Component\ComponentTracker;
 use Stewart\Runtime\Broker\ConnectionTracker;
 use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\Deploy\DeployState;
+use Stewart\Runtime\Broker\GeneratedCodeDrift;
 use Stewart\Runtime\Broker\HaCallSlots;
 use Stewart\Runtime\Broker\Mqtt\DisabledMqttLink;
 use Stewart\Runtime\Broker\Mqtt\MqttConnectionTracker;
@@ -72,6 +73,8 @@ final readonly class BrokerStateFixture
 
     public HaCallSlots $callSlots;
 
+    public GeneratedCodeDrift $drift;
+
     public WorkerPoolFixture $pools;
 
     private RecordingPoolListener $listener;
@@ -84,6 +87,7 @@ final readonly class BrokerStateFixture
         $this->registry = new SubscriptionRegistry();
         $this->metrics = new AppMetrics(WorkerSlotCollection::fromList([self::createSlot(0), self::createSlot(1)]), $this->timers->clock);
         $this->callSlots = new HaCallSlots(ConfigFixture::createServiceCallPolicy(), $this->metrics, $this->timers->clock, new NullLogger());
+        $this->drift = new GeneratedCodeDrift($this->session, $this->timers->clock, new NullLogger());
         $this->listener = new RecordingPoolListener();
         $this->pools = WorkerPoolFixture::createWorkerPool(
             spawner: $spawner,
@@ -176,6 +180,7 @@ final readonly class BrokerStateFixture
             storeHealth: new StoreHealthBuilder($pools->slots, ConfigFixture::createPersistenceConfig()),
             subscriptionInfos: new SubscriptionInfoBuilder($pools->slots, $this->registry),
             scheduleStatuses: new ScheduleStatusBuilder($pools->slots),
+            drift: $this->drift,
             mqttStatus: new MqttStatusBuilder(ConfigFixture::createStewartConfig(), new MqttConnectionTracker($this->timers->clock, new NullLogger()), new DisabledMqttLink(new NullLogger())),
             processMemory: new ProcessMemory(),
             clock: $this->timers->clock,

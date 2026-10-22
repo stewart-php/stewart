@@ -66,7 +66,7 @@ final readonly class BrokerLifecycle
             if ($this->run->isRunning()) {
                 $this->processTimeZone->useAsProcessDefault($this->session->getTimeZone());
                 $this->connection->markConnected();
-                $this->drift->warnIfGeneratedCodeDrifted();
+                $this->drift->recheckGeneratedCode();
                 $this->workers->startWorkers();
                 $this->releases->startPolling();
                 $this->reloads->startAccepting();

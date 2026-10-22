@@ -34,6 +34,7 @@ final readonly class RuntimeSnapshot
         #[ListOf(ScheduleStatus::class)]
         public array $schedules = [],
         public ?MqttStatus $mqtt = null,
+        public ?GeneratedCodeStatus $generated = null,
     ) {}
 
     /** @param list<string> $appIds */
@@ -53,6 +54,7 @@ final readonly class RuntimeSnapshot
             reload: $this->reload,
             schedules: array_values(array_filter($this->schedules, static fn(ScheduleStatus $schedule): bool => \in_array($schedule->appId, $appIds, true))),
             mqtt: $this->mqtt,
+            generated: $this->generated,
         );
     }
 }

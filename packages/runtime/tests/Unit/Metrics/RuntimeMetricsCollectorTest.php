@@ -14,6 +14,7 @@ use Stewart\Runtime\Metrics\Source\ComponentMetricSource;
 use Stewart\Runtime\Metrics\Source\ConnectionMetricSource;
 use Stewart\Runtime\Metrics\Source\DaemonMetricSource;
 use Stewart\Runtime\Metrics\Source\DeployMetricSource;
+use Stewart\Runtime\Metrics\Source\GeneratedCodeMetricSource;
 use Stewart\Runtime\Metrics\Source\MqttMetricSource;
 use Stewart\Runtime\Metrics\Source\StoreMetricSource;
 use Stewart\Runtime\Metrics\Source\WorkerMetricSource;
@@ -26,6 +27,7 @@ use Stewart\Runtime\Tests\Fixtures\Control\StubSnapshotSource;
 #[CoversClass(ConnectionMetricSource::class)]
 #[CoversClass(DaemonMetricSource::class)]
 #[CoversClass(DeployMetricSource::class)]
+#[CoversClass(GeneratedCodeMetricSource::class)]
 #[CoversClass(MqttMetricSource::class)]
 #[CoversClass(StoreMetricSource::class)]
 #[CoversClass(WorkerMetricSource::class)]
@@ -46,6 +48,7 @@ final class RuntimeMetricsCollectorTest extends TestCase
             new AppMetricSource(),
             new StoreMetricSource(),
             new MqttMetricSource(),
+            new GeneratedCodeMetricSource(),
         ]);
 
         $text = new PrometheusTextEncoder()->encodeFamilies($collector->collectMetrics(new StubSnapshotSource()->takeSnapshot()));
@@ -69,6 +72,7 @@ final class RuntimeMetricsCollectorTest extends TestCase
             new ComponentMetricSource(),
             new DeployMetricSource(),
             new MqttMetricSource(),
+            new GeneratedCodeMetricSource(),
         ]);
 
         foreach ($collector->collectMetrics(new StubSnapshotSource()->takeSnapshot()) as $family) {

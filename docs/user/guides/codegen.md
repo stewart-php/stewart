@@ -30,11 +30,18 @@ make generate
 Run it again after you add devices, and commit `generated/`. A build or a server then never needs Home Assistant to
 create the classes.
 
-If Stewart notices at start that Home Assistant has entities the classes do not, it logs one warning:
+If Home Assistant has entities the classes do not, or the classes have entities Home Assistant no longer has, Stewart
+logs a warning:
 
 ```
-Generated entity classes no longer match Home Assistant; run stewart generate {"added":["light.landing"],"removed":[]}
+… WARNING [broker] Generated entity classes no longer match Home Assistant; run stewart generate {"added":["light.landing"],"removed":[]}
 ```
+
+It checks at start, after each reconnect to Home Assistant, after entities are added or removed in Home Assistant, and
+after each [reload](status.md#reloading), so `make generate` followed by `make reload` shows the new classes match. The
+warning comes again only when the list changes, and one line says when the classes match again. `make status` shows
+the same on its `generated` row (`up to date`, `2 added, 1 removed; run stewart generate`, or a format from an older
+Stewart), and so do the metrics `stewart_generated_entities_drift{change}` and `stewart_generated_format_current`.
 
 `make generate ARGS=--check` reports what would change without writing anything, and fails if something would. When
 more than half of the files would be deleted, `make generate` stops, in case it reached the wrong Home Assistant;

@@ -12,6 +12,7 @@ use Stewart\Runtime\App\Collection\UnmarkedAppCollection;
 use Stewart\Runtime\App\DiscoveredApp;
 use Stewart\Runtime\App\DiscoveryResult;
 use Stewart\Runtime\App\UnmarkedApp;
+use Stewart\Runtime\Broker\GeneratedManifest;
 
 // What reload:check found, from a process that could load the apps fresh; it carries no option values.
 final readonly class ReloadCheckReport
@@ -29,15 +30,17 @@ final readonly class ReloadCheckReport
         #[ListOf('string')]
         public array $errors,
         public string $configFingerprint,
+        public ?GeneratedManifest $generated = null,
     ) {}
 
-    public static function fromDiscovery(DiscoveryResult $discovered, string $configFingerprint): self
+    public static function fromDiscovery(DiscoveryResult $discovered, string $configFingerprint, ?GeneratedManifest $generated): self
     {
         return new self(
             $discovered->apps->mapToList(static fn(DiscoveredApp $app): ReloadCheckApp => new ReloadCheckApp($app->id->value, $app->class)),
             $discovered->unmarked->mapToList(static fn(UnmarkedApp $app): string => $app->class),
             [],
             $configFingerprint,
+            $generated,
         );
     }
 

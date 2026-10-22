@@ -9,9 +9,12 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Runtime\Broker\GeneratedCodeDrift;
+use Stewart\Runtime\Broker\GeneratedManifest;
 use Stewart\Runtime\Broker\RegistryRefresher;
 use Stewart\Runtime\Broker\WorkerSlotRegistry;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
+use Stewart\Runtime\Tests\Fixtures\Generated\Code\Manifest;
 use Stewart\Testing\Async\Latch;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
@@ -23,13 +26,16 @@ final class RegistryRefresherTest extends TestCase
 
     private ManualTimers $timers;
 
+    private GeneratedCodeDrift $drift;
+
     private RegistryRefresher $refresher;
 
     protected function setUp(): void
     {
         $this->session = FakeHaSession::createOpened();
         $this->timers = new ManualTimers();
-        $this->refresher = new RegistryRefresher($this->session, new WorkerSlotRegistry(), $this->timers, new NullLogger());
+        $this->drift = new GeneratedCodeDrift($this->session, $this->timers->clock, new NullLogger(), GeneratedManifest::readFromClass(Manifest::class));
+        $this->refresher = new RegistryRefresher($this->session, new WorkerSlotRegistry(), $this->timers, $this->drift, new NullLogger());
     }
 
     public function testBurstRefreshesOnceAfterQuietPeriod(): void
@@ -46,6 +52,17 @@ final class RegistryRefresherTest extends TestCase
         EventLoopTicks::settle();
 
         self::assertSame(1, $this->session->registryRefreshes);
+    }
+
+    public function testRefreshedRegistryRechecksTheGeneratedCode(): void
+    {
+        $this->session->entityIds = [...Manifest::listEntityIds(), 'light.landing'];
+
+        $this->refresher->scheduleRefreshFor(new HaEvent('entity_registry_updated'));
+        $this->timers->delay(Duration::seconds(1));
+        EventLoopTicks::settle();
+
+        self::assertSame(['light.landing'], $this->drift->status?->added);
     }
 
     public function testUnrelatedEventSchedulesNothing(): void

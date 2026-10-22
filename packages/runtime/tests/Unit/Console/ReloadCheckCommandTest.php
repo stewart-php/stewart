@@ -17,6 +17,7 @@ use Stewart\Runtime\Console\ReloadCheckCommand;
 use Stewart\Runtime\Kernel\ConsoleKernel;
 use Stewart\Runtime\Kernel\SyntheticServices;
 use Stewart\Runtime\Tests\Fixtures\Apps\TemporaryAppsDirectory;
+use Stewart\Runtime\Tests\Fixtures\Generated\Code\Manifest;
 use Stewart\Testing\Filesystem\TempDirectory;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -54,6 +55,25 @@ final class ReloadCheckCommandTest extends TestCase
         self::assertSame([['porch', $this->apps->namespace . '\\Porch']], array_map(static fn(ReloadCheckApp $app): array => [$app->id, $app->class], $report->apps));
         self::assertSame(hash_file('xxh128', $config), $report->configFingerprint);
         self::assertStringNotContainsString('hunter2', $output, 'Option values never leave the check.');
+    }
+
+    public function testReportCarriesTheManifestAsGeneratedNow(): void
+    {
+        $this->apps->writeClass('Porch', self::createAppSource('Porch', 'porch'));
+        $config = $this->writeConfig(self::CONFIG . "codegen:\n  namespace: 'Stewart\\Runtime\\Tests\\Fixtures\\Generated\\Code'\n");
+
+        [, $report] = $this->runReloadCheck(['--config' => $config]);
+
+        self::assertSame(Manifest::listEntityIds(), $report->generated?->entityIds);
+    }
+
+    public function testProjectWithoutGeneratedCodeReportsNoManifest(): void
+    {
+        $this->apps->writeClass('Porch', self::createAppSource('Porch', 'porch'));
+
+        [, $report] = $this->runReloadCheck(['--config' => $this->writeConfig(self::CONFIG . "codegen:\n  namespace: 'App\\Nowhere'\n")]);
+
+        self::assertNull($report->generated);
     }
 
     public function testFailingProjectReportsItsErrors(): void

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Console;
 
 use Stewart\Contracts\Exception\IdentifierException;
+use Stewart\Runtime\Broker\GeneratedManifest;
 use Stewart\Runtime\Broker\Reload\ReloadCheckReport;
 use Stewart\Runtime\Broker\Reload\ReloadCheckReportCodec;
 use Stewart\Runtime\Config\ConfigLoader;
 use Stewart\Runtime\Console\Check\ProjectCheck;
+use Stewart\Runtime\Console\Check\ProjectCheckResult;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -47,8 +49,13 @@ final class ReloadCheckCommand extends StewartCommand
         }
 
         return $this->writeReport($output, $result->hasPassed()
-            ? ReloadCheckReport::fromDiscovery($result->discovered, $fingerprint)
+            ? ReloadCheckReport::fromDiscovery($result->discovered, $fingerprint, $this->findGeneratedManifest($result))
             : ReloadCheckReport::failed($result->errors, $fingerprint));
+    }
+
+    private function findGeneratedManifest(ProjectCheckResult $result): ?GeneratedManifest
+    {
+        return $result->codegen === null ? null : GeneratedManifest::findForGeneratedCode($result->codegen);
     }
 
     private function writeReport(OutputInterface $output, ReloadCheckReport $report): int

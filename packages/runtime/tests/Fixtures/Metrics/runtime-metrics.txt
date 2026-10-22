@@ -191,3 +191,10 @@ stewart_mqtt_messages_dropped_total{reason="gave_up"} 0
 # HELP stewart_mqtt_outbound_queued QoS 1 messages waiting for the server to acknowledge them.
 # TYPE stewart_mqtt_outbound_queued gauge
 stewart_mqtt_outbound_queued 1
+# HELP stewart_generated_entities_drift Home Assistant entities the generated classes miss (added) or still have (removed).
+# TYPE stewart_generated_entities_drift gauge
+stewart_generated_entities_drift{change="added"} 1
+stewart_generated_entities_drift{change="removed"} 0
+# HELP stewart_generated_format_current Whether stewart generate wrote the generated classes in the current format; 1 or 0.
+# TYPE stewart_generated_format_current gauge
+stewart_generated_format_current 1
