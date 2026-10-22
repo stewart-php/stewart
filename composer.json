@@ -4,7 +4,7 @@
     "type": "project",
     "license": "MIT",
     "require": {
-        "php": ">=8.5",
+        "php": ">=8.5.12",
         "stewart-php/client": "1.x-dev",
         "stewart-php/contracts": "1.x-dev",
         "stewart-php/mqtt": "1.x-dev",
