@@ -36,6 +36,7 @@ final class TestBootstrap
         ?GeoLocation $location = null,
         ?AppIdCollection $pausedAppIds = null,
         LogLevel $logLevel = LogLevel::Debug,
+        string $generatedNamespace = 'Stewart\\Generated',
     ): Bootstrap {
         return new Bootstrap(
             protocol: IpcCodec::PROTOCOL_VERSION,
@@ -43,7 +44,7 @@ final class TestBootstrap
             timeZone: $timeZone,
             location: $location,
             apps: WorkerAppsFragment::fromCollection(WorkerAppCollection::fromList($apps)),
-            settings: self::createWorkerSettings(logLevel: $logLevel, callTimeout: $callTimeout ?? Duration::seconds(30), initializeTimeout: $initializeTimeout, servicesFile: $servicesFile, mqttEnabled: $mqttEnabled),
+            settings: self::createWorkerSettings(logLevel: $logLevel, callTimeout: $callTimeout ?? Duration::seconds(30), initializeTimeout: $initializeTimeout, servicesFile: $servicesFile, mqttEnabled: $mqttEnabled, generatedNamespace: $generatedNamespace),
             store: $store,
             knownAppIds: AppIdsFragment::fromCollection(AppIdCollection::fromList(array_map(static fn(WorkerApp $app): AppId => $app->id, $apps))),
             pausedAppIds: AppIdsFragment::fromCollection($pausedAppIds ?? AppIdCollection::empty()),
@@ -59,6 +60,7 @@ final class TestBootstrap
         ?Duration $initializeTimeout = null,
         ?string $servicesFile = null,
         bool $mqttEnabled = false,
+        string $generatedNamespace = 'Stewart\\Generated',
     ): WorkerSettings {
         return new WorkerSettings(
             logLevel: $logLevel,
@@ -67,7 +69,7 @@ final class TestBootstrap
             subscriptionBuffer: $subscriptionBuffer,
             initializeTimeout: $initializeTimeout,
             servicesFile: $servicesFile,
-            generatedNamespace: 'Stewart\\Generated',
+            generatedNamespace: $generatedNamespace,
             mqttEnabled: $mqttEnabled,
         );
     }

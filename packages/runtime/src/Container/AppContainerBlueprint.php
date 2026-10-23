@@ -7,6 +7,7 @@ namespace Stewart\Runtime\Container;
 use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Runtime\App\GeneratedRoots;
 use Stewart\Runtime\Config\StewartConfig;
+use Stewart\Runtime\Exception\AppException;
 use Stewart\Runtime\Ipc\Message\Bootstrap;
 
 final readonly class AppContainerBlueprint
@@ -19,6 +20,7 @@ final readonly class AppContainerBlueprint
         public bool $mqttConfigured,
     ) {}
 
+    /** @throws AppException */
     public static function fromBootstrap(Bootstrap $bootstrap): self
     {
         return new self(
@@ -30,11 +32,11 @@ final readonly class AppContainerBlueprint
         );
     }
 
-    public static function fromProjectConfig(StewartConfig $config, AppIdCollection $knownAppIds, string $userServicesFile): self
+    public static function fromProjectConfig(StewartConfig $config, ?GeneratedRoots $generated, AppIdCollection $knownAppIds, string $userServicesFile): self
     {
         return new self(
             servicesFile: is_file($userServicesFile) ? $userServicesFile : null,
-            generated: GeneratedRoots::fromNamespace($config->codegen->namespace->value),
+            generated: $generated,
             knownAppIds: $knownAppIds,
             storeConfigured: $config->persistence->isStoreConfigured(),
             mqttConfigured: $config->mqtt !== null,

@@ -10,6 +10,7 @@ use Stewart\Runtime\App\AppCatalogResolver;
 use Stewart\Runtime\App\AppDiscovery;
 use Stewart\Runtime\App\AppInstanceResolver;
 use Stewart\Runtime\App\AppSelection;
+use Stewart\Runtime\App\GeneratedRoots;
 use Stewart\Runtime\App\UnloadableAppFile;
 use Stewart\Runtime\Broker\AppPlacement;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
@@ -37,6 +38,7 @@ final readonly class ProjectCheck
         try {
             $config = $this->config->loadConfig($configFile);
             $config->requireHomeAssistant();
+            $generated = GeneratedRoots::fromNamespace($config->codegen->namespace->value);
             $discovered = $this->instances->resolveInstances($this->discovery->discover(), $config->apps);
             $catalog = $this->catalogs->resolveCatalog($discovered, $config->apps, $config->workers, $selection);
         } catch (StewartException $e) {
@@ -50,7 +52,7 @@ final readonly class ProjectCheck
         $workerSlots = $this->placement->planWorkerSlots($catalog->enabled, $config);
 
         try {
-            $failures = $this->findAppBuildFailures($workerSlots, AppContainerBlueprint::fromProjectConfig($config, $catalog->knownIds, $this->userServicesFile));
+            $failures = $this->findAppBuildFailures($workerSlots, AppContainerBlueprint::fromProjectConfig($config, $generated, $catalog->knownIds, $this->userServicesFile));
         } catch (StewartException $e) {
             return ProjectCheckResult::failed([$e->getMessage()]);
         }

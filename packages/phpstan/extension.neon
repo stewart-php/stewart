@@ -20,7 +20,12 @@ services:
         class: Stewart\PHPStan\Cache\ManifestResultCacheValue
         tags:
             - phpstan.resultCacheValueExtension
+    -
+        class: Stewart\PHPStan\Collector\GeneratedCodeFromOlderMajorCollector
+        tags:
+            - phpstan.collector
 
 rules:
     - Stewart\PHPStan\Rule\EntityIdArgumentRule
     - Stewart\PHPStan\Rule\ActionNameArgumentRule
+    - Stewart\PHPStan\Rule\GeneratedCodeFromOlderMajorRule

@@ -6,6 +6,7 @@ declare(strict_types=1);
 return [
     'ActionCallError::Rejected' => 'Try the same call under Developer tools → Actions in Home Assistant.',
     'ActionCallError::Overloaded' => 'Call fewer actions at once, for example one call with several targets.',
+    'AppError::GeneratedCodeFromOlderMajor' => 'Run `make generate`, then commit `generated/`.',
     'BrokerError::NoWorkersStarted' => 'The log lines above name why each worker failed; `stewart doctor` checks the PHP setup.',
     'ConfigurationError::AdminTokenMissing' => 'Create one with `openssl rand -hex 16` and set it as `STEWART_HTTP__ADMIN__TOKEN`.',
     'ConfigurationError::ConfigFileMissing' => 'Fix the `--config` path; without the option, Stewart reads `stewart.yaml` in the project root, or the environment alone.',

@@ -14,10 +14,16 @@ final readonly class ManifestResultCacheValue implements ResultCacheValueExtensi
 
     private const string WITHOUT_MANIFEST = 'none';
 
+    private const string FROM_OLDER_MAJOR = 'older-major';
+
     public function __construct(private ManifestCatalogLoader $manifests) {}
 
     public function getValue(string $key): string
     {
+        if ($this->manifests->findOlderMajorNamespace() !== null) {
+            return self::FROM_OLDER_MAJOR;
+        }
+
         return $this->manifests->findCatalog()?->computeHash() ?? self::WITHOUT_MANIFEST;
     }
 

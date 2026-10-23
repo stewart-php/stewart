@@ -46,6 +46,8 @@ parameters:
         analyse:
             # Code the package's own rule tests analyse, with entity IDs that are wrong on purpose.
             - packages/phpstan/tests/Fixtures/Analysed
+            # A Stewart 1.x generated tree, which today's contracts cannot load.
+            - packages/phpstan/tests/Fixtures/OlderMajor
     tmpDir: var/phpstan
     treatPhpDocTypesAsCertain: false
     checkExplicitMixed: true
