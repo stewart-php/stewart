@@ -8,6 +8,7 @@ use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\App\Collection\DiscoveredAppCollection;
 use Stewart\Runtime\App\Collection\UnmarkedAppCollection;
 use Stewart\Runtime\App\DiscoveredApp;
+use Stewart\Runtime\App\DiscoveryResult;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Config\ConfigLoader;
 use Stewart\Runtime\Console\Check\ProjectCheck;
@@ -54,7 +55,7 @@ final class CheckCommand extends StewartCommand
         $this->writeUnmarkedAppNotices($output, $discovered->unmarked);
         $this->writeUnusedTemplateNotices($output, $discovered->listUnusedTemplateClasses());
         $this->writeDisposeDeprecationNotices($output, $discovered->apps);
-        $this->writeAppTable($output, $discovered->apps, $apps, $result->workerSlots);
+        $this->writeAppTable($output, $discovered, $apps, $result->workerSlots);
         $output->writeln(\sprintf('Configuration and %d automations load; %d enabled.', $discovered->apps->count(), $apps->enabled->count()));
 
         return Command::SUCCESS;
@@ -108,14 +109,21 @@ final class CheckCommand extends StewartCommand
         }
     }
 
-    private function writeAppTable(OutputInterface $output, DiscoveredAppCollection $discovered, AppCatalog $apps, WorkerSlotCollection $slots): void
+    // Sorted by class, so the entries that run one class, and a template nothing runs, sit together.
+    private function writeAppTable(OutputInterface $output, DiscoveryResult $discovered, AppCatalog $apps, WorkerSlotCollection $slots): void
     {
-        $rows = $discovered->mapToList(static function (DiscoveredApp $app) use ($apps, $slots): array {
+        $rows = $discovered->apps->mapToList(static function (DiscoveredApp $app) use ($apps, $slots): array {
             $definition = $apps->enabled->find($app->id);
             $state = $definition === null ? 'disabled' : ($definition->startsPaused ? 'paused' : 'enabled');
 
             return [$app->id->value, $app->class, (string) ($slots->findWorkerOfApp($app->id) ?? '-'), $state];
         });
+
+        foreach ($discovered->listUnusedTemplateClasses() as $template) {
+            $rows[] = ['-', $template, '-', 'no entry'];
+        }
+
+        usort($rows, static fn(array $a, array $b): int => [$a[1], $a[0]] <=> [$b[1], $b[0]]);
 
         if ($rows !== []) {
             new Table($output)->setStyle('compact')->setHeaders(['app', 'class', 'worker', 'state'])->setRows($rows)->render();

@@ -45,6 +45,7 @@ use Stewart\Runtime\Worker\AppLifecycle;
 use Stewart\Runtime\Worker\HandlerFailureSampler;
 use Stewart\Runtime\Worker\StderrFallback;
 use Stewart\Support\Text\ClosestNameFinder;
+use Stewart\Support\Text\OptionNameMatcher;
 use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
 
@@ -420,7 +421,7 @@ final class AppLifecycleTest extends TestCase
             ),
             $this->resources->resources,
             new AppFailureReporter($this->transport, new StderrFallback(new WorkerId(0)), new AppActivityCounters(), new HandlerFailureSampler()),
-            new AppContainerBuilder(new AppOptionResolver(new ClosestNameFinder()), new ClosestNameFinder()),
+            new AppContainerBuilder(new AppOptionResolver(new OptionNameMatcher(new ClosestNameFinder())), new ClosestNameFinder()),
         );
     }
 

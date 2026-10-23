@@ -15,6 +15,7 @@ use Stewart\Contracts\Store\PeerStore;
 use Stewart\Contracts\Store\Store;
 use Stewart\Store\ReadOnlyStore;
 use Stewart\Store\Stores;
+use Stewart\Support\Text\OptionNameMatcher;
 use Stewart\Testing\Exception\HarnessError;
 use Stewart\Testing\Exception\HarnessException;
 
@@ -26,6 +27,7 @@ final readonly class AppArgumentResolver
         private array $servicesByType,
         private Stores $stores,
         private HaContext $ha,
+        private OptionNameMatcher $optionNames,
     ) {}
 
     /**
@@ -38,23 +40,58 @@ final readonly class AppArgumentResolver
     public function resolveArguments(ReflectionClass $app, array $options): array
     {
         $parameters = $app->getConstructor()?->getParameters() ?? [];
-        $parameterNames = array_map(static fn(ReflectionParameter $parameter): string => $parameter->getName(), $parameters);
-
-        foreach (array_keys($options) as $option) {
-            if (!\in_array($option, $parameterNames, true)) {
-                throw HarnessException::createForReason(HarnessError::OptionUnknown, option: $option, class: $app->getName());
-            }
-        }
-
+        $optionsByParameter = $this->matchOptionsToParameters($app, $options, array_map(static fn(ReflectionParameter $parameter): string => $parameter->getName(), $parameters));
         $arguments = [];
 
         foreach ($parameters as $parameter) {
-            $arguments[$parameter->getName()] = \array_key_exists($parameter->getName(), $options)
-                ? $options[$parameter->getName()]
+            $arguments[$parameter->getName()] = \array_key_exists($parameter->getName(), $optionsByParameter)
+                ? $options[$optionsByParameter[$parameter->getName()]]
                 : $this->resolveParameter($app, $parameter);
         }
 
         return $arguments;
+    }
+
+    /**
+     * @template T of App
+     * @param ReflectionClass<T> $app
+     * @param array<string, mixed> $options
+     * @param list<string> $parameters
+     * @return array<string, string>
+     * @throws HarnessException
+     */
+    private function matchOptionsToParameters(ReflectionClass $app, array $options, array $parameters): array
+    {
+        $optionsByParameter = [];
+
+        foreach (array_keys($options) as $option) {
+            $match = $this->optionNames->matchOption($option, $parameters);
+
+            if ($match->isAmbiguous()) {
+                throw HarnessException::createForReason(
+                    HarnessError::OptionAmbiguous,
+                    option: $option,
+                    class: $app->getName(),
+                    parameters: implode(', ', array_map(static fn(string $name): string => '$' . $name, $match->candidates)),
+                );
+            }
+
+            $parameter = $match->parameter ?? throw HarnessException::optionUnknown($option, $app->getName(), $match->suggestion);
+
+            if (isset($optionsByParameter[$parameter])) {
+                throw HarnessException::createForReason(
+                    HarnessError::OptionRepeated,
+                    class: $app->getName(),
+                    parameter: $parameter,
+                    firstOption: $optionsByParameter[$parameter],
+                    secondOption: $option,
+                );
+            }
+
+            $optionsByParameter[$parameter] = $option;
+        }
+
+        return $optionsByParameter;
     }
 
     /**

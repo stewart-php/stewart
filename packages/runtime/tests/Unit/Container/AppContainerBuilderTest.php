@@ -78,6 +78,7 @@ use Stewart\Store\StorePrefix;
 use Stewart\Store\Stores;
 use Stewart\Store\StoreValueCodec;
 use Stewart\Support\Text\ClosestNameFinder;
+use Stewart\Support\Text\OptionNameMatcher;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Store\InMemoryStoreBackend;
 use Stewart\Testing\Time\VirtualClock;
@@ -650,7 +651,7 @@ final class AppContainerBuilderTest extends TestCase
 
     private function createBuilder(): AppContainerBuilder
     {
-        return new AppContainerBuilder(new AppOptionResolver(new ClosestNameFinder()), new ClosestNameFinder());
+        return new AppContainerBuilder(new AppOptionResolver(new OptionNameMatcher(new ClosestNameFinder())), new ClosestNameFinder());
     }
 
     private function createBlueprint(?string $servicesFile = null, ?GeneratedRoots $generated = null): AppContainerBlueprint

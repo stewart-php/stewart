@@ -112,6 +112,7 @@ apps:
 
 - Each entry is an app of its own: its ID names it in logs, status and the store, and takes every setting above.
 - An `#[AppTemplate]` class runs only through such entries. `stewart check` notes one that no entry names.
+  `make app NAME=MotionLight TEMPLATE=1` writes one, with a test, and prints the entry that runs it.
 - `class` may also name an `#[Automation]` class, which then runs once more under the entry's ID; the entry's ID
   must not be another automation's.
 - The class may come from a Composer package, so a package can ship apps for others to configure. `make watch` does

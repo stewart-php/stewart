@@ -23,7 +23,7 @@ Your project runs these commands with `make`. The `stewart` commands below run i
 | `make upgrade` | Move to another Stewart release line, then pull its images and install it [VERSION=2.0] |
 | `make sh` | Shell in the development container |
 | `make doctor` | Check the container, the settings, and the connections to Home Assistant and the store |
-| `make app` | Create an app in apps/ and its test in tests/ [NAME=PorchLight] |
+| `make app` | Create an app in apps/ and its test in tests/; TEMPLATE=1 for an #[AppTemplate] [NAME=PorchLight] |
 | `make generate` | Write typed entity and service classes from Home Assistant into generated/ [ARGS=--allow-shrink] |
 | `make run` | Run in the foreground [ONLY="hello porch" to run only those apps, TRACE=hello to trace one, DRY_RUN=1 to send no service calls] |
 | `make watch` | Run in the foreground and reload after every saved change [ONLY="hello porch", TRACE=hello, DRY_RUN=1] |
@@ -179,7 +179,8 @@ stewart make:app [options] [--] <name>
 
 | Option | Meaning | Default |
 | --- | --- | --- |
-| `--id=…` | The automation ID; derived from the name when left out, such as porch-light |  |
+| `--id=…` | The automation ID, or with --template the first entry's; derived from the name when left out, such as porch-light |  |
+| `--template` | Create an #[AppTemplate] class, which runs once per apps.<id>.class entry in stewart.yaml |  |
 
 ### reload
 

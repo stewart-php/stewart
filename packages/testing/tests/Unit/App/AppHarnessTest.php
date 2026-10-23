@@ -152,6 +152,28 @@ final class AppHarnessTest extends TestCase
         $this->assertThrowsReason(HarnessError::OptionUnknown, fn() => $this->harness->startApp(HallLightApp::class, ['motionSensor' => 'binary_sensor.hall_motion', 'motion' => 'x']));
     }
 
+    public function testMisspelledOptionNamesTheClosestParameter(): void
+    {
+        $e = $this->assertThrowsReason(HarnessError::OptionUnknown, fn() => $this->harness->startApp(HallLightApp::class, ['motionSensor' => 'binary_sensor.hall_motion', 'offAfterMinute' => 2]));
+
+        self::assertStringEndsWith('Did you mean "offAfterMinutes"?', $e->getMessage());
+    }
+
+    public function testOptionNamesFoldLikeTheRuntime(): void
+    {
+        $this->harness->ha->seedState('binary_sensor.hall_motion', 'off');
+        $this->harness->startApp(HallLightApp::class, ['motion_sensor' => 'binary_sensor.hall_motion']);
+
+        $this->harness->ha->pushState('binary_sensor.hall_motion', 'on');
+
+        self::assertSame('light.turn_on', $this->harness->ha->getLastCall()->getActionName());
+    }
+
+    public function testTwoSpellingsOfOneOptionAreRefused(): void
+    {
+        $this->assertThrowsReason(HarnessError::OptionRepeated, fn() => $this->harness->startApp(HallLightApp::class, ['motionSensor' => 'binary_sensor.hall_motion', 'motion_sensor' => 'binary_sensor.porch']));
+    }
+
     public function testMissingOptionIsRefused(): void
     {
         $this->assertThrowsReason(HarnessError::OptionMissing, fn() => $this->harness->startApp(HallLightApp::class));

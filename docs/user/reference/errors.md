@@ -475,4 +475,6 @@ Thrown as `HarnessException`.
 | `NotStarted` | No app is running; call startApp() first. |  |
 | `OptionMissing` | {class}::__construct() needs option "{option}"; pass it to startApp(). |  |
 | `OptionUnknown` | Option "{option}" matches no parameter of {class}::__construct(). |  |
+| `OptionAmbiguous` | Option "{option}" matches parameters {parameters} of {class}::__construct(); use the exact name. |  |
+| `OptionRepeated` | {class}::__construct() gets ${parameter} twice, as options "{firstOption}" and "{secondOption}". |  |
 | `ParameterUnresolvable` | {class}::__construct() takes ${parameter} as {type}, which the harness has no fake for; pass one with provideService(). |  |

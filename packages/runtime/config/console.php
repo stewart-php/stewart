@@ -24,6 +24,7 @@ use Stewart\Runtime\Logging\LoggerFactory;
 use Stewart\Store\StoreBackendConnector;
 use Stewart\Store\StoreBackendRegistry;
 use Stewart\Support\Text\ClosestNameFinder;
+use Stewart\Support\Text\OptionNameMatcher;
 use Stewart\Support\Time\Deadlines;
 use Stewart\Support\Time\RevoltTimers;
 use Symfony\Component\Console\Command\Command;
@@ -48,6 +49,7 @@ return static function (ContainerConfigurator $container, ContainerBuilder $buil
     $services->set(ReadinessCheck::class);
 
     $services->set(ClosestNameFinder::class);
+    $services->set(OptionNameMatcher::class);
     $services->set(EnvironmentVariables::class)->factory([EnvironmentVariables::class, 'fromGlobals']);
     $services->set(AppDiscovery::class);
     $services->set(AppInstanceResolver::class);

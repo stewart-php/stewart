@@ -40,6 +40,15 @@ final class MakeAppCommandTest extends TestCase
         self::assertStringContainsString("#[Automation(id: 'porch-light')]", (string) file_get_contents($this->project->getFilePath('apps/PorchLight.php')));
     }
 
+    public function testTemplateShowsTheEntryThatRunsIt(): void
+    {
+        $tester = $this->runMakeApp(['name' => 'PorchLight', '--template' => true]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertStringContainsString("apps:\n  porch-light:\n    class: App\\PorchLight\n", $tester->getDisplay());
+        self::assertStringContainsString('#[AppTemplate]', (string) file_get_contents($this->project->getFilePath('apps/PorchLight.php')));
+    }
+
     public function testRefusalIsReportedWithoutWritingAnything(): void
     {
         file_put_contents($this->project->getFilePath('apps/PorchLight.php'), "<?php\n");
@@ -51,7 +60,7 @@ final class MakeAppCommandTest extends TestCase
         self::assertFileDoesNotExist($this->project->getFilePath('tests/PorchLightTest.php'));
     }
 
-    /** @param array<string, string> $input */
+    /** @param array<string, string|bool> $input */
     private function runMakeApp(array $input): CommandTester
     {
         $psr4 = ['App\\' => [$this->project->getFilePath('apps')]];
