@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests;
+namespace Automations\Tests;
 
-use App\ThermostatBridge;
+use Automations\ThermostatBridge;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Mqtt\MqttMessage;
 use Stewart\Contracts\Mqtt\MqttQos;

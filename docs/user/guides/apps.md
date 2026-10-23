@@ -52,7 +52,7 @@ Stewart fills each constructor parameter by its type:
 | `Stewart\Contracts\Mqtt\Mqtt` | An MQTT client. See [MQTT](mqtt.md) |
 | `Stewart\Contracts\Exposure\EntityExposure` | Entities your app creates in Home Assistant. See [Exposed entities](exposed-entities.md) |
 | `Stewart\Contracts\Registry\RegistryEditor` | Changes to Home Assistant's entity registry. See [Areas, floors and labels](registry.md) |
-| `App\Generated\Entities`, `App\Generated\Actions` | Typed classes for your entities and actions. See [Typed entities](codegen.md) |
+| `Automations\Generated\Entities`, `Automations\Generated\Actions` | Typed classes for your entities and actions. See [Typed entities](codegen.md) |
 | A class from `services.php` | Your own services; see below |
 
 Parameters with a scalar or array type (`int`, `string`, `array`, …) are **options**.
@@ -99,11 +99,11 @@ One class can run several times, each time with its own options, such as a motio
 ```yaml
 apps:
   hall-motion-light:
-    class: App\MotionLight
+    class: Automations\MotionLight
     options:
       light: light.hall
   landing-motion-light:
-    class: App\MotionLight
+    class: Automations\MotionLight
     options:
       light: light.landing
 ```
@@ -116,7 +116,7 @@ apps:
 - The class may come from a Composer package, so a package can ship apps for others to configure. `make watch` does
   not see changes inside `vendor/`; restart after `composer update`.
 - `make reload` applies added and removed entries.
-- The environment can add one too: `STEWART_APPS__PORCH__CLASS='App\MotionLight'` creates the app `porch`. A
+- The environment can add one too: `STEWART_APPS__PORCH__CLASS='Automations\MotionLight'` creates the app `porch`. A
   segment with `_` makes an ID with `_`, because environment names cannot hold `-`.
 
 The [motion light recipe](../recipes/motion-light.md#several-rooms) has a complete one.
@@ -135,13 +135,13 @@ Register it in `services.php`:
 ```php
 return static function (ContainerConfigurator $container): void {
     $services = $container->services()->defaults()->autowire();
-    $services->set(App\Support\QuietHours::class);
+    $services->set(Automations\Support\QuietHours::class);
 };
 ```
 
 Any app can now ask for `QuietHours` in its constructor. A service can ask for the same types an app can, such as
 `Clock` or `LoggerInterface`. To register every class in a folder at once, use
-`$services->load('App\\Support\\', __DIR__ . '/apps/Support/');`.
+`$services->load('Automations\\Support\\', __DIR__ . '/apps/Support/');`.
 
 Each worker process loads `services.php`, so register services there but do no work in it. Apps never go in
 `services.php`; Stewart finds those by their attribute.

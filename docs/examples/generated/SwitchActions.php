@@ -8,7 +8,7 @@ declare(strict_types=1);
  * Do not edit: run `make generate` instead.
  */
 
-namespace App\Generated;
+namespace Automations\Generated;
 
 use Stewart\Contracts\Action\ActionTargetSource;
 use Stewart\Contracts\HaContext;

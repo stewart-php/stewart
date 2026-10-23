@@ -46,7 +46,7 @@ final class PackageDependencyRules
                 Selector::inNamespace('Stewart\Runtime'),
                 Selector::inNamespace('Stewart\Store'),
                 Selector::inNamespace('Stewart\Codegen'),
-                Selector::inNamespace('App'),
+                Selector::inNamespace('Automations'),
             );
     }
 
@@ -176,7 +176,7 @@ final class PackageDependencyRules
     public function testAppsSeeOnlyTheContracts(): Rule
     {
         return PHPat::rule()
-            ->classes(Selector::inNamespace('App'))
+            ->classes(Selector::inNamespace('Automations'))
             ->excluding(TestCodeSelector::selectTestCode())
             ->shouldNot()
             ->dependOn()
@@ -277,14 +277,14 @@ final class PackageDependencyRules
     {
         return PHPat::rule()
             ->classes(
-                Selector::inNamespace('App\Generated'),
+                Selector::inNamespace('Automations\Generated'),
                 Selector::inNamespace('Stewart\Codegen\Tests\Fixtures\Expected'),
                 Selector::inNamespace('Stewart\Runtime\Tests\Fixtures\Generated\Code'),
             )
             ->canOnly()
             ->dependOn()
             ->classes(
-                Selector::inNamespace('App\Generated'),
+                Selector::inNamespace('Automations\Generated'),
                 Selector::inNamespace('Stewart\Codegen\Tests\Fixtures\Expected'),
                 Selector::inNamespace('Stewart\Runtime\Tests\Fixtures\Generated\Code'),
                 Selector::inNamespace('Stewart\Contracts'),
@@ -299,7 +299,7 @@ final class PackageDependencyRules
             ->excluding(TestCodeSelector::selectTestCode())
             ->shouldNot()
             ->dependOn()
-            ->classes(Selector::inNamespace('App'))
+            ->classes(Selector::inNamespace('Automations'))
             ->because('the daemon runs whatever apps it discovers');
     }
 

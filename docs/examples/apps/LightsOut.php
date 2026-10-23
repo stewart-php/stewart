@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App;
+namespace Automations;
 
-use App\Generated\Entities;
+use Automations\Generated\Entities;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
 use Stewart\Contracts\Schedule\Scheduler;

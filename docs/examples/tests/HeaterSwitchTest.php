@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests;
+namespace Automations\Tests;
 
-use App\HeaterSwitch;
+use Automations\HeaterSwitch;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Exception\CommandException;
 use Stewart\Testing\App\AppHarness;

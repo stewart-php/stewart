@@ -22,13 +22,13 @@
     },
     "autoload": {
         "psr-4": {
-            "App\\": "apps/",
-            "App\\Generated\\": "generated/"
+            "Automations\\": "apps/",
+            "Automations\\Generated\\": "generated/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "App\\Tests\\": "tests/"
+            "Automations\\Tests\\": "tests/"
         }
     },
     "scripts": {

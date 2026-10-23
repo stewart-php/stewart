@@ -9,15 +9,15 @@
 namespace PHPSTORM_META;
 
 registerArgumentsSet('stewart_binary_sensor_entity_ids', 'binary_sensor.hall_motion');
-expectedArguments(\App\Generated\BinarySensorEntities::getEntity(), 0, argumentsSet('stewart_binary_sensor_entity_ids'));
+expectedArguments(\Automations\Generated\BinarySensorEntities::getEntity(), 0, argumentsSet('stewart_binary_sensor_entity_ids'));
 registerArgumentsSet('stewart_input_number_entity_ids', 'input_number.target_temperature');
-expectedArguments(\App\Generated\InputNumberEntities::getEntity(), 0, argumentsSet('stewart_input_number_entity_ids'));
+expectedArguments(\Automations\Generated\InputNumberEntities::getEntity(), 0, argumentsSet('stewart_input_number_entity_ids'));
 registerArgumentsSet('stewart_light_entity_ids', 'light.hall', 'light.porch');
-expectedArguments(\App\Generated\LightEntities::getEntity(), 0, argumentsSet('stewart_light_entity_ids'));
+expectedArguments(\Automations\Generated\LightEntities::getEntity(), 0, argumentsSet('stewart_light_entity_ids'));
 registerArgumentsSet('stewart_sensor_entity_ids', 'sensor.hall_humidity', 'sensor.hall_temperature');
-expectedArguments(\App\Generated\SensorEntities::getEntity(), 0, argumentsSet('stewart_sensor_entity_ids'));
+expectedArguments(\Automations\Generated\SensorEntities::getEntity(), 0, argumentsSet('stewart_sensor_entity_ids'));
 registerArgumentsSet('stewart_switch_entity_ids', 'switch.pump');
-expectedArguments(\App\Generated\SwitchEntities::getEntity(), 0, argumentsSet('stewart_switch_entity_ids'));
+expectedArguments(\Automations\Generated\SwitchEntities::getEntity(), 0, argumentsSet('stewart_switch_entity_ids'));
 registerArgumentsSet('stewart_entity_ids', 'binary_sensor.hall_motion', 'input_number.target_temperature', 'light.hall', 'light.porch', 'sensor.hall_humidity', 'sensor.hall_temperature', 'switch.pump');
 expectedArguments(\Stewart\Contracts\HaContext::getState(), 0, argumentsSet('stewart_entity_ids'));
 expectedArguments(\Stewart\Contracts\HaContext::requireState(), 0, argumentsSet('stewart_entity_ids'));

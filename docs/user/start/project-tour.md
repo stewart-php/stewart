@@ -32,10 +32,10 @@ my-home/
 ## Your code
 
 **`apps/`** holds one class per automation. Every class with `#[Automation]` that implements `App` is an app;
-there is no list to keep up to date. The namespace is `App`. You can put other classes here too, such as
+there is no list to keep up to date. The namespace is `Automations`. You can put other classes here too, such as
 value objects or helpers that several apps share.
 
-**`tests/`** holds PHPUnit tests, in the namespace `App\Tests`. `make test` runs them. See
+**`tests/`** holds PHPUnit tests, in the namespace `Automations\Tests`. `make test` runs them. See
 [Testing apps](../guides/testing.md).
 
 **`generated/`** holds classes that `make generate` writes from your Home Assistant: one per entity domain, with
@@ -48,7 +48,7 @@ constructor. Leave it as it is until you need it:
 ```php
 return static function (ContainerConfigurator $container): void {
     $services = $container->services()->defaults()->autowire();
-    $services->set(App\Weather\Forecast::class);
+    $services->set(Automations\Weather\Forecast::class);
 };
 ```
 

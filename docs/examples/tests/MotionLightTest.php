@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests;
+namespace Automations\Tests;
 
-use App\MotionLight;
+use Automations\MotionLight;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Testing\App\AppHarness;

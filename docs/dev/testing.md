@@ -35,7 +35,7 @@ The image has `ext-ev`, so the suites run on Revolt's `EvDriver`. To run them on
 - Fakes that more than one package needs go in `stewart-php/testing` (`Stewart\Testing\<Area>`); the rest stay in the
   package's `tests/Fixtures`.
 - Root `tests/` holds only repository-wide guards (`Architecture`) and console integration tests.
-- The examples the user docs include live in `docs/examples/{apps,tests}`, in the namespaces `App` and `App\Tests`.
+- The examples the user docs include live in `docs/examples/{apps,tests}`, in the namespaces `Automations` and `Automations\Tests`.
 
 ## Booting real containers
 

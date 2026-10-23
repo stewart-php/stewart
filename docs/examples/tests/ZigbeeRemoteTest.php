@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests;
+namespace Automations\Tests;
 
-use App\ZigbeeRemote;
+use Automations\ZigbeeRemote;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Mqtt\MqttMessage;
 use Stewart\Testing\App\AppHarness;

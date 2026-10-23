@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests;
+namespace Automations\Tests;
 
-use App\RemoteToggle;
+use Automations\RemoteToggle;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Testing\App\AppHarness;

@@ -163,8 +163,8 @@ tested with. It builds apps the way a worker does, against contracts and the
 store, without a runtime.
 
 **`stewart-php/codegen`** turns `get_states` and `get_services` into the classes
-under `App\Generated`. It depends on `contracts`, `client` and
-`nette/php-generator`, and it is **optional**: the skeleton requires it so the
+under the namespace `composer.json` maps to `generated/`, `Automations\Generated` in a
+new project. It depends on `contracts`, `client` and `nette/php-generator`, and it is **optional**: the skeleton requires it so the
 `generate` command exists on a server (`STEWART_BOOT_GENERATE`), but a project
 without it runs unchanged, and the generated classes need `contracts` alone. Only its
 `Console` namespace reaches the runtime, for configuration; the runtime never
