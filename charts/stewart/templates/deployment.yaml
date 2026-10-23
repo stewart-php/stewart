@@ -6,16 +6,22 @@
 {{- $persistenceUrl := include "stewart.persistenceUrlSource" . -}}
 {{- $controlToken := include "stewart.controlTokenSource" . -}}
 {{- $adminToken := include "stewart.adminTokenSource" . -}}
+{{- $metricsToken := include "stewart.metricsTokenSource" . -}}
 {{- if not $homeAssistantToken }}
 {{- fail "set homeAssistant.existingSecret, or homeAssistant.token" }}
 {{- end }}
 {{- $readOnlyRoot := and .Values.securityContext.readOnlyRootFilesystem (not (and (eq $mode "image") .Values.code.generateOnStart)) -}}
 {{- $containerSecurity := set (deepCopy .Values.securityContext) "readOnlyRootFilesystem" $readOnlyRoot -}}
 {{- $waitForValkey := and .Values.valkey.enabled (not $persistenceUrl) -}}
-{{- $secretFiles := dict "control-token" $controlToken "admin-token" $adminToken "home-assistant-token" $homeAssistantToken "persistence-url" $persistenceUrl -}}
+{{- $secretFiles := dict "control-token" $controlToken "admin-token" $adminToken "metrics-token" $metricsToken "home-assistant-token" $homeAssistantToken "persistence-url" $persistenceUrl -}}
 {{- if eq $mode "git" }}
 {{- with .Values.code.git.tokenSecret }}{{ if .name }}{{ $_ := set $secretFiles "git-token" (printf "%s/%s" .name .key) }}{{ end }}{{ end }}
 {{- with .Values.code.git.sshKeySecret }}{{ if .name }}{{ $_ := set $secretFiles "git-ssh-key" (printf "%s/%s" .name .key) }}{{ end }}{{ end }}
+{{- end }}
+{{- $secretValues := list .Values.homeAssistant.token .Values.persistence.url -}}
+{{- $externalSecretValues := include "stewart.externalSecretValues" (dict "root" . "sources" $secretFiles) -}}
+{{- if ne $externalSecretValues "[]" }}
+{{- $secretValues = append $secretValues $externalSecretValues -}}
 {{- end }}
 apiVersion: apps/v1
 kind: Deployment
@@ -39,7 +45,7 @@ spec:
       annotations:
         kubectl.kubernetes.io/default-container: stewart
         checksum/config: {{ toYaml .Values.config | sha256sum }}
-        checksum/secret: {{ list .Values.homeAssistant.token .Values.persistence.url | toJson | sha256sum }}
+        checksum/secret: {{ $secretValues | toJson | sha256sum }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -111,18 +117,24 @@ spec:
             {{- include "stewart.env" (dict "root" . "homeAssistantToken" $homeAssistantToken "persistenceUrl" $persistenceUrl "controlToken" $controlToken) | nindent 12 }}
             {{- if eq .Values.probes.mode "http" }}
             - name: STEWART_HTTP__LISTEN
-              value: {{ printf (ternary "tcp://[%s]:%d" "tcp://%s:%d" (contains ":" .Values.probes.host)) .Values.probes.host (int .Values.probes.port) | quote }}
+              value: {{ include "stewart.listenAddress" (dict "host" .Values.probes.host "port" .Values.probes.port) | quote }}
             {{- end }}
             {{- if .Values.adminApi.enabled }}
             - name: STEWART_HTTP__ADMIN__LISTEN
-              value: {{ printf (ternary "tcp://[%s]:%d" "tcp://%s:%d" (contains ":" .Values.adminApi.host)) .Values.adminApi.host (int .Values.adminApi.port) | quote }}
+              value: {{ include "stewart.listenAddress" (dict "host" .Values.adminApi.host "port" .Values.adminApi.port) | quote }}
             - name: STEWART_HTTP__ADMIN__TOKEN_FILE
               value: /run/secrets/stewart/admin-token
+            {{- end }}
+            {{- if .Values.metrics.enabled }}
+            - name: STEWART_HTTP__METRICS__LISTEN
+              value: {{ include "stewart.listenAddress" (dict "host" .Values.metrics.host "port" .Values.metrics.port) | quote }}
+            - name: STEWART_HTTP__METRICS__TOKEN_FILE
+              value: /run/secrets/stewart/metrics-token
             {{- end }}
             {{- with .Values.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-          {{- if or (eq .Values.probes.mode "http") .Values.adminApi.enabled }}
+          {{- if or (eq .Values.probes.mode "http") .Values.adminApi.enabled .Values.metrics.enabled }}
           ports:
             {{- if eq .Values.probes.mode "http" }}
             - name: probe
@@ -132,6 +144,11 @@ spec:
             {{- if .Values.adminApi.enabled }}
             - name: admin
               containerPort: {{ .Values.adminApi.port }}
+              protocol: TCP
+            {{- end }}
+            {{- if .Values.metrics.enabled }}
+            - name: metrics
+              containerPort: {{ .Values.metrics.port }}
               protocol: TCP
             {{- end }}
           {{- end }}

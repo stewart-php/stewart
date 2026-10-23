@@ -1,0 +1,42 @@
+{{- with .Values.metrics.podMonitor }}
+{{- if .enabled }}
+{{- if not $.Values.metrics.enabled }}
+{{- fail "metrics.podMonitor.enabled needs metrics.enabled" }}
+{{- end }}
+{{- if $.Values.adminApi.podMonitor.enabled }}
+{{- fail "metrics.podMonitor and adminApi.podMonitor would create the same PodMonitor; turn adminApi.podMonitor off" }}
+{{- end }}
+{{- if not (include "stewart.metricsReachable" $) }}
+{{- fail (printf "metrics.host is %s, which Prometheus cannot reach; set metrics.host: 0.0.0.0" $.Values.metrics.host) }}
+{{- end }}
+{{- $token := splitList "/" (include "stewart.metricsTokenSource" $) }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ include "stewart.fullname" $ }}
+  labels:
+    {{- include "stewart.labels" $ | nindent 4 }}
+    {{- with .labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "stewart.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: daemon
+  podMetricsEndpoints:
+    - port: metrics
+      path: /metrics
+      {{- with .interval }}
+      interval: {{ . }}
+      {{- end }}
+      {{- with .scrapeTimeout }}
+      scrapeTimeout: {{ . }}
+      {{- end }}
+      authorization:
+        type: Bearer
+        credentials:
+          name: {{ first $token }}
+          key: {{ last $token }}
+{{- end }}
+{{- end }}

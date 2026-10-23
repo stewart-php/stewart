@@ -16,8 +16,17 @@ revisionHistoryLimit: 1
 adminApi:
   enabled: true
   host: 0.0.0.0
+metrics:
+  enabled: true
   podMonitor:
     enabled: true
     interval: 30s
     labels:
       release: kube-prometheus-stack
+networkPolicy:
+  enabled: true
+  metrics:
+    from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: monitoring

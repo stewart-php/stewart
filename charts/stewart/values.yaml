@@ -64,12 +64,40 @@ adminApi:
   port: 8081
   existingSecret: ""
   existingSecretKey: token
-  # Prometheus Operator PodMonitor scraping /metrics with the admin token; needs host 0.0.0.0.
+  # Deprecated, removed in 2.0: use metrics.podMonitor, which needs no admin token. A Prometheus Operator PodMonitor
+  # scraping /metrics with the admin token; needs host 0.0.0.0.
   podMonitor:
     enabled: false
     interval: ""
     scrapeTimeout: ""
     labels: {}
+
+# The metrics port (http.metrics) serves only /metrics, so Prometheus needs no admin token. Its token is generated like
+# the control token. Needs stewart-php/runtime 1.8 or later in the project's composer.lock.
+metrics:
+  enabled: false
+  host: 0.0.0.0
+  port: 9464
+  existingSecret: ""
+  existingSecretKey: token
+  # Prometheus Operator PodMonitor scraping the metrics port with its token.
+  podMonitor:
+    enabled: false
+    interval: ""
+    scrapeTimeout: ""
+    labels: {}
+
+# Ingress NetworkPolicies: the probe port stays open to the kubelet, the metrics and admin ports admit only the peers
+# listed here, and Valkey admits only Stewart. Egress stays open, since Home Assistant is often outside the cluster.
+# Needs a network plugin that enforces NetworkPolicy; `kubectl port-forward` is not affected.
+networkPolicy:
+  enabled: false
+  metrics:
+    # NetworkPolicyPeer entries allowed to scrape, such as the Prometheus namespace; empty admits nobody.
+    from: []
+  adminApi:
+    # NetworkPolicyPeer entries allowed to call the admin API; empty admits nobody.
+    from: []
 
 # stewart.yaml content; when set it replaces the project's own file, so repeat the app options it holds.
 config: {}
