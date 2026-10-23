@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Contracts\Tests\Unit\Entity;
 
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Entity\Entity;
 use Stewart\Contracts\Entity\EntityId;
@@ -159,26 +158,5 @@ final class EntityTest extends TestCase
         $ha->getEntity('light.hall')->callAction('turn_on', ['brightness' => null, 'transition' => 2]);
 
         self::assertSame(['transition' => 2], $ha->getLastCall()->data);
-    }
-
-
-    #[IgnoreDeprecations]
-    public function testDeprecatedCallServiceStillCallsTheAction(): void
-    {
-        $ha = new RecordingHaContext();
-        $this->expectUserDeprecationMessageMatches('/Entity::callService\(\) is deprecated since 1\.8, use callAction/');
-
-        $ha->getEntity('light.hall')->callService('turn_on');
-
-        self::assertSame('light.turn_on', $ha->getLastCall()->getActionName());
-    }
-
-    #[IgnoreDeprecations]
-    public function testDeprecatedCallServiceForResponseStillAsksForTheResponse(): void
-    {
-        $ha = new RecordingHaContext()->stubActionAnswer('weather.get_forecasts', ['forecast' => []]);
-        $this->expectUserDeprecationMessageMatches('/Entity::callServiceForResponse\(\) is deprecated since 1\.8, use callActionForResponse/');
-
-        self::assertSame(['forecast' => []], $ha->getEntity('weather.home')->callServiceForResponse('get_forecasts')->response);
     }
 }
