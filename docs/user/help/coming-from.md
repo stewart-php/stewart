@@ -26,8 +26,8 @@ If you have written automations before, most ideas carry over. This page maps th
 | `mode: single` | Schedules never overlap; a subscription handles its events one at a time |
 | Blueprint inputs | App [options](../guides/apps.md#options) |
 
-What you gain: tests, Git history, refactoring, shared code between automations, and an editor that completes your
-entity IDs.
+What you gain: tests, Git history, refactoring, shared code between automations, and, after `make generate`, PhpStorm
+completing your entity IDs and action names.
 
 ## AppDaemon
 

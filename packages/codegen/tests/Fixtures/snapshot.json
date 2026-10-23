@@ -163,6 +163,24 @@
             "last_changed": "2026-09-01T08:00:00.000000Z",
             "last_updated": "2026-09-01T08:00:00.000000Z",
             "context": null
+        },
+        {
+            "entity_id": "zone.home",
+            "state": "1",
+            "attributes": {
+                "latitude": 47.4979,
+                "longitude": 19.0402,
+                "radius": 100,
+                "passive": false,
+                "persons": [
+                    "person.anna"
+                ],
+                "icon": "mdi:home",
+                "friendly_name": "Home"
+            },
+            "last_changed": "2026-09-01T08:00:00.000000Z",
+            "last_updated": "2026-09-01T08:00:00.000000Z",
+            "context": null
         }
     ],
     "registry": [
@@ -425,6 +443,38 @@
                     "title": {
                         "name": "Title",
                         "description": "Title of the notification.",
+                        "selector": {
+                            "text": []
+                        }
+                    }
+                }
+            }
+        },
+        "persistent_notification": {
+            "create": {
+                "name": "Create",
+                "description": "Shows a notification on the notifications panel.",
+                "fields": {
+                    "message": {
+                        "name": "Message",
+                        "description": "Message body of the notification.",
+                        "required": true,
+                        "selector": {
+                            "text": []
+                        }
+                    },
+                    "title": {
+                        "name": "Title",
+                        "description": "Optional title of the notification.",
+                        "required": false,
+                        "selector": {
+                            "text": []
+                        }
+                    },
+                    "notification_id": {
+                        "name": "Notification ID",
+                        "description": "ID of the notification. This new notification will overwrite an existing notification with the same ID.",
+                        "required": false,
                         "selector": {
                             "text": []
                         }

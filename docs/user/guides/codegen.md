@@ -77,8 +77,8 @@ Because IDs are written in full, searching your project for `light.hall` finds e
 | `LightState` | A typed state: `isOn()`, `isOff()`, `isUnavailable()`, `getFriendlyName()`, one accessor per attribute, and `raw` for the plain `EntityState` |
 | `Services` | One property per domain with services |
 | `LightServices` | Every service of the domain |
-| `Manifest` | What Home Assistant looked like, so Stewart can notice changes |
-| `.phpstorm.meta.php` | Completion of entity, area, floor and label IDs in PhpStorm |
+| `Manifest` | What Home Assistant looked like: its entity IDs and action names, so Stewart can notice changes |
+| `.phpstorm.meta.php` | Completion in PhpStorm: entity IDs wherever a method takes one (`getState()`, `watchStateChanges()`, `ServiceTarget::forEntities()`, `runAtEntityTime()`, …), action names for `callAction()`, and area, floor and label IDs |
 
 A few naming rules:
 

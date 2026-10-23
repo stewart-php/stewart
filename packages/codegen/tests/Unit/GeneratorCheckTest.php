@@ -55,11 +55,11 @@ final class GeneratorCheckTest extends TestCase
         self::assertContains('Manifest.php', array_map(static fn(FileChange $change): string => basename($change->path), $result->listStaleFiles()->listValues()));
     }
 
-    public function testExcludedEntityTouchesOnlyManifest(): void
+    public function testExcludedEntityTouchesOnlyManifestAndCompletion(): void
     {
         $result = GoldenSnapshot::createGenerationRun()->checkAgainstSnapshot(self::createSnapshotWithState(['entity_id' => 'light.debug_extra', 'state' => 'off']));
 
-        self::assertSame(['Manifest.php'], array_map(static fn(FileChange $change): string => basename($change->path), $result->listStaleFiles()->listValues()));
+        self::assertSame(['.phpstorm.meta.php', 'Manifest.php'], array_map(static fn(FileChange $change): string => basename($change->path), $result->listStaleFiles()->listValues()));
     }
 
     public function testIdleLightsKeepTheirAccessors(): void

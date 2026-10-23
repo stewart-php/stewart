@@ -34,6 +34,10 @@ release could break; a release's "Upgrading" section says what to change.
   names the closest parameter, and two options for one parameter are refused
 - `stewart check` lists the apps by class, so the entries that run one class sit together, and shows a template that
   no entry names
+- `.phpstorm.meta.php` completes entity IDs wherever a method takes one (`HaContext`, `ServiceTarget::forEntities()`,
+  `Scheduler::runAtEntityTime()`, `HaTrigger`, `Registry`, `EntityId`), zones for `onZoneTransition()`, and action
+  names for `callAction()`. The generated `Manifest` lists the action names too, through the new
+  `Stewart\Contracts\Generated\ActionManifest`
 - `stewart check` notes, and `stewart doctor` and a reload refuse, an admin port without a token and two HTTP ports on
   one port, which before showed only when the daemon refused to start
 
@@ -45,7 +49,7 @@ release could break; a release's "Upgrading" section says what to change.
 - Chart: `helm upgrade` rolls the pod when a Secret named in an `existingSecret` has changed, since Stewart reads
   secrets only at start
 
-- Generated services and entity methods call `callAction()`. The generated format is 7, so `stewart status` and the
+- Generated services and entity methods call `callAction()`. The generated format is 8, so `stewart status` and the
   start log ask for `stewart generate` until the classes are regenerated
 - The guide "Calling services" is now "Call actions", at `guides/calling-actions/`; the old address redirects to it.
   The scheduling guide says when to use a schedule and when a timer

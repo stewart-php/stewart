@@ -10,14 +10,14 @@ declare(strict_types=1);
 
 namespace App\Generated;
 
-use Stewart\Contracts\Generated\Manifest as ManifestContract;
+use Stewart\Contracts\Generated\ActionManifest;
 
 /**
  * What `stewart generate` saw.
  */
-final class Manifest implements ManifestContract
+final class Manifest implements ActionManifest
 {
-    public const int FORMAT_VERSION = 7;
+    public const int FORMAT_VERSION = 8;
 
     private function __construct()
     {
@@ -45,5 +45,21 @@ final class Manifest implements ManifestContract
     public static function listIgnoredEntityIds(): array
     {
         return [];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function listActionNames(): array
+    {
+        return [
+            'homeassistant.set_location',
+            'homeassistant.turn_on',
+            'light.turn_off',
+            'light.turn_on',
+            'notify.mobile_app_phone',
+            'switch.turn_on',
+            'weather.get_forecasts',
+        ];
     }
 }

@@ -10,14 +10,14 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Tests\Fixtures\Generated\Code;
 
-use Stewart\Contracts\Generated\Manifest as ManifestContract;
+use Stewart\Contracts\Generated\ActionManifest;
 
 /**
  * What `stewart generate` saw.
  */
-final class Manifest implements ManifestContract
+final class Manifest implements ActionManifest
 {
-    public const int FORMAT_VERSION = 7;
+    public const int FORMAT_VERSION = 8;
 
     private function __construct()
     {
@@ -37,5 +37,13 @@ final class Manifest implements ManifestContract
     public static function listIgnoredEntityIds(): array
     {
         return ['light.debug_strip'];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function listActionNames(): array
+    {
+        return ['light.turn_off', 'light.turn_on'];
     }
 }
