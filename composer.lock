@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "76685bced51029e27d22d6324779cbd6",
+    "content-hash": "187d576c9fb34ddf9197dc139e4b3828",
     "packages": [
         {
             "name": "amphp/amp",
@@ -2223,11 +2223,11 @@
         },
         {
             "name": "stewart-php/client",
-            "version": "1.x-dev",
+            "version": "2.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/client",
-                "reference": "a06882d6eb4cd323b900ec25ce99752d5f25f3a8"
+                "reference": "da744c8b01514798fde0343777eb1178359345ee"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2260,7 +2260,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "1.x-dev"
+                    "dev-main": "2.x-dev"
                 }
             },
             "autoload": {
@@ -2290,11 +2290,11 @@
         },
         {
             "name": "stewart-php/contracts",
-            "version": "1.x-dev",
+            "version": "2.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/contracts",
-                "reference": "90944218ff471a29271f90b7de93e1068e7af168"
+                "reference": "822433614a1c5ce09741c96299d76fcc88a12750"
             },
             "require": {
                 "ext-filter": "*",
@@ -2308,7 +2308,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "1.x-dev"
+                    "dev-main": "2.x-dev"
                 }
             },
             "autoload": {
@@ -2338,11 +2338,11 @@
         },
         {
             "name": "stewart-php/mqtt",
-            "version": "1.x-dev",
+            "version": "2.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/mqtt",
-                "reference": "a56fc76ebb8869ee88462624825cabbabf12725e"
+                "reference": "dd62db1235f3605b22be93ab004f83f8fe6bb800"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2362,7 +2362,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "1.x-dev"
+                    "dev-main": "2.x-dev"
                 }
             },
             "autoload": {
@@ -2392,11 +2392,11 @@
         },
         {
             "name": "stewart-php/runtime",
-            "version": "1.x-dev",
+            "version": "2.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/runtime",
-                "reference": "cdfdfc0c2eb1556befc61df584915e2375b40223"
+                "reference": "39d7ade6ea4ae1fd83e97879402e1ed383d8036f"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2447,7 +2447,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "1.x-dev"
+                    "dev-main": "2.x-dev"
                 }
             },
             "autoload": {
@@ -2477,11 +2477,11 @@
         },
         {
             "name": "stewart-php/store",
-            "version": "1.x-dev",
+            "version": "2.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/store",
-                "reference": "d78099508fcec0434e9ab0b316de59d6b3fd282f"
+                "reference": "1f0ba082e6ae15196815bba575788dd699a57a48"
             },
             "require": {
                 "ext-json": "*",
@@ -2499,7 +2499,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "1.x-dev"
+                    "dev-main": "2.x-dev"
                 }
             },
             "autoload": {
@@ -2529,11 +2529,11 @@
         },
         {
             "name": "stewart-php/store-redis",
-            "version": "1.x-dev",
+            "version": "2.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/store-redis",
-                "reference": "1a3dbd5c72f9ab8f3949549a5e13df534f60b875"
+                "reference": "3c267b470108c1e589b68037bd630c8a62a032b3"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2558,7 +2558,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "1.x-dev"
+                    "dev-main": "2.x-dev"
                 }
             },
             "autoload": {
@@ -2588,11 +2588,11 @@
         },
         {
             "name": "stewart-php/sun",
-            "version": "1.x-dev",
+            "version": "2.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/sun",
-                "reference": "283d3c9aa80b835bb0ac0c35d5ac0b25b1aea4ec"
+                "reference": "18af6bda6de5137e5f5c9cff7ee9aa2bd2dd108b"
             },
             "require": {
                 "php": ">=8.5.12",
@@ -2605,7 +2605,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "1.x-dev"
+                    "dev-main": "2.x-dev"
                 }
             },
             "autoload": {
@@ -2635,11 +2635,11 @@
         },
         {
             "name": "stewart-php/support",
-            "version": "1.x-dev",
+            "version": "2.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/support",
-                "reference": "0890f53a87785a2a09b6b6bdbc8af50f27690e45"
+                "reference": "2a148b8e4b214db0cc3cf0980135ee5ab78c8b3e"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2656,7 +2656,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "1.x-dev"
+                    "dev-main": "2.x-dev"
                 }
             },
             "autoload": {
@@ -7795,11 +7795,11 @@
         },
         {
             "name": "stewart-php/codegen",
-            "version": "1.x-dev",
+            "version": "2.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/codegen",
-                "reference": "51925cdc0f4d83ada65ff668a46f2a8d05f2dcc6"
+                "reference": "6b40610ca777a615cf321cb16924e505e9650306"
             },
             "require": {
                 "ext-ctype": "*",
@@ -7822,7 +7822,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "1.x-dev"
+                    "dev-main": "2.x-dev"
                 }
             },
             "autoload": {
@@ -7852,11 +7852,11 @@
         },
         {
             "name": "stewart-php/phpstan",
-            "version": "1.x-dev",
+            "version": "2.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/phpstan",
-                "reference": "79f4ec260f0a5b17e96374d9ba4595b148126db4"
+                "reference": "fc3f17d0bde22c85f9d7708b1ea54f1239f22de8"
             },
             "require": {
                 "php": ">=8.5.12",
@@ -7870,7 +7870,7 @@
             "type": "phpstan-extension",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "1.x-dev"
+                    "dev-main": "2.x-dev"
                 },
                 "phpstan": {
                     "includes": [
@@ -7905,11 +7905,11 @@
         },
         {
             "name": "stewart-php/testing",
-            "version": "1.x-dev",
+            "version": "2.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/testing",
-                "reference": "44441e6b19a2cd41a248670dde7d060cbda5ee51"
+                "reference": "aeeb24ea63014095caa6d328de442bbf03f13418"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -7933,7 +7933,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "1.x-dev"
+                    "dev-main": "2.x-dev"
                 }
             },
             "autoload": {

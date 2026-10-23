@@ -5,14 +5,14 @@
     "license": "MIT",
     "require": {
         "php": ">=8.5.12",
-        "stewart-php/client": "1.x-dev",
-        "stewart-php/contracts": "1.x-dev",
-        "stewart-php/mqtt": "1.x-dev",
-        "stewart-php/runtime": "1.x-dev",
-        "stewart-php/store": "1.x-dev",
-        "stewart-php/store-redis": "1.x-dev",
-        "stewart-php/sun": "1.x-dev",
-        "stewart-php/support": "1.x-dev",
+        "stewart-php/client": "2.x-dev",
+        "stewart-php/contracts": "2.x-dev",
+        "stewart-php/mqtt": "2.x-dev",
+        "stewart-php/runtime": "2.x-dev",
+        "stewart-php/store": "2.x-dev",
+        "stewart-php/store-redis": "2.x-dev",
+        "stewart-php/sun": "2.x-dev",
+        "stewart-php/support": "2.x-dev",
         "symfony/console": "^7.4 || ^8.0",
         "symfony/dependency-injection": "^7.4 || ^8.0"
     },
@@ -28,9 +28,9 @@
         "phpunit/phpunit": "^13.3",
         "shipmonk/composer-dependency-analyser": "^1.8",
         "staabm/annotate-pull-request-from-checkstyle": "^1.8",
-        "stewart-php/codegen": "1.x-dev",
-        "stewart-php/phpstan": "1.x-dev",
-        "stewart-php/testing": "1.x-dev"
+        "stewart-php/codegen": "2.x-dev",
+        "stewart-php/phpstan": "2.x-dev",
+        "stewart-php/testing": "2.x-dev"
     },
     "repositories": [
         {
@@ -39,17 +39,17 @@
             "options": {
                 "symlink": true,
                 "versions": {
-                    "stewart-php/client": "1.x-dev",
-                    "stewart-php/codegen": "1.x-dev",
-                    "stewart-php/contracts": "1.x-dev",
-                    "stewart-php/mqtt": "1.x-dev",
-                    "stewart-php/phpstan": "1.x-dev",
-                    "stewart-php/runtime": "1.x-dev",
-                    "stewart-php/store": "1.x-dev",
-                    "stewart-php/store-redis": "1.x-dev",
-                    "stewart-php/sun": "1.x-dev",
-                    "stewart-php/support": "1.x-dev",
-                    "stewart-php/testing": "1.x-dev"
+                    "stewart-php/client": "2.x-dev",
+                    "stewart-php/codegen": "2.x-dev",
+                    "stewart-php/contracts": "2.x-dev",
+                    "stewart-php/mqtt": "2.x-dev",
+                    "stewart-php/phpstan": "2.x-dev",
+                    "stewart-php/runtime": "2.x-dev",
+                    "stewart-php/store": "2.x-dev",
+                    "stewart-php/store-redis": "2.x-dev",
+                    "stewart-php/sun": "2.x-dev",
+                    "stewart-php/support": "2.x-dev",
+                    "stewart-php/testing": "2.x-dev"
                 }
             }
         }
