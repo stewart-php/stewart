@@ -13,6 +13,8 @@ expectedArguments(\Stewart\Runtime\Tests\Fixtures\Generated\Code\LightEntities::
 registerArgumentsSet('stewart_entity_ids', 'light.debug_strip', 'light.hall', 'light.porch');
 expectedArguments(\Stewart\Contracts\HaContext::getState(), 0, argumentsSet('stewart_entity_ids'));
 expectedArguments(\Stewart\Contracts\HaContext::requireState(), 0, argumentsSet('stewart_entity_ids'));
+expectedArguments(\Stewart\Contracts\HaContext::getHeldStateDuration(), 0, argumentsSet('stewart_entity_ids'));
+expectedArguments(\Stewart\Contracts\HaContext::hasHeldStateFor(), 0, argumentsSet('stewart_entity_ids'));
 expectedArguments(\Stewart\Contracts\HaContext::getEntity(), 0, argumentsSet('stewart_entity_ids'));
 expectedArguments(\Stewart\Contracts\HaContext::getHistory(), 0, argumentsSet('stewart_entity_ids'));
 expectedArguments(\Stewart\Contracts\HaContext::waitForState(), 0, argumentsSet('stewart_entity_ids'));

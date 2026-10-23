@@ -33,6 +33,8 @@ final readonly class PhpStormMetaEmitter implements ModelFileEmitter
     private const array ENTITY_ID_METHODS = [
         HaContext::class . '::getState',
         HaContext::class . '::requireState',
+        HaContext::class . '::getHeldStateDuration',
+        HaContext::class . '::hasHeldStateFor',
         HaContext::class . '::getEntity',
         HaContext::class . '::getHistory',
         HaContext::class . '::waitForState',

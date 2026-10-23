@@ -17,7 +17,7 @@ use Stewart\Contracts\Generated\Manifest as ManifestContract;
  */
 final class Manifest implements ManifestContract
 {
-    public const int FORMAT_VERSION = 10;
+    public const int FORMAT_VERSION = 11;
 
     private function __construct()
     {

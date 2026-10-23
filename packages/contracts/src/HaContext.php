@@ -46,6 +46,13 @@ interface HaContext
     /** @throws StateException|IdentifierException */
     public function requireState(EntityId|string $entityId): EntityState;
 
+    // Null when the entity does not exist or has no last change, and hasHeldStateFor() is then false.
+    /** @throws IdentifierException */
+    public function getHeldStateDuration(EntityId|string $entityId): ?Duration;
+
+    /** @throws IdentifierException */
+    public function hasHeldStateFor(EntityId|string $entityId, Duration $duration): bool;
+
     /** @throws HistoryException|IdentifierException */
     public function getHistory(EntityId|string $entityId, HistoryQuery $query): EntityStateHistory;
 

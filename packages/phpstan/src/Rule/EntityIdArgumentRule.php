@@ -45,6 +45,8 @@ final readonly class EntityIdArgumentRule implements Rule
         $this->parameters = [
             new EntityIdParameter(HaContext::class, 'getState', 'entityId'),
             new EntityIdParameter(HaContext::class, 'requireState', 'entityId'),
+            new EntityIdParameter(HaContext::class, 'getHeldStateDuration', 'entityId'),
+            new EntityIdParameter(HaContext::class, 'hasHeldStateFor', 'entityId'),
             new EntityIdParameter(HaContext::class, 'getEntity', 'entityId'),
             new EntityIdParameter(HaContext::class, 'getHistory', 'entityId'),
             new EntityIdParameter(HaContext::class, 'waitForState', 'entityId'),

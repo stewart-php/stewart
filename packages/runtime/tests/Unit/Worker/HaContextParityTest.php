@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use Stewart\Contracts\App\AppId;
+use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\ActionCallError;
 use Stewart\Contracts\Exception\ExceptionReason;
 use Stewart\Contracts\Exception\IdentifierError;
@@ -18,14 +19,18 @@ use Stewart\Contracts\Exception\TopicError;
 use Stewart\Contracts\Exception\TriggerError;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\History\HistoryQuery;
+use Stewart\Contracts\State\EntityState;
+use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Runtime\Model\ResourceScope;
+use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Tests\Fixtures\Ipc\NullTransport;
 use Stewart\Runtime\Tests\Fixtures\Worker\WorkerHaContextFixture;
 use Stewart\Runtime\Worker\WorkerHaContext;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\HaContext\RecordingHaContext;
+use Stewart\Testing\Time\ManualTimers;
 
 #[CoversClass(WorkerHaContext::class)]
 #[CoversClass(RecordingHaContext::class)]
@@ -60,5 +65,37 @@ final class HaContextParityTest extends TestCase
 
         $this->assertThrowsReason($reason, static fn() => $call($production));
         $this->assertThrowsReason($reason, static fn() => $call(new RecordingHaContext()));
+    }
+
+    /** @return iterable<string, array{string, Duration, bool, ?Duration}> */
+    public static function provideHeldStates(): iterable
+    {
+        yield 'held longer than asked' => ['light.hall', Duration::minutes(5), true, Duration::minutes(10)];
+        yield 'held exactly as long' => ['light.hall', Duration::minutes(10), true, Duration::minutes(10)];
+        yield 'not held long enough' => ['light.hall', Duration::minutes(15), false, Duration::minutes(10)];
+        yield 'no last change' => ['switch.fan', Duration::zero(), false, null];
+        yield 'missing entity' => ['light.missing', Duration::zero(), false, null];
+    }
+
+    #[DataProvider('provideHeldStates')]
+    public function testHeldStateIsMeasuredAlike(string $entityId, Duration $asked, bool $held, ?Duration $heldFor): void
+    {
+        $timers = new ManualTimers();
+        $states = [
+            new EntityState(new EntityId('light.hall'), 'off', lastChangedAt: $timers->clock->getNow()->minus(Duration::minutes(10))),
+            new EntityState(new EntityId('switch.fan'), 'on'),
+        ];
+        $stateCache = new StateCache();
+        $stateCache->replaceAll($states);
+        $fake = new RecordingHaContext($timers);
+
+        foreach ($states as $state) {
+            $fake->pushStateChange(StateChange::fromCurrentState($state));
+        }
+
+        foreach ([WorkerHaContextFixture::createWorkerHaContext(new NullTransport(), ResourceScope::forApp(new AppId('demo')), $timers, $stateCache), $fake] as $ha) {
+            self::assertSame($held, $ha->hasHeldStateFor($entityId, $asked));
+            self::assertEquals($heldFor, $ha->getHeldStateDuration($entityId));
+        }
     }
 }

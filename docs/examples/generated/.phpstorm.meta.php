@@ -21,6 +21,8 @@ expectedArguments(\App\Generated\SwitchEntities::getEntity(), 0, argumentsSet('s
 registerArgumentsSet('stewart_entity_ids', 'binary_sensor.hall_motion', 'input_number.target_temperature', 'light.hall', 'light.porch', 'sensor.hall_humidity', 'sensor.hall_temperature', 'switch.pump');
 expectedArguments(\Stewart\Contracts\HaContext::getState(), 0, argumentsSet('stewart_entity_ids'));
 expectedArguments(\Stewart\Contracts\HaContext::requireState(), 0, argumentsSet('stewart_entity_ids'));
+expectedArguments(\Stewart\Contracts\HaContext::getHeldStateDuration(), 0, argumentsSet('stewart_entity_ids'));
+expectedArguments(\Stewart\Contracts\HaContext::hasHeldStateFor(), 0, argumentsSet('stewart_entity_ids'));
 expectedArguments(\Stewart\Contracts\HaContext::getEntity(), 0, argumentsSet('stewart_entity_ids'));
 expectedArguments(\Stewart\Contracts\HaContext::getHistory(), 0, argumentsSet('stewart_entity_ids'));
 expectedArguments(\Stewart\Contracts\HaContext::waitForState(), 0, argumentsSet('stewart_entity_ids'));

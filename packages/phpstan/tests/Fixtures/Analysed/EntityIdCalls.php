@@ -47,4 +47,9 @@ final readonly class EntityIdCalls
         $this->lights->getEntity('switch.fan');
         $this->lights->getEntity('light.porch');
     }
+
+    public function readHeldStates(): void
+    {
+        $this->ha->getHeldStateDuration('light.kitchn');
+    }
 }

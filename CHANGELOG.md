@@ -12,6 +12,8 @@ release could break; a release's "Upgrading" section says what to change.
 - `stewart check`, the deploy gate, `stewart run` and a reload refuse generated classes written by Stewart 1.x with
   one line that says to run `stewart generate`, instead of failing to load them; the PHPStan extension reports such a
   tree once (`stewart.generatedCode`) and checks no entity IDs or action names until it is regenerated
+- `HaContext::hasHeldStateFor('binary_sensor.hall_motion', Duration::minutes(10))` and `getHeldStateDuration()` say how
+  long an entity has held its state, with no clock to pass; an entity that does not exist has held nothing
 - `Scheduler::waitFor($arm, $timeout)` builds a wait of your own: `$arm` starts what resolves it, and the closure it
   returns cleans up once the wait ends
 - `stewart run --dry-run` turns on `ha_calls.dry_run` for one run, and reloads keep it; `make run DRY_RUN=1` uses it
@@ -27,7 +29,7 @@ release could break; a release's "Upgrading" section says what to change.
   `$this->actions->notify->mobileAppPhone()`. A generated member that clashes with another takes an `Action` suffix
   instead of `Service`. The generated `Manifest` implements `Stewart\Contracts\Generated\Manifest`, which now lists
   the action names itself
-- The generated format is 10, so `stewart status` and the start log ask for `stewart generate` until the classes are
+- The generated format is 11, so `stewart status` and the start log ask for `stewart generate` until the classes are
   regenerated
 - `stewart generate` refuses only a run that would leave fewer than half as many generated files as before, so
   renamed classes no longer need `--allow-shrink`; its summary counts `actions`
@@ -58,6 +60,8 @@ release could break; a release's "Upgrading" section says what to change.
 - `Stewart\Contracts\Time\Timers` and `TimerHandle`, so apps have one way to run code later: `Scheduler::runAfter()`,
   which shows in status and in traces. In tests, `AppHarness::$timers` and `RecordingHaContext::$timers` are private;
   use `advanceTime()`, or give `RecordingHaContext` a `ManualTimers` of your own and advance that
+- `EntityState::hasHeldFor($duration, $clock)` and `getHeldDuration($clock)`: use `HaContext::hasHeldStateFor()` and
+  `getHeldStateDuration()`
 - `Stewart\Contracts\Generated\ActionManifest`: its `listActionNames()` is part of `Manifest`
 - Chart: `adminApi.podMonitor`, deprecated since 1.8; a release that still sets it fails to render and names
   `metrics.podMonitor`
@@ -95,7 +99,8 @@ release could break; a release's "Upgrading" section says what to change.
    upgrading, `stewart check` on 1.8 names every app this affects.
 4. An app that took `Timers` takes `Scheduler` instead: `startTimer($delay, $callback)` becomes
    `runAfter($delay, $callback)`, `isPending()` on the handle becomes `isActive()`, and `waitFor()` moves to the
-   `Scheduler` unchanged. `make stan` points at each one.
+   `Scheduler` unchanged. `$state->hasHeldFor($duration, $this->clock)` becomes
+   `$this->ha->hasHeldStateFor($state->entityId, $duration)`. `make stan` points at each one.
 5. If Prometheus scrapes the admin port, turn on the metrics port and scrape that: `http.metrics.listen`
    (`STEWART_HTTP__METRICS__LISTEN`, port 9464 by convention) with Docker, or `metrics.enabled` and
    `metrics.podMonitor.enabled` instead of `adminApi.podMonitor` with the chart. If Prometheus was the only reason for

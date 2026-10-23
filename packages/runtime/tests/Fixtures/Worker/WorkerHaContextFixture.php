@@ -52,6 +52,7 @@ final class WorkerHaContextFixture
             new DispatchStreams($dispatcher ?? RecordingDispatchListener::createDispatcher(10, $registry), $timers, $stateCache, $registry),
             new TopicPublisher($transport, $timers->clock, $activityCounters),
             $identity,
+            $timers->clock,
             $scope,
         );
     }

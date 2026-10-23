@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Contracts\State;
 
 use Stewart\Contracts\Entity\EntityId;
-use Stewart\Contracts\Time\Clock;
-use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 
 final readonly class EntityState
@@ -103,18 +101,6 @@ final readonly class EntityState
     public function getStateAsFloat(): ?float
     {
         return is_numeric($this->state) ? (float) $this->state : null;
-    }
-
-    public function getHeldDuration(Clock $clock): ?Duration
-    {
-        return $this->lastChangedAt === null ? null : $clock->getNow()->elapsedSince($this->lastChangedAt);
-    }
-
-    public function hasHeldFor(Duration $duration, Clock $clock): bool
-    {
-        $held = $this->getHeldDuration($clock);
-
-        return $held !== null && !$duration->isLongerThan($held);
     }
 
     public function getFriendlyName(): string
