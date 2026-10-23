@@ -9,8 +9,6 @@ use Amp\CancelledException;
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Duration;
-use Stewart\Contracts\Time\TimerHandle;
-use Stewart\Contracts\Time\Timers;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Config\StewartConfig;
 use Stewart\Runtime\Config\SupervisionConfig;
@@ -23,6 +21,8 @@ use Stewart\Runtime\Ipc\Message\WorkerMessage;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Support\Time\Deadlines;
+use Stewart\Support\Time\TimerHandle;
+use Stewart\Support\Time\Timers;
 use Throwable;
 
 use function Amp\async;

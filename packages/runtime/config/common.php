@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Stewart\Contracts\Time\Timers;
 use Stewart\Runtime\Health\ProcessMemory;
 use Stewart\Runtime\Ipc\Wire\IpcCodec;
 use Stewart\Runtime\Ipc\Wire\IpcMessageCatalog;
@@ -15,6 +14,7 @@ use Stewart\Support\Text\ClosestNameFinder;
 use Stewart\Support\Text\OptionNameMatcher;
 use Stewart\Support\Time\Deadlines;
 use Stewart\Support\Time\RevoltTimers;
+use Stewart\Support\Time\Timers;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\inline_service;

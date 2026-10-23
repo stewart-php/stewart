@@ -10,5 +10,7 @@
         <ignored-regex>#changed from Stewart\\Contracts\\Service\\Service(TargetSource|Response)\b.* to .*Stewart\\Contracts\\Action\\Action(TargetSource|Response)\b#</ignored-regex>
         <ignored-regex>#Class Stewart\\Contracts\\Generated\\ActionManifest has been deleted#</ignored-regex>
         <ignored-regex>#Method listActionNames\(\) was added to interface Stewart\\Contracts\\Generated\\Manifest#</ignored-regex>
+        <ignored-regex>#Class Stewart\\Contracts\\Time\\Timer(s|Handle) has been deleted#</ignored-regex>
+        <ignored-regex>#Method waitFor\(\) was added to interface Stewart\\Contracts\\Schedule\\Scheduler#</ignored-regex>
     </baseline>
 </roave-bc-check>

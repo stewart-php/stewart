@@ -25,7 +25,6 @@ use Stewart\Contracts\Store\Store;
 use Stewart\Contracts\Sun\SunCalendar;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Duration;
-use Stewart\Contracts\Time\Timers;
 use Stewart\Store\KeyspacedStores;
 use Stewart\Store\ReadOnlyStore;
 use Stewart\Store\StorePrefix;
@@ -53,7 +52,7 @@ final class AppHarness
 {
     private const string STORE_PREFIX = 'stewart';
 
-    public readonly ManualTimers $timers;
+    private readonly ManualTimers $timers;
 
     public readonly VirtualClock $clock;
 
@@ -168,7 +167,6 @@ final class AppHarness
             HaContext::class => $this->ha,
             EntityExposure::class => $this->entities,
             Scheduler::class => $this->scheduler,
-            Timers::class => $this->timers,
             Clock::class => $this->clock,
             Store::class => $store,
             ReadableStore::class => new ReadOnlyStore($store),

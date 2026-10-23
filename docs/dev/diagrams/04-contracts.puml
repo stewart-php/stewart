@@ -53,10 +53,6 @@ interface "StateChangeStream" as ChangeStream {
     +acrossEntities(): EventStream
 }
 
-interface Timers {
-    +startTimer(Duration, Closure): TimerHandle
-}
-
 interface Scheduler {
     +runEvery(Duration, Closure): ScheduledTask
     +runDailyAt(TimeOfDay, Closure, DayOfWeek...): ScheduledTask
@@ -65,6 +61,7 @@ interface Scheduler {
     +runAt(DateTimeImmutable, Closure): ScheduledTask
     +runAtSunEvent(SunEvent, Closure, SunOffset): ScheduledTask
     +runAtEntityTime(entity, Closure): ScheduledTask
+    +waitFor(arm, Duration): mixed
 }
 
 interface Schedule {
@@ -149,12 +146,6 @@ note right of ChangeStream
   Every operator that keeps the element type hands
   back a StateChangeStream, so whenChangedTo() still
   chains after a filter(). Only map() drops out.
-end note
-
-note right of Timers
-  Timers are a port: Revolt in the runtime, a virtual
-  clock in tests. It is what lets debounce and the
-  scheduler be tested with no event loop.
 end note
 
 note right of Scheduler

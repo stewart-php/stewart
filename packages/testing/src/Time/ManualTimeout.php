@@ -6,7 +6,7 @@ namespace Stewart\Testing\Time;
 
 use Amp\Cancellation;
 use Closure;
-use Stewart\Contracts\Time\TimerHandle;
+use Stewart\Support\Time\TimerHandle;
 
 final class ManualTimeout implements Cancellation
 {

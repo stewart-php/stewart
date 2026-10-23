@@ -17,7 +17,6 @@ use Stewart\Contracts\Exception\StewartException;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\Store\Store;
-use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\App\GeneratedRoots;
 use Stewart\Runtime\Container\AppBuildFailure;
 use Stewart\Runtime\Container\AppContainerBlueprint;
@@ -33,9 +32,7 @@ use Stewart\Runtime\Exception\ContainerError;
 use Stewart\Runtime\Ipc\Collection\WorkerAppCollection;
 use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Ipc\WorkerApp;
-use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
-use Stewart\Runtime\Schedule\WorkerTimers;
 use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Apps\Nested\HallLight;
@@ -58,7 +55,6 @@ use Stewart\Runtime\Tests\Fixtures\Container\NeedsUnregisteredService;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsWritablePeer;
 use Stewart\Runtime\Tests\Fixtures\Container\ScalarConsumer;
 use Stewart\Runtime\Tests\Fixtures\Container\SharedStoreConsumer;
-use Stewart\Runtime\Tests\Fixtures\Container\TimerConsumer;
 use Stewart\Runtime\Tests\Fixtures\Container\TypedOptionsApp;
 use Stewart\Runtime\Tests\Fixtures\Generated\Code\Actions;
 use Stewart\Runtime\Tests\Fixtures\Generated\Code\Entities;
@@ -103,7 +99,6 @@ final class AppContainerBuilderTest extends TestCase
 
     private const string DEFAULTS = __DIR__ . '/../../Fixtures/Container/services/defaults-binding.php';
 
-    private const string TIMER_USER = __DIR__ . '/../../Fixtures/Container/services/timer-user.php';
 
     private const string UNWIRABLE_SERVICE = __DIR__ . '/../../Fixtures/Container/services/unwirable-service.php';
 
@@ -431,13 +426,11 @@ final class AppContainerBuilderTest extends TestCase
         self::assertInstanceOf(WorkerLogger::class, $hall->logger);
     }
 
-    public function testAppCanAutowireTheClockAndTimers(): void
+    public function testAppCanAutowireTheClock(): void
     {
         $services = $this->buildContainer([new WorkerApp(id: new AppId('demo'), class: NeedsClock::class, options: [])]);
-        $demo = $this->getApp($services, 'demo', NeedsClock::class);
 
-        self::assertInstanceOf(VirtualClock::class, $demo->clock);
-        self::assertInstanceOf(WorkerTimers::class, $demo->timers);
+        self::assertInstanceOf(VirtualClock::class, $this->getApp($services, 'demo', NeedsClock::class)->clock);
     }
 
     public function testAppCanAutowireSunCalendar(): void
@@ -445,25 +438,6 @@ final class AppContainerBuilderTest extends TestCase
         $services = $this->buildContainer([new WorkerApp(id: new AppId('demo'), class: NeedsSunCalendar::class, options: [])]);
 
         self::assertSame(AppRuntimeServicesFixture::LATITUDE, $this->getApp($services, 'demo', NeedsSunCalendar::class)->sunCalendar->getLocation()->latitude);
-    }
-
-    public function testAppTimersBelongToTheAppsScope(): void
-    {
-        $demo = $this->buildSingleApp('demo', NeedsClock::class);
-
-        $demo->timers->startTimer(Duration::seconds(5), static function (): void {});
-
-        self::assertSame(1, $this->resources->schedules->countFor(ResourceScope::forApp(new AppId('demo'))));
-        self::assertSame(0, $this->resources->timers->countPendingTimers(), 'It waits for the app to go live.');
-    }
-
-    public function testUserServiceTimersBelongToSharedScope(): void
-    {
-        $services = $this->buildContainer([], self::TIMER_USER);
-
-        $services->resolveService(TimerConsumer::class)->timers->startTimer(Duration::seconds(5), static function (): void {});
-
-        self::assertSame(1, $this->resources->schedules->countFor(ResourceScope::shared()));
     }
 
     public function testUnknownOptionFailsOnlyItsApp(): void

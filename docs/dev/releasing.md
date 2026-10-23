@@ -25,7 +25,7 @@ This repository is the only place Stewart is developed. Everything else is publi
   what apps code against: `stewart-php/contracts`, the generated classes, configuration keys, environment variables,
   console commands and the image entrypoint settings. `make bc-check` guards the PHP part: `contracts` and `testing`,
   which apps and their tests import. The other packages may change their classes in a minor.
-- **What may grow in a minor.** `HaContext`, `Scheduler`, `Timers` and the other interfaces Stewart implements for
+- **What may grow in a minor.** `HaContext`, `Scheduler` and the other interfaces Stewart implements for
   apps may gain methods, and the `*Error` reason enums may gain cases. Add each new method to the package's roave
   baseline (`.roave-backward-compatibility-check.xml`), as `HaContext::callAction()` was in 1.8; the contracts and
   testing baselines already allow new reasons.

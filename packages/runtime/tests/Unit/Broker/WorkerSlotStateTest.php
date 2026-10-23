@@ -12,7 +12,6 @@ use Psr\Log\NullLogger;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
-use Stewart\Contracts\Time\TimerHandle;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\OutboxLimits;
@@ -24,6 +23,7 @@ use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeWorkerProcess;
 use Stewart\Runtime\Tests\Fixtures\Broker\RecordingPoolListener;
+use Stewart\Support\Time\TimerHandle;
 use Stewart\Testing\Time\ManualTimers;
 
 #[CoversClass(WorkerSlotState::class)]

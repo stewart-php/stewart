@@ -23,13 +23,10 @@ use Stewart\Runtime\Ipc\WorkerApp;
 use Stewart\Runtime\Kernel\SyntheticServices;
 use Stewart\Runtime\Kernel\WorkerKernel;
 use Stewart\Runtime\Lifecycle\AppFailurePhase;
-use Stewart\Runtime\Schedule\ScheduledTimerHandle;
-use Stewart\Runtime\Schedule\WorkerTimers;
 use Stewart\Runtime\Tests\Fixtures\Ipc\FakeWorkerTransport;
 use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Stewart\Runtime\Tests\Fixtures\Lifecycle\Healthy;
 use Stewart\Runtime\Tests\Fixtures\Protocol\ThrowingSchedule;
-use Stewart\Runtime\Tests\Fixtures\Protocol\ThrowingTimer;
 use Stewart\Runtime\Tests\Fixtures\Protocol\UnawaitedFailure;
 use Stewart\Runtime\Tests\Fixtures\Time\RecordingProcessTimeZone;
 use Stewart\Runtime\Time\ProcessTimeZone;
@@ -42,8 +39,6 @@ use Stewart\Testing\Time\ManualTimers;
 
 use function Amp\async;
 
-#[CoversClass(WorkerTimers::class)]
-#[CoversClass(ScheduledTimerHandle::class)]
 #[CoversClass(LoopErrorReporter::class)]
 #[CoversClass(AppFailureReporter::class)]
 #[CoversClass(HandlerFailureSampler::class)]
@@ -68,10 +63,10 @@ final class WorkerFaultIsolationTest extends TestCase
         $this->running?->await();
     }
 
-    public function testThrowingAppTimerFailsOnlyThatApp(): void
+    public function testThrowingAppScheduleFailsOnlyThatApp(): void
     {
         $this->startWorkerWith(
-            new WorkerApp(id: new AppId('throwing-timer'), class: ThrowingTimer::class, options: []),
+            new WorkerApp(id: new AppId('throwing-schedule'), class: ThrowingSchedule::class, options: []),
             new WorkerApp(id: new AppId('healthy'), class: Healthy::class, options: []),
         );
 
@@ -79,10 +74,10 @@ final class WorkerFaultIsolationTest extends TestCase
         EventLoopTicks::settleUntil(fn(): bool => $this->transport->listSentOfType(AppFailed::class) !== []);
 
         $failure = $this->transport->listSentOfType(AppFailed::class)[0];
-        self::assertSame('throwing-timer', $failure->scope->wireValue());
+        self::assertSame('throwing-schedule', $failure->scope->wireValue());
         self::assertSame(AppFailurePhase::Handler, $failure->phase);
-        self::assertSame(ThrowingTimer::FAILURE, $failure->message);
-        self::assertSame(['throwing-timer', 'healthy'], $this->transport->listSentOfType(WorkerReady::class)[0]->appIds->collection->toStrings());
+        self::assertSame(ThrowingSchedule::FAILURE, $failure->message);
+        self::assertSame(['throwing-schedule', 'healthy'], $this->transport->listSentOfType(WorkerReady::class)[0]->appIds->collection->toStrings());
         $this->assertWorkerStillAnswers();
     }
 

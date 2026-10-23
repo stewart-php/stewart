@@ -12,7 +12,6 @@ use Stewart\Contracts\Registry\EntityFilter;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
-use Stewart\Contracts\Time\Timers;
 use Stewart\Contracts\Topic\TopicEvent;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Runtime\Dispatch\DispatchSource;
@@ -25,6 +24,7 @@ use Stewart\Runtime\State\StateCache;
 use Stewart\Support\Stream\OperatorStream;
 use Stewart\Support\Stream\StateChanges;
 use Stewart\Support\Time\Deadlines;
+use Stewart\Support\Time\Timers;
 use Stewart\Support\Wire\EventTypeSelector;
 use Stewart\Support\Wire\TriggerSpec;
 

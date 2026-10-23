@@ -6,7 +6,7 @@ namespace Stewart\Testing\Time;
 
 use Closure;
 use Stewart\Contracts\Time\MonotonicTime;
-use Stewart\Contracts\Time\TimerHandle;
+use Stewart\Support\Time\TimerHandle;
 
 final class ManualTimer implements TimerHandle
 {

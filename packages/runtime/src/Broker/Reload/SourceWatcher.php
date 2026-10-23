@@ -6,9 +6,9 @@ namespace Stewart\Runtime\Broker\Reload;
 
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\Time\Duration;
-use Stewart\Contracts\Time\Timers;
 use Stewart\Runtime\Broker\DaemonLaunchOptions;
 use Stewart\Runtime\Time\RepeatingTimer;
+use Stewart\Support\Time\Timers;
 use Throwable;
 
 final class SourceWatcher

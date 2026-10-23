@@ -11,7 +11,7 @@ use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Subscription;
 use Stewart\Contracts\Time\Duration;
-use Stewart\Contracts\Time\Timers;
+use Stewart\Support\Time\Timers;
 
 /**
  * @internal

@@ -35,6 +35,7 @@ use Stewart\Testing\HaContext\RecordedActionCall;
 use Stewart\Testing\HaContext\RecordingHaContext;
 use Stewart\Testing\HaContext\SeededHistory;
 use Stewart\Testing\Time\EventLoopTicks;
+use Stewart\Testing\Time\ManualTimers;
 
 use function Amp\async;
 
@@ -326,10 +327,11 @@ final class RecordingHaContextTest extends TestCase
 
     public function testPushStateStampsChangeOnNewValueOnly(): void
     {
-        $ha = new RecordingHaContext()->seedState('light.hall', 'on');
+        $timers = new ManualTimers();
+        $ha = new RecordingHaContext($timers)->seedState('light.hall', 'on');
         $seededAt = $ha->clock->getNow();
 
-        $ha->timers->delay(Duration::minutes(5));
+        $timers->delay(Duration::minutes(5));
         $ha->pushState('light.hall', 'on', ['brightness' => 80]);
 
         self::assertEquals($seededAt, $ha->requireState('light.hall')->lastChangedAt);

@@ -12,8 +12,6 @@ use Closure;
 use Stewart\Contracts\Mqtt\MqttMessage;
 use Stewart\Contracts\Mqtt\MqttQos;
 use Stewart\Contracts\Time\Duration;
-use Stewart\Contracts\Time\TimerHandle;
-use Stewart\Contracts\Time\Timers;
 use Stewart\Mqtt\Exception\MqttClientError;
 use Stewart\Mqtt\Exception\MqttClientException;
 use Stewart\Mqtt\Packet\InboundPacket;
@@ -24,6 +22,8 @@ use Stewart\Mqtt\Packet\PubAckPacket;
 use Stewart\Mqtt\Packet\PublishPacket;
 use Stewart\Mqtt\Packet\SubAckPacket;
 use Stewart\Mqtt\Packet\UnsubAckPacket;
+use Stewart\Support\Time\TimerHandle;
+use Stewart\Support\Time\Timers;
 use Throwable;
 
 use function Amp\async;

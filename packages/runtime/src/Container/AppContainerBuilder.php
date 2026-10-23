@@ -23,7 +23,6 @@ use Stewart\Contracts\Store\ReadableStore;
 use Stewart\Contracts\Store\Store;
 use Stewart\Contracts\Sun\SunCalendar;
 use Stewart\Contracts\Time\Clock;
-use Stewart\Contracts\Time\Timers;
 use Stewart\Runtime\App\GeneratedRoots;
 use Stewart\Runtime\Container\Collection\AppBuildFailureCollection;
 use Stewart\Runtime\Exception\ContainerError;
@@ -31,7 +30,6 @@ use Stewart\Runtime\Exception\ContainerException;
 use Stewart\Runtime\Ipc\Collection\WorkerAppCollection;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Schedule\WorkerScheduler;
-use Stewart\Runtime\Schedule\WorkerTimers;
 use Stewart\Runtime\Worker\WorkerEntityExposure;
 use Stewart\Runtime\Worker\WorkerHaContext;
 use Stewart\Runtime\Worker\WorkerLogger;
@@ -70,17 +68,11 @@ final readonly class AppContainerBuilder
 
     public const string READ_ONLY_GLOBAL_STORE = '.stewart.store.global.read_only';
 
-    private const string TIMERS = '.stewart.timers';
-
-    private const string LOOP_TIMERS = '.stewart.loop_timers';
-
     private const string LOGGER_SUFFIX = '.logger';
 
     private const string CONTEXT_SUFFIX = '.context';
 
     private const string SCHEDULER_SUFFIX = '.scheduler';
-
-    private const string TIMERS_SUFFIX = '.timers';
 
     private const string STORE_SUFFIX = '.store';
 
@@ -102,7 +94,6 @@ final readonly class AppContainerBuilder
         self::LOGGER,
         self::CONTEXT,
         self::SCHEDULER,
-        self::LOOP_TIMERS,
         self::EXPOSURE,
         self::REGISTRY_EDITOR,
     ];
@@ -284,13 +275,10 @@ final readonly class AppContainerBuilder
             ->setFactory([new Reference(self::STORES), 'openGlobalStore']);
         $container->register(self::READ_ONLY_GLOBAL_STORE, ReadOnlyStore::class)
             ->setArguments([new Reference(self::GLOBAL_STORE)]);
-        $container->register(self::TIMERS, WorkerTimers::class)
-            ->setArguments([new Reference(self::SCHEDULER), new Reference(self::LOOP_TIMERS)]);
 
         $container->setAlias(LoggerInterface::class, self::LOGGER)->setPublic(true);
         $container->setAlias(HaContext::class, self::CONTEXT)->setPublic(true);
         $container->setAlias(Scheduler::class, self::SCHEDULER)->setPublic(true);
-        $container->setAlias(Timers::class, self::TIMERS)->setPublic(true);
         // Private, so an unconfigured store or MQTT fails only the services that take them.
         $container->setAlias(Store::class, self::GLOBAL_STORE);
         $container->setAlias(ReadableStore::class, self::READ_ONLY_GLOBAL_STORE);
@@ -328,7 +316,6 @@ final readonly class AppContainerBuilder
             self::LOGGER => $runtime->logger,
             self::CONTEXT => $runtime->context,
             self::SCHEDULER => $runtime->scheduler,
-            self::LOOP_TIMERS => $runtime->timers,
             self::EXPOSURE => $runtime->exposure,
             self::REGISTRY_EDITOR => $runtime->registryEditor,
         ];
@@ -399,9 +386,6 @@ final readonly class AppContainerBuilder
             ->setFactory([new Reference(self::SCHEDULER), 'forApp'])
             ->setArguments([$appId, new Reference($serviceId . self::LOGGER_SUFFIX)]);
 
-        $container->register($serviceId . self::TIMERS_SUFFIX, WorkerTimers::class)
-            ->setArguments([new Reference($serviceId . self::SCHEDULER_SUFFIX), new Reference(self::LOOP_TIMERS)]);
-
         $container->register($serviceId . self::STORE_SUFFIX, ScopedStore::class)
             ->setFactory([new Reference(self::STORES), 'openAppStore'])
             ->addArgument($appId);
@@ -438,7 +422,6 @@ final readonly class AppContainerBuilder
             HaContext::class => $serviceId . self::CONTEXT_SUFFIX,
             LoggerInterface::class => $serviceId . self::LOGGER_SUFFIX,
             Scheduler::class => $serviceId . self::SCHEDULER_SUFFIX,
-            Timers::class => $serviceId . self::TIMERS_SUFFIX,
             Store::class => $serviceId . self::STORE_SUFFIX,
             ReadableStore::class => $serviceId . self::READ_ONLY_STORE_SUFFIX,
             Mqtt::class => $serviceId . self::MQTT_SUFFIX,

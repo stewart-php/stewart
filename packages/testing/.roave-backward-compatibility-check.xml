@@ -6,5 +6,8 @@
         <ignored-regex>#Class Stewart\\Testing\\HaContext\\(Collection\\RecordedServiceCallCollection|RecordedServiceCall) has been deleted#</ignored-regex>
         <ignored-regex>#changed from Stewart\\Contracts\\(Service\\Service(TargetSource|Response)|Exception\\ServiceCallException)\b.* to .*Stewart\\Contracts\\(Action\\Action(TargetSource|Response)|Exception\\ActionCallException)\b#</ignored-regex>
         <ignored-regex>#changed from Stewart\\Testing\\HaContext\\(Collection\\RecordedServiceCallCollection|RecordedServiceCall) to .*Stewart\\Testing\\HaContext\\(Collection\\RecordedActionCallCollection|RecordedActionCall)\b#</ignored-regex>
+        <ignored-regex>#from Stewart\\Contracts\\Time\\TimerHandle to .*Stewart\\Support\\Time\\TimerHandle#</ignored-regex>
+        <ignored-regex>#These ancestors of Stewart\\Testing\\Time\\ManualTimers? have been removed: \["Stewart\\\\Contracts\\\\Time\\\\Timer(s|Handle)"\]#</ignored-regex>
+        <ignored-regex>#Property Stewart\\Testing\\(App\\AppHarness|HaContext\\RecordingHaContext)\#\$timers (was removed|visibility reduced from public to private)#</ignored-regex>
     </baseline>
 </roave-bc-check>

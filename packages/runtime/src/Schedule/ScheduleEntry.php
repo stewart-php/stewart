@@ -10,8 +10,8 @@ use Stewart\Contracts\Schedule\ScheduledRun;
 use Stewart\Contracts\Schedule\ScheduledTask;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
-use Stewart\Contracts\Time\TimerHandle;
 use Stewart\Runtime\Scope\ScopeState;
+use Stewart\Support\Time\TimerHandle;
 use Throwable;
 
 final class ScheduleEntry

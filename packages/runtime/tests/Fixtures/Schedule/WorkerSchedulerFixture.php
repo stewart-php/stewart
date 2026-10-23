@@ -36,6 +36,6 @@ final class WorkerSchedulerFixture
         $streams = new DispatchStreams($dispatcher ?? RecordingDispatchListener::createDispatcher(10, $registryCache), $timers, $states, $registryCache);
         $entityTimes ??= new EntityTimeScheduler($registry, new ScopeLifecycle(), $states, $streams, $timers->clock);
 
-        return new WorkerScheduler($registry, $sunCalendar, $entityTimes, $logger, $scope);
+        return new WorkerScheduler($registry, $sunCalendar, $entityTimes, $logger, $scope, $timers);
     }
 }

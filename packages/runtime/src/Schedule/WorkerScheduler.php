@@ -16,6 +16,7 @@ use Stewart\Contracts\Schedule\TimeOfDay;
 use Stewart\Contracts\Sun\SunCalendar;
 use Stewart\Contracts\Sun\SunEvent;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Contracts\Time\PendingWait;
 use Stewart\Contracts\Time\SunOffset;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Support\Schedule\CalendarSchedule;
@@ -27,6 +28,7 @@ use Stewart\Support\Schedule\IntervalSchedule;
 use Stewart\Support\Schedule\OneShotSchedule;
 use Stewart\Support\Schedule\SunEventSchedule;
 use Stewart\Support\Schedule\WallClockSchedule;
+use Stewart\Support\Time\Timers;
 
 final readonly class WorkerScheduler implements Scheduler
 {
@@ -36,11 +38,12 @@ final readonly class WorkerScheduler implements Scheduler
         private EntityTimeScheduler $entityTimes,
         private LoggerInterface $logger,
         private ResourceScope $resourceScope,
+        private Timers $loopTimers,
     ) {}
 
     public function forApp(AppId $appId, LoggerInterface $logger): self
     {
-        return new self($this->registry, $this->sunCalendar, $this->entityTimes, $logger, ResourceScope::forApp($appId));
+        return new self($this->registry, $this->sunCalendar, $this->entityTimes, $logger, ResourceScope::forApp($appId), $this->loopTimers);
     }
 
     public function runEvery(Duration $period, Closure $handler): ScheduledTask
@@ -79,6 +82,17 @@ final readonly class WorkerScheduler implements Scheduler
     public function runAtSunEvent(SunEvent $event, Closure $handler, ?SunOffset $offset = null): ScheduledTask
     {
         return $this->armSchedule(SunEventSchedule::forEvent($this->sunCalendar, $event, $offset), $handler);
+    }
+
+    // On the loop timers rather than a schedule, so a paused app's wait still times out.
+    /**
+     * @template T
+     * @param Closure(PendingWait<T>): (Closure(): void) $arm
+     * @return T|null
+     */
+    public function waitFor(Closure $arm, ?Duration $timeout = null): mixed
+    {
+        return $this->loopTimers->waitFor($arm, $timeout);
     }
 
     private function armSchedule(WallClockSchedule|ElapsedSchedule $schedule, Closure $handler): ScheduledTask

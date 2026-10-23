@@ -26,7 +26,7 @@ use Stewart\Runtime\Ipc\WorkerApp;
 use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Stewart\Runtime\Tests\Fixtures\Protocol\DisposeCaller;
 use Stewart\Runtime\Tests\Fixtures\Protocol\HangsOnDispose;
-use Stewart\Runtime\Tests\Fixtures\Protocol\ThrowingTimer;
+use Stewart\Runtime\Tests\Fixtures\Protocol\ThrowingSchedule;
 use Stewart\Runtime\Tests\Fixtures\Protocol\UnawaitedFailure;
 use Stewart\Runtime\Tests\Fixtures\Protocol\WorkerHarness;
 use Stewart\Runtime\Time\SystemClock;
@@ -46,12 +46,12 @@ final class WorkerFaultIsolationProcessTest extends TestCase
         $this->worker = null;
     }
 
-    public function testChildSurvivesThrowingTimerAndLostFuture(): void
+    public function testChildSurvivesThrowingScheduleAndLostFuture(): void
     {
         $this->worker = WorkerHarness::boot(
             new ProcessWorkerSpawner(new ProcessContextFactory(), IpcCodec::createForWorkerBootstrap()),
             TestBootstrap::createForApps([
-                new WorkerApp(id: new AppId('throwing-timer'), class: ThrowingTimer::class, options: []),
+                new WorkerApp(id: new AppId('throwing-schedule'), class: ThrowingSchedule::class, options: []),
                 new WorkerApp(id: new AppId('unawaited-failure'), class: UnawaitedFailure::class, options: []),
             ]),
             EntityStatesFragment::fromCollection(EntityStateCollection::keyedByEntityId([])),
@@ -65,7 +65,7 @@ final class WorkerFaultIsolationProcessTest extends TestCase
         self::assertCount(2, $origins);
         self::assertStringStartsWith('@shared ', $origins[0]);
         self::assertStringContainsString(UnawaitedFailure::FAILURE, $origins[0]);
-        self::assertSame('throwing-timer ' . ThrowingTimer::FAILURE, $origins[1]);
+        self::assertSame('throwing-schedule ' . ThrowingSchedule::FAILURE, $origins[1]);
 
         $this->worker->send(new Ping(nonce: 7, sentAt: SystemClock::inUtc()->getNow()));
         self::assertSame(7, $this->worker->receiveUntil(Pong::class)->nonce);

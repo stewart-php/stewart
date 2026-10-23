@@ -8,7 +8,6 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Duration;
-use Stewart\Contracts\Time\Timers;
 use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Broker\RestartBudget;
 use Stewart\Runtime\Broker\WorkerMessageReader;
@@ -23,6 +22,7 @@ use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
 use Stewart\Runtime\Time\SystemClock;
 use Stewart\Support\Time\Deadlines;
 use Stewart\Support\Time\RevoltTimers;
+use Stewart\Support\Time\Timers;
 use Stewart\Testing\Time\ManualTimers;
 
 final readonly class WorkerPoolFixture
