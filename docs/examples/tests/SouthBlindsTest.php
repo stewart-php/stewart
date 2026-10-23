@@ -32,6 +32,6 @@ final class SouthBlindsTest extends TestCase
     {
         $this->harness->advanceTime(Duration::hours(7));
 
-        self::assertSame('cover.close_cover', $this->harness->ha->getLastCall()->getServiceName());
+        self::assertSame('cover.close_cover', $this->harness->ha->getLastCall()->getActionName());
     }
 }

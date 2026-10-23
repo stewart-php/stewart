@@ -31,13 +31,13 @@ final readonly class SunBlinds implements App
     {
         $this->scheduler->runEvery(Duration::minutes(10), function (): void {
             if ($this->isSunOnTheFacade() && $this->isWarmOutside() && $this->areBlindsIn('open')) {
-                $this->moveBlinds('close_cover');
+                $this->moveBlinds('cover.close_cover');
             }
         });
 
         $this->scheduler->runAtSunEvent(SunEvent::Sunset, function (): void {
             if ($this->areBlindsIn('closed')) {
-                $this->moveBlinds('open_cover');
+                $this->moveBlinds('cover.open_cover');
             }
         });
     }
@@ -59,8 +59,8 @@ final readonly class SunBlinds implements App
         return $this->ha->getState($this->blinds)?->state === $state;
     }
 
-    private function moveBlinds(string $service): void
+    private function moveBlinds(string $action): void
     {
-        $this->ha->callService('cover', $service, target: ServiceTarget::forEntities($this->blinds));
+        $this->ha->callAction($action, target: ServiceTarget::forEntities($this->blinds));
     }
 }

@@ -77,6 +77,18 @@ interface HaContext
      * @param array<string, mixed> $data
      * @throws ServiceCallException
      */
+    public function callAction(string $action, array $data = [], ?ServiceTargetSource $target = null): EventContext;
+
+    /**
+     * @param array<string, mixed> $data
+     * @throws ServiceCallException
+     */
+    public function callActionForResponse(string $action, array $data = [], ?ServiceTargetSource $target = null): ServiceResponse;
+
+    /**
+     * @param array<string, mixed> $data
+     * @throws ServiceCallException
+     */
     public function callService(string $domain, string $service, array $data = [], ?ServiceTargetSource $target = null): EventContext;
 
     /**

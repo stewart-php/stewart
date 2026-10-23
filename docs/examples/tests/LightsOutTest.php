@@ -19,7 +19,7 @@ final class LightsOutTest extends TestCase
         $harness->advanceTime(Duration::minutes(23 * 60 + 30));
 
         $call = $harness->ha->getLastCall();
-        self::assertSame('light.turn_off', $call->getServiceName());
+        self::assertSame('light.turn_off', $call->getActionName());
         self::assertSame(['light.porch'], $call->listTargetedEntityIds());
     }
 }

@@ -16,7 +16,7 @@ final readonly class ConstructCaller implements App
         private HaContext $ha,
         private LoggerInterface $logger,
     ) {
-        $ha->callService('light', 'turn_on');
+        $ha->callAction('light.turn_on');
 
         $logger->info('Construct call finished', ['service' => 'light.turn_on']);
     }

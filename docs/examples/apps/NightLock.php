@@ -23,10 +23,10 @@ final readonly class NightLock implements App
     public function initialize(): void
     {
         $this->scheduler->runDailyAt('23:00', function (): void {
-            $this->ha->callService('lock', 'lock', target: ServiceTarget::forEntities($this->lock));
+            $this->ha->callAction('lock.lock', target: ServiceTarget::forEntities($this->lock));
 
             if ($this->ha->waitForState($this->lock, 'locked', Duration::seconds(30)) === null) {
-                $this->ha->callService('notify', 'notify', ['message' => 'The front door did not lock.']);
+                $this->ha->callAction('notify.notify', ['message' => 'The front door did not lock.']);
             }
         });
     }

@@ -25,8 +25,8 @@ final readonly class WelcomeHome implements App
     {
         $this->ha->watchTrigger($this->createTriggers())->subscribe(function (TriggerEvent $event): void {
             match ($event->getTriggerId()) {
-                'arrived' => $this->ha->callService('light', 'turn_on', target: ServiceTarget::forEntities('light.hall')),
-                'left' => $this->ha->callService('light', 'turn_off', target: ServiceTarget::forFloors('ground')),
+                'arrived' => $this->ha->callAction('light.turn_on', target: ServiceTarget::forEntities('light.hall')),
+                'left' => $this->ha->callAction('light.turn_off', target: ServiceTarget::forFloors('ground')),
                 default => null,
             };
         });

@@ -29,7 +29,7 @@ final readonly class SouthBlinds implements App
             $sunOnTheFacade = $position->isWithinAzimuth(135.0, 225.0) && $position->isHigherThan(15.0);
 
             if ($sunOnTheFacade && $this->ha->getState($this->blinds)?->state === 'open') {
-                $this->ha->callService('cover', 'close_cover', target: ServiceTarget::forEntities($this->blinds));
+                $this->ha->callAction('cover.close_cover', target: ServiceTarget::forEntities($this->blinds));
             }
         });
     }

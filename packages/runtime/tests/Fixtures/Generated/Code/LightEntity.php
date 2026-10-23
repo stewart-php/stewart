@@ -121,7 +121,7 @@ final readonly class LightEntity implements TypedEntity
      */
     public function turnOff(int|float|null $transition = null): EventContext
     {
-        return $this->entity->callService('turn_off', [
+        return $this->entity->callAction('turn_off', [
             'transition' => $transition,
         ]);
     }
@@ -135,7 +135,7 @@ final readonly class LightEntity implements TypedEntity
      */
     public function turnOn(int|float|null $brightnessPct = null): EventContext
     {
-        return $this->entity->callService('turn_on', [
+        return $this->entity->callAction('turn_on', [
             'brightness_pct' => $brightnessPct,
         ]);
     }

@@ -24,6 +24,15 @@ final class EntityStateTest extends TestCase
         self::assertSame('light.hall', new EntityState(new EntityId('light.hall'), 'on')->getFriendlyName());
     }
 
+    public function testReadsOnAndOffLikeTheTypedStates(): void
+    {
+        self::assertTrue(new EntityState(new EntityId('switch.fan'), 'on')->isOn());
+        self::assertFalse(new EntityState(new EntityId('switch.fan'), 'on')->isOff());
+        self::assertTrue(new EntityState(new EntityId('switch.fan'), 'off')->isOff());
+        self::assertFalse(new EntityState(new EntityId('switch.fan'), 'unavailable')->isOn());
+        self::assertFalse(new EntityState(new EntityId('switch.fan'), 'unavailable')->isOff());
+    }
+
     public function testTreatsUnavailableAndUnknownAsUnusable(): void
     {
         self::assertTrue(new EntityState(new EntityId('sensor.x'), 'unavailable')->isUnavailable());

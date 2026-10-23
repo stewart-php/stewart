@@ -25,7 +25,7 @@ final class WelcomeHomeTest extends TestCase
         ]);
         $harness->ha->pushTrigger($watched, new TriggerEvent(['platform' => 'zone', 'id' => 'arrived']));
 
-        self::assertSame('light.turn_on', $harness->ha->getLastCall()->getServiceName());
+        self::assertSame('light.turn_on', $harness->ha->getLastCall()->getActionName());
         self::assertCount(1, $harness->ha->listWatchedTriggers());
     }
 }

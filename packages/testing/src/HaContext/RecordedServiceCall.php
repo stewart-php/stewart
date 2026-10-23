@@ -19,9 +19,14 @@ final readonly class RecordedServiceCall
         public EventContext $context,
     ) {}
 
-    public function getServiceName(): string
+    public function getActionName(): string
     {
         return $this->domain . '.' . $this->service;
+    }
+
+    public function getServiceName(): string
+    {
+        return $this->getActionName();
     }
 
     /** @return list<string> */

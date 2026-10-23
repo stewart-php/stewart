@@ -24,7 +24,7 @@ final class HelloAppTest extends TestCase
     {
         $call = $this->harness->ha->getLastCall();
 
-        self::assertSame('persistent_notification.create', $call->getServiceName());
+        self::assertSame('persistent_notification.create', $call->getActionName());
         self::assertSame('stewart_hello', $call->data['notification_id'] ?? null);
         self::assertSame('Stewart is connected and can see 2 entities.', $call->data['message'] ?? null);
     }

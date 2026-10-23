@@ -19,6 +19,7 @@ use Stewart\Contracts\Registry\EntityFilter;
 use Stewart\Contracts\Registry\Registry;
 use Stewart\Contracts\Selector\Collection\SelectorCollection;
 use Stewart\Contracts\Selector\Selector;
+use Stewart\Contracts\Service\ActionName;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTargetSource;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
@@ -119,6 +120,20 @@ final readonly class WorkerHaContext implements HaContext
     public function watchTrigger(HaTrigger|HaTriggerCollection|array $trigger, array $variables = []): EventStream
     {
         return $this->streams->watchTrigger($this->resourceScope, TriggerSpec::fromSpec($trigger, $variables));
+    }
+
+    public function callAction(string $action, array $data = [], ?ServiceTargetSource $target = null): EventContext
+    {
+        $name = new ActionName($action);
+
+        return $this->serviceCalls->callService($this->resourceScope, $name->domain, $name->action, ServiceFields::fromFieldsDroppingNulls($data), $target?->toServiceTarget());
+    }
+
+    public function callActionForResponse(string $action, array $data = [], ?ServiceTargetSource $target = null): ServiceResponse
+    {
+        $name = new ActionName($action);
+
+        return $this->serviceCalls->callServiceForResponse($this->resourceScope, $name->domain, $name->action, ServiceFields::fromFieldsDroppingNulls($data), $target?->toServiceTarget());
     }
 
     public function callService(string $domain, string $service, array $data = [], ?ServiceTargetSource $target = null): EventContext

@@ -44,9 +44,9 @@ final readonly class BoostAction implements App
             }
 
             $target = ServiceTarget::forEntities($room);
-            $this->ha->callService('climate', 'set_preset_mode', ['preset_mode' => 'boost'], $target);
+            $this->ha->callAction('climate.set_preset_mode', ['preset_mode' => 'boost'], $target);
             $this->scheduler->runAfter(Duration::minutes((int) ($call->findNumber('minutes') ?? 30)), function () use ($target): void {
-                $this->ha->callService('climate', 'set_preset_mode', ['preset_mode' => 'comfort'], $target);
+                $this->ha->callAction('climate.set_preset_mode', ['preset_mode' => 'comfort'], $target);
             });
         });
     }

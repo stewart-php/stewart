@@ -32,7 +32,7 @@ final readonly class RainWarning implements App
     private function checkTheForecast(): void
     {
         try {
-            $answer = $this->ha->callServiceForResponse('weather', 'get_forecasts', ['type' => 'daily'], ServiceTarget::forEntities($this->weather));
+            $answer = $this->ha->callActionForResponse('weather.get_forecasts', ['type' => 'daily'], ServiceTarget::forEntities($this->weather));
         } catch (ServiceCallException $e) {
             $this->logger->warning('No forecast today', ['reason' => $e->getMessage()]);
 
@@ -42,7 +42,7 @@ final readonly class RainWarning implements App
         $chance = $this->readChanceOfRain($answer);
 
         if ($chance >= $this->minimumChance) {
-            $this->ha->callService('notify', 'notify', ['message' => "Take an umbrella: {$chance}% chance of rain."]);
+            $this->ha->callAction('notify.notify', ['message' => "Take an umbrella: {$chance}% chance of rain."]);
         }
     }
 

@@ -119,6 +119,6 @@ final readonly class SwitchEntity implements TypedEntity
      */
     public function turnOn(): EventContext
     {
-        return $this->entity->callService('turn_on');
+        return $this->entity->callAction('turn_on');
     }
 }

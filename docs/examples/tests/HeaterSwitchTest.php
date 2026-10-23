@@ -24,7 +24,7 @@ final class HeaterSwitchTest extends TestCase
     {
         $this->harness->entities->requireSwitch('heater')->pushTurnOn();
 
-        self::assertSame('switch.turn_on', $this->harness->ha->getLastCall()->getServiceName());
+        self::assertSame('switch.turn_on', $this->harness->ha->getLastCall()->getActionName());
         self::assertTrue($this->harness->entities->requireSwitch('heater')->getValue());
     }
 

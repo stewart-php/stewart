@@ -15,7 +15,7 @@ final class RainWarningTest extends TestCase
     public function testRainyDaysSendAWarning(): void
     {
         $harness = new AppHarness();
-        $harness->ha->stubServiceAnswer('weather', 'get_forecasts', [
+        $harness->ha->stubActionAnswer('weather.get_forecasts', [
             'weather.home' => ['forecast' => [['condition' => 'rainy', 'precipitation_probability' => 80]]],
         ]);
         $harness->startApp(RainWarning::class);
@@ -28,7 +28,7 @@ final class RainWarningTest extends TestCase
     public function testAMissingForecastIsLogged(): void
     {
         $harness = new AppHarness();
-        $harness->ha->stubServiceFailure('weather', 'get_forecasts', ServiceCallException::unreachable('weather', 'get_forecasts', 'disconnected'));
+        $harness->ha->stubActionFailure('weather.get_forecasts', ServiceCallException::unreachable('weather', 'get_forecasts', 'disconnected'));
         $harness->startApp(RainWarning::class);
 
         $harness->advanceTime(Duration::hours(7));

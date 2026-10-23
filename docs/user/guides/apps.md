@@ -44,12 +44,12 @@ Stewart fills each constructor parameter by its type:
 
 | Type | What you get |
 |---|---|
-| `HaContext` | Home Assistant: states, state changes, events, triggers, service calls. See [State changes](state-changes.md) |
+| `HaContext` | Home Assistant: states, state changes, events, triggers, actions. See [State changes](state-changes.md) and [Call actions](calling-actions.md) |
 | `Psr\Log\LoggerInterface` | A logger whose lines carry the app's ID |
 | `Stewart\Contracts\Schedule\Scheduler` | Schedules: daily, every few minutes, at sunset. See [Scheduling and waiting](scheduling.md) |
 | `Stewart\Contracts\Store\Store` | Storage that survives restarts, for this app only. See [Persistence](persistence.md) |
 | `Stewart\Contracts\Time\Clock` | The current time in Home Assistant's time zone, and `isWithin('22:00', '07:00')` |
-| `Stewart\Contracts\Time\Timers` | Low-level timers; prefer schedules and waits |
+| `Stewart\Contracts\Time\Timers` | Low-level timers; prefer schedules and waits. See [Schedules or timers](scheduling.md#schedules-or-timers) |
 | `Stewart\Contracts\Sun\SunCalendar` | Sunrise, sunset and the sun's position. See [Sun](sun.md) |
 | `Stewart\Contracts\Mqtt\Mqtt` | An MQTT client. See [MQTT](mqtt.md) |
 | `Stewart\Contracts\Exposure\EntityExposure` | Entities your app creates in Home Assistant. See [Exposed entities](exposed-entities.md) |

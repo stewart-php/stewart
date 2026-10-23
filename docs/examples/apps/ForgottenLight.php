@@ -32,7 +32,7 @@ final readonly class ForgottenLight implements App
             $motion = $this->ha->getHistory($this->motionSensor, HistoryQuery::lastFor(Duration::minutes(30)));
 
             if (!$motion->hasBeenIn('on')) {
-                $this->ha->callService('light', 'turn_off', target: ServiceTarget::forEntities($this->light));
+                $this->ha->callAction('light.turn_off', target: ServiceTarget::forEntities($this->light));
             }
         });
     }

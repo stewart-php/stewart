@@ -82,7 +82,7 @@ final class WorkerHaContextTest extends TestCase
         $transport = new FailingTransport($failure);
 
         try {
-            self::createContext($transport)->callService('light', 'turn_on');
+            self::createContext($transport)->callAction('light.turn_on');
             self::fail('The request never left the worker.');
         } catch (ServiceCallException $e) {
             self::assertSame($reason, $e->reason);
@@ -143,6 +143,14 @@ final class WorkerHaContextTest extends TestCase
         }
     }
 
+    public function testMalformedActionNameFailsBeforeAnythingIsSent(): void
+    {
+        $transport = new NullTransport();
+
+        $this->assertThrowsReason(ServiceCallError::ActionNameInvalid, static fn() => self::createContext($transport)->callAction('light/turn_on'));
+        self::assertSame([], $transport->sent);
+    }
+
     public function testCallDuringOutageFailsLocally(): void
     {
         $transport = new NullTransport();
@@ -150,7 +158,7 @@ final class WorkerHaContextTest extends TestCase
         $connection->markLost();
 
         try {
-            self::createContext($transport, $connection)->callService('light', 'turn_on');
+            self::createContext($transport, $connection)->callAction('light.turn_on');
             self::fail('Home Assistant is disconnected.');
         } catch (ServiceCallException $e) {
             self::assertSame(ServiceCallError::Unreachable, $e->reason);

@@ -21,7 +21,7 @@ final class DoorAlarmApp implements App, Disposable
     {
         $this->ha->watchStateChanges('binary_sensor.front_door')->whenChangedTo('on')->subscribe(function (): void {
             if ($this->ha->waitForState('binary_sensor.front_door', 'off', Duration::minutes(5)) === null) {
-                $this->ha->callService('notify', 'notify', ['message' => 'The front door is still open']);
+                $this->ha->callAction('notify.notify', ['message' => 'The front door is still open']);
             }
         });
     }

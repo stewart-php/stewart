@@ -20,7 +20,7 @@ final readonly class SunsetWatcher implements App
     public function initialize(): void
     {
         $this->ha->watchTrigger(HaTrigger::onSunset())->subscribe(function (TriggerEvent $event): void {
-            $this->ha->callService('light', 'turn_on', ['trigger' => $event->getTriggerId()]);
+            $this->ha->callAction('light.turn_on', ['trigger' => $event->getTriggerId()]);
         });
         $this->ha->watchTrigger(self::REJECTED_TRIGGER)->subscribe(static function (): void {});
     }

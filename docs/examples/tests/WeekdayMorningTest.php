@@ -19,7 +19,7 @@ final class WeekdayMorningTest extends TestCase
 
         $harness->advanceTime(Duration::minutes(6 * 60 + 45));
 
-        self::assertSame('switch.turn_on', $harness->ha->getLastCall()->getServiceName());
+        self::assertSame('switch.turn_on', $harness->ha->getLastCall()->getActionName());
     }
 
     public function testTheCoffeeMachineSleepsInOnSaturday(): void
@@ -39,6 +39,6 @@ final class WeekdayMorningTest extends TestCase
 
         $harness->advanceTime(Duration::minutes(17 * 60 + 30));
 
-        self::assertSame('cover.close_cover', $harness->ha->getLastCall()->getServiceName());
+        self::assertSame('cover.close_cover', $harness->ha->getLastCall()->getActionName());
     }
 }

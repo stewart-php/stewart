@@ -20,7 +20,7 @@ If you have written automations before, most ideas carry over. This page maps th
 | Any other trigger | `watchTrigger([...])` with the same keys |
 | `condition: state` | `if ($this->ha->getState('…')?->state === '…')` |
 | `condition: time, after/before` | `$clock->isWithin('22:00', '06:00')` |
-| `action: light.turn_on, target: entity_id` | `callService('light', 'turn_on', target: ServiceTarget::forEntities('…'))` |
+| `action: light.turn_on, target: entity_id` | `callAction('light.turn_on', target: ServiceTarget::forEntities('…'))` |
 | `delay:` | A schedule (`runAfter()`), or `whenChangedTo(…, for: …)` |
 | `wait_for_trigger:` | `waitForState()` or `$stream->waitForNext()` |
 | `mode: single` | Schedules never overlap; a subscription handles its events one at a time |
@@ -39,7 +39,7 @@ entity IDs.
 | `duration=` | `for:` |
 | `self.listen_event(cb, 'zha_event')` | `watchEvents('zha_event')->subscribe(…)` |
 | `self.get_state(entity)` | `$this->ha->getState($entity)?->state` |
-| `self.call_service('light/turn_on', entity_id=…)` | `callService('light', 'turn_on', target: ServiceTarget::forEntities(…))` |
+| `self.call_service('light/turn_on', entity_id=…)` | `callAction('light.turn_on', target: ServiceTarget::forEntities(…))` |
 | `self.run_daily(cb, time)` | `runDailyAt('07:00', …)` |
 | `self.run_in(cb, 60)` | `runAfter(Duration::seconds(60), …)` |
 | `self.run_every(cb, start, 300)` | `runEvery(Duration::minutes(5), …)` |

@@ -26,7 +26,7 @@ final class SunBlindsTest extends TestCase
         $this->harness->ha->seedState('sensor.outside_temperature', '28');
         $this->harness->advanceTime(Duration::hours(10));
 
-        self::assertSame('cover.close_cover', $this->harness->ha->getLastCall()->getServiceName());
+        self::assertSame('cover.close_cover', $this->harness->ha->getLastCall()->getActionName());
     }
 
     public function testTheBlindsStayOpenOnACoolDay(): void
@@ -43,6 +43,6 @@ final class SunBlindsTest extends TestCase
         $this->harness->ha->pushState('cover.south_blinds', 'closed');
         $this->harness->advanceTime(Duration::hours(18));
 
-        self::assertSame('cover.open_cover', $this->harness->ha->getLastCall()->getServiceName());
+        self::assertSame('cover.open_cover', $this->harness->ha->getLastCall()->getActionName());
     }
 }

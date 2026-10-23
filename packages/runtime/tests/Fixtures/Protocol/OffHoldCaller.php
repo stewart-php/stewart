@@ -20,7 +20,7 @@ final readonly class OffHoldCaller implements App
         $this->ha->watchStateChanges('sensor.*')
             ->whenChangedTo('off', Duration::minutes(1))
             ->subscribe(function (StateChange $change): void {
-                $this->ha->callService('script', 'record', ['entity' => $change->entityId->value]);
+                $this->ha->callAction('script.record', ['entity' => $change->entityId->value]);
             });
     }
 }

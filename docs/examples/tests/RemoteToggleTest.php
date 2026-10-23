@@ -24,7 +24,7 @@ final class RemoteToggleTest extends TestCase
         $this->harness->ha->pushEvent(new HaEvent('zha_event', ['device_ieee' => 'aa:bb', 'command' => 'toggle']));
 
         $call = $this->harness->ha->getLastCall();
-        self::assertSame('light.toggle', $call->getServiceName());
+        self::assertSame('light.toggle', $call->getActionName());
         self::assertSame(['light.desk'], $call->listTargetedEntityIds());
     }
 

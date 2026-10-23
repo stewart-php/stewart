@@ -29,7 +29,7 @@ final readonly class BatteryAlert implements App
                     return;
                 }
 
-                $this->ha->callService('notify', $this->notifyService, [
+                $this->ha->callAction('notify.' . $this->notifyService, [
                     'message' => \sprintf('%s is at %s%%.', $change->to?->getFriendlyName(), $change->to?->state),
                 ]);
             });

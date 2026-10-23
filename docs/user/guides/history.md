@@ -48,11 +48,11 @@ yet, has an empty history.
 
 ## Cost and failures
 
-`getHistory()` asks Home Assistant, so it waits for the answer like `callService()` and shares its timeout and limits.
+`getHistory()` asks Home Assistant, so it waits for the answer like `callAction()` and shares its timeout and limits.
 Do not call it on every change of a busy sensor; a schedule, as in the example, is a better fit.
 
 It throws `HistoryException`. The reason is `RecorderUnavailable` when Home Assistant has no recorder, or
-`Rejected`, `Unreachable`, `TimedOut` or `Overloaded`, as for [service calls](calling-services.md#when-a-call-fails).
+`Rejected`, `Unreachable`, `TimedOut` or `Overloaded`, as for [action calls](calling-actions.md#when-a-call-fails).
 
 ## Testing
 

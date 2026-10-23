@@ -95,7 +95,7 @@ already in, or by its timeout, as it would in production.
 
 - Pausing an app.
 - Queue limits: no event is dropped, however many a test pushes.
-- Home Assistant itself: a service call is recorded, and no state changes unless the test pushes it.
+- Home Assistant itself: an action call is recorded, and no state changes unless the test pushes it.
 
 ## The app under test
 

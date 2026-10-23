@@ -114,8 +114,8 @@ For a traced app, `Worker/AppTracer` turns both into `TRACE` lines.
 
 ## A service call, end to end
 
-1. `WorkerHaContext::callService()` → `Worker/Context/ServiceCaller::sendRequestAndAwait()`. While disconnected, it
-   fails at once.
+1. `WorkerHaContext::callAction()` splits `light.turn_on` into domain and service through `ActionName`, then calls
+   `Worker/Context/ServiceCaller::sendRequestAndAwait()`. While disconnected, it fails at once.
 2. `PendingRequests::open()` registers the request before sending, with an ID from `CorrelationIdSequence`
    (`<workerId>:<n>`, unique without coordination).
 3. It sends `ServiceCallRequest` and suspends the fiber, with `WorkerSettings::callTimeout` (the Home Assistant

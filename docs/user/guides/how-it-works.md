@@ -42,7 +42,7 @@ meanwhile. A worker that keeps crashing is stopped after a few tries, and `make 
 **Reading a state is instant.** `getState()` reads the worker's own copy, so it never waits for Home Assistant. Call
 it as often as you like.
 
-**Calling a service waits for Home Assistant.** `callService()` returns once Home Assistant has answered. Other apps
+**Calling an action waits for Home Assistant.** `callAction()` returns once Home Assistant has answered. Other apps
 keep running while one app waits; Stewart pauses only the function that is waiting.
 
 **Do not block the worker.** Apps in a worker share it. A `sleep()`, a slow `file_get_contents()` on a URL, or a

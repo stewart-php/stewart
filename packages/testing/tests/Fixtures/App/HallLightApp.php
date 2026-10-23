@@ -30,12 +30,12 @@ final class HallLightApp implements App
     public function initialize(): void
     {
         $this->ha->watchStateChanges($this->motionSensor)->whenChangedTo('on')->subscribe(function (): void {
-            $this->ha->callService('light', 'turn_on', ['entity_id' => 'light.hall']);
+            $this->ha->callAction('light.turn_on', ['entity_id' => 'light.hall']);
             $this->store->increment('motions');
             $this->logger->info('Motion in the hall');
             $this->turnOff?->cancel();
             $this->turnOff = $this->scheduler->runAfter(Duration::minutes($this->offAfterMinutes), function (): void {
-                $this->ha->callService('light', 'turn_off', ['entity_id' => 'light.hall']);
+                $this->ha->callAction('light.turn_off', ['entity_id' => 'light.hall']);
             });
         });
     }

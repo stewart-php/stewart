@@ -34,6 +34,6 @@ final readonly class PresenceHeating implements App
 
     private function setPreset(string $preset): void
     {
-        $this->ha->callService('climate', 'set_preset_mode', ['preset_mode' => $preset], ServiceTarget::forEntities(...$this->thermostats));
+        $this->ha->callAction('climate.set_preset_mode', ['preset_mode' => $preset], ServiceTarget::forEntities(...$this->thermostats));
     }
 }

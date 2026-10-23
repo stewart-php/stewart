@@ -24,7 +24,7 @@ final class ZigbeeRemoteTest extends TestCase
         $this->harness->mqtt->pushMessage(new MqttMessage('zigbee2mqtt/living_room_remote/action', 'brightness_up'));
 
         $call = $this->harness->ha->getLastCall();
-        self::assertSame('light.turn_on', $call->getServiceName());
+        self::assertSame('light.turn_on', $call->getActionName());
         self::assertSame(['brightness_step_pct' => 10], $call->data);
     }
 

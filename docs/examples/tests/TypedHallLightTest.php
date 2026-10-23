@@ -19,7 +19,7 @@ final class TypedHallLightTest extends TestCase
 
         $harness->ha->pushState('binary_sensor.hall_motion', 'on');
 
-        $calls = $harness->ha->calls->mapToList(static fn($call): string => $call->getServiceName());
+        $calls = $harness->ha->calls->mapToList(static fn($call): string => $call->getActionName());
         self::assertSame(['light.turn_on', 'notify.mobile_app_phone'], $calls);
     }
 }

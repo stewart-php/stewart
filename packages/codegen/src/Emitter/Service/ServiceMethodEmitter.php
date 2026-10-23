@@ -28,7 +28,7 @@ final readonly class ServiceMethodEmitter implements ReservesMemberNames
 
         $method->setBody(\sprintf(
             'return $this->entity->%s(%s%s);',
-            $service->definition->returnsResponse ? 'callServiceForResponse' : 'callService',
+            $service->definition->returnsResponse ? 'callActionForResponse' : 'callAction',
             var_export($service->definition->name, true),
             $service->fields === [] ? '' : ', ' . $this->buildPayload($service),
         ));
@@ -45,10 +45,9 @@ final readonly class ServiceMethodEmitter implements ReservesMemberNames
         $this->addFieldParameters($method, $service);
 
         $method->setBody(\sprintf(
-            'return $this->ha->%s(%s, %s, %s%s);',
-            $service->definition->returnsResponse ? 'callServiceForResponse' : 'callService',
-            var_export($service->definition->domain, true),
-            var_export($service->definition->name, true),
+            'return $this->ha->%s(%s, %s%s);',
+            $service->definition->returnsResponse ? 'callActionForResponse' : 'callAction',
+            var_export($service->definition->domain . '.' . $service->definition->name, true),
             $service->fields === [] ? '[]' : $this->buildPayload($service),
             $service->definition->target->isTargetable ? ', $' . self::TARGET_PARAMETER : '',
         ));

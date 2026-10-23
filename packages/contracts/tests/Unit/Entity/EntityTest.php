@@ -109,10 +109,10 @@ final class EntityTest extends TestCase
     {
         $ha = new RecordingHaContext();
 
-        $context = $ha->getEntity('light.hall')->callService('turn_on', ['brightness' => 180]);
+        $context = $ha->getEntity('light.hall')->callAction('turn_on', ['brightness' => 180]);
 
         self::assertSame($ha->getLastCall()->context, $context);
-        self::assertSame('light.turn_on', $ha->getLastCall()->getServiceName());
+        self::assertSame('light.turn_on', $ha->getLastCall()->getActionName());
         self::assertSame(['brightness' => 180], $ha->getLastCall()->data);
         self::assertSame(['light.hall'], $ha->getLastCall()->listTargetedEntityIds());
         self::assertFalse($ha->getLastCall()->returnsResponse);
@@ -135,9 +135,9 @@ final class EntityTest extends TestCase
 
     public function testResponseCallAsksForResponse(): void
     {
-        $ha = new RecordingHaContext()->stubServiceAnswer('weather', 'get_forecasts', ['forecast' => []]);
+        $ha = new RecordingHaContext()->stubActionAnswer('weather.get_forecasts', ['forecast' => []]);
 
-        $response = $ha->getEntity('weather.home')->callServiceForResponse('get_forecasts', ['type' => 'daily']);
+        $response = $ha->getEntity('weather.home')->callActionForResponse('get_forecasts', ['type' => 'daily']);
 
         self::assertTrue($ha->getLastCall()->returnsResponse);
         self::assertSame(['forecast' => []], $response->response);
@@ -155,7 +155,7 @@ final class EntityTest extends TestCase
     {
         $ha = new RecordingHaContext();
 
-        $ha->getEntity('light.hall')->callService('turn_on', ['brightness' => null, 'transition' => 2]);
+        $ha->getEntity('light.hall')->callAction('turn_on', ['brightness' => null, 'transition' => 2]);
 
         self::assertSame(['transition' => 2], $ha->getLastCall()->data);
     }

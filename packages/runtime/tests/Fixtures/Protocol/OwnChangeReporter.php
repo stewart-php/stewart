@@ -23,12 +23,12 @@ final class OwnChangeReporter implements App
     public function initialize(): void
     {
         $this->ha->watchStateChanges(self::LIGHT)->subscribe(function (StateChange $change): void {
-            $this->ha->callService('script', 'record', [
+            $this->ha->callAction('script.record', [
                 'by_last_call' => $this->lastCall !== null && $change->wasCausedBy($this->lastCall),
                 'by_stewart' => $this->ha->wasCausedByStewart($change),
             ]);
         });
 
-        $this->lastCall = $this->ha->callService('light', 'turn_on', target: ServiceTarget::forEntities(self::LIGHT));
+        $this->lastCall = $this->ha->callAction('light.turn_on', target: ServiceTarget::forEntities(self::LIGHT));
     }
 }

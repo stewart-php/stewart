@@ -27,7 +27,7 @@ own class:
 
 | Class | Thrown by |
 |---|---|
-| `ServiceCallException` | `callService()`, `callServiceForResponse()` and the generated service methods |
+| `ServiceCallException` | `callAction()`, `callActionForResponse()` and the generated service methods |
 | `HistoryException` | `getHistory()` |
 | `EventFireException` | `fireEvent()` |
 | `StateException` | `requireState()` for an entity that does not exist, and invalid operator settings |
@@ -71,8 +71,8 @@ the log line. With `log_format: json`, that is the `extra.error` field:
 ## Testing
 
 A test sees an exception from a handler directly: the harness throws it out of the `pushState()`, `pushEvent()` or
-`advanceTime()` that ran the handler. To test a failing service, use `stubServiceFailure()`; see
-[Calling services](calling-services.md#testing).
+`advanceTime()` that ran the handler. To test a failing action, use `stubActionFailure()`; see
+[Call actions](calling-actions.md#testing).
 
 ```php file=../../examples/tests/VisitCounterTest.php
 ```

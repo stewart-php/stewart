@@ -33,7 +33,7 @@ final readonly class HeaterSwitch implements App
                 throw CommandException::rejected('Close the window first.');
             }
 
-            $this->ha->callService('switch', $command->isTurnOn() ? 'turn_on' : 'turn_off', target: ServiceTarget::forEntities($this->plug));
+            $this->ha->callAction($command->isTurnOn() ? 'switch.turn_on' : 'switch.turn_off', target: ServiceTarget::forEntities($this->plug));
         });
     }
 }

@@ -13,6 +13,10 @@ export const SITES = {
         port: 4321,
         title: 'Stewart',
         description: 'Write Home Assistant automations in PHP.',
+        // Pages that moved, from the old path to the new one, both below the base.
+        redirects: {
+            '/guides/calling-services/': '/guides/calling-actions/',
+        },
         sidebar: (site) => [
             { label: 'Get started', items: directoryItems(site, 'start') },
             { label: 'Guides', items: directoryItems(site, 'guides') },

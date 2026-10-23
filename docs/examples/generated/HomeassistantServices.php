@@ -37,7 +37,7 @@ final readonly class HomeassistantServices
         int|float $longitude,
         int|float|null $elevation = null,
     ): EventContext {
-        return $this->ha->callService('homeassistant', 'set_location', [
+        return $this->ha->callAction('homeassistant.set_location', [
             'latitude' => $latitude,
             'longitude' => $longitude,
             'elevation' => $elevation,
@@ -51,6 +51,6 @@ final readonly class HomeassistantServices
      */
     public function turnOn(ServiceTargetSource $target): EventContext
     {
-        return $this->ha->callService('homeassistant', 'turn_on', [], $target);
+        return $this->ha->callAction('homeassistant.turn_on', [], $target);
     }
 }

@@ -8,7 +8,7 @@ use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
 
-// Every call and fired event carries the token's user id, so it is known before callService() or fireEvent() returns.
+// Every call and fired event carries the token's user id, so it is known before callAction() or fireEvent() returns.
 /** @internal */
 final readonly class StewartIdentity
 {

@@ -48,7 +48,7 @@ final class NightMotionLightTest extends TestCase
 
         $harness->advanceTime(Duration::minutes(3));
 
-        self::assertSame('light.turn_off', $harness->ha->getLastCall()->getServiceName());
+        self::assertSame('light.turn_off', $harness->ha->getLastCall()->getActionName());
     }
 
     private function startAt(string $moment): AppHarness

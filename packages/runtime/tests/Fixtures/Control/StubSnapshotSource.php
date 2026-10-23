@@ -41,10 +41,11 @@ use Stewart\Runtime\Model\RoutingStats;
 use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Store\StoreHealth;
-use Stewart\Support\Wire\GeneratedFormat;
 
 final class StubSnapshotSource implements SnapshotSource
 {
+    private const int GENERATED_FORMAT_IN_GOLDENS = 6;
+
     public int $taken = 0;
 
     /** @param list<WorkerPhase> $workerPhases */
@@ -114,7 +115,7 @@ final class StubSnapshotSource implements SnapshotSource
                 dropped: array_map(static fn(MqttDropReason $reason): MqttDropCount => new MqttDropCount($reason, $reason === MqttDropReason::Disconnected ? 2 : 0), MqttDropReason::cases()),
                 outboundQueued: 1,
             ),
-            generated: new GeneratedCodeStatus(GeneratedFormat::VERSION, GeneratedFormat::VERSION, ['light.landing'], [], Instant::fromIso('2026-09-26T10:59:00Z')),
+            generated: new GeneratedCodeStatus(self::GENERATED_FORMAT_IN_GOLDENS, self::GENERATED_FORMAT_IN_GOLDENS, ['light.landing'], [], Instant::fromIso('2026-09-26T10:59:00Z')),
         );
     }
 

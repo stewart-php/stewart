@@ -32,9 +32,8 @@ final readonly class GuestMode implements App
 
         $switch->watchCommands()->subscribe(function (SwitchCommand $command): void {
             $this->house->set('guest_mode', $command->isTurnOn());
-            $this->ha->callService(
-                'climate',
-                'set_preset_mode',
+            $this->ha->callAction(
+                'climate.set_preset_mode',
                 ['preset_mode' => $command->isTurnOn() ? 'comfort' : 'eco'],
                 ServiceTarget::forEntities($this->guestRoomThermostat),
             );
