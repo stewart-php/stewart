@@ -24,7 +24,7 @@ use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Broker\ServiceCallTracer;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
-use Stewart\Runtime\Config\ServiceCallPolicy;
+use Stewart\Runtime\Config\HaCallPolicy;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
 use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
 use Stewart\Runtime\Ipc\Message\RequestFailed;
@@ -50,7 +50,7 @@ use Stewart\Testing\Time\ManualTimers;
 use Stewart\Testing\Time\VirtualClock;
 
 #[CoversClass(ServiceCallRequestHandler::class)]
-#[CoversClass(ServiceCallPolicy::class)]
+#[CoversClass(HaCallPolicy::class)]
 final class ServiceCallRequestHandlerTest extends TestCase
 {
     private FakeHaSession $session;
@@ -85,7 +85,7 @@ final class ServiceCallRequestHandlerTest extends TestCase
 
     public function testCallsBeyondTheWorkerLimitAreRefusedAtOnce(): void
     {
-        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 2, total: 0), new NullLogger());
+        $handler = $this->createHandler(new HaCallPolicy(perWorker: 2, total: 0), new NullLogger());
         $worker = $this->createHandle(0);
 
         foreach (range(1, 5) as $call) {
@@ -109,7 +109,7 @@ final class ServiceCallRequestHandlerTest extends TestCase
 
     public function testCountsCallsPerAppByOutcome(): void
     {
-        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0), new NullLogger());
+        $handler = $this->createHandler(new HaCallPolicy(perWorker: 1, total: 0), new NullLogger());
         $worker = $this->createHandle(0);
 
         $handler->handle($worker, self::createRequest('a'));
@@ -133,7 +133,7 @@ final class ServiceCallRequestHandlerTest extends TestCase
 
     public function testSlotsAreFreedOnceCallsFinish(): void
     {
-        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 1), new NullLogger());
+        $handler = $this->createHandler(new HaCallPolicy(perWorker: 1, total: 1), new NullLogger());
         $worker = $this->createHandle(0);
 
         $handler->handle($worker, self::createRequest('first'));
@@ -148,7 +148,7 @@ final class ServiceCallRequestHandlerTest extends TestCase
 
     public function testStaleReleaseKeepsReplacementCount(): void
     {
-        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 2, total: 0), new NullLogger());
+        $handler = $this->createHandler(new HaCallPolicy(perWorker: 2, total: 0), new NullLogger());
         $dead = $this->createHandle(0);
         $replacement = $this->createHandle(0);
 
@@ -174,7 +174,7 @@ final class ServiceCallRequestHandlerTest extends TestCase
     public function testDryRunAnswersWithoutReachingHomeAssistant(): void
     {
         $logger = new RecordingLogger();
-        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0, dryRun: true), $logger);
+        $handler = $this->createHandler(new HaCallPolicy(perWorker: 1, total: 0, dryRun: true), $logger);
         $worker = $this->createHandle(0);
 
         $handler->handle($worker, self::createRequest('dry'));
@@ -184,10 +184,10 @@ final class ServiceCallRequestHandlerTest extends TestCase
         self::assertStringStartsWith('dry-run:', (string) self::listSentResultsFor($worker)[0]->result->context?->id);
         self::assertCount(0, $this->homeAssistant->listReceivedCalls());
         self::assertSame(0, $this->slots->inFlight);
-        self::assertSame(['Service call not sent: service_calls.dry_run is on'], $logger->listMessagesAt(PsrLogLevel::INFO));
+        self::assertSame(['Action call not sent: ha_calls.dry_run is on'], $logger->listMessagesAt(PsrLogLevel::INFO));
     }
 
-    private function createHandler(ServiceCallPolicy $policy, LoggerInterface $logger, LogVerbosityPolicy $verbosity = new LogVerbosityPolicy(LogLevel::Info)): ServiceCallRequestHandler
+    private function createHandler(HaCallPolicy $policy, LoggerInterface $logger, LogVerbosityPolicy $verbosity = new LogVerbosityPolicy(LogLevel::Info)): ServiceCallRequestHandler
     {
         $this->slots = new HaCallSlots($policy, $this->metrics, $this->timers->clock, new NullLogger());
 
@@ -197,7 +197,7 @@ final class ServiceCallRequestHandlerTest extends TestCase
     public function testTracedAppLogsEachCallItSendsAndItsAnswer(): void
     {
         $logger = new RecordingLogger();
-        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0), $logger, new LogVerbosityPolicy(LogLevel::Info, ['demo' => new AppVerbosity(trace: true)]));
+        $handler = $this->createHandler(new HaCallPolicy(perWorker: 1, total: 0), $logger, new LogVerbosityPolicy(LogLevel::Info, ['demo' => new AppVerbosity(trace: true)]));
         $worker = $this->createHandle(0);
 
         $handler->handle($worker, self::createRequest('traced'));
@@ -218,7 +218,7 @@ final class ServiceCallRequestHandlerTest extends TestCase
     {
         $logger = new RecordingLogger();
         $this->session->connected = false;
-        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0), $logger, new LogVerbosityPolicy(LogLevel::Info, ['demo' => new AppVerbosity(trace: true)]));
+        $handler = $this->createHandler(new HaCallPolicy(perWorker: 1, total: 0), $logger, new LogVerbosityPolicy(LogLevel::Info, ['demo' => new AppVerbosity(trace: true)]));
 
         $handler->handle($this->createHandle(0), self::createRequest('offline'));
         EventLoopTicks::settle();
@@ -232,7 +232,7 @@ final class ServiceCallRequestHandlerTest extends TestCase
     public function testUntracedAppLogsNoCalls(): void
     {
         $logger = new RecordingLogger();
-        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0), $logger);
+        $handler = $this->createHandler(new HaCallPolicy(perWorker: 1, total: 0), $logger);
 
         $handler->handle($this->createHandle(0), self::createRequest('quiet'));
         $this->finishCalls();

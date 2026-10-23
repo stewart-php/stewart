@@ -52,7 +52,8 @@ final class RunCommand extends StewartCommand
             ->addOption('json-logs', null, InputOption::VALUE_NONE, 'Emit logs as JSON')
             ->addOption('only', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Run only this automation, even if disabled; repeat for more')
             ->addOption('trace', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Log TRACE lines for this automation at any log level; repeat for more')
-            ->addOption('watch', null, InputOption::VALUE_NONE, 'Reload after every saved change to the apps, services.php or stewart.yaml');
+            ->addOption('watch', null, InputOption::VALUE_NONE, 'Reload after every saved change to the apps, services.php or stewart.yaml')
+            ->addOption('dry-run', null, InputOption::VALUE_NONE, 'Log actions, event fires and registry edits instead of sending them (ha_calls.dry_run)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -87,6 +88,7 @@ final class RunCommand extends StewartCommand
             $this->readAppSelectionOption($input),
             $this->nonEmptyStringOption($input, 'log-level'),
             $input->getOption('watch') === true,
+            $input->getOption('dry-run') === true,
         );
         $config = $this->config->loadConfig($launch->configFile, $launch->listConfigOverrides());
         // Validated before the logger exists, so a missing home_assistant section fails as a config error.
@@ -100,8 +102,8 @@ final class RunCommand extends StewartCommand
         $this->noteMissingConfigFile($this->config->findMissingDefaultFile($launch->configFile), $logger);
         $this->catalogWarnings->logCatalogWarnings($discovered, $apps, $this->config->locateConfigFile($launch->configFile), $logger);
 
-        if ($config->serviceCalls->dryRun) {
-            $logger->warning('service_calls.dry_run is on: service calls are logged, not sent to Home Assistant.');
+        if ($config->haCalls->dryRun) {
+            $logger->warning('ha_calls.dry_run is on: actions, event fires and registry edits are logged, not sent to Home Assistant.');
         }
 
         if ($selection->onlyIds !== null) {

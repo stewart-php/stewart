@@ -64,12 +64,12 @@ generate: ## Write typed entity and action classes from Home Assistant into gene
 	$(RUN) stewart generate $(ARGS)
 
 .PHONY: run
-run: ## Run in the foreground [ONLY="hello porch" to run only those apps, TRACE=hello to trace one, DRY_RUN=1 to send no service calls]
-	$(RUN_APP) $(if $(DRY_RUN),-e STEWART_SERVICE_CALLS__DRY_RUN=true) stewart run $(addprefix --only=,$(ONLY)) $(addprefix --trace=,$(TRACE))
+run: ## Run in the foreground [ONLY="hello porch" to run only those apps, TRACE=hello to trace one, DRY_RUN=1 to change nothing in Home Assistant]
+	$(RUN_APP) stewart run $(addprefix --only=,$(ONLY)) $(addprefix --trace=,$(TRACE))$(if $(DRY_RUN), --dry-run)
 
 .PHONY: watch
 watch: ## Run in the foreground and reload after every saved change [ONLY="hello porch", TRACE=hello, DRY_RUN=1]
-	$(RUN_APP) $(if $(DRY_RUN),-e STEWART_SERVICE_CALLS__DRY_RUN=true) stewart run --watch $(addprefix --only=,$(ONLY)) $(addprefix --trace=,$(TRACE))
+	$(RUN_APP) stewart run --watch $(addprefix --only=,$(ONLY)) $(addprefix --trace=,$(TRACE))$(if $(DRY_RUN), --dry-run)
 
 .PHONY: debug
 debug: ## Run in the foreground with Xdebug [ONLY="hello porch", TRACE=hello]

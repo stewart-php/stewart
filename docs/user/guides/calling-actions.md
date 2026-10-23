@@ -74,8 +74,8 @@ try {
 
 A worker may have 64 calls waiting for an answer at once, and all workers together 256. Further calls fail with
 `Overloaded` until answers come back. A loop that calls an action for hundreds of entities can reach this; use one
-call with a target that names all of them instead. The limits are `service_calls.max_in_flight_per_worker` and
-`service_calls.max_in_flight`.
+call with a target that names all of them instead. The limits are `ha_calls.max_in_flight_per_worker` and
+`ha_calls.max_in_flight`; fired events and registry edits count against them too.
 
 ## Dry run
 
@@ -86,8 +86,9 @@ app against your real Home Assistant without changing anything:
 make run ONLY=rain-warning DRY_RUN=1
 ```
 
-The log shows `Service call not sent: service_calls.dry_run is on`, with the action, the data and the target. Dry
-run is the `service_calls.dry_run` setting.
+The log shows `Action call not sent: ha_calls.dry_run is on`, with the action, the data and the target. `DRY_RUN=1`
+passes `--dry-run` to `stewart run`, which turns on the `ha_calls.dry_run` setting; fired events and registry edits
+are held back too.
 
 ## Testing
 

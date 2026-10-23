@@ -12,7 +12,7 @@ use Stewart\Runtime\Broker\Exposure\ExposureLink;
 use Stewart\Runtime\Broker\HaCallSlots;
 use Stewart\Runtime\Broker\HaSession;
 use Stewart\Runtime\Broker\WorkerHandle;
-use Stewart\Runtime\Config\ServiceCallPolicy;
+use Stewart\Runtime\Config\HaCallPolicy;
 use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateRequest;
 use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateResult;
 use Stewart\Runtime\Ipc\Message\WorkerMessage;
@@ -26,7 +26,7 @@ final readonly class RegistryEntityUpdateRequestHandler implements WorkerMessage
         private HaClient $client,
         private ExposureLink $exposures,
         private HaCallSlots $slots,
-        private ServiceCallPolicy $policy,
+        private HaCallPolicy $policy,
         private LoggerInterface $logger,
     ) {}
 
@@ -81,7 +81,7 @@ final readonly class RegistryEntityUpdateRequestHandler implements WorkerMessage
     /** @throws RegistryEditException */
     private function previewUpdate(RegistryEntityUpdateRequest $request): RegisteredEntity
     {
-        $this->logger->info('Registry entry not updated: service_calls.dry_run is on', ['entity' => $request->entityId->value, LogOrigin::CONTEXT_KEY => LogOrigin::forScope($request->scope)]);
+        $this->logger->info('Registry entry not updated: ha_calls.dry_run is on', ['entity' => $request->entityId->value, LogOrigin::CONTEXT_KEY => LogOrigin::forScope($request->scope)]);
 
         return $request->update->applyTo($this->client->getEntityRegistryEntry($request->entityId)->toRegisteredEntity());
     }

@@ -18,10 +18,10 @@ use Stewart\Runtime\Config\ConfigSection;
 use Stewart\Runtime\Config\ControlConfig;
 use Stewart\Runtime\Config\DomainAttributesConfig;
 use Stewart\Runtime\Config\EnvironmentVariables;
+use Stewart\Runtime\Config\HaCallPolicy;
 use Stewart\Runtime\Config\OptionalDuration;
 use Stewart\Runtime\Config\PersistenceConfig;
 use Stewart\Runtime\Config\ProjectRoot;
-use Stewart\Runtime\Config\ServiceCallPolicy;
 use Stewart\Runtime\Config\StewartConfig;
 use Stewart\Runtime\Config\SupervisionConfig;
 use Stewart\Runtime\Config\UnixControlAddress;
@@ -41,7 +41,7 @@ use Stewart\Testing\Filesystem\TempDirectory;
 #[CoversClass(OptionalDuration::class)]
 #[CoversClass(BackoffPolicy::class)]
 #[CoversClass(SupervisionConfig::class)]
-#[CoversClass(ServiceCallPolicy::class)]
+#[CoversClass(HaCallPolicy::class)]
 #[CoversClass(PersistenceConfig::class)]
 #[CoversClass(ControlConfig::class)]
 #[CoversClass(CodegenConfig::class)]
@@ -122,6 +122,13 @@ final class ConfigLoaderTest extends TestCase
 
         self::assertSame(3, $config->supervision->restartAttempts);
         self::assertEquals(new BackoffPolicy(Duration::seconds(1), Duration::seconds(30)), $config->supervision->restartBackoff);
+    }
+
+    public function testRenamedSectionNamesItsNewName(): void
+    {
+        $e = $this->assertThrowsReason(ConfigurationError::KeyRenamed, fn() => $this->loadConfig(self::CONNECTION . "\nservice_calls:\n  dry_run: true\n"));
+
+        self::assertSame('service_calls was renamed to ha_calls.', $e->getMessage());
     }
 
     public function testBareNumberDurationIsRefused(): void

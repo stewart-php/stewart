@@ -12,6 +12,7 @@ release could break; a release's "Upgrading" section says what to change.
 - `stewart check`, the deploy gate, `stewart run` and a reload refuse generated classes written by Stewart 1.x with
   one line that says to run `stewart generate`, instead of failing to load them; the PHPStan extension reports such a
   tree once (`stewart.generatedCode`) and checks no entity IDs or action names until it is regenerated
+- `stewart run --dry-run` turns on `ha_calls.dry_run` for one run, and reloads keep it; `make run DRY_RUN=1` uses it
 
 ### Changed
 
@@ -28,6 +29,9 @@ release could break; a release's "Upgrading" section says what to change.
   regenerated
 - `stewart generate` refuses only a run that would leave fewer than half as many generated files as before, so
   renamed classes no longer need `--allow-shrink`; its summary counts `actions`
+- `service_calls` is now `ha_calls` (`STEWART_HA_CALLS__*`), since its limits and dry run also cover event fires and
+  registry edits. An old `service_calls` key or `STEWART_SERVICE_CALLS__*` variable stops the start with the new name.
+  Dry-run log lines name `ha_calls.dry_run`, and an action says `Action call not sent`
 - The worker protocol is 34
 
 ### Removed
@@ -46,9 +50,8 @@ release could break; a release's "Upgrading" section says what to change.
 
 ### Upgrading
 
-1. Run `make generate` and commit `generated/`: Stewart 2.0 refuses the classes 1.x generated.
-2. From `make sh`, rewrite the names that 2.0 changed in your apps, tests and `services.php`. The command rewrites the
-   names it recognises; `make stan` then points at the rest, such as names held in a variable:
+1. From `make sh`, rewrite the names that 2.0 changed in your apps, tests, `services.php` and settings. The commands
+   rewrite the names they recognise; `make stan` then points at the rest, such as names held in a variable:
 
    ```bash
    grep -rlsE 'callService|stubService|getServiceName|Contracts\\Service|ServiceTarget|ServiceResponse|ServiceCall' \
@@ -64,12 +67,16 @@ release could break; a release's "Upgrading" section says what to change.
      -e 's/RecordedServiceCall/RecordedActionCall/g'
    grep -rlsE '\\Generated\\' apps tests services.php \
      | xargs -r sed -i -E 's/\b([A-Z][A-Za-z0-9]*)?Services\b/\1Actions/g'
+   grep -lsE 'service_calls|STEWART_SERVICE_CALLS__' stewart.yaml .env .env.example Makefile \
+     | xargs -r sed -i -E -e 's/^service_calls:/ha_calls:/' -e 's/STEWART_SERVICE_CALLS__/STEWART_HA_CALLS__/g'
    ```
 
    The second command renames the generated `Services` and `<Domain>Services` in files that import generated classes,
    and a class of yours whose name ends in `Services` there too. It leaves `->service` on an `ActionResponse` or a
    `RecordedActionCall` alone, which is `->action` now, and a call to a generated method with a `Service` suffix,
-   which has an `Action` suffix now.
+   which has an `Action` suffix now. The third renames `service_calls` in `stewart.yaml` and its variables in `.env`
+   and the Makefile; on Kubernetes, rename them in the chart's `config` and `env` values by hand.
+2. Run `make generate` and commit `generated/`: Stewart 2.0 refuses the classes 1.x generated.
 3. An app whose `dispose()` does something implements `Stewart\Contracts\Disposable`, or it no longer runs. Before
    upgrading, `stewart check` on 1.8 names every app this affects.
 4. If Prometheus scrapes the admin port, turn on the metrics port and scrape that: `http.metrics.listen`

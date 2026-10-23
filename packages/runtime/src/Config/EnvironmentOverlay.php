@@ -31,6 +31,7 @@ final readonly class EnvironmentOverlay
         private EnvironmentValueParser $environmentValueParser,
         private ClosestNameFinder $closestNameFinder,
         private SecretFileReader $secretFiles,
+        private RenamedSettings $renamedSettings,
     ) {}
 
     /**
@@ -163,6 +164,12 @@ final readonly class EnvironmentOverlay
 
         if (\in_array($key, $children, true)) {
             return $key;
+        }
+
+        $newName = $path === [] ? $this->renamedSettings->findNewName($key) : null;
+
+        if ($newName !== null) {
+            throw ConfigurationException::createForReason(ConfigurationError::KeyRenamed, setting: $name, renamedTo: self::PREFIX . strtoupper($newName) . substr($name, \strlen(self::PREFIX . $segment)));
         }
 
         $closestChildKey = $this->closestNameFinder->findClosestName($key, $children);

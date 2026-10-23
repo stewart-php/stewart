@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Tests\Fixtures\Config;
 
 use Stewart\Runtime\Config\ConfigSection;
+use Stewart\Runtime\Config\HaCallPolicy;
 use Stewart\Runtime\Config\PersistenceConfig;
-use Stewart\Runtime\Config\ServiceCallPolicy;
 use Stewart\Runtime\Config\StewartConfig;
 use Stewart\Runtime\Config\StewartConfigSchema;
 use Stewart\Runtime\Config\SupervisionConfig;
@@ -45,9 +45,9 @@ final class ConfigFixture
         return self::createStewartConfig(['persistence' => $persistence])->persistence;
     }
 
-    /** @param array<string, mixed> $serviceCalls */
-    public static function createServiceCallPolicy(array $serviceCalls = []): ServiceCallPolicy
+    /** @param array<string, mixed> $haCalls */
+    public static function createHaCallPolicy(array $haCalls = []): HaCallPolicy
     {
-        return self::createStewartConfig(['service_calls' => $serviceCalls])->serviceCalls;
+        return self::createStewartConfig(['ha_calls' => $haCalls])->haCalls;
     }
 }

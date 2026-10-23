@@ -43,7 +43,7 @@ final class StewartConfigSchema implements ConfigurationInterface
         $this->addHomeAssistantSection($root);
         $this->addReconnectSection($root);
         $this->addSupervisionSection($root);
-        $this->addServiceCallsSection($root);
+        $this->addHaCallsSection($root);
         $this->addPersistenceSection($root);
         $this->addMqttSection($root);
         $this->addControlSection($root);
@@ -427,12 +427,12 @@ final class StewartConfigSchema implements ConfigurationInterface
         return $node;
     }
 
-    private function addServiceCallsSection(ArrayNodeDefinition $root): void
+    private function addHaCallsSection(ArrayNodeDefinition $root): void
     {
         $root
             ->children()
-                ->arrayNode('service_calls')
-                    ->info('Bounds on the service calls workers may have in flight through the shared connection.')
+                ->arrayNode('ha_calls')
+                    ->info('Bounds on the calls workers may have in flight through the shared connection: actions, event fires and registry edits.')
                     ->addDefaultsIfNotSet()
                     ->children()
                         ->integerNode('max_in_flight_per_worker')
@@ -446,7 +446,7 @@ final class StewartConfigSchema implements ConfigurationInterface
                             ->defaultValue(256)
                         ->end()
                         ->booleanNode('dry_run')
-                            ->info('Log service calls and answer them as succeeded instead of sending them, to develop against a live Home Assistant.')
+                            ->info('Log actions, event fires and registry edits and answer them as succeeded instead of sending them, to develop against a live Home Assistant.')
                             ->defaultFalse()
                         ->end()
                     ->end()

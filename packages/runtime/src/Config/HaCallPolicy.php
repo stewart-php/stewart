@@ -8,7 +8,7 @@ use Stewart\Contracts\State\EventContext;
 use Stewart\Runtime\Exception\ConfigurationException;
 use Stewart\Runtime\Model\CorrelationId;
 
-final readonly class ServiceCallPolicy
+final readonly class HaCallPolicy
 {
     private const string DRY_RUN_CONTEXT_PREFIX = 'dry-run:';
 
@@ -19,12 +19,12 @@ final readonly class ServiceCallPolicy
     ) {}
 
     /** @throws ConfigurationException */
-    public static function fromSection(ConfigSection $serviceCalls): self
+    public static function fromSection(ConfigSection $haCalls): self
     {
         return new self(
-            perWorker: $serviceCalls->readInt('max_in_flight_per_worker'),
-            total: $serviceCalls->readInt('max_in_flight'),
-            dryRun: $serviceCalls->readBool('dry_run'),
+            perWorker: $haCalls->readInt('max_in_flight_per_worker'),
+            total: $haCalls->readInt('max_in_flight'),
+            dryRun: $haCalls->readBool('dry_run'),
         );
     }
 

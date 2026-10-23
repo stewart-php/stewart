@@ -281,7 +281,7 @@ DEMO := $(DC) run --rm -w /app/var/demo
 
 .PHONY: demo
 demo: demo-create ## Run the demo project in var/demo [ONLY="hello porch", DRY_RUN=1]
-	$(DEMO) $(if $(DRY_RUN),-e STEWART_SERVICE_CALLS__DRY_RUN=true) php vendor/bin/stewart run $(addprefix --only=,$(ONLY))
+	$(DEMO) php vendor/bin/stewart run $(addprefix --only=,$(ONLY))$(if $(DRY_RUN), --dry-run)
 
 .PHONY: demo-create
 demo-create: ## Create var/demo from skeleton/ unless it exists; apps/ and .env come back from the last demo-clean

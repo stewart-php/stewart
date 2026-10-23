@@ -13,11 +13,14 @@ final readonly class DaemonLaunchOptions
         public AppSelection $selection = new AppSelection(),
         public ?string $logLevel = null,
         public bool $watch = false,
+        public bool $dryRun = false,
     ) {}
 
     /** @return array<string, mixed> */
     public function listConfigOverrides(): array
     {
-        return $this->logLevel === null ? [] : ['log_level' => $this->logLevel];
+        $overrides = $this->logLevel === null ? [] : ['log_level' => $this->logLevel];
+
+        return $this->dryRun ? [...$overrides, 'ha_calls' => ['dry_run' => true]] : $overrides;
     }
 }

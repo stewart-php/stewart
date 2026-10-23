@@ -14,7 +14,7 @@ sidebar:
 | **Broker** | Stewart's main process. It holds the connection to Home Assistant and passes events to the workers. |
 | **Component** | The Stewart integration in Home Assistant, as `make status` and error reasons such as `ComponentMissing` call it. |
 | **Control socket** | How `stewart status` and the other commands talk to a running Stewart. It needs the control token. |
-| **Dry run** | A mode that logs service calls instead of sending them, to try apps against your real Home Assistant. |
+| **Dry run** | A mode that logs action calls, event fires and registry edits instead of sending them, to try apps against your real Home Assistant. |
 | **Entity filter** | A way to pick entities by area, floor, label or device. See [Areas, floors and labels](../guides/registry.md). |
 | **Exposed entity** | An entity your app creates in Home Assistant, such as a sensor or a switch. Needs the Stewart integration. |
 | **Handler** | The function you pass to `subscribe()` or to a schedule. Stewart calls it for each event or run. |

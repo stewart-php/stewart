@@ -266,7 +266,7 @@ the broker answers every request including failures, and the worker wraps every
 await in a `TimeoutCancellation` as a backstop.
 
 Every write to Home Assistant counts against one in-flight budget, `HaCallSlots`,
-bounded by `service_calls.max_in_flight` and `max_in_flight_per_worker`: service
+bounded by `ha_calls.max_in_flight` and `max_in_flight_per_worker`: service
 calls, fired events, history queries and registry edits alike. A fired event is a
 write like a service call, so it shares the budget, the per-app call counts and
 dry run; a burst of one can refuse the other. On the worker side, one

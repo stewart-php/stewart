@@ -117,8 +117,8 @@ supervision:
     # Time a worker gets to report its apps ready before it is restarted; keep it above initialize_timeout. "off" disables.
     ready_timeout:        5m
 
-# Bounds on the service calls workers may have in flight through the shared connection.
-service_calls:
+# Bounds on the calls workers may have in flight through the shared connection: actions, event fires and registry edits.
+ha_calls:
 
     # Calls one worker may have outstanding before further ones are refused. 0 is unlimited.
     max_in_flight_per_worker: 64
@@ -126,7 +126,7 @@ service_calls:
     # Calls the whole broker may have outstanding. 0 is unlimited.
     max_in_flight:        256
 
-    # Log service calls and answer them as succeeded instead of sending them, to develop against a live Home Assistant.
+    # Log actions, event fires and registry edits and answer them as succeeded instead of sending them, to develop against a live Home Assistant.
     dry_run:              false
 
 # Where apps keep what must survive a restart. Without a url, an app that asks for a store is not started.

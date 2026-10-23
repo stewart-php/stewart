@@ -9,7 +9,7 @@ use Psr\Log\LoggerInterface;
 use Stewart\Contracts\Exception\ExceptionReason;
 use Stewart\Contracts\Exception\StewartException;
 use Stewart\Contracts\Time\Clock;
-use Stewart\Runtime\Config\ServiceCallPolicy;
+use Stewart\Runtime\Config\HaCallPolicy;
 use Stewart\Runtime\Ipc\Message\BrokerMessage;
 use Stewart\Runtime\Ipc\Message\HaCallRequest;
 use Stewart\Runtime\Ipc\Message\RefusableHaCallRequest;
@@ -34,7 +34,7 @@ final class HaCallSlots
     private readonly EveryNthOccurrence $refusalReports;
 
     public function __construct(
-        private readonly ServiceCallPolicy $policy,
+        private readonly HaCallPolicy $policy,
         private readonly AppMetrics $metrics,
         private readonly Clock $clock,
         private readonly LoggerInterface $logger,
