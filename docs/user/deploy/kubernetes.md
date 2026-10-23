@@ -52,10 +52,14 @@ kubectl exec deployment/home-stewart -- stewart app:pause porch-light
 kubectl exec deployment/home-stewart -- stewart worker:restart 0
 ```
 
-With `adminApi.enabled: true`, the [admin API](../reference/admin-api.md) and Prometheus metrics listen on port 8081,
-inside the pod only (`kubectl port-forward` reaches it). Set `adminApi.host: 0.0.0.0` to reach it from other pods:
-the chart then creates a Service, so the release `home` answers at `http://home-stewart.<namespace>.svc:8081`.
-`adminApi.podMonitor.enabled: true` creates a `PodMonitor` for the Prometheus Operator and needs that host too.
+With `adminApi.enabled: true`, the [admin API](../reference/admin-api.md) listens on port 8081, inside the pod only
+(`kubectl port-forward` reaches it). Set `adminApi.host: 0.0.0.0` to reach it from other pods: the chart then creates
+a Service, so the release `home` answers at `http://home-stewart.<namespace>.svc:8081`.
+
+`metrics.enabled: true` opens the [metrics port](../guides/status.md#metrics), 9464, to other pods with a token the
+chart generates, and `metrics.podMonitor.enabled: true` creates a `PodMonitor` for the Prometheus Operator that
+presents it. The admin API stays private. `networkPolicy.enabled: true` then admits only the peers in
+`networkPolicy.metrics.from` and `networkPolicy.adminApi.from`, and lets only Stewart reach Valkey.
 
 ## Common problems
 

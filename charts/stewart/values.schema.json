@@ -88,15 +88,26 @@
                 "port": {"type": "integer", "minimum": 1, "maximum": 65535},
                 "existingSecret": {"type": "string"},
                 "existingSecretKey": {"type": "string", "minLength": 1},
-                "podMonitor": {
-                    "type": "object",
-                    "properties": {
-                        "enabled": {"type": "boolean"},
-                        "interval": {"type": "string", "pattern": "^$|^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$"},
-                        "scrapeTimeout": {"type": "string", "pattern": "^$|^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$"},
-                        "labels": {"type": "object", "additionalProperties": {"type": "string"}}
-                    }
-                }
+                "podMonitor": {"$ref": "#/definitions/podMonitor"}
+            }
+        },
+        "metrics": {
+            "type": "object",
+            "properties": {
+                "enabled": {"type": "boolean"},
+                "host": {"type": "string", "minLength": 1},
+                "port": {"type": "integer", "minimum": 1, "maximum": 65535},
+                "existingSecret": {"type": "string"},
+                "existingSecretKey": {"type": "string", "minLength": 1},
+                "podMonitor": {"$ref": "#/definitions/podMonitor"}
+            }
+        },
+        "networkPolicy": {
+            "type": "object",
+            "properties": {
+                "enabled": {"type": "boolean"},
+                "metrics": {"$ref": "#/definitions/networkPolicyPeers"},
+                "adminApi": {"$ref": "#/definitions/networkPolicyPeers"}
             }
         },
         "config": {"type": "object"},
@@ -130,6 +141,21 @@
         }
     },
     "definitions": {
+        "podMonitor": {
+            "type": "object",
+            "properties": {
+                "enabled": {"type": "boolean"},
+                "interval": {"type": "string", "pattern": "^$|^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$"},
+                "scrapeTimeout": {"type": "string", "pattern": "^$|^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$"},
+                "labels": {"type": "object", "additionalProperties": {"type": "string"}}
+            }
+        },
+        "networkPolicyPeers": {
+            "type": "object",
+            "properties": {
+                "from": {"type": "array", "items": {"type": "object"}}
+            }
+        },
         "secretKey": {
             "type": "object",
             "properties": {

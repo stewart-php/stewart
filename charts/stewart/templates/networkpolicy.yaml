@@ -1,0 +1,58 @@
+{{- if .Values.networkPolicy.enabled }}
+{{- $ingress := list -}}
+{{- if eq .Values.probes.mode "http" }}
+{{- /* The kubelet probes from the node, which no pod or namespace selector names. */}}
+{{- $ingress = append $ingress (dict "ports" (list (dict "port" "probe" "protocol" "TCP"))) -}}
+{{- end }}
+{{- if and .Values.metrics.enabled .Values.networkPolicy.metrics.from }}
+{{- $ingress = append $ingress (dict "from" .Values.networkPolicy.metrics.from "ports" (list (dict "port" "metrics" "protocol" "TCP"))) -}}
+{{- end }}
+{{- if and .Values.adminApi.enabled .Values.networkPolicy.adminApi.from }}
+{{- $ingress = append $ingress (dict "from" .Values.networkPolicy.adminApi.from "ports" (list (dict "port" "admin" "protocol" "TCP"))) -}}
+{{- end }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "stewart.fullname" . }}
+  labels:
+    {{- include "stewart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: daemon
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "stewart.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: daemon
+  policyTypes:
+    - Ingress
+  ingress:
+    {{- if $ingress }}
+    {{- toYaml $ingress | nindent 4 }}
+    {{- else }} []
+    {{- end }}
+{{- if .Values.valkey.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "stewart.valkeyName" . }}
+  labels:
+    {{- include "stewart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: valkey
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "stewart.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: valkey
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "stewart.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: daemon
+      ports:
+        - port: valkey
+          protocol: TCP
+{{- end }}
+{{- end }}

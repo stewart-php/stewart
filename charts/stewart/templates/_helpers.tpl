@@ -22,11 +22,26 @@ app.kubernetes.io/name: {{ include "stewart.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
-{{- define "stewart.adminReachable" -}}
-{{- $host := .Values.adminApi.host -}}
-{{- if and .Values.adminApi.enabled (not (or (hasPrefix "127." $host) (has $host (list "localhost" "::1")))) -}}
+{{- define "stewart.offLoopback" -}}
+{{- if not (or (hasPrefix "127." .) (has . (list "localhost" "::1"))) -}}
 true
 {{- end -}}
+{{- end }}
+
+{{- define "stewart.adminReachable" -}}
+{{- if and .Values.adminApi.enabled (include "stewart.offLoopback" .Values.adminApi.host) -}}
+true
+{{- end -}}
+{{- end }}
+
+{{- define "stewart.metricsReachable" -}}
+{{- if and .Values.metrics.enabled (include "stewart.offLoopback" .Values.metrics.host) -}}
+true
+{{- end -}}
+{{- end }}
+
+{{- define "stewart.listenAddress" -}}
+{{- printf (ternary "tcp://[%s]:%d" "tcp://%s:%d" (contains ":" .host)) .host (int .port) -}}
 {{- end }}
 
 {{- define "stewart.valkeyName" -}}
@@ -84,6 +99,34 @@ true
 {{ include "stewart.fullname" . }}/admin-token
 {{- end -}}
 {{- end -}}
+{{- end }}
+
+{{- define "stewart.metricsTokenSource" -}}
+{{- if .Values.metrics.enabled -}}
+{{- if .Values.metrics.existingSecret -}}
+{{ .Values.metrics.existingSecret }}/{{ .Values.metrics.existingSecretKey }}
+{{- else -}}
+{{ include "stewart.fullname" . }}/metrics-token
+{{- end -}}
+{{- end -}}
+{{- end }}
+
+{{/* The current values behind every Secret the chart does not own; empty without cluster access, as in `helm template`. */}}
+{{- define "stewart.externalSecretValues" -}}
+{{- $root := .root -}}
+{{- $own := include "stewart.fullname" $root -}}
+{{- $values := list -}}
+{{- range $path, $source := .sources -}}
+{{- if $source -}}
+{{- $parts := splitn "/" 2 $source -}}
+{{- if ne $parts._0 $own -}}
+{{- with dig "data" $parts._1 "" (lookup "v1" "Secret" $root.Release.Namespace $parts._0) -}}
+{{- $values = append $values . -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- toJson $values -}}
 {{- end }}
 
 {{- define "stewart.probe" -}}

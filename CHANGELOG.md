@@ -12,6 +12,10 @@ release could break; a release's "Upgrading" section says what to change.
 - `http.metrics.listen` (`STEWART_HTTP__METRICS__LISTEN`) serves only `GET /metrics`, on a port of its own, so
   Prometheus no longer needs the admin token that can pause apps. `http.metrics.token` is optional: without one,
   anyone who reaches the port reads the metrics. `/metrics` on the admin port keeps working under the admin token
+- Chart: `metrics.enabled` opens the metrics port (9464) with a token the chart generates, or one from
+  `metrics.existingSecret`, and `metrics.podMonitor` scrapes it, so the admin API can stay on loopback
+- Chart: `networkPolicy.enabled` creates ingress NetworkPolicies. The probe port stays open, the metrics and admin
+  ports admit only `networkPolicy.metrics.from` and `networkPolicy.adminApi.from`, and Valkey admits only Stewart
 - `stewart check` notes, and `stewart doctor` and a reload refuse, an admin port without a token and two HTTP ports on
   one port, which before showed only when the daemon refused to start
 
@@ -20,6 +24,12 @@ release could break; a release's "Upgrading" section says what to change.
 - The admin API logs a warning when it listens off loopback, as the control socket already does
 - A request refused for a missing or wrong token on the admin or metrics port logs a warning: the first, then every
   100th
+- Chart: `helm upgrade` rolls the pod when a Secret named in an `existingSecret` has changed, since Stewart reads
+  secrets only at start
+
+### Deprecated
+
+- Chart: `adminApi.podMonitor`, which scrapes with the admin token; use `metrics.podMonitor`. It is removed in 2.0
 
 ## [1.7.0] - 2026-10-22
 

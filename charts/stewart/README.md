@@ -15,8 +15,8 @@ helm install home oci://ghcr.io/stewart-php/charts/stewart \
 ## What it runs
 
 - **One pod, always.** Two daemons would both run every automation, so the Deployment has one replica and the
-  `Recreate` strategy: an upgrade stops the old pod before starting the new one. Only the admin API gets a Service,
-  once it listens beyond loopback; otherwise only the kubelet's probes connect to Stewart.
+  `Recreate` strategy: an upgrade stops the old pod before starting the new one. Only the admin API and the metrics
+  port get a Service, once they listen beyond loopback; otherwise only the kubelet's probes connect to Stewart.
 - **Probes** call the daemon's HTTP port (`/healthz`, `/readyz` on `probes.port`), which answers in-process without
   starting PHP. Liveness (and startup) checks that the daemon answers. Readiness also needs a live Home Assistant
   connection and no quarantined worker, so `kubectl get pods` shows when automations are not running.
@@ -24,8 +24,10 @@ helm install home oci://ghcr.io/stewart-php/charts/stewart \
 - **Secrets** are mounted as files and read through `STEWART_*_FILE` variables; none is passed as a plain environment
   value. An app option can come from a mounted secret the same way, through `env`:
   `STEWART_APPS__WEATHER__OPTIONS__API_KEY_FILE`. The control token, used by `stewart status` and `exec` probes inside the pod, is generated once per release.
-  Changing `homeAssistant.token` or `persistence.url` rolls the pod; after editing an existing Secret, run
-  `kubectl rollout restart`, since Stewart reads secrets only at start.
+  Stewart reads secrets only at start. Changing `homeAssistant.token` or `persistence.url` rolls the pod, and so does
+  `helm upgrade` after you change a Secret named in an `existingSecret`, because Helm looks it up. `helm template`
+  cannot look Secrets up, so with Argo CD and similar tools, and after regenerating a chart token by deleting it from
+  `secret/<release>-stewart`, run `kubectl rollout restart`.
 - **Locked down**: non-root (uid 10001), read-only root filesystem, no capabilities, no service account token,
   `enableServiceLinks: false`.
 
@@ -63,8 +65,14 @@ classes are rewritten inside the image.
 | `adminApi.enabled` | `false` | Start the HTTP admin API (`http.admin`) that lists, pauses and resumes apps and restarts workers |
 | `adminApi.host`, `.port` | `127.0.0.1`, `8081` | Where it binds; loopback is reachable through `kubectl port-forward`, `0.0.0.0` from other pods through the Service `<release>-stewart` |
 | `adminApi.existingSecret`, `.existingSecretKey` | `""`, `token` | Secret with the admin bearer token; name one when rendering with `helm template`, or the generated token changes on every render |
-| `adminApi.podMonitor.enabled` | `false` | Create a Prometheus Operator `PodMonitor` that scrapes `/metrics` with the admin token; needs `adminApi.host: 0.0.0.0` |
-| `adminApi.podMonitor.interval`, `.scrapeTimeout`, `.labels` | `""`, `""`, `{}` | Scrape settings, and labels your Prometheus selects PodMonitors by (`release: …` for kube-prometheus-stack) |
+| `adminApi.podMonitor.*` | | Deprecated, removed in 2.0: the same as `metrics.podMonitor.*`, but scraping the admin port with the admin token; needs `adminApi.host: 0.0.0.0` |
+| `metrics.enabled` | `false` | Start the metrics port (`http.metrics`), which serves only `/metrics`; needs `stewart-php/runtime` 1.8 |
+| `metrics.host`, `.port` | `0.0.0.0`, `9464` | Where it binds; other pods reach it through the Service `<release>-stewart` |
+| `metrics.existingSecret`, `.existingSecretKey` | `""`, `token` | Secret with the bearer token Prometheus presents; generated like the control token when empty |
+| `metrics.podMonitor.enabled` | `false` | Create a Prometheus Operator `PodMonitor` that scrapes the metrics port with its token |
+| `metrics.podMonitor.interval`, `.scrapeTimeout`, `.labels` | `""`, `""`, `{}` | Scrape settings, and labels your Prometheus selects PodMonitors by (`release: …` for kube-prometheus-stack) |
+| `networkPolicy.enabled` | `false` | Create ingress NetworkPolicies: the probe port stays open, the metrics and admin ports admit only the peers below, and Valkey admits only Stewart; egress stays open |
+| `networkPolicy.metrics.from`, `networkPolicy.adminApi.from` | `[]`, `[]` | `NetworkPolicyPeer` entries allowed to reach each port, such as Prometheus's namespace; empty admits nobody |
 | `config` | `{}` | `stewart.yaml` content; when set it replaces the project's file. Left empty, the project's own `stewart.yaml` is used, or the environment alone when the project has none |
 | `logLevel`, `logFormat` | `info`, `json` | |
 | `workers` | `0` | Worker processes; `0` is min(4, CPUs), and a CPU limit counts |
@@ -108,7 +116,36 @@ curl -X POST -H "Authorization: Bearer $TOKEN" localhost:8081/api/workers/0/rest
 curl -H "Authorization: Bearer $TOKEN" localhost:8081/metrics                        # Prometheus text format
 ```
 
-For Prometheus Operator, `adminApi.podMonitor.enabled: true` with `adminApi.host: 0.0.0.0` scrapes `/metrics`
-using the same token. Binding `0.0.0.0` makes the pause endpoints reachable from other pods too, still behind
-the token, at `http://<release>-stewart.<namespace>.svc:8081` through the Service the chart then creates; the chart
-refuses to render a PodMonitor against a loopback host.
+Binding `adminApi.host: 0.0.0.0` makes the admin API reachable from other pods, behind its token, at
+`http://<release>-stewart.<namespace>.svc:8081` through the Service the chart then creates.
+
+For Prometheus, turn on the metrics port instead, which serves only `/metrics` and needs a token of its own, so the
+admin API can stay on loopback:
+
+```yaml
+metrics:
+  enabled: true
+  podMonitor:
+    enabled: true
+    labels:
+      release: kube-prometheus-stack
+```
+
+The `PodMonitor` reads the token from `secret/<release>-stewart`; another Prometheus reads it from there too, or from
+`metrics.existingSecret`. `adminApi.podMonitor` still scrapes the admin port with the admin token, but is deprecated
+and cannot be on together with `metrics.podMonitor`; the chart refuses to render a PodMonitor against a loopback host.
+
+`networkPolicy.enabled: true` admits only the listed peers to the metrics and admin ports:
+
+```yaml
+networkPolicy:
+  enabled: true
+  metrics:
+    from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: monitoring
+```
+
+The probe port stays open, because the kubelet probes from the node. Valkey then accepts only the Stewart pod.
+`kubectl port-forward` is not filtered by NetworkPolicies, so the commands above still work.
