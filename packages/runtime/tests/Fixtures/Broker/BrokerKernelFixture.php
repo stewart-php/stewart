@@ -20,6 +20,7 @@ use Stewart\Runtime\Broker\WorkerRestartPolicy;
 use Stewart\Runtime\Broker\WorkerSlotRegistry;
 use Stewart\Runtime\Broker\WorkerWatchdog;
 use Stewart\Runtime\Config\ProjectRoot;
+use Stewart\Runtime\Config\Psr4Map;
 use Stewart\Runtime\Kernel\BrokerKernel;
 use Stewart\Runtime\Kernel\SyntheticServices;
 use Stewart\Runtime\Logging\LogVerbosityPolicy;
@@ -68,7 +69,7 @@ final class BrokerKernelFixture
             ->withOverrides($overrides);
 
         $enabledApps = self::listEnabledApps($workerSlots);
-        $lifecycle = new BrokerKernel(new StewartVersion('test'), '/nonexistent/services.php', ReloadCoordinatorFixture::CONSOLE_SCRIPT, new ProjectRoot(sys_get_temp_dir()), $services)->createBroker(
+        $lifecycle = new BrokerKernel(new StewartVersion('test'), '/nonexistent/services.php', ReloadCoordinatorFixture::CONSOLE_SCRIPT, new ProjectRoot(sys_get_temp_dir()), new Psr4Map([]), $services)->createBroker(
             $config,
             new AppCatalog($enabledApps, $knownAppIds, AppIdCollection::fromList([])),
             $logger,

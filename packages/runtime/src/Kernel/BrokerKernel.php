@@ -19,6 +19,7 @@ use Stewart\Runtime\Config\HaCallPolicy;
 use Stewart\Runtime\Config\HttpConfig;
 use Stewart\Runtime\Config\PersistenceConfig;
 use Stewart\Runtime\Config\ProjectRoot;
+use Stewart\Runtime\Config\Psr4Map;
 use Stewart\Runtime\Config\StewartConfig;
 use Stewart\Runtime\Config\SupervisionConfig;
 use Stewart\Runtime\Exception\ConfigurationException;
@@ -32,6 +33,7 @@ final readonly class BrokerKernel
         private string $userServicesFile,
         private string $stewartConsoleScript,
         private ProjectRoot $projectRoot,
+        private Psr4Map $psr4Map,
         private SyntheticServices $overrides = new SyntheticServices(),
         private ProfileCompiler $compiler = new ProfileCompiler(),
     ) {}
@@ -65,6 +67,7 @@ final readonly class BrokerKernel
             ->withService(HttpConfig::class, $config->http)
             ->withService(PersistenceConfig::class, $config->persistence)
             ->withService(ProjectRoot::class, $this->projectRoot)
+            ->withService(Psr4Map::class, $this->psr4Map)
             ->withService(CodegenConfig::class, $config->codegen)
             ->withService(GitDeployConfig::class, $config->gitDeploy)
             ->withService(ExposeConfig::class, $config->expose)

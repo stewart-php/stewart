@@ -36,4 +36,39 @@ final readonly class Psr4Map
 
         return $found;
     }
+
+    /** @return list<string> */
+    public function listPrefixesMappedTo(string $directory): array
+    {
+        $wanted = self::normalizePath($directory);
+        $prefixes = [];
+
+        foreach ($this->directoriesByNamespace as $namespacePrefix => $directories) {
+            foreach ($directories as $mapped) {
+                if (self::normalizePath($mapped) === $wanted) {
+                    $prefixes[] = $namespacePrefix;
+
+                    break;
+                }
+            }
+        }
+
+        return $prefixes;
+    }
+
+    // Composer's base directory contains `..`, and realpath fails before the first run.
+    private static function normalizePath(string $path): string
+    {
+        $segments = [];
+
+        foreach (explode('/', str_replace('\\', '/', $path)) as $segment) {
+            match ($segment) {
+                '', '.' => null,
+                '..' => array_pop($segments),
+                default => $segments[] = $segment,
+            };
+        }
+
+        return '/' . implode('/', $segments);
+    }
 }

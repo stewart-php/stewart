@@ -226,6 +226,17 @@ final readonly class ConfigSection
         }
     }
 
+    /**
+     * @template T
+     * @param Closure(string): T $parse
+     * @return T|null
+     * @throws ConfigurationException
+     */
+    public function findParsedValue(string $key, Closure $parse): mixed
+    {
+        return $this->findString($key) === null ? null : $this->readParsedValue($key, $parse);
+    }
+
     private function createKeyInvalidFailure(string $key, string $expected): ConfigurationException
     {
         return ConfigurationException::createForReason(ConfigurationError::KeyInvalid, path: $this->buildKeyPath($key), expected: $expected);

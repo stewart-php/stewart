@@ -1,10 +1,10 @@
 parameters:
     stewart:
-        manifest: App\Generated\Manifest
+        manifest: null
 
 parametersSchema:
     stewart: structure([
-        manifest: string()
+        manifest: schema(string(), nullable())
     ])
 
 services:
@@ -16,6 +16,7 @@ services:
         arguments:
             manifestClass: %stewart.manifest%
     - Stewart\PHPStan\Manifest\GeneratedHandles
+    - Stewart\PHPStan\Manifest\GeneratedManifestLocator
     -
         class: Stewart\PHPStan\Cache\ManifestResultCacheValue
         tags:

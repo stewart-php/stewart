@@ -17,7 +17,7 @@ final readonly class ClassNamespace implements Stringable
         $namespace = trim($value, '\\');
 
         if (preg_match('/\A[A-Za-z_][A-Za-z0-9_]*(\\\\[A-Za-z_][A-Za-z0-9_]*)*\z/', $namespace) !== 1) {
-            throw ConfigurationException::valueInvalid($value, 'a PHP namespace such as "App\Generated"');
+            throw ConfigurationException::valueInvalid($value, 'a PHP namespace such as "Automations\Generated"');
         }
 
         $this->value = $namespace;

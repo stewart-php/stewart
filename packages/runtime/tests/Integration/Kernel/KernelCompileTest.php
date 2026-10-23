@@ -14,6 +14,7 @@ use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\BrokerLifecycle;
 use Stewart\Runtime\Config\ProjectRoot;
+use Stewart\Runtime\Config\Psr4Map;
 use Stewart\Runtime\Container\TypedContainer;
 use Stewart\Runtime\Exception\AppError;
 use Stewart\Runtime\Kernel\BrokerKernel;
@@ -103,7 +104,7 @@ final class KernelCompileTest extends TestCase
     /** @param array<string, mixed> $yaml */
     private static function bootBroker(array $yaml, LoggerInterface $logger = new NullLogger()): BrokerLifecycle
     {
-        return new BrokerKernel(new StewartVersion('test'), self::EMPTY_SERVICES_FILE, '/nonexistent/vendor/bin/stewart', new ProjectRoot(sys_get_temp_dir()))->createBroker(
+        return new BrokerKernel(new StewartVersion('test'), self::EMPTY_SERVICES_FILE, '/nonexistent/vendor/bin/stewart', new ProjectRoot(sys_get_temp_dir()), new Psr4Map([]))->createBroker(
             ConfigFixture::createStewartConfig($yaml),
             new AppCatalog(AppDefinitionCollection::keyedByAppId([]), AppIdCollection::fromList([]), AppIdCollection::fromList([])),
             $logger,

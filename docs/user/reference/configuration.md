@@ -219,8 +219,8 @@ http:
 # What `stewart generate` writes: typed classes over the entities and actions of your own instance.
 codegen:
 
-    # Namespace of the generated classes. Composer must map it to output_dir.
-    namespace:            App\Generated
+    # Namespace of the generated classes. Omit it to use the one composer.json maps to output_dir.
+    namespace:            null
 
     # Directory the classes are written to, relative to the project root.
     output_dir:           generated
