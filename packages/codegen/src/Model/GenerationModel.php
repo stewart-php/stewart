@@ -28,9 +28,9 @@ final readonly class GenerationModel
         return $this->domains->havingEntities();
     }
 
-    public function listServiceDomains(): DomainModelCollection
+    public function listActionDomains(): DomainModelCollection
     {
-        return $this->domains->havingServices();
+        return $this->domains->havingActions();
     }
 
     /** @return list<string> */
@@ -38,9 +38,9 @@ final readonly class GenerationModel
     {
         $names = [];
 
-        foreach ($this->listServiceDomains() as $domain) {
-            foreach ($domain->services as $service) {
-                $names[] = $service->definition->domain . '.' . $service->definition->name;
+        foreach ($this->listActionDomains() as $domain) {
+            foreach ($domain->actions as $action) {
+                $names[] = $action->definition->domain . '.' . $action->definition->name;
             }
         }
 
@@ -59,8 +59,8 @@ final readonly class GenerationModel
         return $this->listEntityDomains()->countAttributes();
     }
 
-    public function countServices(): int
+    public function countActions(): int
     {
-        return array_sum($this->domains->mapToList(static fn(DomainModel $domain): int => \count($domain->services)));
+        return array_sum($this->domains->mapToList(static fn(DomainModel $domain): int => \count($domain->actions)));
     }
 }

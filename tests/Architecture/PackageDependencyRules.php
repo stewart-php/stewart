@@ -232,7 +232,7 @@ final class PackageDependencyRules
                 Selector::inNamespace('Stewart\Codegen\Snapshot'),
                 Selector::inNamespace('Stewart\Codegen\Entity'),
                 Selector::inNamespace('Stewart\Codegen\Attribute'),
-                Selector::inNamespace('Stewart\Codegen\Service'),
+                Selector::inNamespace('Stewart\Codegen\Action'),
                 Selector::inNamespace('Stewart\Codegen\Model'),
                 Selector::inNamespace('Stewart\Codegen\Php'),
             )

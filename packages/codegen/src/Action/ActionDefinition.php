@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Codegen\Service;
+namespace Stewart\Codegen\Action;
 
-final readonly class ServiceDefinition
+final readonly class ActionDefinition
 {
-    /** @param list<ServiceField> $fields */
+    /** @param list<ActionField> $fields */
     public function __construct(
         public string $domain,
         public string $name,
         public ?string $title,
         public ?string $description,
         public array $fields,
-        public ServiceTargetSpec $target,
+        public ActionTargetSpec $target,
         public bool $returnsResponse,
     ) {}
 

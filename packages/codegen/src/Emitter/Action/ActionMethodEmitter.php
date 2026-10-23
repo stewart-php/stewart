@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Codegen\Emitter\Service;
+namespace Stewart\Codegen\Emitter\Action;
 
 use Nette\PhpGenerator\ClassType;
 use Nette\PhpGenerator\Method;
+use Stewart\Codegen\Action\ActionModel;
 use Stewart\Codegen\Php\MemberScope;
 use Stewart\Codegen\Php\ReservesMemberNames;
-use Stewart\Codegen\Service\ServiceModel;
 use Stewart\Contracts\Action\ActionResponse;
 use Stewart\Contracts\Action\ActionTargetSource;
 use Stewart\Contracts\State\EventContext;
 
-final readonly class ServiceMethodEmitter implements ReservesMemberNames
+final readonly class ActionMethodEmitter implements ReservesMemberNames
 {
     private const string TARGET_PARAMETER = 'target';
 
@@ -21,53 +21,53 @@ final readonly class ServiceMethodEmitter implements ReservesMemberNames
 
     private const array RESERVED_TARGETED_PARAMETER_NAMES = [...self::RESERVED_PARAMETER_NAMES, self::TARGET_PARAMETER];
 
-    public function addHandleMethod(ClassType $class, ServiceModel $service): void
+    public function addHandleMethod(ClassType $class, ActionModel $action): void
     {
-        $method = $this->declareMethod($class, $service);
-        $this->addFieldParameters($method, $service);
+        $method = $this->declareMethod($class, $action);
+        $this->addFieldParameters($method, $action);
 
         $method->setBody(\sprintf(
             'return $this->entity->%s(%s%s);',
-            $service->definition->returnsResponse ? 'callActionForResponse' : 'callAction',
-            var_export($service->definition->name, true),
-            $service->fields === [] ? '' : ', ' . $this->buildPayload($service),
+            $action->definition->returnsResponse ? 'callActionForResponse' : 'callAction',
+            var_export($action->definition->name, true),
+            $action->fields === [] ? '' : ', ' . $this->buildPayload($action),
         ));
     }
 
-    public function addDomainServiceMethod(ClassType $class, ServiceModel $service): void
+    public function addDomainActionMethod(ClassType $class, ActionModel $action): void
     {
-        $method = $this->declareMethod($class, $service);
+        $method = $this->declareMethod($class, $action);
 
-        if ($service->definition->target->isTargetable) {
+        if ($action->definition->target->isTargetable) {
             $method->addParameter(self::TARGET_PARAMETER)->setType(ActionTargetSource::class);
         }
 
-        $this->addFieldParameters($method, $service);
+        $this->addFieldParameters($method, $action);
 
         $method->setBody(\sprintf(
             'return $this->ha->%s(%s, %s%s);',
-            $service->definition->returnsResponse ? 'callActionForResponse' : 'callAction',
-            var_export($service->definition->domain . '.' . $service->definition->name, true),
-            $service->fields === [] ? '[]' : $this->buildPayload($service),
-            $service->definition->target->isTargetable ? ', $' . self::TARGET_PARAMETER : '',
+            $action->definition->returnsResponse ? 'callActionForResponse' : 'callAction',
+            var_export($action->definition->domain . '.' . $action->definition->name, true),
+            $action->fields === [] ? '[]' : $this->buildPayload($action),
+            $action->definition->target->isTargetable ? ', $' . self::TARGET_PARAMETER : '',
         ));
     }
 
-    private function declareMethod(ClassType $class, ServiceModel $service): Method
+    private function declareMethod(ClassType $class, ActionModel $action): Method
     {
-        $method = $class->addMethod($service->method)
-            ->setReturnType($service->definition->returnsResponse ? ActionResponse::class : EventContext::class);
+        $method = $class->addMethod($action->method)
+            ->setReturnType($action->definition->returnsResponse ? ActionResponse::class : EventContext::class);
 
-        foreach ($this->buildDocblock($service) as $line) {
+        foreach ($this->buildDocblock($action) as $line) {
             $method->addComment($line);
         }
 
         return $method;
     }
 
-    private function addFieldParameters(Method $method, ServiceModel $service): void
+    private function addFieldParameters(Method $method, ActionModel $action): void
     {
-        foreach ($service->fields as $field) {
+        foreach ($action->fields as $field) {
             $parameter = $method->addParameter($field->parameter)->setType($field->type()->native);
 
             if (!$field->field->required) {
@@ -77,10 +77,10 @@ final readonly class ServiceMethodEmitter implements ReservesMemberNames
     }
 
     /** @return list<string> */
-    private function buildDocblock(ServiceModel $service): array
+    private function buildDocblock(ActionModel $action): array
     {
-        $title = $service->definition->title;
-        $description = $service->definition->description;
+        $title = $action->definition->title;
+        $description = $action->definition->description;
         $lines = $title === null ? [] : [$title];
 
         if ($description !== null) {
@@ -89,7 +89,7 @@ final readonly class ServiceMethodEmitter implements ReservesMemberNames
 
         $params = [];
 
-        foreach ($service->fields as $field) {
+        foreach ($action->fields as $field) {
             $summary = $field->summary();
 
             if (!$field->type()->needsDocblock() && $summary === '') {
@@ -106,11 +106,11 @@ final readonly class ServiceMethodEmitter implements ReservesMemberNames
         return [...$lines, ...$params];
     }
 
-    private function buildPayload(ServiceModel $service): string
+    private function buildPayload(ActionModel $action): string
     {
         $entries = '';
 
-        foreach ($service->fields as $field) {
+        foreach ($action->fields as $field) {
             $entries .= \sprintf("    %s => $%s,\n", var_export($field->field->name, true), $field->parameter);
         }
 

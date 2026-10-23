@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Codegen\Tests\Unit\Service;
+namespace Stewart\Codegen\Tests\Unit\Action;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Stewart\Codegen\Action\ActionSelector;
 use Stewart\Codegen\Php\PhpType;
-use Stewart\Codegen\Service\ServiceSelector;
 use Stewart\Codegen\Snapshot\RawMap;
 
-#[CoversClass(ServiceSelector::class)]
+#[CoversClass(ActionSelector::class)]
 #[CoversClass(PhpType::class)]
 #[CoversClass(RawMap::class)]
-final class ServiceSelectorTest extends TestCase
+final class ActionSelectorTest extends TestCase
 {
     private const string DURATION = 'array{days?: int|float, hours?: int|float, minutes?: int|float, seconds?: int|float, milliseconds?: int|float}|string|int|float';
 
@@ -57,7 +57,7 @@ final class ServiceSelectorTest extends TestCase
     #[DataProvider('provideSelectors')]
     public function testSelectorKinds(array $selector, string $native, string $docblock): void
     {
-        $type = new ServiceSelector(RawMap::fromValue($selector))->resolvePhpType();
+        $type = new ActionSelector(RawMap::fromValue($selector))->resolvePhpType();
 
         self::assertSame($native, $type->native);
         self::assertSame($docblock, $type->docblock);
@@ -65,25 +65,25 @@ final class ServiceSelectorTest extends TestCase
 
     public function testNullabilityKeepsTheDocblockReadable(): void
     {
-        self::assertSame('?string', new ServiceSelector(RawMap::fromValue(['entity' => []]))->resolvePhpType()->nullable()->native);
-        self::assertSame('?string', new ServiceSelector(RawMap::fromValue(['entity' => []]))->resolvePhpType()->nullable()->docblock);
+        self::assertSame('?string', new ActionSelector(RawMap::fromValue(['entity' => []]))->resolvePhpType()->nullable()->native);
+        self::assertSame('?string', new ActionSelector(RawMap::fromValue(['entity' => []]))->resolvePhpType()->nullable()->docblock);
 
-        $rgb = new ServiceSelector(RawMap::fromValue(['color_rgb' => []]))->resolvePhpType()->nullable();
+        $rgb = new ActionSelector(RawMap::fromValue(['color_rgb' => []]))->resolvePhpType()->nullable();
         self::assertSame('?array', $rgb->native);
         self::assertSame('array{int, int, int}|null', $rgb->docblock);
 
-        $select = new ServiceSelector(RawMap::fromValue(['select' => ['options' => ['long', 'short']]]))->resolvePhpType()->nullable();
+        $select = new ActionSelector(RawMap::fromValue(['select' => ['options' => ['long', 'short']]]))->resolvePhpType()->nullable();
         self::assertSame('?string', $select->native);
         self::assertSame("'long'|'short'|null", $select->docblock);
 
-        $number = new ServiceSelector(RawMap::fromValue(['number' => []]))->resolvePhpType()->nullable();
+        $number = new ActionSelector(RawMap::fromValue(['number' => []]))->resolvePhpType()->nullable();
         self::assertSame('int|float|null', $number->native);
         self::assertFalse($number->needsDocblock());
     }
 
     public function testNullableConstantKeepsItsLiteral(): void
     {
-        $constant = new ServiceSelector(RawMap::fromValue(['constant' => ['value' => true]]))->resolvePhpType()->nullable();
+        $constant = new ActionSelector(RawMap::fromValue(['constant' => ['value' => true]]))->resolvePhpType()->nullable();
 
         self::assertSame('?bool', $constant->native);
         self::assertSame('true|null', $constant->docblock);
@@ -91,7 +91,7 @@ final class ServiceSelectorTest extends TestCase
 
     public function testNullableDurationKeepsTheUnion(): void
     {
-        $duration = new ServiceSelector(RawMap::fromValue(['duration' => []]))->resolvePhpType()->nullable();
+        $duration = new ActionSelector(RawMap::fromValue(['duration' => []]))->resolvePhpType()->nullable();
 
         self::assertSame('array|string|int|float|null', $duration->native);
         self::assertSame(self::DURATION . '|null', $duration->docblock);

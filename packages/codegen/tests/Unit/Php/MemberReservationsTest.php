@@ -6,7 +6,7 @@ namespace Stewart\Codegen\Tests\Unit\Php;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Stewart\Codegen\Emitter\Service\ServiceMethodEmitter;
+use Stewart\Codegen\Emitter\Action\ActionMethodEmitter;
 use Stewart\Codegen\Php\MemberReservations;
 use Stewart\Codegen\Php\MemberScope;
 use Stewart\Codegen\Tests\Fixtures\Php\FixedMemberReserver;
@@ -44,7 +44,7 @@ final class MemberReservationsTest extends TestCase
 
     public function testTargetIsReservedOnlyWhenTargeted(): void
     {
-        $reservations = new MemberReservations([new ServiceMethodEmitter()]);
+        $reservations = new MemberReservations([new ActionMethodEmitter()]);
 
         self::assertSame('target', $reservations->createAllocatorFor(MemberScope::Parameters)->claim('target'));
         self::assertSame('targetField', $reservations->createAllocatorFor(MemberScope::TargetedParameters)->claim('target'));

@@ -22,7 +22,7 @@ final readonly class ServicesRootEmitter extends RootEmitter
 
     protected function listDomains(GenerationModel $model): DomainModelCollection
     {
-        return $model->listServiceDomains();
+        return $model->listActionDomains();
     }
 
     protected function getDomainClassName(DomainModel $domain): string
