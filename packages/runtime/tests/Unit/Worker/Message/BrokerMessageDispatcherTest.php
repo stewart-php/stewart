@@ -10,7 +10,7 @@ use Psr\Log\NullLogger;
 use Stewart\Contracts\Action\ActionResponse;
 use Stewart\Contracts\Exception\ActionCallException;
 use Stewart\Contracts\Time\Duration;
-use Stewart\Runtime\Ipc\Message\ServiceCallResult;
+use Stewart\Runtime\Ipc\Message\ActionCallResult;
 use Stewart\Runtime\Ipc\Message\Shutdown;
 use Stewart\Runtime\Ipc\Message\SubscriptionAck;
 use Stewart\Runtime\Model\SubscriptionId;
@@ -56,7 +56,7 @@ final class BrokerMessageDispatcherTest extends TestCase
         $response = new ActionResponse('light', 'turn_on');
 
         new BrokerMessageDispatcher([new CorrelatedReplyHandler($pending)], new NullLogger())
-            ->dispatch(new ServiceCallResult($call->correlationId, $response));
+            ->dispatch(new ActionCallResult($call->correlationId, $response));
 
         self::assertSame($response, $call->getFuture()->await());
     }

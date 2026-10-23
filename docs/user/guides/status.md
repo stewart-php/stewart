@@ -35,9 +35,9 @@ page run inside the Stewart container:
 
 | Table | Shows |
 |---|---|
-| Daemon | Stewart's version, uptime and resident memory; the Home Assistant connection and its last outage; whether the store is up; the `mqtt` row (the MQTT connection, its last outage, and messages queued or dropped); the `component` row (the Stewart integration in Home Assistant); the `deploy` row (the running commit and the last rejected one, in Git mode); the `reload` row (the last reload and how it went); the `generated` row (whether the [generated classes](codegen.md) still match Home Assistant); service calls waiting and refused. |
+| Daemon | Stewart's version, uptime and resident memory; the Home Assistant connection and its last outage; whether the store is up; the `mqtt` row (the MQTT connection, its last outage, and messages queued or dropped); the `component` row (the Stewart integration in Home Assistant); the `deploy` row (the running commit and the last rejected one, in Git mode); the `reload` row (the last reload and how it went); the `generated` row (whether the [generated classes](codegen.md) still match Home Assistant); `HA calls` (actions, event fires and registry edits) waiting and refused. |
 | Workers | Whether each worker is running, how much resident memory it uses, how often it restarted, and whether it is falling behind (events waiting or dropped). |
-| Apps | Whether each app is running, paused (and by whom: `config`, `control` or `http`) or failed; when its handler last ran for an event (`last handled`) and when its next schedule or timer is due (`next run`); how many events and schedule runs it handled or skipped while paused; its exposed entities; how its service calls went. |
+| Apps | Whether each app is running, paused (and by whom: `config`, `control` or `http`) or failed; when its handler last ran for an event (`last handled`) and when its next schedule or timer is due (`next run`); how many events and schedule runs it handled or skipped while paused; its exposed entities; how its calls to Home Assistant went. |
 | Failures | Each app's last failure: when, where, the reason and the message. |
 
 The worker and app figures are refreshed every `supervision.ping_interval` (10 seconds by default), and keep adding up
@@ -238,8 +238,8 @@ The answer is the Prometheus text format (every series is in the
 [metrics reference](../reference/metrics.md)), built from
 the same snapshot as `stewart status`. Series are named
 `stewart_*`. Per-app series have `app` and `worker` labels, per-worker series
-have `worker`, and service-call latency is the histogram
-`stewart_app_service_call_duration_seconds{outcome}`. Values that are not known
+have `worker`, and the latency of calls to Home Assistant is the histogram
+`stewart_app_ha_call_duration_seconds{outcome}`. Values that are not known
 yet, such as a worker's memory before its first probe, are left out instead of
 reported as 0. While `deploy.git.poll` is on, `stewart_deploy_info{commit}` names
 the running commit and `stewart_deploy_failures_total` counts commits that failed

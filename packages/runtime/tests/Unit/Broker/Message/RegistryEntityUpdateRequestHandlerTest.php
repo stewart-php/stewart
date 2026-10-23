@@ -30,8 +30,8 @@ use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateRequest;
 use Stewart\Runtime\Ipc\Message\RegistryEntityUpdateResult;
 use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Model\CorrelationId;
+use Stewart\Runtime\Model\HaCallOutcome;
 use Stewart\Runtime\Model\ResourceScope;
-use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
@@ -43,7 +43,7 @@ use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
 
 #[CoversClass(RegistryEntityUpdateRequestHandler::class)]
-#[CoversClass(ServiceCallOutcome::class)]
+#[CoversClass(HaCallOutcome::class)]
 final class RegistryEntityUpdateRequestHandlerTest extends TestCase
 {
     private FakeHaSession $session;

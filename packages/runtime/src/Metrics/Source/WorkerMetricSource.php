@@ -28,7 +28,7 @@ final readonly class WorkerMetricSource implements RuntimeMetricSource
         $restarts = new MetricFamily('stewart_worker_restarts_total', 'Restarts scheduled since the daemon started.', MetricType::Counter, $workerLabels);
         $quarantines = new MetricFamily('stewart_worker_quarantines_total', 'Times the worker was quarantined after using up its restart budget.', MetricType::Counter, $workerLabels);
         $restartDue = new MetricFamily('stewart_worker_restart_due_timestamp_seconds', 'Unix time of the next scheduled restart.', MetricType::Gauge, $workerLabels);
-        $inFlight = new MetricFamily('stewart_worker_service_calls_in_flight', 'Home Assistant calls of this worker awaiting an answer.', MetricType::Gauge, $workerLabels);
+        $inFlight = new MetricFamily('stewart_worker_ha_calls_in_flight', 'Home Assistant calls of this worker awaiting an answer.', MetricType::Gauge, $workerLabels);
         $queued = new MetricFamily('stewart_worker_outbox_queued', 'Messages waiting in the outbox to the worker.', MetricType::Gauge, $workerLabels);
         $largestBatch = new MetricFamily('stewart_worker_outbox_largest_state_batch', 'Largest state change batch sent to the worker.', MetricType::Gauge, $workerLabels);
         $dropped = new MetricFamily('stewart_worker_outbox_dropped_total', 'Messages dropped because the worker outbox was full.', MetricType::Counter, $workerLabels);
@@ -47,7 +47,7 @@ final readonly class WorkerMetricSource implements RuntimeMetricSource
             $restartsInWindow->recordSample($labels, $worker->restartsInWindow);
             $restarts->recordSample($labels, $worker->restarts);
             $quarantines->recordSample($labels, $worker->quarantines);
-            $inFlight->recordSample($labels, $worker->inFlightServiceCalls);
+            $inFlight->recordSample($labels, $worker->inFlightHaCalls);
 
             if ($worker->loopLag !== null) {
                 $loopLag->recordSample($labels, $worker->loopLag->toSeconds());

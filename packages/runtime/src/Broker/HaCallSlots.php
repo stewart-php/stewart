@@ -16,7 +16,7 @@ use Stewart\Runtime\Ipc\Message\RefusableHaCallRequest;
 use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Logging\EveryNthOccurrence;
 use Stewart\Runtime\Logging\LogOrigin;
-use Stewart\Runtime\Model\ServiceCallOutcome;
+use Stewart\Runtime\Model\HaCallOutcome;
 use Throwable;
 use WeakMap;
 
@@ -79,11 +79,11 @@ final class HaCallSlots
             try {
                 try {
                     $reply = $call();
-                    $outcome = ServiceCallOutcome::Succeeded;
+                    $outcome = HaCallOutcome::Succeeded;
                 } catch (Throwable $e) {
                     $failure = $this->describeFailure($request, $e);
                     $reply = RequestFailed::fromException($request->correlationId, $failure);
-                    $outcome = ServiceCallOutcome::failedWith($failure->reason);
+                    $outcome = HaCallOutcome::failedWith($failure->reason);
                 } finally {
                     $this->release($handle);
                 }

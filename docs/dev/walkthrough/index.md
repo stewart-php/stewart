@@ -22,6 +22,6 @@ bin/stewart
 | Page | Covers |
 |---|---|
 | [Console and configuration](console.md) | The entry point, the container profiles, configuration loading, app discovery, `run` |
-| [The broker](broker.md) | Boot, connecting to Home Assistant, spawning workers, routing, the outbox, service calls, supervision, shutdown |
-| [The worker](worker.md) | Worker boot, building apps, `HaContext`, streams and dispatch, a service call end to end, schedules, pause, logging |
+| [The broker](broker.md) | Boot, connecting to Home Assistant, spawning workers, routing, the outbox, action calls, supervision, shutdown |
+| [The worker](worker.md) | Worker boot, building apps, `HaContext`, streams and dispatch, an action call end to end, schedules, pause, logging |
 | [Client and testing](client.md) | The Home Assistant WebSocket client, and the test harness as a second `HaContext` |

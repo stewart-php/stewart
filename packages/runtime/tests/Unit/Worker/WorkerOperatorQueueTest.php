@@ -15,8 +15,8 @@ use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Dispatch\SubscriptionQueue;
-use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
-use Stewart\Runtime\Ipc\Message\ServiceCallResult;
+use Stewart\Runtime\Ipc\Message\ActionCallRequest;
+use Stewart\Runtime\Ipc\Message\ActionCallResult;
 use Stewart\Runtime\Ipc\Message\Shutdown;
 use Stewart\Runtime\Ipc\Message\StateSnapshot;
 use Stewart\Runtime\Ipc\Message\StateUpdateBatch;
@@ -71,17 +71,17 @@ final class WorkerOperatorQueueTest extends TestCase
         $this->timers->delay(Duration::seconds(30));
         $this->sendUpdate('sensor.watched', 'off');
         $this->timers->delay(Duration::seconds(30));
-        EventLoopTicks::settleUntil(fn(): bool => $this->transport->listSentOfType(ServiceCallRequest::class) !== []);
+        EventLoopTicks::settleUntil(fn(): bool => $this->transport->listSentOfType(ActionCallRequest::class) !== []);
 
         $this->sendUpdate('sensor.watched', 'on');
         $this->timers->delay(Duration::seconds(30));
         EventLoopTicks::settle();
 
-        $busyCall = $this->transport->listSentOfType(ServiceCallRequest::class)[0];
-        $this->transport->deliver(new ServiceCallResult($busyCall->correlationId, new ActionResponse('script', 'record')));
+        $busyCall = $this->transport->listSentOfType(ActionCallRequest::class)[0];
+        $this->transport->deliver(new ActionCallResult($busyCall->correlationId, new ActionResponse('script', 'record')));
         EventLoopTicks::settle(5);
 
-        $calls = array_map(static fn(ServiceCallRequest $request): mixed => $request->data['entity'] ?? null, $this->transport->listSentOfType(ServiceCallRequest::class));
+        $calls = array_map(static fn(ActionCallRequest $request): mixed => $request->data['entity'] ?? null, $this->transport->listSentOfType(ActionCallRequest::class));
         self::assertSame(['sensor.busy'], $calls, 'The watched sensor came back on while the first call was in flight.');
     }
 

@@ -28,7 +28,7 @@ apps:
 - `whenChangedTo('not_home', for: …)` fires only after the household has been away for the whole time.
 - `whenChangedTo('home', from: 'not_home')` fires on the way back, but not when Home Assistant restarts and the
   group goes from `unknown` to `home`.
-- One service call targets every thermostat at once.
+- One action call targets every thermostat at once.
 
 ## Test
 

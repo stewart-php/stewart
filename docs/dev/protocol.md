@@ -86,14 +86,14 @@ Forty-one messages, closed by the `BrokerMessage`, `CorrelatedReply` and
 | `Bootstrap` | The protocol version, identity, timezone, Home Assistant's location (behind `SunCalendar`), the app list, the worker settings (log level, call and initialize timeouts, subscription buffer, where `services.php` is, the generated namespace), the store settings, every discovered automation's ID and the Home Assistant user the token belongs to (behind `HaContext::wasCausedByStewart()`). First message a worker sees. |
 | `RegistrySnapshot` | Home Assistant's areas, floors, labels, devices and entity registry with a revision, **encoded once** (`RegistryFragment`). Sent before `StateSnapshot` to a new worker, before `StateResynced` after a reconnect, and to every live worker after a registry refresh. The worker keeps the highest revision. |
 | `StateSnapshot` | Whole-world state, **encoded once** and shared by every worker (`EntityStatesFragment`). Also means "you are new: initialize your apps". |
-| `HaConnectionLost` | Home Assistant is gone, with the moment and the reason. Service calls now fail in the worker, and apps hear `ConnectionLost`. Also sent right after `StateSnapshot` to a worker bootstrapped during an outage. |
+| `HaConnectionLost` | Home Assistant is gone, with the moment and the reason. Action calls now fail in the worker, and apps hear `ConnectionLost`. Also sent right after `StateSnapshot` to a worker bootstrapped during an outage. |
 | `StateResynced` | The rebuilt snapshot after a reconnect. The worker diffs it against its state cache, replays the differences as reconstructed state changes, then tells apps `ConnectionRestored`. Nothing is initialized again. |
 | `StateUpdateBatch` | One or more state updates, in order, each encoded once (`StateUpdatesFragment`). An update carries the new state, not the previous one. Sent to every live worker; each rebuilds the change from its cache and matches it against its own subscriptions. |
 | `EventFired` | Any other Home Assistant event — `zha_event`, a custom one — plus the subscription IDs that matched. Sent only to workers that asked. |
-| `ServiceCallResult` | Answer to a `ServiceCallRequest`, with the call's `EventContext` (`dry-run:…` under dry run). Always sent, success or not. |
+| `ActionCallResult` | Answer to a `ActionCallRequest`, with the call's `EventContext` (`dry-run:…` under dry run). Always sent, success or not. |
 | `EventFireResult` | Answer to an `EventFireRequest`, with the fired event's `EventContext`. |
 | `HistoryResult` | Answer to a `HistoryRequest`: the entity's recorded states, oldest first. |
-| `RequestFailed` | The failure answer to any correlated request: a service call, event fire, history query, registry edit or exposure. It carries the exception class, reason and context, and the worker rebuilds the exception the request expects. `Overloaded` means the broker refused the call because `service_calls.max_in_flight[_per_worker]` is already reached. |
+| `RequestFailed` | The failure answer to any correlated request: an action call, event fire, history query, registry edit or exposure. It carries the exception class, reason and context, and the worker rebuilds the exception the request expects. `Overloaded` means the broker refused the call because `ha_calls.max_in_flight[_per_worker]` is already reached. |
 | `TopicMessage` | An app-to-app message, routed. |
 | `MqttMessageDelivery` | A message from the MQTT server, with the subscription IDs whose filter matched its topic. Droppable, like `TopicMessage`. |
 | `TriggerFired` | A Home Assistant trigger fired (`TriggerEvent`), with the subscription IDs that share its spec. Droppable, like `EventFired`. |
@@ -113,12 +113,12 @@ Forty-one messages, closed by the `BrokerMessage`, `CorrelatedReply` and
 | `Subscribe` / `Unsubscribe` | Register or drop interest in Home Assistant events or topics, carrying a `Selector`. State and connection subscriptions never cross: the worker matches them itself. |
 | `SubscribeTrigger` | Register interest in a Home Assistant trigger, carrying the `TriggerSpec` (trigger configs and variables). Dropped with the same `Unsubscribe`. |
 | `WorkerReady` | Every app constructed, initialized and subscribed. Never sent once the worker is stopping, and the broker's `supervision.ready_timeout` restarts a worker that never sends it. |
-| `ServiceCallRequest` | An app wants Home Assistant to do something. |
+| `ActionCallRequest` | An app wants Home Assistant to do something. |
 | `EventFireRequest` | An app fires an event on Home Assistant's bus. |
 | `HistoryRequest` | An app wants one entity's recorded states over a fixed window. |
 | `Publish` | An app-to-app message on its way to routing. |
 | `MqttPublish` | A message for the MQTT server, with the publishing app's scope. |
-| `ExposeEntityRequest`, `UpdateExposedEntityRequest`, `ReconfigureExposedEntityRequest`, `RemoveExposedEntityRequest` | An app exposes an entity, changes its state, replaces its configuration, or removes it. Correlated like a service call. |
+| `ExposeEntityRequest`, `UpdateExposedEntityRequest`, `ReconfigureExposedEntityRequest`, `RemoveExposedEntityRequest` | An app exposes an entity, changes its state, replaces its configuration, or removes it. Correlated like an action call. |
 | `ExposuresReleased` | An app stopped; the broker marks its exposed entities unavailable. |
 | `ExposedCommandAnswered` | The app accepted or rejected a command, by its command ID. |
 | `RegistryEntityUpdateRequest` | An app edits an entity registry entry through `RegistryEditor`. |
@@ -197,7 +197,7 @@ state cache. Reading state inside `initialize()` is normal and must work.
 `RegistrySnapshot` comes between the two, so the registry is loaded by then too.
 
 The reader runs from before the first constructor, so a constructor may await a
-`ServiceCallRequest` and get its answer. An app's schedules and subscriptions
+`ActionCallRequest` and get its answer. An app's schedules and subscriptions
 stay dormant until that app's own `initialize()` returns; events matched in the
 meantime are buffered under `subscription_buffer` and delivered in order once it
 does.
@@ -244,14 +244,14 @@ cost of the full-state-cache decision.
 
 Each subscription has its own queue and one fiber that runs its handler, so one
 subscription handles its events one at a time while different subscriptions run
-concurrently. A handler that awaits a service call holds back only the later
+concurrently. A handler that awaits an action call holds back only the later
 events of its own subscription.
 
 ---
 
-## A service call
+## An action call
 
-![Service call](diagrams/08-service-call.svg)
+![Action call](diagrams/08-action-call.svg)
 
 Two correlation maps, no cleverness: the worker maps `correlationId → Future`,
 the broker maps `correlationId → worker` and `haMessageId → correlationId`. IDs
@@ -268,13 +268,13 @@ await in a `TimeoutCancellation` as a backstop.
 Every write to Home Assistant counts against one in-flight budget, `HaCallSlots`,
 bounded by `ha_calls.max_in_flight` and `max_in_flight_per_worker`: service
 calls, fired events, history queries and registry edits alike. A fired event is a
-write like a service call, so it shares the budget, the per-app call counts and
+write like an action call, so it shares the budget, the per-app call counts and
 dry run; a burst of one can refuse the other. On the worker side, one
 `PendingRequests` registry holds every correlated request.
 
 ## A history query
 
-The same shape as a service call: one correlation ID from the same per-worker
+The same shape as an action call: one correlation ID from the same per-worker
 sequence, one reply per request, the same worker-side timeout and the same
 in-flight budget. The worker
 turns `HistoryQuery::lastFor()` into a fixed window with its own clock before
@@ -450,7 +450,7 @@ from the test, standing in for the broker. Frames still go through the codecs. I
 runs with `make test-integration` and needs neither Home Assistant nor Valkey.
 
 This is the test that earns its keep: the entrypoint contract, the
-initialize-after-snapshot ordering, selector serialization, service-call
+initialize-after-snapshot ordering, selector serialization, action-call
 correlation and clean shutdown are all invisible to testing a single class.
 
 `make test-process` runs `packages/runtime/tests/Process/WorkerProcessSmokeTest.php`: a real

@@ -18,7 +18,7 @@ use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
 use Stewart\Runtime\Control\Protocol\Status\ScheduleStatus;
 use Stewart\Runtime\Control\Protocol\Status\WorkerStatus;
 use Stewart\Runtime\Lifecycle\ComponentState;
-use Stewart\Runtime\Model\ServiceCallOutcome;
+use Stewart\Runtime\Model\HaCallOutcome;
 use Stewart\Store\StoreHealth;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -70,7 +70,7 @@ final readonly class StatusRenderer
             ['entities', (string) $daemon->entities],
             ['time zone', $daemon->timeZone],
             ['workers', \sprintf('%d live of %d', $broker->liveWorkers, $broker->workers)],
-            ['service calls', \sprintf('%d in flight, %d refused', $broker->inFlightServiceCalls, $broker->refusedServiceCalls)],
+            ['HA calls', \sprintf('%d in flight, %d refused', $broker->inFlightHaCalls, $broker->refusedHaCalls)],
             ['routing', \sprintf('%d subscriptions, %d patterns, cache %d hits / %d misses', $broker->routing->subscriptions, $broker->routing->patterns, $broker->routing->cacheHits, $broker->routing->cacheMisses)],
         ]);
     }
@@ -95,7 +95,7 @@ final readonly class StatusRenderer
                 $w->outbox === null ? '-' : (string) $w->outbox->queued,
                 $w->outbox === null ? '-' : (string) $w->outbox->dropped,
                 $w->outbox === null ? '-' : \sprintf('%d (%d coalesced)', $w->outbox->stateBatchesSent, $w->outbox->coalescedStateChanges),
-                (string) $w->inFlightServiceCalls,
+                (string) $w->inFlightHaCalls,
             ], $snapshot->workers),
         );
     }
@@ -364,7 +364,7 @@ final readonly class StatusRenderer
         $succeeded = 0;
         $failed = 0;
 
-        foreach ($app->serviceCalls as $stats) {
+        foreach ($app->haCalls as $stats) {
             if ($stats->outcome->isFailure()) {
                 $failed += $stats->count;
             } else {
@@ -377,8 +377,8 @@ final readonly class StatusRenderer
 
     private function formatLatency(AppStatus $app): string
     {
-        foreach ($app->serviceCalls as $stats) {
-            if ($stats->outcome !== ServiceCallOutcome::Succeeded || $stats->latency === null) {
+        foreach ($app->haCalls as $stats) {
+            if ($stats->outcome !== HaCallOutcome::Succeeded || $stats->latency === null) {
                 continue;
             }
 

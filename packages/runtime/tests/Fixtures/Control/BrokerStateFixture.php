@@ -37,10 +37,10 @@ use Stewart\Runtime\Control\Assembler\SubscriptionInfoBuilder;
 use Stewart\Runtime\Control\Assembler\WorkerStatusBuilder;
 use Stewart\Runtime\Control\SnapshotAssembler;
 use Stewart\Runtime\Health\ProcessMemory;
+use Stewart\Runtime\Ipc\Message\ActionCallRequest;
+use Stewart\Runtime\Ipc\Message\ActionCallResult;
 use Stewart\Runtime\Ipc\Message\AppActivityReport;
 use Stewart\Runtime\Ipc\Message\Pong;
-use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
-use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\StewartVersion;
@@ -142,13 +142,13 @@ final readonly class BrokerStateFixture
 
     public function startHeldServiceCall(int $workerId): void
     {
-        $request = new ServiceCallRequest(new CorrelationId($workerId . ':1'), ResourceScope::forApp(new AppId($workerId === 0 ? 'demo' : 'echo')), 'light', 'turn_on', [], null, false);
+        $request = new ActionCallRequest(new CorrelationId($workerId . ':1'), ResourceScope::forApp(new AppId($workerId === 0 ? 'demo' : 'echo')), 'light', 'turn_on', [], null, false);
         $held = $this->heldServiceCalls;
 
-        $this->callSlots->runBounded($this->getLiveHandleOf($workerId), $request, static function () use ($held, $request): ServiceCallResult {
+        $this->callSlots->runBounded($this->getLiveHandleOf($workerId), $request, static function () use ($held, $request): ActionCallResult {
             $held->waitUntilOpen();
 
-            return new ServiceCallResult($request->correlationId, new ActionResponse('light', 'turn_on'));
+            return new ActionCallResult($request->correlationId, new ActionResponse('light', 'turn_on'));
         });
     }
 

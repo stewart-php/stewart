@@ -23,6 +23,7 @@ use Stewart\Runtime\Control\Protocol\Status\DeployFailure;
 use Stewart\Runtime\Control\Protocol\Status\DeployStatus;
 use Stewart\Runtime\Control\Protocol\Status\FailureReport;
 use Stewart\Runtime\Control\Protocol\Status\GeneratedCodeStatus;
+use Stewart\Runtime\Control\Protocol\Status\HaCallStats;
 use Stewart\Runtime\Control\Protocol\Status\LatencyHistogram;
 use Stewart\Runtime\Control\Protocol\Status\MqttDropCount;
 use Stewart\Runtime\Control\Protocol\Status\MqttStatus;
@@ -32,7 +33,6 @@ use Stewart\Runtime\Control\Protocol\Status\ReloadAttempt;
 use Stewart\Runtime\Control\Protocol\Status\ReloadStatus;
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
 use Stewart\Runtime\Control\Protocol\Status\ScheduleStatus;
-use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
 use Stewart\Runtime\Control\Protocol\Status\WorkerStatus;
 use Stewart\Runtime\Lifecycle\AppFailurePhase;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
@@ -41,9 +41,9 @@ use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Lifecycle\ReloadOutcome;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
+use Stewart\Runtime\Model\HaCallOutcome;
 use Stewart\Runtime\Model\MqttDropReason;
 use Stewart\Runtime\Model\RoutingStats;
-use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Store\StoreHealth;
 use Stewart\Support\Wire\GeneratedFormat;
@@ -177,9 +177,9 @@ final class StatusRendererTest extends TestCase
                     schedules: 1,
                     exposedEntities: 2,
                     counters: new AppCounters(delivered: 12, subscriptionDropped: 1, scheduleRuns: 3, publishes: 2, failures: 1, suppressed: 4),
-                    serviceCalls: [
-                        new ServiceCallStats(ServiceCallOutcome::Succeeded, 4, new LatencyHistogram([5, 10], [1, 3], 4, Duration::milliseconds(40))),
-                        new ServiceCallStats(ServiceCallOutcome::TimedOut, 1, new LatencyHistogram([5, 10], [0, 0], 1, Duration::seconds(30))),
+                    haCalls: [
+                        new HaCallStats(HaCallOutcome::Succeeded, 4, new LatencyHistogram([5, 10], [1, 3], 4, Duration::milliseconds(40))),
+                        new HaCallStats(HaCallOutcome::TimedOut, 1, new LatencyHistogram([5, 10], [0, 0], 1, Duration::seconds(30))),
                     ],
                     lastFailure: new FailureReport(AppFailurePhase::Handler, 'RuntimeException', 'lamp offline', null, 'unreachable', self::createInstantAt($now - 60.0)),
                     lastHandledAt: self::createInstantAt($now - 90.0),

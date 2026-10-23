@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Support\Wire;
 
 /** @internal */
-final readonly class ServiceFields
+final readonly class ActionFields
 {
     /** @param array<string, mixed> $fields */
     private function __construct(public array $fields) {}

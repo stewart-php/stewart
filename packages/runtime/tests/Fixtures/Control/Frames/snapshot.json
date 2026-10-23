@@ -20,8 +20,8 @@
         "broker": {
             "workers": 1,
             "live_workers": 1,
-            "in_flight_service_calls": 0,
-            "refused_service_calls": 2,
+            "in_flight_ha_calls": 0,
+            "refused_ha_calls": 2,
             "routing": {
                 "subscriptions": 3,
                 "patterns": 1,
@@ -52,7 +52,7 @@
                     "state_batches_sent": 90,
                     "largest_state_batch": 12
                 },
-                "in_flight_service_calls": 0,
+                "in_flight_ha_calls": 0,
                 "restarts": 3,
                 "quarantines": 1
             }
@@ -81,7 +81,7 @@
                     "suppressed": 6,
                     "handled": 12
                 },
-                "service_calls": [
+                "ha_calls": [
                     {
                         "outcome": "succeeded",
                         "count": 10,

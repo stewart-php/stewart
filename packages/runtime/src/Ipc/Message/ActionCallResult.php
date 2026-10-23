@@ -7,8 +7,8 @@ namespace Stewart\Runtime\Ipc\Message;
 use Stewart\Contracts\Action\ActionResponse;
 use Stewart\Runtime\Model\CorrelationId;
 
-#[IpcMessage(tag: 'service_call_result')]
-final readonly class ServiceCallResult implements CorrelatedReply
+#[IpcMessage(tag: 'action_call_result')]
+final readonly class ActionCallResult implements CorrelatedReply
 {
     public function __construct(
         public CorrelationId $correlationId,

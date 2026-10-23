@@ -11,9 +11,9 @@ use stdClass;
 use Stewart\Contracts\Action\ActionResponse;
 use Stewart\Runtime\Broker\Message\LogRecordHandler;
 use Stewart\Runtime\Exception\ContainerError;
+use Stewart\Runtime\Ipc\Message\ActionCallResult;
 use Stewart\Runtime\Ipc\Message\BrokerMessage;
 use Stewart\Runtime\Ipc\Message\LogRecord;
-use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Ipc\MessageHandlerIndex;
 use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\LogLevel;
@@ -57,7 +57,7 @@ final class MessageHandlerIndexTest extends TestCase
         $exact = new class implements BrokerMessageHandler {
             public function handledMessageClass(): string
             {
-                return ServiceCallResult::class;
+                return ActionCallResult::class;
             }
 
             public function handle(BrokerMessage $message): void {}
@@ -72,8 +72,8 @@ final class MessageHandlerIndexTest extends TestCase
         $this->assertThrowsReason(ContainerError::MessageHandlerDuplicated, fn() => MessageHandlerIndex::fromHandlers([new LogRecordHandler(new NullLogger()), new LogRecordHandler(new NullLogger())]));
     }
 
-    private static function createServiceCallResult(): ServiceCallResult
+    private static function createServiceCallResult(): ActionCallResult
     {
-        return new ServiceCallResult(new CorrelationId('w0:1'), new ActionResponse('light', 'turn_on'));
+        return new ActionCallResult(new CorrelationId('w0:1'), new ActionResponse('light', 'turn_on'));
     }
 }

@@ -10,15 +10,15 @@ use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
 use Throwable;
 
-#[IpcMessage(tag: 'service_call_request')]
-final readonly class ServiceCallRequest implements WorkerMessage, RefusableHaCallRequest
+#[IpcMessage(tag: 'action_call_request')]
+final readonly class ActionCallRequest implements WorkerMessage, RefusableHaCallRequest
 {
     /** @param array<string, mixed> $data */
     public function __construct(
         public CorrelationId $correlationId,
         public ResourceScope $scope,
         public string $domain,
-        public string $service,
+        public string $action,
         public array $data,
         public ?ActionTarget $target,
         public bool $returnResponse,
@@ -26,11 +26,11 @@ final readonly class ServiceCallRequest implements WorkerMessage, RefusableHaCal
 
     public function createUnreachableFailure(string $detail, ?Throwable $previous = null): ActionCallException
     {
-        return ActionCallException::unreachable($this->domain, $this->service, $detail, $previous);
+        return ActionCallException::unreachable($this->domain, $this->action, $detail, $previous);
     }
 
     public function createOverloadedFailure(string $detail): ActionCallException
     {
-        return ActionCallException::overloaded($this->domain, $this->service, $detail);
+        return ActionCallException::overloaded($this->domain, $this->action, $detail);
     }
 }

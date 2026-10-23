@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker;
 
 use Stewart\Contracts\Time\Duration;
+use Stewart\Runtime\Control\Protocol\Status\HaCallStats;
 use Stewart\Runtime\Control\Protocol\Status\LatencyHistogram;
-use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
-use Stewart\Runtime\Model\ServiceCallOutcome;
+use Stewart\Runtime\Model\HaCallOutcome;
 
-final class ServiceCallStatsRecorder
+final class HaCallStatsRecorder
 {
     // Prometheus' default seconds buckets, in milliseconds.
     private const array BOUNDS_MS = [5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000];
@@ -23,7 +23,7 @@ final class ServiceCallStatsRecorder
 
     private int $sumMicroseconds = 0;
 
-    public function __construct(private readonly ServiceCallOutcome $outcome) {}
+    public function __construct(private readonly HaCallOutcome $outcome) {}
 
     public function recordCall(?Duration $latency): void
     {
@@ -45,9 +45,9 @@ final class ServiceCallStatsRecorder
         }
     }
 
-    public function buildServiceCallStats(): ServiceCallStats
+    public function buildHaCallStats(): HaCallStats
     {
-        return new ServiceCallStats($this->outcome, $this->count, $this->timed === 0 ? null : $this->buildLatencyHistogram());
+        return new HaCallStats($this->outcome, $this->count, $this->timed === 0 ? null : $this->buildLatencyHistogram());
     }
 
     private function buildLatencyHistogram(): LatencyHistogram

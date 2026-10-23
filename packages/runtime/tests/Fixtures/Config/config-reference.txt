@@ -203,7 +203,7 @@ http:
         # Bearer token Prometheus presents. Optional: without one, anyone who reaches the port reads the metrics.
         token:                null
 
-# What `stewart generate` writes: typed classes over the entities and services of your own instance.
+# What `stewart generate` writes: typed classes over the entities and actions of your own instance.
 codegen:
 
     # Namespace of the generated classes. Composer must map it to output_dir.
@@ -274,7 +274,7 @@ apps:
         # This app's log level, louder or quieter than the global log_level. Omit to use the global one.
         log_level:            null # One of "debug"; "info"; "notice"; "warning"; "error"
 
-        # Log a TRACE line for each event this app receives, each handler call, schedule run and service call, at any log_level.
+        # Log a TRACE line for each event this app receives, each handler call, schedule run and action call, at any log_level.
         trace:                false
 
         # Passed to the app constructor as named arguments.

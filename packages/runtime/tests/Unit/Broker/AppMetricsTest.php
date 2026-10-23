@@ -18,8 +18,8 @@ use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\AppRunningTotals;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\DaemonStartTime;
+use Stewart\Runtime\Broker\HaCallStatsRecorder;
 use Stewart\Runtime\Broker\OutboxLimits;
-use Stewart\Runtime\Broker\ServiceCallStatsRecorder;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
@@ -31,8 +31,8 @@ use Stewart\Runtime\Ipc\Message\Pong;
 use Stewart\Runtime\Lifecycle\AppFailurePhase;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
 use Stewart\Runtime\Lifecycle\AppState;
+use Stewart\Runtime\Model\HaCallOutcome;
 use Stewart\Runtime\Model\ResourceScope;
-use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
@@ -43,7 +43,7 @@ use Stewart\Testing\Time\VirtualClock;
 #[CoversClass(AppMetrics::class)]
 #[CoversClass(AppStatusBuilder::class)]
 #[CoversClass(AppRunningTotals::class)]
-#[CoversClass(ServiceCallStatsRecorder::class)]
+#[CoversClass(HaCallStatsRecorder::class)]
 final class AppMetricsTest extends TestCase
 {
     private AppMetrics $metrics;
@@ -173,11 +173,11 @@ final class AppMetricsTest extends TestCase
 
     public function testLatencyOnABoundCountsInThatBucket(): void
     {
-        $this->metrics->recordFinishedCall(new WorkerId(0), ResourceScope::forApp(new AppId('demo')), ServiceCallOutcome::Succeeded, Duration::milliseconds(5));
-        $this->metrics->recordFinishedCall(new WorkerId(0), ResourceScope::forApp(new AppId('demo')), ServiceCallOutcome::Succeeded, Duration::microseconds(5_001));
-        $this->metrics->recordFinishedCall(new WorkerId(0), ResourceScope::forApp(new AppId('demo')), ServiceCallOutcome::Succeeded, Duration::seconds(6));
+        $this->metrics->recordFinishedCall(new WorkerId(0), ResourceScope::forApp(new AppId('demo')), HaCallOutcome::Succeeded, Duration::milliseconds(5));
+        $this->metrics->recordFinishedCall(new WorkerId(0), ResourceScope::forApp(new AppId('demo')), HaCallOutcome::Succeeded, Duration::microseconds(5_001));
+        $this->metrics->recordFinishedCall(new WorkerId(0), ResourceScope::forApp(new AppId('demo')), HaCallOutcome::Succeeded, Duration::seconds(6));
 
-        $latency = $this->listAppStatuses()[0]->serviceCalls[0]->latency;
+        $latency = $this->listAppStatuses()[0]->haCalls[0]->latency;
 
         self::assertNotNull($latency);
         self::assertSame([1, 2], \array_slice($latency->cumulativeCounts, 0, 2));

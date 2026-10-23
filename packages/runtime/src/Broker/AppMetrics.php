@@ -13,8 +13,8 @@ use Stewart\Runtime\Ipc\Message\AppActivityReport;
 use Stewart\Runtime\Ipc\Message\AppFailed;
 use Stewart\Runtime\Ipc\Message\Pong;
 use Stewart\Runtime\Model\ExposedCommandOutcome;
+use Stewart\Runtime\Model\HaCallOutcome;
 use Stewart\Runtime\Model\ResourceScope;
-use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\WorkerId;
 use WeakMap;
 
@@ -78,14 +78,14 @@ final class AppMetrics
         $this->lastActivityReports[$handle] = $latest;
     }
 
-    public function recordFinishedCall(WorkerId $workerId, ResourceScope $scope, ServiceCallOutcome $outcome, Duration $latency): void
+    public function recordFinishedCall(WorkerId $workerId, ResourceScope $scope, HaCallOutcome $outcome, Duration $latency): void
     {
         $this->findOrCreateRunningTotals($workerId, $scope)?->recordCall($outcome, $latency);
     }
 
     public function recordRefusedCall(WorkerId $workerId, ResourceScope $scope): void
     {
-        $this->findOrCreateRunningTotals($workerId, $scope)?->recordCall(ServiceCallOutcome::Refused, null);
+        $this->findOrCreateRunningTotals($workerId, $scope)?->recordCall(HaCallOutcome::Refused, null);
     }
 
     public function recordExposedCommand(AppId $appId, ExposedCommandOutcome $outcome): void

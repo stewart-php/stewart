@@ -40,6 +40,6 @@ of its own, so PlantUML warning about that is expected.
 | `05-protocol` | The core channel messages |
 | `06-boot` | Startup through `WorkerReady` |
 | `07-state-event` | A state change reaching an app |
-| `08-service-call` | The correlated call and its fiber suspension |
+| `08-action-call` | The correlated call and its fiber suspension |
 | `09-pubsub` | App-to-app messaging across processes |
 | `10-shutdown` | Graceful shutdown |

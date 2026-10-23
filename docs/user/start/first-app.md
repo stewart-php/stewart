@@ -62,7 +62,7 @@ Waiting for sunset to check your app is slow. A test runs the app on a virtual c
   scheduler.
 - Its clock starts at midnight on 1 January 2026 and stands still until the test moves it.
 - `advanceTime(Duration::hours(18))` jumps to 18:00, the harness's sunset. Every schedule due on the way runs.
-- `getLastCall()` returns the last service call the app made, so the test can check it.
+- `getLastCall()` returns the last action call the app made, so the test can check it.
 
 Run the tests:
 

@@ -17,6 +17,7 @@ use Stewart\Runtime\Control\Protocol\Status\DeployFailure;
 use Stewart\Runtime\Control\Protocol\Status\DeployStatus;
 use Stewart\Runtime\Control\Protocol\Status\FailureReport;
 use Stewart\Runtime\Control\Protocol\Status\GeneratedCodeStatus;
+use Stewart\Runtime\Control\Protocol\Status\HaCallStats;
 use Stewart\Runtime\Control\Protocol\Status\LatencyHistogram;
 use Stewart\Runtime\Control\Protocol\Status\MqttDropCount;
 use Stewart\Runtime\Control\Protocol\Status\MqttStatus;
@@ -26,7 +27,6 @@ use Stewart\Runtime\Control\Protocol\Status\ReloadAttempt;
 use Stewart\Runtime\Control\Protocol\Status\ReloadStatus;
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
 use Stewart\Runtime\Control\Protocol\Status\ScheduleStatus;
-use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
 use Stewart\Runtime\Control\Protocol\Status\WorkerStatus;
 use Stewart\Runtime\Control\SnapshotSource;
 use Stewart\Runtime\Lifecycle\AppFailurePhase;
@@ -36,9 +36,9 @@ use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Lifecycle\ReloadOutcome;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
+use Stewart\Runtime\Model\HaCallOutcome;
 use Stewart\Runtime\Model\MqttDropReason;
 use Stewart\Runtime\Model\RoutingStats;
-use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Store\StoreHealth;
 
@@ -80,9 +80,9 @@ final class StubSnapshotSource implements SnapshotSource
                 schedules: 1,
                 exposedEntities: 3,
                 counters: new AppCounters(delivered: 30, subscriptionDropped: 1, scheduleRuns: 4, publishes: 2, failures: 1, suppressed: 6, handled: 12),
-                serviceCalls: [
-                    new ServiceCallStats(ServiceCallOutcome::Succeeded, 10, new LatencyHistogram([5, 10, 25], [2, 9, 10], 10, Duration::milliseconds(80))),
-                    new ServiceCallStats(ServiceCallOutcome::Refused, 2, null),
+                haCalls: [
+                    new HaCallStats(HaCallOutcome::Succeeded, 10, new LatencyHistogram([5, 10, 25], [2, 9, 10], 10, Duration::milliseconds(80))),
+                    new HaCallStats(HaCallOutcome::Refused, 2, null),
                 ],
                 lastFailure: new FailureReport(AppFailurePhase::Handler, 'RuntimeException', 'boom', 'subscription w0:1', 'entity_not_found', Instant::fromIso('2026-09-26T10:30:00Z')),
                 lastHandledAt: Instant::fromIso('2026-09-26T10:57:00Z'),

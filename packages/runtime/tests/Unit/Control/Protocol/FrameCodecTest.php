@@ -23,11 +23,11 @@ use Stewart\Runtime\Control\Protocol\Status\BrokerStats;
 use Stewart\Runtime\Control\Protocol\Status\ConnectionState;
 use Stewart\Runtime\Control\Protocol\Status\DaemonInfo;
 use Stewart\Runtime\Control\Protocol\Status\FailureReport;
+use Stewart\Runtime\Control\Protocol\Status\HaCallStats;
 use Stewart\Runtime\Control\Protocol\Status\LatencyHistogram;
 use Stewart\Runtime\Control\Protocol\Status\OutboxStatus;
 use Stewart\Runtime\Control\Protocol\Status\RegistrationInfo;
 use Stewart\Runtime\Control\Protocol\Status\RuntimeSnapshot;
-use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
 use Stewart\Runtime\Control\Protocol\Status\WorkerStatus;
 use Stewart\Runtime\Exception\ControlError;
 use Stewart\Runtime\Exception\ControlException;
@@ -39,8 +39,8 @@ use Stewart\Runtime\Lifecycle\AppFailurePhase;
 use Stewart\Runtime\Lifecycle\AppState;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
+use Stewart\Runtime\Model\HaCallOutcome;
 use Stewart\Runtime\Model\RoutingStats;
-use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Runtime\Tests\Fixtures\Wire\BrokenDurationConverter;
 use Stewart\Store\StoreHealth;
@@ -54,7 +54,7 @@ use Stewart\Testing\Exception\AssertsReason;
 #[CoversClass(ControlException::class)]
 #[CoversClass(JsonShapeException::class)]
 #[CoversClass(LatencyHistogram::class)]
-#[CoversClass(ServiceCallOutcome::class)]
+#[CoversClass(HaCallOutcome::class)]
 final class FrameCodecTest extends TestCase
 {
     use AssertsReason;
@@ -112,7 +112,7 @@ final class FrameCodecTest extends TestCase
         [$demo, $broken] = $decoded->snapshot->apps;
         self::assertSame(AppState::Failed, $broken->state);
         self::assertSame('boom', $broken->lastFailure?->message);
-        self::assertNull($demo->serviceCalls[1]->latency, 'A refused call carries no latency.');
+        self::assertNull($demo->haCalls[1]->latency, 'A refused call carries no latency.');
     }
 
     public function testHistogramNamesTheBoundAQuantileFallsUnder(): void
@@ -128,10 +128,10 @@ final class FrameCodecTest extends TestCase
 
     public function testFailureReasonMapsToAnOutcome(): void
     {
-        self::assertSame(ServiceCallOutcome::Refused, ServiceCallOutcome::failedWith(ActionCallError::Overloaded));
-        self::assertSame(ServiceCallOutcome::TimedOut, ServiceCallOutcome::failedWith(ActionCallError::TimedOut));
-        self::assertFalse(ServiceCallOutcome::Succeeded->isFailure());
-        self::assertTrue(ServiceCallOutcome::Rejected->isFailure());
+        self::assertSame(HaCallOutcome::Refused, HaCallOutcome::failedWith(ActionCallError::Overloaded));
+        self::assertSame(HaCallOutcome::TimedOut, HaCallOutcome::failedWith(ActionCallError::TimedOut));
+        self::assertFalse(HaCallOutcome::Succeeded->isFailure());
+        self::assertTrue(HaCallOutcome::Rejected->isFailure());
     }
 
     public function testDaemonWithoutAStoreSendsNoStoreHealth(): void
@@ -257,9 +257,9 @@ final class FrameCodecTest extends TestCase
                     schedules: 1,
                     exposedEntities: 1,
                     counters: new AppCounters(3, 1, 1, 1, 0),
-                    serviceCalls: [
-                        new ServiceCallStats(ServiceCallOutcome::Succeeded, 4, new LatencyHistogram([5, 10], [1, 4], 4, Duration::microseconds(18_250))),
-                        new ServiceCallStats(ServiceCallOutcome::Refused, 1, null),
+                    haCalls: [
+                        new HaCallStats(HaCallOutcome::Succeeded, 4, new LatencyHistogram([5, 10], [1, 4], 4, Duration::microseconds(18_250))),
+                        new HaCallStats(HaCallOutcome::Refused, 1, null),
                     ],
                     lastFailure: null,
                 ),
@@ -275,7 +275,7 @@ final class FrameCodecTest extends TestCase
                     schedules: 0,
                     exposedEntities: 0,
                     counters: new AppCounters(failures: 1),
-                    serviceCalls: [],
+                    haCalls: [],
                     lastFailure: new FailureReport(AppFailurePhase::Initialize, 'RuntimeException', 'boom', null, 'timed_out', self::createInstantAt(1700000000.1)),
                 ),
                 new AppStatus('other', 'Other', 1, null, null, null, null, 0, 0, 0, new AppCounters(), [], null),

@@ -1,5 +1,5 @@
 {
-    "t": "service_call_result",
+    "t": "action_call_result",
     "m": {
         "correlation_id": "w0:2",
         "result": {

@@ -22,7 +22,7 @@ use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Broker\BrokerKernelFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHomeAssistant;
-use Stewart\Runtime\Tests\Fixtures\Broker\ReceivedServiceCall;
+use Stewart\Runtime\Tests\Fixtures\Broker\ReceivedActionCall;
 use Stewart\Runtime\Tests\Fixtures\Broker\WorkerPoolFixture;
 use Stewart\Runtime\Tests\Fixtures\Protocol\OwnChangeReporter;
 use Stewart\Runtime\Tests\Fixtures\Worker\InMemoryWorkerSpawner;
@@ -64,7 +64,7 @@ final class OwnChangeRoundTripTest extends TestCase
 
         self::assertSame(
             [['by_last_call' => true, 'by_stewart' => true], ['by_last_call' => false, 'by_stewart' => false]],
-            array_map(static fn(ReceivedServiceCall $call): array => $call->data, \array_slice($broker->homeAssistant->listReceivedCalls(), 1)),
+            array_map(static fn(ReceivedActionCall $call): array => $call->data, \array_slice($broker->homeAssistant->listReceivedCalls(), 1)),
         );
 
         $broker->run->stop('test done');

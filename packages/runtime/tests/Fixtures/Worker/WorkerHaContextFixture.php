@@ -14,10 +14,10 @@ use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Stewart\Runtime\Worker\AppActivityCounters;
 use Stewart\Runtime\Worker\ConnectionStatus;
+use Stewart\Runtime\Worker\Context\ActionCaller;
 use Stewart\Runtime\Worker\Context\DispatchStreams;
 use Stewart\Runtime\Worker\Context\EventFirer;
 use Stewart\Runtime\Worker\Context\HistoryReader;
-use Stewart\Runtime\Worker\Context\ServiceCaller;
 use Stewart\Runtime\Worker\Context\TopicPublisher;
 use Stewart\Runtime\Worker\CorrelationIdSequence;
 use Stewart\Runtime\Worker\PendingRequests;
@@ -46,7 +46,7 @@ final class WorkerHaContextFixture
             $stateCache,
             $registry,
             $connection,
-            new ServiceCaller($transport, $pending, $connection, $timers, TestBootstrap::createWorkerSettings(callTimeout: $callTimeout ?? Duration::seconds(1))),
+            new ActionCaller($transport, $pending, $connection, $timers, TestBootstrap::createWorkerSettings(callTimeout: $callTimeout ?? Duration::seconds(1))),
             new HistoryReader($transport, $pending, $connection, $timers, $timers->clock, TestBootstrap::createWorkerSettings(callTimeout: $callTimeout ?? Duration::seconds(1))),
             new EventFirer($transport, $pending, $connection, $timers, TestBootstrap::createWorkerSettings(callTimeout: $callTimeout ?? Duration::seconds(1))),
             new DispatchStreams($dispatcher ?? RecordingDispatchListener::createDispatcher(10, $registry), $timers, $stateCache, $registry),

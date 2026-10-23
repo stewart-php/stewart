@@ -25,11 +25,11 @@ use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Config\HaCallPolicy;
+use Stewart\Runtime\Ipc\Message\ActionCallRequest;
+use Stewart\Runtime\Ipc\Message\ActionCallResult;
 use Stewart\Runtime\Ipc\Message\HistoryRequest;
 use Stewart\Runtime\Ipc\Message\HistoryResult;
 use Stewart\Runtime\Ipc\Message\RequestFailed;
-use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
-use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
@@ -107,12 +107,12 @@ final class HistoryRequestHandlerTest extends TestCase
 
     public function testFullCallBudgetRefusesHistory(): void
     {
-        $serviceCall = new ServiceCallRequest(new CorrelationId('w0:1'), ResourceScope::forApp(new AppId('demo')), 'light', 'turn_on', [], null, false);
+        $serviceCall = new ActionCallRequest(new CorrelationId('w0:1'), ResourceScope::forApp(new AppId('demo')), 'light', 'turn_on', [], null, false);
         $held = new Latch();
-        $this->slots->runBounded($this->worker, $serviceCall, static function () use ($held, $serviceCall): ServiceCallResult {
+        $this->slots->runBounded($this->worker, $serviceCall, static function () use ($held, $serviceCall): ActionCallResult {
             $held->waitUntilOpen();
 
-            return new ServiceCallResult($serviceCall->correlationId, new ActionResponse('light', 'turn_on'));
+            return new ActionCallResult($serviceCall->correlationId, new ActionResponse('light', 'turn_on'));
         });
 
         $this->forwardRequest();

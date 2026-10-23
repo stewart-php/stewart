@@ -21,6 +21,6 @@ final readonly class InitCaller implements App
     {
         $this->ha->callAction('light.turn_on');
 
-        $this->logger->info('Initialize call finished', ['service' => 'light.turn_on']);
+        $this->logger->info('Initialize call finished', ['action' => 'light.turn_on']);
     }
 }

@@ -18,6 +18,8 @@ Stewart serves these metrics at `GET /metrics` in the Prometheus text format, on
 | `stewart_app_exposed_commands_total` | counter | `app`, `worker`, `outcome` | Home Assistant commands on the app's exposed entities by outcome. |
 | `stewart_app_exposed_entities` | gauge | `app`, `worker` | Home Assistant entities the app exposes, unavailable ones included. |
 | `stewart_app_failures_total` | counter | `app`, `worker` | Handler failures of the app. |
+| `stewart_app_ha_call_duration_seconds` | histogram | `app`, `worker`, `outcome` | Home Assistant call latency of the app by outcome. |
+| `stewart_app_ha_calls_total` | counter | `app`, `worker`, `outcome` | Home Assistant calls of the app by outcome. |
 | `stewart_app_info` | gauge | `app`, `worker`, `class` | App class per app; always 1. |
 | `stewart_app_last_failure_timestamp_seconds` | gauge | `app`, `worker` | Unix time of the last app failure. |
 | `stewart_app_last_handled_timestamp_seconds` | gauge | `app`, `worker` | Unix time the app's own handler last ran for an event. |
@@ -26,8 +28,6 @@ Stewart serves these metrics at `GET /metrics` in the Prometheus text format, on
 | `stewart_app_publishes_total` | counter | `app`, `worker` | Messages the app published. |
 | `stewart_app_schedule_runs_total` | counter | `app`, `worker` | Scheduled handler runs. |
 | `stewart_app_schedules` | gauge | `app`, `worker` | Schedules the app holds. |
-| `stewart_app_service_call_duration_seconds` | histogram | `app`, `worker`, `outcome` | Home Assistant call latency of the app by outcome. |
-| `stewart_app_service_calls_total` | counter | `app`, `worker`, `outcome` | Home Assistant calls of the app by outcome. |
 | `stewart_app_state` | gauge | `app`, `worker`, `state` | App lifecycle state; 1 for the current one. |
 | `stewart_app_subscription_dropped_total` | counter | `app`, `worker` | Events dropped because a subscription queue was full. |
 | `stewart_app_subscriptions` | gauge | `app`, `worker` | Subscriptions the app holds. |
@@ -40,6 +40,8 @@ Stewart serves these metrics at `GET /metrics` in the Prometheus text format, on
 | `stewart_deploy_info` | gauge | `commit` | Commit the daemon runs while it polls for new ones; always 1. |
 | `stewart_generated_entities_drift` | gauge | `change` | Home Assistant entities the generated classes miss (added) or still have (removed). |
 | `stewart_generated_format_current` | gauge |  | Whether stewart generate wrote the generated classes in the current format; 1 or 0. |
+| `stewart_ha_calls_in_flight` | gauge |  | Home Assistant calls awaiting an answer. |
+| `stewart_ha_calls_refused_total` | counter |  | Home Assistant calls refused for lack of a free slot. |
 | `stewart_ha_connection_phase` | gauge | `phase` | Home Assistant connection phase; 1 for the current one. |
 | `stewart_ha_entities` | gauge |  | Entities in the Home Assistant state cache. |
 | `stewart_ha_last_outage_seconds` | gauge |  | Length of the last Home Assistant outage. |
@@ -54,11 +56,10 @@ Stewart serves these metrics at `GET /metrics` in the Prometheus text format, on
 | `stewart_routing_cached_keys` | gauge |  | Routing keys with a cached match. |
 | `stewart_routing_patterns` | gauge |  | Wildcard patterns in the broker routing index. |
 | `stewart_routing_subscriptions` | gauge |  | Subscriptions in the broker routing index. |
-| `stewart_service_calls_in_flight` | gauge |  | Home Assistant calls awaiting an answer. |
-| `stewart_service_calls_refused_total` | counter |  | Home Assistant calls refused for lack of a free slot. |
 | `stewart_start_time_seconds` | gauge |  | Unix time the daemon started. |
 | `stewart_store_available` | gauge |  | Whether workers reach the store; 1 or 0. |
 | `stewart_store_last_failure_timestamp_seconds` | gauge |  | Unix time of the last store failure. |
+| `stewart_worker_ha_calls_in_flight` | gauge | `worker` | Home Assistant calls of this worker awaiting an answer. |
 | `stewart_worker_last_pong_timestamp_seconds` | gauge | `worker` | Unix time of the last liveness answer. |
 | `stewart_worker_loop_lag_seconds` | gauge | `worker` | Event loop lag the worker last reported. |
 | `stewart_worker_memory_bytes` | gauge | `worker` | Resident memory (RSS) the worker process last reported. |
@@ -74,6 +75,5 @@ Stewart serves these metrics at `GET /metrics` in the Prometheus text format, on
 | `stewart_worker_restart_due_timestamp_seconds` | gauge | `worker` | Unix time of the next scheduled restart. |
 | `stewart_worker_restarts_in_window` | gauge | `worker` | Restarts inside the current restart budget window. |
 | `stewart_worker_restarts_total` | counter | `worker` | Restarts scheduled since the daemon started. |
-| `stewart_worker_service_calls_in_flight` | gauge | `worker` | Home Assistant calls of this worker awaiting an answer. |
 | `stewart_workers` | gauge |  | Worker slots the broker supervises. |
 | `stewart_workers_live` | gauge |  | Worker processes currently running. |

@@ -46,14 +46,14 @@ An upsert for an app and key that exist under another platform replaces the enti
 ## A command
 
 ```
-HA service call ─▶ component ──event command──▶ broker ──IPC──▶ worker handler
+HA action call ─▶ component ──event command──▶ broker ──IPC──▶ worker handler
                      │ waits                                       │
                      ◀──── stewart/command/result {ok, message} ◀──┘
 ```
 
 The component gives each command an id and waits up to `command_timeout`. A handler that returns answers `ok: true`,
 and the component applies the requested state. A handler that throws `CommandException::rejected()` answers `ok: false` with its
-message, and the service call fails with that message. The broker answers for a paused app itself, with `ok: false`.
+message, and the action call fails with that message. The broker answers for a paused app itself, with `ok: false`.
 
 ---
 
@@ -84,7 +84,7 @@ unavailable. `expose.prune: false` skips the call.
 | The component is not installed | `unknown_command` on `stewart/version` | Exposure off; `expose*()` throws `ExposureError::ComponentMissing` |
 | Stewart and the component disagree on the protocol | `protocol` differs, or `protocol_mismatch` on subscribe | Exposure off; `expose*()` throws `ExposureError::ProtocolMismatch` |
 | The session ends | Home Assistant closes the subscription | Every entity of the instance becomes unavailable until the replay |
-| A handler is too slow | No `stewart/command/result` within `command_timeout` | The service call fails; a late answer gets `not_found` |
+| A handler is too slow | No `stewart/command/result` within `command_timeout` | The action call fails; a late answer gets `not_found` |
 | The worker dies during a command | The broker loses the owner | The broker answers `ok: false`; the app's entities become unavailable |
 | A config or state does not fit the platform | `invalid_config` or `invalid_state` | The upsert or state change is refused; the entity keeps its previous value |
 

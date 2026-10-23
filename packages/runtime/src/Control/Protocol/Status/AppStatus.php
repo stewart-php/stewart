@@ -11,7 +11,7 @@ use Stewart\Runtime\Lifecycle\AppState;
 final readonly class AppStatus
 {
     /**
-     * @param list<ServiceCallStats> $serviceCalls
+     * @param list<HaCallStats> $haCalls
      * @param list<ExposedCommandStats> $exposedCommands
      */
     public function __construct(
@@ -26,8 +26,8 @@ final readonly class AppStatus
         public int $schedules,
         public int $exposedEntities,
         public AppCounters $counters,
-        #[ListOf(ServiceCallStats::class)]
-        public array $serviceCalls,
+        #[ListOf(HaCallStats::class)]
+        public array $haCalls,
         public ?FailureReport $lastFailure,
         #[ListOf(ExposedCommandStats::class)]
         public array $exposedCommands = [],

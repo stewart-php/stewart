@@ -323,7 +323,7 @@ final class StewartConfigSchema implements ConfigurationInterface
         $root
             ->children()
                 ->arrayNode('codegen')
-                    ->info('What `stewart generate` writes: typed classes over the entities and services of your own instance.')
+                    ->info('What `stewart generate` writes: typed classes over the entities and actions of your own instance.')
                     ->addDefaultsIfNotSet()
                     ->children()
                         ->append($this->createScalarNode('namespace', 'Namespace of the generated classes. Composer must map it to output_dir.', 'App\\Generated'))
@@ -492,7 +492,7 @@ final class StewartConfigSchema implements ConfigurationInterface
                                 ->defaultNull()
                             ->end()
                             ->booleanNode('trace')
-                                ->info('Log a TRACE line for each event this app receives, each handler call, schedule run and service call, at any log_level.')
+                                ->info('Log a TRACE line for each event this app receives, each handler call, schedule run and action call, at any log_level.')
                                 ->defaultFalse()
                             ->end()
                             ->arrayNode('options')

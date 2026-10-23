@@ -12,29 +12,29 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\EventFireError;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
+use Stewart\Runtime\Broker\ActionCallTracer;
 use Stewart\Runtime\Broker\AppMetrics;
 use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\HaCallSlots;
+use Stewart\Runtime\Broker\Message\ActionCallRequestHandler;
 use Stewart\Runtime\Broker\Message\EventFireRequestHandler;
-use Stewart\Runtime\Broker\Message\ServiceCallRequestHandler;
 use Stewart\Runtime\Broker\OutboxLimits;
-use Stewart\Runtime\Broker\ServiceCallTracer;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Config\HaCallPolicy;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
-use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
+use Stewart\Runtime\Control\Protocol\Status\HaCallStats;
+use Stewart\Runtime\Ipc\Message\ActionCallRequest;
 use Stewart\Runtime\Ipc\Message\EventFireRequest;
 use Stewart\Runtime\Ipc\Message\EventFireResult;
 use Stewart\Runtime\Ipc\Message\RequestFailed;
-use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Logging\LogVerbosityPolicy;
 use Stewart\Runtime\Model\CorrelationId;
+use Stewart\Runtime\Model\HaCallOutcome;
 use Stewart\Runtime\Model\LogLevel;
 use Stewart\Runtime\Model\ResourceScope;
-use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
@@ -49,7 +49,7 @@ use Stewart\Testing\Time\ManualTimers;
 use Stewart\Testing\Time\VirtualClock;
 
 #[CoversClass(EventFireRequestHandler::class)]
-#[CoversClass(ServiceCallOutcome::class)]
+#[CoversClass(HaCallOutcome::class)]
 final class EventFireRequestHandlerTest extends TestCase
 {
     private FakeHaSession $session;
@@ -101,10 +101,10 @@ final class EventFireRequestHandlerTest extends TestCase
     {
         $policy = new HaCallPolicy(perWorker: 1, total: 0);
         $handler = $this->createHandler($policy);
-        $serviceCalls = new ServiceCallRequestHandler($this->session, $this->homeAssistant->client, $this->slots, $policy, new ServiceCallTracer(new NullLogger(), new LogVerbosityPolicy(LogLevel::Info)), new VirtualClock(), new NullLogger());
+        $actionCalls = new ActionCallRequestHandler($this->session, $this->homeAssistant->client, $this->slots, $policy, new ActionCallTracer(new NullLogger(), new LogVerbosityPolicy(LogLevel::Info)), new VirtualClock(), new NullLogger());
         $worker = $this->createHandle();
 
-        $serviceCalls->handle($worker, new ServiceCallRequest(new CorrelationId('call'), ResourceScope::forApp(new AppId('demo')), 'light', 'turn_on', [], null, false));
+        $actionCalls->handle($worker, new ActionCallRequest(new CorrelationId('call'), ResourceScope::forApp(new AppId('demo')), 'light', 'turn_on', [], null, false));
         $handler->handle($worker, self::createRequest('fire'));
         EventLoopTicks::settleUntil(static fn(): bool => self::listSentOfType($worker, RequestFailed::class) !== []);
 
@@ -136,10 +136,10 @@ final class EventFireRequestHandlerTest extends TestCase
         $handler->handle($worker, self::createRequest('b'));
         $this->finishCalls();
 
-        $calls = new AppStatusBuilder($this->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock())), FakeHomeAssistant::createUnreachable()->exposures)->buildAppStatuses()[0]->serviceCalls;
+        $calls = new AppStatusBuilder($this->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock())), FakeHomeAssistant::createUnreachable()->exposures)->buildAppStatuses()[0]->haCalls;
         self::assertSame(
-            [ServiceCallOutcome::Refused, ServiceCallOutcome::Succeeded],
-            array_map(static fn(ServiceCallStats $stats): ServiceCallOutcome => $stats->outcome, $calls),
+            [HaCallOutcome::Refused, HaCallOutcome::Succeeded],
+            array_map(static fn(HaCallStats $stats): HaCallOutcome => $stats->outcome, $calls),
         );
     }
 

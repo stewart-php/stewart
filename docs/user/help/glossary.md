@@ -7,7 +7,7 @@ sidebar:
 
 | Term | Meaning |
 |---|---|
-| **Action** | What Home Assistant calls with `callAction()`, such as `light.turn_on`; older releases called it a service. Also an [exposed action](../guides/exposed-entities.md#actions): an action your app answers. |
+| **Action** | Something you call in Home Assistant with `callAction()`, such as `light.turn_on`; Home Assistant used to call it a service. Also an [exposed action](../guides/exposed-entities.md#actions): an action your app answers. |
 | **Admin API** | An optional HTTP port to list, pause and resume apps; [metrics](../reference/metrics.md) have a port of their own. |
 | **App** | One automation: a class in `apps/` with `#[Automation]` that implements `App`. |
 | **App ID** | The name in `#[Automation(id: '…')]`. It names the app in logs, settings and stored data. |
@@ -24,7 +24,7 @@ sidebar:
 | **Option** | A constructor parameter of an app that `stewart.yaml` can set, under `apps.<id>.options`. |
 | **Reason** | The enum on every Stewart exception that says exactly what failed, such as `StoreError::TypeMismatch`. |
 | **Selector** | The entity IDs a method listens to: an exact ID, a pattern with `*`, or a list. |
-| **Service** | Two meanings. In Home Assistant, something you call, such as `light.turn_on`. In `services.php`, one of your own classes that apps receive in their constructor. |
+| **Service** | One of your own classes, registered in `services.php`, that apps receive in their constructor. What Home Assistant used to call a service is an **Action**. |
 | **Skeleton** | The template a new project starts from, `stewart-php/skeleton`. |
 | **Store** | Storage that survives restarts, kept in Valkey. Each app has its own; the global store is shared. |
 | **Stream** | What `watchStateChanges()`, `watchEvents()` and similar methods return: a sequence of events to shape with operators and `subscribe()` to. |

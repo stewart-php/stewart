@@ -12,12 +12,12 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Broker\ProcessWorkerSpawner;
+use Stewart\Runtime\Ipc\Message\ActionCallRequest;
+use Stewart\Runtime\Ipc\Message\ActionCallResult;
 use Stewart\Runtime\Ipc\Message\AppFailed;
 use Stewart\Runtime\Ipc\Message\LogRecord;
 use Stewart\Runtime\Ipc\Message\Ping;
 use Stewart\Runtime\Ipc\Message\Pong;
-use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
-use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Ipc\Message\Shutdown;
 use Stewart\Runtime\Ipc\Message\WorkerReady;
 use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
@@ -90,8 +90,8 @@ final class WorkerFaultIsolationProcessTest extends TestCase
 
         $startedAt = hrtime(true);
         $this->worker->send(new Shutdown('done', Duration::seconds(self::GRACE_SECONDS)));
-        $request = $this->worker->receiveUntil(ServiceCallRequest::class);
-        $this->worker->send(new ServiceCallResult($request->correlationId, new ActionResponse('light', 'turn_off')));
+        $request = $this->worker->receiveUntil(ActionCallRequest::class);
+        $this->worker->send(new ActionCallResult($request->correlationId, new ActionResponse('light', 'turn_off')));
         $this->worker->receiveUntil(LogRecord::class, static fn(LogRecord $log): bool => $log->message === 'Dispose call finished');
         $abandoned = $this->worker->receiveUntil(LogRecord::class, static fn(LogRecord $log): bool => $log->message === 'Apps did not stop within the grace period');
 

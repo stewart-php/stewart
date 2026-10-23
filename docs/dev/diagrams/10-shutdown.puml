@@ -14,7 +14,7 @@ b -> b : stop probing and restarting workers
 b -> w : **Shutdown** { reason, grace }
 w -> app : dispose()
 app --> w
-w -> w : fail all pending\nservice-call futures
+w -> w : fail all pending\naction-call futures
 note right of w
   Anything still awaiting a result would
   otherwise hang a fiber through shutdown.

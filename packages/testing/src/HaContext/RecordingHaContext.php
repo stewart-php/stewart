@@ -42,9 +42,9 @@ use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Support\State\StewartIdentity;
 use Stewart\Support\Stream\OperatorStream;
 use Stewart\Support\Stream\StateChanges;
+use Stewart\Support\Wire\ActionFields;
 use Stewart\Support\Wire\EventPayload;
 use Stewart\Support\Wire\EventTypeSelector;
-use Stewart\Support\Wire\ServiceFields;
 use Stewart\Support\Wire\TopicPayload;
 use Stewart\Support\Wire\TriggerSpec;
 use Stewart\Testing\HaContext\Collection\RecordedActionCallCollection;
@@ -402,7 +402,7 @@ final class RecordingHaContext implements HaContext
         $call = new RecordedActionCall(
             $action->domain,
             $action->action,
-            ServiceFields::fromFieldsDroppingNulls($data)->fields,
+            ActionFields::fromFieldsDroppingNulls($data)->fields,
             $target?->toActionTarget(),
             $returnsResponse,
             $this->issueContext(),
