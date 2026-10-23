@@ -93,13 +93,13 @@ Everything is optional; these are the defaults:
 
 ```yaml
 codegen:
-  namespace: App\Generated
   output_dir: generated
   include: ['*']
   exclude: []
 ```
 
-`include` and `exclude` take entity IDs and patterns, such as `light.debug_*`. Exclude wins.
+`include` and `exclude` take entity IDs and patterns, such as `light.debug_*`. Exclude wins. The namespace is the one
+`composer.json` maps to `output_dir`; `codegen.namespace` sets it when several do.
 
 An attribute gets an accessor when Home Assistant defines it for the domain (such as `brightness` on a light), or
 when you include it:
@@ -164,12 +164,13 @@ composer config allow-plugins.phpstan/extension-installer true
 composer require --dev stewart-php/phpstan phpstan/extension-installer
 ```
 
-With a `codegen.namespace` other than `App\Generated`, tell it where the manifest is in `phpstan.neon.dist`:
+It finds the generated `Manifest` through `composer.json`, as `stewart generate` does. With an `output_dir` that
+several namespaces map to, name it in `phpstan.neon.dist`:
 
 ```neon
 parameters:
     stewart:
-        manifest: Home\Generated\Manifest
+        manifest: Automations\Generated\Manifest
 ```
 
 An entity that exists only at run time, such as one an app creates, can be silenced with PHPStan's

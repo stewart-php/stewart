@@ -147,6 +147,7 @@ final class PackageDependencyRules
                 Selector::inNamespace('Stewart\Support'),
                 Selector::inNamespace('PHPStan'),
                 Selector::inNamespace('PhpParser'),
+                Selector::inNamespace('Composer\Autoload'),
             )
             ->because('a project installs the extension for development only, next to whatever runtime it runs');
     }

@@ -20,8 +20,9 @@ final class ManifestCatalogLoader
     private bool $loaded = false;
 
     public function __construct(
-        private readonly string $manifestClass,
+        private readonly ?string $manifestClass,
         private readonly ReflectionProvider $reflection,
+        private readonly GeneratedManifestLocator $locator,
     ) {}
 
     // Tracked also while there is no Manifest, so the first make generate brings the findings.
@@ -70,7 +71,12 @@ final class ManifestCatalogLoader
 
     private function loadCatalog(): ?ManifestCatalog
     {
-        $class = $this->manifestClass;
+        $class = $this->manifestClass ?? $this->locator->findManifestClass();
+
+        if ($class === null) {
+            return null;
+        }
+
         $separator = strrpos($class, '\\');
         $namespace = $separator === false ? '' : substr($class, 0, $separator);
 

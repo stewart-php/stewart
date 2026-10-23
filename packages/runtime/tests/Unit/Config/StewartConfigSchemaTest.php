@@ -230,7 +230,7 @@ final class StewartConfigSchemaTest extends TestCase
     {
         $processed = self::processConfigs([self::addRequiredConnection()]);
 
-        self::assertSame('App\\Generated', self::getValueAt($processed, 'codegen.namespace'));
+        self::assertNull(self::getValueAt($processed, 'codegen.namespace'));
         self::assertSame('generated', self::getValueAt($processed, 'codegen.output_dir'));
         self::assertSame(['*'], self::getValueAt($processed, 'codegen.include'));
         self::assertSame([], self::getValueAt($processed, 'codegen.exclude'));

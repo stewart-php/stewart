@@ -19,7 +19,7 @@ final class ConfigFixtureTest extends TestCase
     {
         $processed = new Processor()->process(new StewartConfigSchema()->buildConfigTree(), [['home_assistant' => ConfigFixture::HOME_ASSISTANT]]);
 
-        self::assertEquals(StewartConfig::fromSection(ConfigSection::forRoot($processed)), ConfigFixture::createStewartConfig());
+        self::assertEquals(StewartConfig::fromSection(ConfigSection::forRoot($processed), ConfigFixture::createGeneratedNamespaceResolver()), ConfigFixture::createStewartConfig());
     }
 
     public function testSectionAccessorOverridesOnlyWhatItIsGiven(): void

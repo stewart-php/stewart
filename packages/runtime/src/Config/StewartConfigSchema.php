@@ -326,7 +326,7 @@ final class StewartConfigSchema implements ConfigurationInterface
                     ->info('What `stewart generate` writes: typed classes over the entities and actions of your own instance.')
                     ->addDefaultsIfNotSet()
                     ->children()
-                        ->append($this->createScalarNode('namespace', 'Namespace of the generated classes. Composer must map it to output_dir.', 'App\\Generated'))
+                        ->append($this->createScalarNode('namespace', 'Namespace of the generated classes. Omit it to use the one composer.json maps to output_dir.', null))
                         ->append($this->createScalarNode('output_dir', 'Directory the classes are written to, relative to the project root.', 'generated'))
                         ->append($this->createPatternListNode('include', 'Entity selectors that get classes. Exact IDs or globs (* and ?).', ['*']))
                         ->append($this->createPatternListNode('exclude', 'Entity selectors that do not, whatever include says.', []))

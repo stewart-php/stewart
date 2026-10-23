@@ -43,7 +43,7 @@ final readonly class StewartConfig
      * @throws ConfigurationException
      * @throws IdentifierException
      */
-    public static function fromSection(#[SensitiveParameter] ConfigSection $config): self
+    public static function fromSection(#[SensitiveParameter] ConfigSection $config, GeneratedNamespaceResolver $generatedNamespaces): self
     {
         $homeAssistant = $config->findSection('home_assistant');
 
@@ -63,7 +63,7 @@ final readonly class StewartConfig
             mqtt: MqttConfig::fromSection($config->readSection('mqtt')),
             control: ControlConfig::fromSection($config->readSection('control')),
             http: HttpConfig::fromSection($config->readSection('http')),
-            codegen: CodegenConfig::fromSection($config->readSection('codegen')),
+            codegen: CodegenConfig::fromSection($config->readSection('codegen'), $generatedNamespaces),
             gitDeploy: GitDeployConfig::fromSection($config->readSection('deploy')->readSection('git')),
             expose: ExposeConfig::fromSection($config->readSection('expose')),
             apps: AppOverrideCollection::keyedByAppId($config->readSection('apps')->mapSubsections(AppOverride::fromSection(...))),

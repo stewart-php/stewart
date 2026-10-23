@@ -23,6 +23,7 @@ final readonly class ConfigLoader
         private ProjectRoot $projectRoot,
         private StewartConfigSchema $configuration,
         private RenamedSettings $renamedSettings,
+        private GeneratedNamespaceResolver $generatedNamespaces,
     ) {}
 
     /**
@@ -55,7 +56,7 @@ final readonly class ConfigLoader
      */
     public function loadConfig(?string $path, array $cliOverrides = []): StewartConfig
     {
-        return StewartConfig::fromSection(ConfigSection::forRoot($this->mergeConfigTree($path, $cliOverrides)));
+        return StewartConfig::fromSection(ConfigSection::forRoot($this->mergeConfigTree($path, $cliOverrides)), $this->generatedNamespaces);
     }
 
     /**
@@ -66,7 +67,7 @@ final readonly class ConfigLoader
     public function buildValidatedConfigTree(?string $path): array
     {
         $tree = $this->mergeConfigTree($path);
-        StewartConfig::fromSection(ConfigSection::forRoot($tree));
+        StewartConfig::fromSection(ConfigSection::forRoot($tree), $this->generatedNamespaces);
 
         return $tree;
     }

@@ -119,15 +119,12 @@ final class GenerateCommand extends StewartCommand
         return $this->snapshotFetcher->fetchSnapshot($config->requireHomeAssistant(), $logger);
     }
 
-    // Compared as strings: realpath fails while the directory does not exist yet.
     private function describeAutoloadMismatch(CodegenConfig $codegen): ?string
     {
-        $expected = $this->normalizePath($codegen->outputDir->resolveWithin($this->projectRoot->path));
+        $mapped = $this->psr4Map->listPrefixesMappedTo($codegen->outputDir->resolveWithin($this->projectRoot->path));
 
-        foreach ($this->psr4Map->listDirectoriesFor($codegen->namespace->value . '\\') as $directory) {
-            if ($this->normalizePath($directory) === $expected) {
-                return null;
-            }
+        if (\in_array($codegen->namespace->value . '\\', $mapped, true)) {
+            return null;
         }
 
         return \sprintf(
@@ -184,21 +181,5 @@ final class GenerateCommand extends StewartCommand
         $output->writeln('<error>' . $message . '</error>');
 
         return Command::FAILURE;
-    }
-
-    // Composer's base directory contains `..`, and realpath fails before the first run.
-    private function normalizePath(string $path): string
-    {
-        $segments = [];
-
-        foreach (explode('/', str_replace('\\', '/', $path)) as $segment) {
-            match ($segment) {
-                '', '.' => null,
-                '..' => array_pop($segments),
-                default => $segments[] = $segment,
-            };
-        }
-
-        return '/' . implode('/', $segments);
     }
 }

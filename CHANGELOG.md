@@ -44,6 +44,9 @@ release could break; a release's "Upgrading" section says what to change.
   `service_calls` are `in_flight_ha_calls`, `refused_ha_calls` and `ha_calls`, and `stewart status` shows an
   `HA calls` row
 - Trace lines say `Action call sent` and `Action call answered`, with the name under `action`
+- `codegen.namespace` is optional and defaults to the namespace `composer.json` maps to `codegen.output_dir`, which
+  is `App\Generated` in projects created before 2.0, so they need no setting; `stewart-php/phpstan` finds the generated
+  `Manifest` the same way, and `stewart.manifest` is needed only when several namespaces map the directory
 - The worker protocol is 35 and the control protocol 34, so `make status` and the other control targets refuse to talk
   to a daemon that still runs 1.x
 

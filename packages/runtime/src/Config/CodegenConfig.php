@@ -22,11 +22,14 @@ final readonly class CodegenConfig
     ) {}
 
     /** @throws ConfigurationException */
-    public static function fromSection(ConfigSection $codegen): self
+    public static function fromSection(ConfigSection $codegen, GeneratedNamespaceResolver $namespaces): self
     {
+        $outputDir = $codegen->readParsedValue('output_dir', static fn(string $directory): ProjectDirectory => new ProjectDirectory($directory));
+
         return new self(
-            namespace: $codegen->readParsedValue('namespace', static fn(string $namespace): ClassNamespace => new ClassNamespace($namespace)),
-            outputDir: $codegen->readParsedValue('output_dir', static fn(string $directory): ProjectDirectory => new ProjectDirectory($directory)),
+            namespace: $codegen->findParsedValue('namespace', static fn(string $namespace): ClassNamespace => new ClassNamespace($namespace))
+                ?? $namespaces->resolveNamespaceFor($outputDir),
+            outputDir: $outputDir,
             include: $codegen->readStringList('include'),
             exclude: $codegen->readStringList('exclude'),
             attributes: DomainAttributesConfigCollection::keyedByDomain(

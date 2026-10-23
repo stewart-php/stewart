@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Tests\Fixtures\Config;
 
 use Stewart\Runtime\Config\ConfigSection;
+use Stewart\Runtime\Config\GeneratedNamespaceResolver;
 use Stewart\Runtime\Config\HaCallPolicy;
 use Stewart\Runtime\Config\PersistenceConfig;
+use Stewart\Runtime\Config\ProjectRoot;
+use Stewart\Runtime\Config\Psr4Map;
 use Stewart\Runtime\Config\StewartConfig;
 use Stewart\Runtime\Config\StewartConfigSchema;
 use Stewart\Runtime\Config\SupervisionConfig;
@@ -21,7 +24,12 @@ final class ConfigFixture
     /** @param array<string, mixed> $yaml */
     public static function createStewartConfig(array $yaml = []): StewartConfig
     {
-        return StewartConfig::fromSection(ConfigSection::forRoot(self::processConfigYaml($yaml)));
+        return StewartConfig::fromSection(ConfigSection::forRoot(self::processConfigYaml($yaml)), self::createGeneratedNamespaceResolver());
+    }
+
+    public static function createGeneratedNamespaceResolver(): GeneratedNamespaceResolver
+    {
+        return new GeneratedNamespaceResolver(new Psr4Map([]), new ProjectRoot('/nonexistent'));
     }
 
     /**
