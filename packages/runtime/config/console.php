@@ -6,6 +6,7 @@ use Amp\Socket\DnsSocketConnector;
 use Stewart\Client\HaClientFactory;
 use Stewart\Runtime\App\AppCatalogResolver;
 use Stewart\Runtime\App\AppDiscovery;
+use Stewart\Runtime\App\AppInstanceResolver;
 use Stewart\Runtime\App\CatalogWarnings;
 use Stewart\Runtime\Broker\AppPlacement;
 use Stewart\Runtime\Broker\AppPlacementFactory;
@@ -49,6 +50,7 @@ return static function (ContainerConfigurator $container, ContainerBuilder $buil
     $services->set(ClosestNameFinder::class);
     $services->set(EnvironmentVariables::class)->factory([EnvironmentVariables::class, 'fromGlobals']);
     $services->set(AppDiscovery::class);
+    $services->set(AppInstanceResolver::class);
     $services->set(AppCatalogResolver::class);
     $services->set(CatalogWarnings::class);
     $services->set(ReloadCheckReportCodec::class)->arg('$reloadCheckReportWireMapper', inline_service(WireMapper::class)->factory([ReloadCheckReportCodec::class, 'createReportWireMapper']));

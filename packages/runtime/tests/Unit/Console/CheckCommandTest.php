@@ -198,7 +198,7 @@ final class CheckCommandTest extends TestCase
         $tester = $this->runCheck(self::VALID_CONFIG);
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getErrorOutput());
-        self::assertStringContainsString($this->apps->namespace . '\\Forgotten implements App but is not marked #[Automation], so it will not run.', $tester->getErrorOutput());
+        self::assertStringContainsString($this->apps->namespace . '\\Forgotten implements App but is not marked #[Automation] or #[AppTemplate], so it will not run.', $tester->getErrorOutput());
     }
 
     public function testDisposeWithoutDisposableIsNoticed(): void
@@ -222,6 +222,39 @@ final class CheckCommandTest extends TestCase
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getErrorOutput());
         self::assertStringContainsString('http.admin.token is required while http.admin.listen is set;', $tester->getErrorOutput());
         self::assertStringContainsString('The daemon refuses to start until it is fixed.', $tester->getErrorOutput());
+    }
+
+    public function testEveryEntryOfATemplateIsListedAsAnApp(): void
+    {
+        $this->apps->writeClass('RoomLight', "#[\\Stewart\\Contracts\\AppTemplate]\nfinal class RoomLight implements \\Stewart\\Contracts\\App\n{\n    public function __construct(public string \$light) {}\n\n    public function initialize(): void {}\n}");
+        $class = $this->apps->namespace . '\\RoomLight';
+
+        $tester = $this->runCheck(self::VALID_CONFIG . "apps:\n  hall-light:\n    class: {$class}\n    options:\n      light: light.hall\n  landing-light:\n    class: {$class}\n    options:\n      light: light.landing\n");
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertStringContainsString('2 automations load; 2 enabled', $tester->getDisplay());
+        self::assertMatchesRegularExpression('/hall-light\s+' . preg_quote($class, '/') . '/', $tester->getDisplay());
+    }
+
+    public function testATemplateNoEntryNamesIsNoticed(): void
+    {
+        $this->apps->writeClass('Porch', self::createAppSource('Porch', 'porch'));
+        $this->apps->writeClass('RoomLight', "#[\\Stewart\\Contracts\\AppTemplate]\nfinal class RoomLight implements \\Stewart\\Contracts\\App\n{\n    public function initialize(): void {}\n}");
+
+        $tester = $this->runCheck(self::VALID_CONFIG);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertStringContainsString($this->apps->namespace . '\\RoomLight is an #[AppTemplate], but no apps.<id>.class names it', $tester->getErrorOutput());
+    }
+
+    public function testAMistypedClassFailsWithTheClosestName(): void
+    {
+        $this->apps->writeClass('RoomLight', "#[\\Stewart\\Contracts\\AppTemplate]\nfinal class RoomLight implements \\Stewart\\Contracts\\App\n{\n    public function initialize(): void {}\n}");
+
+        $tester = $this->runCheck(self::VALID_CONFIG . "apps:\n  hall-light:\n    class: {$this->apps->namespace}\\RoomLite\n");
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode());
+        self::assertStringContainsString('Did you mean ' . $this->apps->namespace . '\\RoomLight?', $tester->getErrorOutput());
     }
 
     private static function createAppSource(string $class, string $id, string $constructorParameters = '', string $body = '', string $interfaces = ''): string

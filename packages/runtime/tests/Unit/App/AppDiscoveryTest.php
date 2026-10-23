@@ -22,6 +22,7 @@ use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Apps\Nested\HallLight;
 use Stewart\Runtime\Tests\Fixtures\Apps\TemporaryAppsDirectory;
 use Stewart\Runtime\Tests\Fixtures\Broken\Unmarked\Forgotten;
+use Stewart\Runtime\Tests\Fixtures\Templates\RoomLight;
 use Stewart\Testing\Exception\AssertsReason;
 
 #[CoversClass(AppDiscovery::class)]
@@ -163,5 +164,27 @@ final class AppDiscoveryTest extends TestCase
         $e = $this->assertThrowsReason(AppError::DirectoryNotAutoloadable, fn() => new AppDiscovery(new Psr4Map([]), \dirname(__DIR__, 2) . '/Fixtures/Apps')->discover());
 
         self::assertMatchesRegularExpression('/not covered by a PSR-4 autoload rule/', $e->getMessage());
+    }
+
+    public function testTemplatesAreCollectedApartFromAppsAndUnmarkedClasses(): void
+    {
+        $found = AppDiscoveryFixture::createForFixtureDirectory('Templates')->discover();
+
+        self::assertTrue($found->apps->isEmpty());
+        self::assertTrue($found->unmarked->isEmpty());
+        self::assertSame([RoomLight::class], $found->templateClasses);
+        self::assertSame([RoomLight::class], $found->listUnusedTemplateClasses());
+    }
+
+    public function testClassCannotBeBothTemplateAndAutomation(): void
+    {
+        $this->assertThrowsReason(AppError::TemplateAndAutomation, fn() => AppDiscoveryFixture::createForFixtureDirectory('Broken/TemplateAndAutomation')->discover());
+    }
+
+    public function testTemplateMustImplementApp(): void
+    {
+        $e = $this->assertThrowsReason(AppError::NotAnApp, fn() => AppDiscoveryFixture::createForFixtureDirectory('Broken/TemplateNotAnApp')->discover());
+
+        self::assertStringContainsString('has #[AppTemplate] but does not implement', $e->getMessage());
     }
 }

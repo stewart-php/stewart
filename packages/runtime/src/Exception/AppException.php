@@ -18,4 +18,13 @@ final class AppException extends StewartException
             $suggestion === null ? null : \sprintf('Did you mean "%s"?', $suggestion),
         );
     }
+
+    public static function instanceClassMissing(AppId $appId, string $className, ?string $suggestion): self
+    {
+        return self::createForReasonWithAppendedText(
+            AppError::InstanceClassMissing,
+            ['appId' => $appId->value, 'className' => $className, 'suggestion' => $suggestion],
+            $suggestion === null ? null : \sprintf('Did you mean %s?', $suggestion),
+        );
+    }
 }

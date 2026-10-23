@@ -8,7 +8,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Stewart\Runtime\Config\StewartConfigSchema;
-use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\Definition\Processor;
 
@@ -86,6 +85,7 @@ final class StewartConfigSchemaTest extends TestCase
         ])]);
 
         self::assertTrue(self::getValueAt($processed, 'apps.demo.enabled'));
+        self::assertNull(self::getValueAt($processed, 'apps.demo.class'));
         self::assertNull(self::getValueAt($processed, 'apps.demo.worker'));
         self::assertNull(self::getValueAt($processed, 'apps.demo.log_level'));
         self::assertFalse(self::getValueAt($processed, 'apps.demo.trace'));
@@ -183,11 +183,6 @@ final class StewartConfigSchemaTest extends TestCase
         yield 'misspelled supervision key' => [
             ['supervision' => ['ping_intervall' => 5.0]],
             '/Unrecognized option "ping_intervall".*ping_interval/s',
-        ];
-
-        yield 'a class named where none belongs' => [
-            ['apps' => ['demo' => ['class' => Demo::class]]],
-            '/Unrecognized option "class"/',
         ];
 
         yield 'an empty entity selector' => [

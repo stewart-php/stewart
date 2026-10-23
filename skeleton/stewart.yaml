@@ -11,3 +11,8 @@ apps:
     enabled: false
     options:
       watch: sun.sun
+  # An #[AppTemplate] class runs once per entry that names it, each with its own ID and options:
+  # porch-light:
+  #   class: App\PorchLight
+  #   options:
+  #     light: light.porch

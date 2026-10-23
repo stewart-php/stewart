@@ -52,6 +52,7 @@ final class CheckCommand extends StewartCommand
         $this->writeHttpListenerNotice($output, $result->httpListenerError);
         $this->writeUnmatchedOverridesNotice($output, $apps);
         $this->writeUnmarkedAppNotices($output, $discovered->unmarked);
+        $this->writeUnusedTemplateNotices($output, $discovered->listUnusedTemplateClasses());
         $this->writeDisposeDeprecationNotices($output, $discovered->apps);
         $this->writeAppTable($output, $discovered->apps, $apps, $result->workerSlots);
         $output->writeln(\sprintf('Configuration and %d automations load; %d enabled.', $discovered->apps->count(), $apps->enabled->count()));
@@ -69,14 +70,25 @@ final class CheckCommand extends StewartCommand
     private function writeUnmarkedAppNotices(OutputInterface $output, UnmarkedAppCollection $unmarked): void
     {
         foreach ($unmarked as $app) {
-            $this->writeNotice($output, \sprintf('%s implements App but is not marked #[Automation], so it will not run.', $app->class));
+            $this->writeNotice($output, \sprintf('%s implements App but is not marked #[Automation] or #[AppTemplate], so it will not run.', $app->class));
+        }
+    }
+
+    /** @param list<class-string> $templates */
+    private function writeUnusedTemplateNotices(OutputInterface $output, array $templates): void
+    {
+        foreach ($templates as $template) {
+            $this->writeNotice($output, \sprintf('%s is an #[AppTemplate], but no apps.<id>.class names it, so it does not run.', $template));
         }
     }
 
     private function writeDisposeDeprecationNotices(OutputInterface $output, DiscoveredAppCollection $apps): void
     {
+        $noticed = [];
+
         foreach ($apps as $app) {
-            if ($app->declaresDisposeWithoutDisposable()) {
+            if (!isset($noticed[$app->class]) && $app->declaresDisposeWithoutDisposable()) {
+                $noticed[$app->class] = true;
                 $this->writeNotice($output, \sprintf(
                     '%s declares dispose() without implementing Disposable; delete it if it is empty, or add "implements Disposable". Stewart 2.0 stops calling it.',
                     $app->class,

@@ -23,7 +23,9 @@ The harness comes from `stewart-php/testing`, which every project from the skele
 ## Starting the app
 
 `startApp($class, $options)` builds the app the way the worker does and runs its `initialize()`. The app's ID comes
-from its `#[Automation]` attribute. Each constructor parameter is filled from:
+from its `#[Automation]` attribute. An [`#[AppTemplate]`](apps.md#one-class-several-apps) has none, so name the entry
+to test: `startApp(MotionLight::class, $options, appId: 'hall-motion-light')`. The ID reaches the app's store and
+exposed entities. Each constructor parameter is filled from:
 
 - an option with the parameter's exact name; the array stands in for `options:` in `stewart.yaml`, with PHP values
   rather than strings;

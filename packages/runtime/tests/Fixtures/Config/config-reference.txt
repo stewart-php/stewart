@@ -255,11 +255,14 @@ expose:
     # Remove this daemon's entities that no running app exposed shortly after startup; entities of failed apps stay.
     prune:                true
 
-# Per-app overrides, keyed by the ID in the automation's #[Automation] attribute. Automations are found by scanning, not listed here.
+# Per-app settings, keyed by the ID in the automation's #[Automation] attribute. Automations are found by scanning; an entry with class runs one more under its own ID.
 apps:
 
     # Prototype
     -
+
+        # Run this class under this ID with the settings here: an #[AppTemplate] class, or an #[Automation] class once more. Omit for the automation with this ID.
+        class:                null
         enabled:              true
 
         # Start loaded but paused: no events or schedule runs reach it until resumed.

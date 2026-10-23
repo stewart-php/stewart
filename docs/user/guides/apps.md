@@ -5,8 +5,8 @@ sidebar:
   order: 2
 ---
 
-An app is a PHP class in `apps/` that implements `App` and carries `#[Automation]`. This page covers what goes into
-one. The example warns you about low batteries, but not at night:
+An app is a PHP class in `apps/` that implements `App` and carries `#[Automation]`, or an `#[AppTemplate]` class
+that `stewart.yaml` runs [several times](#one-class-several-apps). This page covers what goes into one. The example warns you about low batteries, but not at night:
 
 ```php file=../../examples/apps/BatteryAlert.php
 ```
@@ -78,7 +78,7 @@ apps:
 - Options can also come from the environment: `STEWART_APPS__BATTERY_ALERT__OPTIONS__THRESHOLD=15`. See
   [Configuration](configuration.md).
 
-Next to `options`, an app's entry takes five more settings:
+Next to `options`, an app's entry takes five more settings, and `class` for [one class, several apps](#one-class-several-apps):
 
 ```yaml
 apps:
@@ -92,6 +92,35 @@ apps:
 
 If an entry names an ID that no app has, Stewart logs a warning at start and ignores the entry, so a typo does not go
 unnoticed. `stewart check` prints the same warning and still passes.
+
+## One class, several apps
+
+One class can run several times, each time with its own options, such as a motion light per room. Mark it
+`#[AppTemplate]` instead of `#[Automation]`, and give each copy an entry in `stewart.yaml` that names the class:
+
+```yaml
+apps:
+  hall-motion-light:
+    class: App\MotionLight
+    options:
+      light: light.hall
+  landing-motion-light:
+    class: App\MotionLight
+    options:
+      light: light.landing
+```
+
+- Each entry is an app of its own: its ID names it in logs, status and the store, and takes every setting above.
+- An `#[AppTemplate]` class runs only through such entries. `stewart check` notes one that no entry names.
+- `class` may also name an `#[Automation]` class, which then runs once more under the entry's ID; the entry's ID
+  must not be another automation's.
+- The class may come from a Composer package, so a package can ship apps for others to configure. `make watch` does
+  not see changes inside `vendor/`; restart after `composer update`.
+- `make reload` applies added and removed entries.
+- The environment can add one too: `STEWART_APPS__PORCH__CLASS='App\MotionLight'` creates the app `porch`. A
+  segment with `_` makes an ID with `_`, because environment names cannot hold `-`.
+
+The [motion light recipe](../recipes/motion-light.md#several-rooms) has a complete one.
 
 ## Your own classes (services.php)
 

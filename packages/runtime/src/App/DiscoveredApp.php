@@ -14,6 +14,7 @@ final readonly class DiscoveredApp
     public function __construct(
         public string $class,
         public AppId $id,
+        public AppOrigin $origin = AppOrigin::Scanned,
     ) {}
 
     public function declaresDisposeWithoutDisposable(): bool
