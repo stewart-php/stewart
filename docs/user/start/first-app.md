@@ -108,7 +108,7 @@ and their `hello:` and `change-counter:` entries in `stewart.yaml`.
 location. Set one under **Settings →
 System → General** and restart Stewart.
 
-**`App "porch-light" sets option "…", which matches no parameter of App\PorchLight::__construct()`.** An option
+**`App "porch-light" sets option "…", which matches no parameter of Automations\PorchLight::__construct()`.** An option
 in `stewart.yaml` has a name the constructor does not have. Check its spelling against the parameter names.
 
 **The light does not react.** Run with `DRY_RUN=1` and check that the log shows the right entity ID. Then call

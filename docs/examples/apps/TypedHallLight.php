@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App;
+namespace Automations;
 
-use App\Generated\Actions;
-use App\Generated\Entities;
-use App\Generated\LightState;
+use Automations\Generated\Actions;
+use Automations\Generated\Entities;
+use Automations\Generated\LightState;
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;

@@ -45,9 +45,6 @@ An app is a class in `apps/` that implements `Stewart\Contracts\App` and carries
 adds `number.stewart_change_counter_step`. Exposed entities need the `stewart` Home Assistant integration, so it is
 `enabled: false` in `stewart.yaml` until you install that.
 
-Import generated classes with `use App\Generated\…;`. Inside `namespace App`, a qualified `App\Generated\X` would
-resolve against the imported `Stewart\Contracts\App` interface instead.
-
 ### Testing an app
 
 `tests/HelloAppTest.php` and `tests/ChangeCounterTest.php` show the pattern: `AppHarness` from `stewart-php/testing`

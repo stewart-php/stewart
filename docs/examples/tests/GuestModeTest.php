@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests;
+namespace Automations\Tests;
 
-use App\GuestMode;
+use Automations\GuestMode;
 use PHPUnit\Framework\TestCase;
 use Stewart\Testing\App\AppHarness;
 

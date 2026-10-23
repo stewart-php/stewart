@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App;
+namespace Automations;
 
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;

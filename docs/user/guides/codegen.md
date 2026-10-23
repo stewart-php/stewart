@@ -196,6 +196,6 @@ reports it once. Run `make generate` and commit `generated/`.
 go. Add the snippet under `autoload`, run `make install`, then `make generate` again. Projects from the skeleton
 already have it.
 
-**`Class "Stewart\Contracts\App\Generated\…" not found`.** An app imports `Stewart\Contracts\App`, so inside the app,
-`App\Generated\Entities` means `Stewart\Contracts\App\Generated\Entities`. Import the generated classes with
-`use App\Generated\Entities;` instead.
+**`Class "Stewart\Contracts\App\Generated\…" not found`.** Only in a project created before 2.0, whose namespace is
+`App`: an app imports `Stewart\Contracts\App`, so `App\Generated\Entities` there means
+`Stewart\Contracts\App\Generated\Entities`. Import the generated classes with `use App\Generated\Entities;` instead.

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App;
+namespace Automations;
 
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\App;

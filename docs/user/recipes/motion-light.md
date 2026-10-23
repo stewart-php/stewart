@@ -55,12 +55,12 @@ short:
 ```yaml
 apps:
   hall-motion-light:
-    class: App\MotionLight
+    class: Automations\MotionLight
     options:
       motionSensor: binary_sensor.hall_motion
       light: light.hall
   landing-motion-light:
-    class: App\MotionLight
+    class: Automations\MotionLight
     options:
       motionSensor: binary_sensor.landing_motion
       light: light.landing

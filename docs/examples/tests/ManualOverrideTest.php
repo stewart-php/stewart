@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests;
+namespace Automations\Tests;
 
-use App\ManualOverride;
+use Automations\ManualOverride;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\Time\Duration;
