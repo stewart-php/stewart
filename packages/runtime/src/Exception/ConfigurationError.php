@@ -23,6 +23,7 @@ enum ConfigurationError: string implements ExceptionReason
     case PlaceholderUnset = 'placeholder_unset';
     case ControlTokenMissing = 'control_token_missing';
     case AdminTokenMissing = 'admin_token_missing';
+    case HttpListenAddressShared = 'http_listen_address_shared';
     case WorkerIndexOutOfRange = 'worker_index_out_of_range';
     case AppSelectionUnknown = 'app_selection_unknown';
     case OptionsConflict = 'options_conflict';
@@ -53,6 +54,7 @@ enum ConfigurationError: string implements ExceptionReason
             self::PlaceholderUnset => '{setting} refers to ${{variable}}, which is not set. Set it or add a default: ${{variable}:-value}.',
             self::ControlTokenMissing => 'control.token is required while control.listen is set; set STEWART_CONTROL__TOKEN or set control.listen to "off".',
             self::AdminTokenMissing => 'http.admin.token is required while http.admin.listen is set; set STEWART_HTTP__ADMIN__TOKEN or set http.admin.listen to "off".',
+            self::HttpListenAddressShared => '{setting} ({address}) and {otherSetting} ({otherAddress}) use the same port; give each HTTP listener a port of its own.',
             self::WorkerIndexOutOfRange => 'App "{appId}" is pinned to worker {worker}, but the highest worker index is {highestIndex}.',
             self::AppSelectionUnknown => '{option} names app "{appId}", but no automation has that ID.',
             self::OptionsConflict => '{option} cannot be combined with {conflicting}.',

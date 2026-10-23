@@ -33,7 +33,8 @@ final readonly class AdminApiPage implements ReferencePage
             implode("\n", [
                 'The admin port is off by default. Every request needs `Authorization: Bearer <token>` with',
                 '`http.admin.token`. [Status and control](../guides/status.md#admin-api) shows how to turn it on, and the answers',
-                'and status codes.',
+                'and status codes. Prometheus can scrape the [metrics port](../guides/status.md#metrics) instead, which needs no',
+                'admin token.',
                 '',
                 MarkdownTable::formatTable(['Method', 'Path', 'Does'], $rows),
             ]),

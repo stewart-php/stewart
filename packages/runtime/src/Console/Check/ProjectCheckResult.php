@@ -20,11 +20,12 @@ final readonly class ProjectCheckResult
         public AppCatalog $catalog,
         public WorkerSlotCollection $workerSlots,
         public ?CodegenConfig $codegen = null,
+        public ?string $httpListenerError = null,
     ) {}
 
-    public static function passed(DiscoveryResult $discovered, AppCatalog $catalog, WorkerSlotCollection $workerSlots, CodegenConfig $codegen): self
+    public static function passed(DiscoveryResult $discovered, AppCatalog $catalog, WorkerSlotCollection $workerSlots, CodegenConfig $codegen, ?string $httpListenerError): self
     {
-        return new self([], $discovered, $catalog, $workerSlots, $codegen);
+        return new self([], $discovered, $catalog, $workerSlots, $codegen, $httpListenerError);
     }
 
     /** @param list<string> $errors */

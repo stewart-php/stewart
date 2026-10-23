@@ -15,10 +15,9 @@ use Stewart\Runtime\Http\AmpHttpListener;
 use Stewart\Runtime\Http\HttpListenerRole;
 use Stewart\Runtime\Http\ProbeRequestHandler;
 use Stewart\Runtime\Tests\Fixtures\Health\StubProbeReporter;
+use Stewart\Runtime\Tests\Fixtures\Http\LocalHttpRequests;
 use Stewart\Testing\Logging\RecordingLogger;
 
-use function Amp\ByteStream\buffer;
-use function Amp\Socket\connect;
 use function Amp\Socket\listen;
 
 #[CoversClass(AmpHttpListener::class)]
@@ -31,17 +30,16 @@ final class AmpHttpListenerTest extends TestCase
 
     private AmpHttpListener $server;
 
-    /** @var int<0, 65535> */
-    private int $port;
+    private LocalHttpRequests $requests;
 
     protected function setUp(): void
     {
         $this->reporter = new StubProbeReporter();
         $this->logger = new RecordingLogger();
-        $this->port = self::findFreePort();
+        $this->requests = LocalHttpRequests::createOnFreePort();
         $codec = new ProbeReportCodec(ProbeReportCodec::createProbeReportWireMapper());
         $this->server = new AmpHttpListener(
-            new HttpListenAddress('127.0.0.1', $this->port),
+            new HttpListenAddress('127.0.0.1', $this->requests->port),
             new ProbeRequestHandler($this->reporter, $codec, $this->logger),
             HttpListenerRole::Probe,
             $this->logger,
@@ -107,29 +105,31 @@ final class AmpHttpListenerTest extends TestCase
     {
         $this->server->stop();
 
-        $rebound = listen(new InternetAddress('127.0.0.1', $this->port));
+        $rebound = listen(new InternetAddress('127.0.0.1', $this->requests->port));
         $rebound->close();
         $this->server->start();
 
         self::assertStringStartsWith('HTTP/1.1 200', $this->sendRequest('GET', '/healthz'));
     }
 
-    private function sendRequest(string $method, string $path): string
+    public function testOnlyTheAdminListenerWarnsBeyondLoopback(): void
     {
-        $socket = connect('tcp://127.0.0.1:' . $this->port);
-        $socket->write(\sprintf("%s %s HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n", $method, $path));
+        $handler = new ProbeRequestHandler($this->reporter, new ProbeReportCodec(ProbeReportCodec::createProbeReportWireMapper()), $this->logger);
 
-        return buffer($socket);
+        foreach ([HttpListenerRole::Admin, HttpListenerRole::Metrics] as $role) {
+            $listener = new AmpHttpListener(new HttpListenAddress('0.0.0.0', LocalHttpRequests::createOnFreePort()->port), $handler, $role, $this->logger);
+            $listener->start();
+            $listener->stop();
+        }
+
+        self::assertSame(
+            ['The HTTP admin API accepts connections from other hosts; anyone with the token can pause apps and reload'],
+            $this->logger->listMessagesAt('warning'),
+        );
     }
 
-    /** @return int<0, 65535> */
-    private static function findFreePort(): int
+    private function sendRequest(string $method, string $path): string
     {
-        $probe = listen('127.0.0.1:0');
-        $address = $probe->getAddress();
-        $probe->close();
-        \assert($address instanceof InternetAddress);
-
-        return $address->getPort();
+        return $this->requests->sendRequest($method, $path);
     }
 }

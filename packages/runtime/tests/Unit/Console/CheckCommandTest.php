@@ -213,6 +213,17 @@ final class CheckCommandTest extends TestCase
         self::assertStringNotContainsString('Tidy declares', $tester->getErrorOutput());
     }
 
+    public function testAdminPortWithoutTokenIsOnlyNoticed(): void
+    {
+        $this->apps->writeClass('Porch', self::createAppSource('Porch', 'porch'));
+
+        $tester = $this->runCheck(self::VALID_CONFIG . "http:\n  admin:\n    listen: 'tcp://127.0.0.1:8081'\n");
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertStringContainsString('http.admin.token is required while http.admin.listen is set;', $tester->getErrorOutput());
+        self::assertStringContainsString('The daemon refuses to start until it is fixed.', $tester->getErrorOutput());
+    }
+
     private static function createAppSource(string $class, string $id, string $constructorParameters = '', string $body = '', string $interfaces = ''): string
     {
         $constructor = $constructorParameters === '' ? '' : "public function __construct({$constructorParameters}) {}\n\n    ";

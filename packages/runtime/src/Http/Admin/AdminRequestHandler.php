@@ -10,7 +10,6 @@ use Amp\Http\Server\RequestHandler;
 use Amp\Http\Server\Response;
 use LogicException;
 use Psr\Log\LoggerInterface;
-use SensitiveParameter;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\ExceptionReason;
 use Stewart\Contracts\Exception\IdentifierError;
@@ -23,31 +22,31 @@ use Stewart\Runtime\Exception\AppError;
 use Stewart\Runtime\Exception\WorkerError;
 use Stewart\Runtime\Http\Admin\Response\AdminAppList;
 use Stewart\Runtime\Http\Admin\Response\AdminAppView;
+use Stewart\Runtime\Http\BearerTokenCheck;
+use Stewart\Runtime\Http\MetricsRequestHandler;
+use Stewart\Runtime\Http\UnauthorizedRequestWarnings;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
-use Stewart\Runtime\Metrics\PrometheusTextEncoder;
 use Stewart\Runtime\Metrics\RuntimeMetricsExporter;
 use Throwable;
 
 final readonly class AdminRequestHandler implements RequestHandler
 {
-    private const string BEARER_TOKEN = '~\ABearer +(\S+)\z~i';
-
     private const array JSON_HEADERS = ['content-type' => 'application/json', 'cache-control' => 'no-store'];
-
-    private const array METRICS_HEADERS = ['content-type' => PrometheusTextEncoder::CONTENT_TYPE, 'cache-control' => 'no-store'];
 
     public function __construct(
         private RuntimeAdmin $admin,
         private AdminApiCodec $codec,
         private RuntimeMetricsExporter $metrics,
         private LoggerInterface $logger,
-        #[SensitiveParameter]
-        private string $adminApiToken,
+        private BearerTokenCheck $tokens,
+        private UnauthorizedRequestWarnings $refusals,
     ) {}
 
     public function handleRequest(Request $request): Response
     {
-        if (!$this->isAuthorized($request)) {
+        if (!$this->tokens->admitsRequest($request)) {
+            $this->refusals->recordRefusedRequest($request);
+
             return $this->respondWithFailure(HttpStatus::UNAUTHORIZED, new RequestFailed('unauthorized', 'A valid bearer token is required.'), ['www-authenticate' => 'Bearer']);
         }
 
@@ -68,7 +67,7 @@ final readonly class AdminRequestHandler implements RequestHandler
 
         try {
             return $route->action === AdminAction::ShowMetrics
-                ? new Response(HttpStatus::OK, self::METRICS_HEADERS, $this->metrics->exportMetrics())
+                ? new Response(HttpStatus::OK, MetricsRequestHandler::RESPONSE_HEADERS, $this->metrics->exportMetrics())
                 : $this->respond(HttpStatus::OK, $this->answerRoute($route));
         } catch (StewartException $e) {
             return $this->respondWithFailure($this->selectFailureStatus($e->reason), new RequestFailed((string) $e->reason->value, $e->getMessage()));
@@ -92,15 +91,6 @@ final readonly class AdminRequestHandler implements RequestHandler
             AdminAction::Reload => $this->admin->reload(ReloadTrigger::Http),
             AdminAction::ShowMetrics => throw new LogicException('Metrics are answered before the JSON routes.'),
         };
-    }
-
-    private function isAuthorized(Request $request): bool
-    {
-        $authorization = $request->getHeader('authorization');
-
-        return $authorization !== null
-            && preg_match(self::BEARER_TOKEN, $authorization, $matches) === 1
-            && hash_equals($this->adminApiToken, $matches[1]);
     }
 
     private function selectFailureStatus(ExceptionReason $reason): int

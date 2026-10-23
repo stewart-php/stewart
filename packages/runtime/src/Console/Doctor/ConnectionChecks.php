@@ -14,6 +14,7 @@ use Stewart\Client\HaConfig;
 use Stewart\Contracts\Exception\StewartException;
 use Stewart\Contracts\Exception\StoreException;
 use Stewart\Runtime\Config\ConfigLoader;
+use Stewart\Runtime\Config\HttpConfig;
 use Stewart\Runtime\Config\PersistenceConfig;
 use Stewart\Runtime\Config\ProjectRoot;
 use Stewart\Runtime\Logging\LoggerFactory;
@@ -51,7 +52,35 @@ final readonly class ConnectionChecks
             ? new DoctorFinding('config', DoctorOutcome::Pass, 'loads')
             : new DoctorFinding('config', DoctorOutcome::Pass, 'loads from the environment; there is no stewart.yaml');
 
-        return [$environmentFile, $configFile, ...$this->checkHomeAssistant($config->homeAssistant), $this->checkStore($config->persistence)];
+        return [$environmentFile, $configFile, ...$this->checkHttpListeners($config->http), ...$this->checkHomeAssistant($config->homeAssistant), $this->checkStore($config->persistence)];
+    }
+
+    /** @return list<DoctorFinding> */
+    private function checkHttpListeners(HttpConfig $http): array
+    {
+        $listeners = array_filter([
+            'probe' => $http->listen,
+            'admin' => $http->admin->listen,
+            'metrics' => $http->metrics->listen,
+        ]);
+
+        if ($listeners === []) {
+            return [];
+        }
+
+        try {
+            $http->requireValidListeners();
+        } catch (StewartException $e) {
+            return [new DoctorFinding('http', DoctorOutcome::Fail, $e->getMessage())];
+        }
+
+        $described = [];
+
+        foreach ($listeners as $role => $address) {
+            $described[] = $role === 'metrics' && $http->metrics->token === null ? \sprintf('%s %s (no token)', $role, $address) : \sprintf('%s %s', $role, $address);
+        }
+
+        return [new DoctorFinding('http', DoctorOutcome::Pass, implode(', ', $described))];
     }
 
     /** @return list<DoctorFinding> */

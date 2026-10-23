@@ -13,6 +13,7 @@ use Stewart\Runtime\App\UnloadableAppFile;
 use Stewart\Runtime\Broker\AppPlacement;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Config\ConfigLoader;
+use Stewart\Runtime\Config\HttpConfig;
 use Stewart\Runtime\Container\AppContainerBlueprint;
 use Stewart\Runtime\Container\AppContainerBuilder;
 use Stewart\Runtime\Container\Collection\AppBuildFailureCollection;
@@ -54,7 +55,21 @@ final readonly class ProjectCheck
 
         $errors = $this->listBuildErrorsInAppOrder($catalog, $failures);
 
-        return $errors === [] ? ProjectCheckResult::passed($discovered, $catalog, $workerSlots, $config->codegen) : ProjectCheckResult::failed($errors);
+        return $errors === []
+            ? ProjectCheckResult::passed($discovered, $catalog, $workerSlots, $config->codegen, $this->findHttpListenerError($config->http))
+            : ProjectCheckResult::failed($errors);
+    }
+
+    // Only a notice for check: CI checks a project without its secrets, which the daemon gets at deploy time.
+    private function findHttpListenerError(HttpConfig $http): ?string
+    {
+        try {
+            $http->requireValidListeners();
+        } catch (StewartException $e) {
+            return $e->getMessage();
+        }
+
+        return null;
     }
 
     /** @throws StewartException */

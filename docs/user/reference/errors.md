@@ -324,6 +324,7 @@ Thrown as `ConfigurationException`.
 | `PlaceholderUnset` | {setting} refers to ${{variable}}, which is not set. Set it or add a default: ${{variable}:-value}. | Add the variable to `.env`. |
 | `ControlTokenMissing` | control.token is required while control.listen is set; set STEWART_CONTROL__TOKEN or set control.listen to "off". | `make env` writes a fresh token into a new `.env`; for an older one, add `STEWART_CONTROL__TOKEN=` followed by `openssl rand -hex 16`. |
 | `AdminTokenMissing` | http.admin.token is required while http.admin.listen is set; set STEWART_HTTP__ADMIN__TOKEN or set http.admin.listen to "off". | Create one with `openssl rand -hex 16` and set it as `STEWART_HTTP__ADMIN__TOKEN`. |
+| `HttpListenAddressShared` | {setting} ({address}) and {otherSetting} ({otherAddress}) use the same port; give each HTTP listener a port of its own. | Give one of them another port, such as `tcp://0.0.0.0:9464` for `http.metrics.listen`. |
 | `WorkerIndexOutOfRange` | App "{appId}" is pinned to worker {worker}, but the highest worker index is {highestIndex}. |  |
 | `AppSelectionUnknown` | {option} names app "{appId}", but no automation has that ID. |  |
 | `OptionsConflict` | {option} cannot be combined with {conflicting}. |  |

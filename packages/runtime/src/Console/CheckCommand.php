@@ -49,6 +49,7 @@ final class CheckCommand extends StewartCommand
         $apps = $result->catalog;
 
         $this->writeMissingConfigFileNotice($output, $this->config->findMissingDefaultFile($configFile));
+        $this->writeHttpListenerNotice($output, $result->httpListenerError);
         $this->writeUnmatchedOverridesNotice($output, $apps);
         $this->writeUnmarkedAppNotices($output, $discovered->unmarked);
         $this->writeDisposeDeprecationNotices($output, $discovered->apps);
@@ -56,6 +57,13 @@ final class CheckCommand extends StewartCommand
         $output->writeln(\sprintf('Configuration and %d automations load; %d enabled.', $discovered->apps->count(), $apps->enabled->count()));
 
         return Command::SUCCESS;
+    }
+
+    private function writeHttpListenerNotice(OutputInterface $output, ?string $error): void
+    {
+        if ($error !== null) {
+            $this->writeNotice($output, $error . ' The daemon refuses to start until it is fixed.');
+        }
     }
 
     private function writeUnmarkedAppNotices(OutputInterface $output, UnmarkedAppCollection $unmarked): void

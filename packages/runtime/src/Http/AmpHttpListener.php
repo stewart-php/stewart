@@ -46,6 +46,12 @@ final class AmpHttpListener implements HttpListener
         $this->server = $server;
 
         $this->logger->info('HTTP listener listening', ['listener' => $this->role->value, 'address' => (string) $this->address]);
+
+        $warning = $this->role->findOffLoopbackWarning();
+
+        if ($warning !== null && !$this->address->isLoopback()) {
+            $this->logger->warning($warning, ['address' => (string) $this->address]);
+        }
     }
 
     public function stop(): void

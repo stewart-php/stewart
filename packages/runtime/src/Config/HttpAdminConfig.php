@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Config;
 
 use SensitiveParameter;
+use Stewart\Runtime\Exception\ConfigurationError;
 use Stewart\Runtime\Exception\ConfigurationException;
 
 final readonly class HttpAdminConfig
@@ -22,5 +23,11 @@ final readonly class HttpAdminConfig
             listen: $admin->findSwitchableValue('listen', HttpListenAddress::parse(...)),
             token: $admin->findSwitchableValue('token', strval(...)),
         );
+    }
+
+    /** @throws ConfigurationException */
+    public function requireToken(): string
+    {
+        return $this->token ?? throw ConfigurationException::createForReason(ConfigurationError::AdminTokenMissing);
     }
 }

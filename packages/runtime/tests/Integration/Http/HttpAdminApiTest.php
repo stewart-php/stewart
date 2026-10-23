@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Tests\Integration\Http;
 
-use Amp\Socket\InternetAddress;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\App\AppId;
@@ -14,21 +13,22 @@ use Stewart\Runtime\Http\Admin\AdminApiCodec;
 use Stewart\Runtime\Http\Admin\AdminRequestHandler;
 use Stewart\Runtime\Http\Admin\Response\AdminAppView;
 use Stewart\Runtime\Http\AmpHttpListener;
+use Stewart\Runtime\Http\BearerTokenCheck;
 use Stewart\Runtime\Http\HttpListenerRole;
+use Stewart\Runtime\Http\UnauthorizedRequestWarnings;
 use Stewart\Runtime\Lifecycle\AppPauseSource;
 use Stewart\Runtime\Metrics\RuntimeMetricsExporter;
 use Stewart\Runtime\Tests\Fixtures\Http\AdminApiFixture;
+use Stewart\Runtime\Tests\Fixtures\Http\LocalHttpRequests;
 use Stewart\Testing\Logging\RecordingLogger;
-
-use function Amp\ByteStream\buffer;
-use function Amp\Socket\connect;
-use function Amp\Socket\listen;
 
 #[CoversClass(AdminRequestHandler::class)]
 #[CoversClass(RuntimeAdmin::class)]
 #[CoversClass(AdminApiCodec::class)]
 #[CoversClass(AdminAppView::class)]
 #[CoversClass(RuntimeMetricsExporter::class)]
+#[CoversClass(BearerTokenCheck::class)]
+#[CoversClass(UnauthorizedRequestWarnings::class)]
 final class HttpAdminApiTest extends TestCase
 {
     private const string TOKEN = 'admin-secret';
@@ -43,20 +43,28 @@ final class HttpAdminApiTest extends TestCase
 
     private AmpHttpListener $server;
 
-    /** @var int<0, 65535> */
-    private int $port;
+    private RecordingLogger $logger;
+
+    private LocalHttpRequests $requests;
 
     protected function setUp(): void
     {
         $this->fixture = new AdminApiFixture();
         $fixture = $this->fixture;
-        $logger = new RecordingLogger();
-        $this->port = self::findFreePort();
+        $this->logger = new RecordingLogger();
+        $this->requests = LocalHttpRequests::createOnFreePort();
         $this->server = new AmpHttpListener(
-            new HttpListenAddress('127.0.0.1', $this->port),
-            new AdminRequestHandler($fixture->admin, $fixture->codec, $fixture->metricsExporter, $logger, self::TOKEN),
+            new HttpListenAddress('127.0.0.1', $this->requests->port),
+            new AdminRequestHandler(
+                $fixture->admin,
+                $fixture->codec,
+                $fixture->metricsExporter,
+                $this->logger,
+                new BearerTokenCheck(self::TOKEN),
+                new UnauthorizedRequestWarnings(HttpListenerRole::Admin, $this->logger),
+            ),
             HttpListenerRole::Admin,
-            $logger,
+            $this->logger,
         );
         $this->server->start();
     }
@@ -73,8 +81,8 @@ final class HttpAdminApiTest extends TestCase
 
         self::assertStringStartsWith('HTTP/1.1 200', $response);
         self::assertStringContainsStringIgnoringCase('content-type: text/plain; version=0.0.4; charset=utf-8', $response);
-        self::assertStringContainsString('stewart_build_info{version="0.1.0-test",ha_version="', self::extractBody($response));
-        self::assertStringContainsString('stewart_app_paused{app="porch",worker="0"} 1', self::extractBody($response));
+        self::assertStringContainsString('stewart_build_info{version="0.1.0-test",ha_version="', LocalHttpRequests::extractBody($response));
+        self::assertStringContainsString('stewart_app_paused{app="porch",worker="0"} 1', LocalHttpRequests::extractBody($response));
     }
 
     public function testMetricsNeedToken(): void
@@ -93,7 +101,7 @@ final class HttpAdminApiTest extends TestCase
 
         self::assertStringStartsWith('HTTP/1.1 401', $response);
         self::assertStringContainsStringIgnoringCase('www-authenticate: Bearer', $response);
-        self::assertStringContainsString('"reason":"unauthorized"', self::extractBody($response));
+        self::assertStringContainsString('"reason":"unauthorized"', LocalHttpRequests::extractBody($response));
     }
 
     public function testWrongTokenIsUnauthorized(): void
@@ -115,7 +123,7 @@ final class HttpAdminApiTest extends TestCase
         $since = $this->fixture->clock->getNow()->toIso8601();
         self::assertJsonStringEqualsJsonString(
             \sprintf('{"apps":[%s,%s]}', self::DEMO_JSON, \sprintf(self::PORCH_JSON, $since)),
-            self::extractBody($response),
+            LocalHttpRequests::extractBody($response),
         );
     }
 
@@ -124,7 +132,7 @@ final class HttpAdminApiTest extends TestCase
         $response = $this->sendRequest('GET', '/api/apps/porch');
 
         self::assertStringStartsWith('HTTP/1.1 200', $response);
-        self::assertJsonStringEqualsJsonString(\sprintf(self::PORCH_JSON, $this->fixture->clock->getNow()->toIso8601()), self::extractBody($response));
+        self::assertJsonStringEqualsJsonString(\sprintf(self::PORCH_JSON, $this->fixture->clock->getNow()->toIso8601()), LocalHttpRequests::extractBody($response));
     }
 
     public function testUnknownAppIsNotFound(): void
@@ -132,7 +140,7 @@ final class HttpAdminApiTest extends TestCase
         $response = $this->sendRequest('GET', '/api/apps/ghost');
 
         self::assertStringStartsWith('HTTP/1.1 404', $response);
-        self::assertStringContainsString('"reason":"unknown"', self::extractBody($response));
+        self::assertStringContainsString('"reason":"unknown"', LocalHttpRequests::extractBody($response));
     }
 
     public function testMalformedAppIdIsNotFound(): void
@@ -145,7 +153,7 @@ final class HttpAdminApiTest extends TestCase
         $response = $this->sendRequest('GET', '/api/apps/retired');
 
         self::assertStringStartsWith('HTTP/1.1 409', $response);
-        self::assertStringContainsString('"reason":"disabled"', self::extractBody($response));
+        self::assertStringContainsString('"reason":"disabled"', LocalHttpRequests::extractBody($response));
     }
 
     public function testUnknownPathIsNotFound(): void
@@ -167,8 +175,8 @@ final class HttpAdminApiTest extends TestCase
         $second = $this->sendRequest('POST', '/api/apps/demo/pause');
 
         self::assertStringStartsWith('HTTP/1.1 200', $first);
-        self::assertJsonStringEqualsJsonString(\sprintf('{"changed":true,"message":"App demo paused.","warning":"%s"}', self::NOT_SAVED), self::extractBody($first));
-        self::assertJsonStringEqualsJsonString(\sprintf('{"changed":false,"message":"App demo was already paused.","warning":"%s"}', self::NOT_SAVED), self::extractBody($second));
+        self::assertJsonStringEqualsJsonString(\sprintf('{"changed":true,"message":"App demo paused.","warning":"%s"}', self::NOT_SAVED), LocalHttpRequests::extractBody($first));
+        self::assertJsonStringEqualsJsonString(\sprintf('{"changed":false,"message":"App demo was already paused.","warning":"%s"}', self::NOT_SAVED), LocalHttpRequests::extractBody($second));
         self::assertSame(AppPauseSource::Http, $this->fixture->registry->findPause(new AppId('demo'))?->source);
     }
 
@@ -176,7 +184,7 @@ final class HttpAdminApiTest extends TestCase
     {
         $response = $this->sendRequest('POST', '/api/apps/porch/resume');
 
-        self::assertJsonStringEqualsJsonString(\sprintf('{"changed":true,"message":"App porch resumed.","warning":"%s"}', self::NOT_SAVED), self::extractBody($response));
+        self::assertJsonStringEqualsJsonString(\sprintf('{"changed":true,"message":"App porch resumed.","warning":"%s"}', self::NOT_SAVED), LocalHttpRequests::extractBody($response));
         self::assertFalse($this->fixture->registry->isPaused(new AppId('porch')));
     }
 
@@ -188,7 +196,7 @@ final class HttpAdminApiTest extends TestCase
 
         self::assertJsonStringEqualsJsonString(
             \sprintf('{"changed":true,"message":"App porch pause override removed; config keeps it paused.","warning":"%s"}', self::NOT_SAVED),
-            self::extractBody($response),
+            LocalHttpRequests::extractBody($response),
         );
         self::assertTrue($this->fixture->registry->isPaused(new AppId('porch')));
     }
@@ -224,7 +232,7 @@ final class HttpAdminApiTest extends TestCase
         $response = $this->sendRequest('POST', '/api/workers/0/restart');
 
         self::assertStringStartsWith('HTTP/1.1 200', $response);
-        self::assertJsonStringEqualsJsonString('{"changed":true,"message":"Worker 0 is restarting.","warning":null}', self::extractBody($response));
+        self::assertJsonStringEqualsJsonString('{"changed":true,"message":"Worker 0 is restarting.","warning":null}', LocalHttpRequests::extractBody($response));
     }
 
     public function testRestartOfUnknownWorkerIsNotFound(): void
@@ -233,7 +241,7 @@ final class HttpAdminApiTest extends TestCase
             $response = $this->sendRequest('POST', $path);
 
             self::assertStringStartsWith('HTTP/1.1 404', $response);
-            self::assertStringContainsString('"reason":"worker_unknown"', self::extractBody($response));
+            self::assertStringContainsString('"reason":"worker_unknown"', LocalHttpRequests::extractBody($response));
         }
     }
 
@@ -242,7 +250,7 @@ final class HttpAdminApiTest extends TestCase
         $response = $this->sendRequest('POST', '/api/reload');
 
         self::assertStringStartsWith('HTTP/1.1 200', $response);
-        self::assertJsonStringEqualsJsonString('{"changed":false,"message":"Stewart is not running its apps yet, so there is nothing to reload.","warning":null}', self::extractBody($response));
+        self::assertJsonStringEqualsJsonString('{"changed":false,"message":"Stewart is not running its apps yet, so there is nothing to reload.","warning":null}', LocalHttpRequests::extractBody($response));
         self::assertStringStartsWith('HTTP/1.1 405', $this->sendRequest('GET', '/api/reload'));
     }
 
@@ -256,28 +264,16 @@ final class HttpAdminApiTest extends TestCase
         self::assertStringStartsWith('HTTP/1.1 401', $this->sendRequest('POST', '/api/workers/0/restart', null));
     }
 
+    public function testOnlyTheFirstRefusalIsLoggedUntilTheHundredth(): void
+    {
+        $this->sendRequest('GET', '/api/apps', null);
+        $this->sendRequest('GET', '/api/apps', 'wrong');
+
+        self::assertSame(['HTTP request refused: no valid bearer token'], $this->logger->listMessagesAt('warning'));
+    }
+
     private function sendRequest(string $method, string $path, ?string $token = self::TOKEN): string
     {
-        $authorization = $token === null ? '' : \sprintf("Authorization: Bearer %s\r\n", $token);
-        $socket = connect('tcp://127.0.0.1:' . $this->port);
-        $socket->write(\sprintf("%s %s HTTP/1.1\r\nHost: localhost\r\n%sContent-Length: 0\r\nConnection: close\r\n\r\n", $method, $path, $authorization));
-
-        return buffer($socket);
-    }
-
-    private static function extractBody(string $response): string
-    {
-        return explode("\r\n\r\n", $response, 2)[1] ?? '';
-    }
-
-    /** @return int<0, 65535> */
-    private static function findFreePort(): int
-    {
-        $probe = listen('127.0.0.1:0');
-        $address = $probe->getAddress();
-        $probe->close();
-        \assert($address instanceof InternetAddress);
-
-        return $address->getPort();
+        return $this->requests->sendRequest($method, $path, $token);
     }
 }
