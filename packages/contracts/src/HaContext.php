@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Stewart\Contracts;
 
-use Deprecated;
 use Stewart\Contracts\Connection\ConnectionEvent;
 use Stewart\Contracts\Entity\Entity;
 use Stewart\Contracts\Entity\EntityId;
@@ -85,20 +84,6 @@ interface HaContext
      * @throws ServiceCallException
      */
     public function callActionForResponse(string $action, array $data = [], ?ServiceTargetSource $target = null): ServiceResponse;
-
-    /**
-     * @param array<string, mixed> $data
-     * @throws ServiceCallException
-     */
-    #[Deprecated(message: "use callAction('domain.action'); it is removed in 2.0", since: '1.8')]
-    public function callService(string $domain, string $service, array $data = [], ?ServiceTargetSource $target = null): EventContext;
-
-    /**
-     * @param array<string, mixed> $data
-     * @throws ServiceCallException
-     */
-    #[Deprecated(message: "use callActionForResponse('domain.action'); it is removed in 2.0", since: '1.8')]
-    public function callServiceForResponse(string $domain, string $service, array $data = [], ?ServiceTargetSource $target = null): ServiceResponse;
 
     /**
      * @param array<string, mixed> $data

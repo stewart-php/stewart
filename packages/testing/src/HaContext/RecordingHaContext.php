@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Stewart\Testing\HaContext;
 
-use Deprecated;
 use LogicException;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Connection\ConnectionEvent;
@@ -175,23 +174,6 @@ final class RecordingHaContext implements HaContext
         return $this;
     }
 
-    /** @param array<string, mixed> $response */
-    #[Deprecated(message: "use stubActionAnswer('domain.action', …); it is removed in 2.0", since: '1.8')]
-    public function stubServiceAnswer(string $domain, string $service, array $response): self
-    {
-        $this->serviceOutcomes[$domain . '.' . $service] = $response;
-
-        return $this;
-    }
-
-    #[Deprecated(message: "use stubActionFailure('domain.action', …); it is removed in 2.0", since: '1.8')]
-    public function stubServiceFailure(string $domain, string $service, ServiceCallException $failure): self
-    {
-        $this->serviceOutcomes[$domain . '.' . $service] = $failure;
-
-        return $this;
-    }
-
     public function stubEventFireFailure(string $eventType, EventFireException $failure): self
     {
         $this->eventFireFailures[$eventType] = $failure;
@@ -358,18 +340,6 @@ final class RecordingHaContext implements HaContext
         $name = new ActionName($action);
 
         return $this->callStubbedService($name->domain, $name->action, $data, $target, true);
-    }
-
-    #[Deprecated(message: "use callAction('domain.action'); it is removed in 2.0", since: '1.8')]
-    public function callService(string $domain, string $service, array $data = [], ?ServiceTargetSource $target = null): EventContext
-    {
-        return $this->callStubbedService($domain, $service, $data, $target, false)->context ?? EventContext::unknown();
-    }
-
-    #[Deprecated(message: "use callActionForResponse('domain.action'); it is removed in 2.0", since: '1.8')]
-    public function callServiceForResponse(string $domain, string $service, array $data = [], ?ServiceTargetSource $target = null): ServiceResponse
-    {
-        return $this->callStubbedService($domain, $service, $data, $target, true);
     }
 
     public function fireEvent(string $eventType, array $data = []): EventContext

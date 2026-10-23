@@ -54,13 +54,6 @@ parameters:
     phpat:
         ignore_built_in_classes: true
     ignoreErrors:
-        # Each deprecated method keeps one test that calls it and asserts its deprecation.
-        -
-            identifier: method.deprecated
-            paths:
-                - packages/contracts/tests/Unit/Entity/EntityTest.php
-                - packages/runtime/tests/Unit/Worker/WorkerHaContextTest.php
-                - packages/testing/tests/Unit/HaContext/RecordingHaContextTest.php
         # The point of the fixture: an app written against classes nobody has generated yet.
         -
             identifier: class.notFound

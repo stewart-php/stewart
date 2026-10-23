@@ -2,5 +2,6 @@
 <roave-bc-check>
     <baseline>
         <ignored-regex>#Case Stewart\\Testing\\Exception\\[A-Za-z]+Error::[A-Za-z]+ was added#</ignored-regex>
+        <ignored-regex>#Method Stewart\\Testing\\HaContext\\(RecordingHaContext\#(callService(ForResponse)?|stubService(Answer|Failure))|RecordedServiceCall\#getServiceName)\(\) was removed#</ignored-regex>
     </baseline>
 </roave-bc-check>

@@ -7,6 +7,26 @@ release could break; a release's "Upgrading" section says what to change.
 
 ## [Unreleased]
 
+### Removed
+
+- `HaContext::callService()` and `callServiceForResponse()`, the same on `Entity`, and in tests
+  `RecordingHaContext::stubServiceAnswer()`, `stubServiceFailure()` and `RecordedServiceCall::getServiceName()`, all
+  deprecated since 1.8: use `callAction()`, `callActionForResponse()`, `stubActionAnswer()`, `stubActionFailure()` and
+  `getActionName()`
+
+### Upgrading
+
+1. From `make sh`, rewrite the names that 2.0 changed in your apps, tests and `services.php`. The command rewrites the
+   names it recognises; `make stan` then points at the rest, such as names held in a variable:
+
+   ```bash
+   grep -rlsE 'callService|stubService|getServiceName' apps tests services.php | xargs -r sed -i -E \
+     -e "s/->callService(ForResponse)?\('([a-z0-9_]+)', *'([a-z0-9_]+)'/->callAction\1('\2.\3'/g" \
+     -e "s/->stubService(Answer|Failure)\('([a-z0-9_]+)', *'([a-z0-9_]+)'/->stubAction\1('\2.\3'/g" \
+     -e 's/->callService(ForResponse)?\(/->callAction\1(/g' \
+     -e 's/->getServiceName\(\)/->getActionName()/g'
+   ```
+
 ## [1.8.0] - 2026-10-23
 
 Fewer copies, fewer typos: call actions by the names Home Assistant gives them, run one app class several times with

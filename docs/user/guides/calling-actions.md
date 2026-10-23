@@ -22,8 +22,8 @@ The arguments are the action, its data, and the target. Data and target are opti
 Assistant writes it, `domain.action`; Home Assistant lists every action and its data under **Developer tools →
 Actions**. A name without exactly one dot throws `ServiceCallError::ActionNameInvalid` before anything is sent.
 
-`callService('light', 'turn_on', …)` from Stewart 1.7 and earlier still works, but is deprecated: each call prints a
-PHP deprecation line, and Stewart 2.0 removes it.
+Stewart 2.0 removed the older `callService('light', 'turn_on', …)`; [Upgrading](../help/upgrading.md) has a command
+that rewrites such calls.
 
 The target picks what the action acts on:
 

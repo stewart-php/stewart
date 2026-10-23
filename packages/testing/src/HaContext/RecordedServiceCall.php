@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Stewart\Testing\HaContext;
 
-use Deprecated;
 use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\EventContext;
 
@@ -23,12 +22,6 @@ final readonly class RecordedServiceCall
     public function getActionName(): string
     {
         return $this->domain . '.' . $this->service;
-    }
-
-    #[Deprecated(message: 'use getActionName(); it is removed in 2.0', since: '1.8')]
-    public function getServiceName(): string
-    {
-        return $this->getActionName();
     }
 
     /** @return list<string> */
