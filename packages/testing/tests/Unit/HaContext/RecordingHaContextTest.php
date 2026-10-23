@@ -322,7 +322,7 @@ final class RecordingHaContextTest extends TestCase
         $changedAt = $ha->clock->getNow()->minus(Duration::hours(2));
         $ha->seedState('light.hall', 'on', changedAt: $changedAt);
 
-        self::assertTrue($ha->requireState('light.hall')->hasHeldFor(Duration::hours(2), $ha->clock));
+        self::assertTrue($ha->hasHeldStateFor('light.hall', Duration::hours(2)));
     }
 
     public function testPushStateStampsChangeOnNewValueOnly(): void

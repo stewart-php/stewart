@@ -44,6 +44,7 @@ final class EntityIdArgumentRuleTest extends RuleTestCase
             ['Entity ID "light.attic" is left out of the generated classes, so getEntity() throws EntityNotGenerated.', 46, 'Use HaContext::getEntity() for it, or include it in codegen.'],
             ['Entity ID "switch.fan" is not a light entity, so this getEntity() throws EntityNotGenerated.', 47],
             ['Entity ID "light.porch" was not in Home Assistant at the last stewart generate.', 48, self::UNKNOWN_TIP],
+            ['Entity ID "light.kitchn" was not in Home Assistant at the last stewart generate. Did you mean "light.kitchen"?', 53, self::UNKNOWN_TIP],
         ]);
     }
 

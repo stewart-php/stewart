@@ -260,6 +260,20 @@ final class RecordingHaContext implements HaContext
         return $this->states->find($id) ?? throw StateException::entityNotFound($id);
     }
 
+    public function getHeldStateDuration(EntityId|string $entityId): ?Duration
+    {
+        $changedAt = $this->getState($entityId)?->lastChangedAt;
+
+        return $changedAt === null ? null : $this->clock->getNow()->elapsedSince($changedAt);
+    }
+
+    public function hasHeldStateFor(EntityId|string $entityId, Duration $duration): bool
+    {
+        $held = $this->getHeldStateDuration($entityId);
+
+        return $held !== null && !$duration->isLongerThan($held);
+    }
+
     public function getHistory(EntityId|string $entityId, HistoryQuery $query): EntityStateHistory
     {
         $id = EntityId::fromStringOrId($entityId);

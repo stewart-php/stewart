@@ -24,6 +24,8 @@ expectedArguments(\Stewart\Contracts\Trigger\HaTrigger::onZoneTransition(), 1, a
 registerArgumentsSet('stewart_entity_ids', 'binary_sensor.hall_motion', 'input_number.target_temperature', 'light.1st_floor', 'light.attic', 'light.cellar', 'light.debug_strip', 'light.hall', 'light.porch2', 'light.porch_2', 'sensor.broken_probe', 'sensor.hall_humidity', 'sensor.hall_temperature', 'switch.pump', 'zone.home');
 expectedArguments(\Stewart\Contracts\HaContext::getState(), 0, argumentsSet('stewart_entity_ids'));
 expectedArguments(\Stewart\Contracts\HaContext::requireState(), 0, argumentsSet('stewart_entity_ids'));
+expectedArguments(\Stewart\Contracts\HaContext::getHeldStateDuration(), 0, argumentsSet('stewart_entity_ids'));
+expectedArguments(\Stewart\Contracts\HaContext::hasHeldStateFor(), 0, argumentsSet('stewart_entity_ids'));
 expectedArguments(\Stewart\Contracts\HaContext::getEntity(), 0, argumentsSet('stewart_entity_ids'));
 expectedArguments(\Stewart\Contracts\HaContext::getHistory(), 0, argumentsSet('stewart_entity_ids'));
 expectedArguments(\Stewart\Contracts\HaContext::waitForState(), 0, argumentsSet('stewart_entity_ids'));

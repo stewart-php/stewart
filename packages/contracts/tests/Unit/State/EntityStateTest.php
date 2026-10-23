@@ -11,9 +11,7 @@ use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\State\StateChangeOrigin;
-use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
-use Stewart\Testing\Time\VirtualClock;
 
 #[CoversClass(EntityState::class)]
 #[CoversClass(StateChange::class)]
@@ -126,44 +124,6 @@ final class EntityStateTest extends TestCase
         self::assertSame($change->context, $merged->context);
         self::assertSame(StateChangeOrigin::Resync, $merged->origin);
         self::assertFalse($merged->hasStateChanged());
-    }
-
-    public function testHasHeldForOnceLongEnoughUnchanged(): void
-    {
-        $clock = new VirtualClock();
-        $state = $this->createStateChangedAt($clock->getNow()->minus(Duration::minutes(10)));
-
-        self::assertTrue($state->hasHeldFor(Duration::minutes(5), $clock));
-        self::assertFalse($state->hasHeldFor(Duration::minutes(15), $clock));
-    }
-
-    public function testHasHeldForIncludesExactDuration(): void
-    {
-        $clock = new VirtualClock();
-        $state = $this->createStateChangedAt($clock->getNow()->minus(Duration::minutes(5)));
-
-        self::assertTrue($state->hasHeldFor(Duration::minutes(5), $clock));
-    }
-
-    public function testHeldDurationMeasuresFromLastChange(): void
-    {
-        $clock = new VirtualClock();
-        $state = $this->createStateChangedAt($clock->getNow()->minus(Duration::seconds(90)));
-
-        self::assertEquals(Duration::seconds(90), $state->getHeldDuration($clock));
-    }
-
-    public function testHeldDurationUnknownWithoutLastChange(): void
-    {
-        $state = new EntityState(new EntityId('light.hall'), 'on');
-
-        self::assertNull($state->getHeldDuration(new VirtualClock()));
-        self::assertFalse($state->hasHeldFor(Duration::zero(), new VirtualClock()));
-    }
-
-    private function createStateChangedAt(Instant $changedAt): EntityState
-    {
-        return new EntityState(new EntityId('light.hall'), 'on', lastChangedAt: $changedAt);
     }
 
     public function testIsInitialOnlyForInitialOrigin(): void

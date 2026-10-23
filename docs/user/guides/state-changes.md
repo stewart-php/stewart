@@ -29,8 +29,9 @@ An `EntityState` has the state as text (`$state->state`, for example `'on'` or `
 (`getAttribute('brightness')`, `getFloatAttribute()`, …), `getStateAsFloat()`, `getFriendlyName()`, and when it
 last changed (`lastChangedAt`).
 
-To check how long an entity has held its state, pass a `Clock` (see [Anatomy of an app](apps.md)):
-`$state->hasHeldFor(Duration::minutes(10), $this->clock)`.
+To check how long an entity has held its state, ask the context:
+`$this->ha->hasHeldStateFor('binary_sensor.hall_motion', Duration::minutes(10))`, or `getHeldStateDuration()` for the
+time itself. An entity that does not exist has held nothing: `false` and `null`.
 
 ## Choosing entities
 

@@ -27,6 +27,7 @@ use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
+use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
 use Stewart\Contracts\Trigger\HaTrigger;
@@ -58,12 +59,13 @@ final readonly class WorkerHaContext implements HaContext
         private DispatchStreams $streams,
         private TopicPublisher $topics,
         private StewartIdentity $identity,
+        private Clock $clock,
         private ResourceScope $resourceScope,
     ) {}
 
     public function forApp(AppId $appId): self
     {
-        return new self($this->states, $this->registry, $this->connection, $this->actions, $this->history, $this->eventFires, $this->streams, $this->topics, $this->identity, ResourceScope::forApp($appId));
+        return new self($this->states, $this->registry, $this->connection, $this->actions, $this->history, $this->eventFires, $this->streams, $this->topics, $this->identity, $this->clock, ResourceScope::forApp($appId));
     }
 
     public function getState(EntityId|string $entityId): ?EntityState
@@ -81,6 +83,20 @@ final readonly class WorkerHaContext implements HaContext
         $id = EntityId::fromStringOrId($entityId);
 
         return $this->states->find($id) ?? throw StateException::entityNotFound($id);
+    }
+
+    public function getHeldStateDuration(EntityId|string $entityId): ?Duration
+    {
+        $changedAt = $this->getState($entityId)?->lastChangedAt;
+
+        return $changedAt === null ? null : $this->clock->getNow()->elapsedSince($changedAt);
+    }
+
+    public function hasHeldStateFor(EntityId|string $entityId, Duration $duration): bool
+    {
+        $held = $this->getHeldStateDuration($entityId);
+
+        return $held !== null && !$duration->isLongerThan($held);
     }
 
     public function getHistory(EntityId|string $entityId, HistoryQuery $query): EntityStateHistory
