@@ -42,6 +42,11 @@ final class Entities
         get => new SwitchEntities($this->ha);
     }
 
+    /** Entities in the `zone` domain. */
+    public ZoneEntities $zone {
+        get => new ZoneEntities($this->ha);
+    }
+
     public function __construct(private readonly HaContext $ha)
     {
     }

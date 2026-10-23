@@ -43,7 +43,7 @@ final class GenerateCommandTest extends TestCase
         $tester = $this->runGenerateCommand(['--snapshot-in' => GoldenSnapshot::getSnapshotPath()]);
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode());
-        self::assertStringContainsString('entities: 10 in 5 domains', $tester->getDisplay());
+        self::assertStringContainsString('entities: 11 in 6 domains', $tester->getDisplay());
         self::assertStringContainsString('ignored: 3', $tester->getDisplay());
         self::assertFileExists($this->getOutputDirectory() . '/Entities.php');
         self::assertFileExists($this->getOutputDirectory() . '/LightEntity.php');
@@ -65,7 +65,7 @@ final class GenerateCommandTest extends TestCase
     {
         $tester = $this->runGenerateCommand(['--snapshot-in' => GoldenSnapshot::getSnapshotPath()]);
 
-        self::assertStringContainsString('attributes: 23 typed ·', $tester->getDisplay());
+        self::assertStringContainsString('attributes: 30 typed ·', $tester->getDisplay());
         self::assertStringNotContainsString('calibrated_at', $tester->getDisplay());
     }
 

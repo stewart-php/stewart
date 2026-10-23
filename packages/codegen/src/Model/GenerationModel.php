@@ -33,6 +33,22 @@ final readonly class GenerationModel
         return $this->domains->havingServices();
     }
 
+    /** @return list<string> */
+    public function listActionNames(): array
+    {
+        $names = [];
+
+        foreach ($this->listServiceDomains() as $domain) {
+            foreach ($domain->services as $service) {
+                $names[] = $service->definition->domain . '.' . $service->definition->name;
+            }
+        }
+
+        sort($names);
+
+        return $names;
+    }
+
     public function countEntities(): int
     {
         return \count($this->entityIds);

@@ -25,7 +25,7 @@ final class ServiceCatalogTest extends TestCase
     {
         $catalog = self::createCatalog();
 
-        self::assertSame(['homeassistant', 'light', 'notify', 'switch', 'weather'], $catalog->listDomains());
+        self::assertSame(['homeassistant', 'light', 'notify', 'persistent_notification', 'switch', 'weather'], $catalog->listDomains());
         self::assertSame(['state', 'turn_off', 'turn_on'], self::listServiceNames($catalog->forDomain('light')));
     }
 

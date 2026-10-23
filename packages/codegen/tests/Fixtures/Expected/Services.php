@@ -32,6 +32,11 @@ final class Services
         get => new NotifyServices($this->ha);
     }
 
+    /** Services in the `persistent_notification` domain. */
+    public PersistentNotificationServices $persistentNotification {
+        get => new PersistentNotificationServices($this->ha);
+    }
+
     /** Services in the `switch` domain. */
     public SwitchServices $switch {
         get => new SwitchServices($this->ha);
