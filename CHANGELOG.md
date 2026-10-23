@@ -13,6 +13,8 @@ release could break; a release's "Upgrading" section says what to change.
   `RecordingHaContext::stubServiceAnswer()`, `stubServiceFailure()` and `RecordedServiceCall::getServiceName()`, all
   deprecated since 1.8: use `callAction()`, `callActionForResponse()`, `stubActionAnswer()`, `stubActionFailure()` and
   `getActionName()`
+- Stewart no longer calls a public `dispose()` on an app that does not implement `Disposable`, deprecated since 1.5,
+  and `stewart check` no longer names such apps
 
 ### Upgrading
 
@@ -26,6 +28,8 @@ release could break; a release's "Upgrading" section says what to change.
      -e 's/->callService(ForResponse)?\(/->callAction\1(/g' \
      -e 's/->getServiceName\(\)/->getActionName()/g'
    ```
+2. An app whose `dispose()` does something implements `Stewart\Contracts\Disposable`, or it no longer runs. Before
+   upgrading, `stewart check` on 1.8 names every app this affects.
 
 ## [1.8.0] - 2026-10-23
 

@@ -6,7 +6,7 @@ namespace Stewart\Runtime\Tests\Fixtures\Lifecycle;
 
 use Stewart\Contracts\App;
 
-final class LegacyDisposer implements App
+final class DisposeWithoutDisposable implements App
 {
     public static int $disposals = 0;
 

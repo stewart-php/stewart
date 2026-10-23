@@ -201,18 +201,6 @@ final class CheckCommandTest extends TestCase
         self::assertStringContainsString($this->apps->namespace . '\\Forgotten implements App but is not marked #[Automation] or #[AppTemplate], so it will not run.', $tester->getErrorOutput());
     }
 
-    public function testDisposeWithoutDisposableIsNoticed(): void
-    {
-        $this->apps->writeClass('Legacy', self::createAppSource('Legacy', 'legacy', body: 'public function dispose(): void {}'));
-        $this->apps->writeClass('Tidy', self::createAppSource('Tidy', 'tidy', body: 'public function dispose(): void {}', interfaces: ', \\Stewart\\Contracts\\Disposable'));
-
-        $tester = $this->runCheck(self::VALID_CONFIG);
-
-        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getErrorOutput());
-        self::assertStringContainsString($this->apps->namespace . '\\Legacy declares dispose() without implementing Disposable;', $tester->getErrorOutput());
-        self::assertStringNotContainsString('Tidy declares', $tester->getErrorOutput());
-    }
-
     public function testAdminPortWithoutTokenIsOnlyNoticed(): void
     {
         $this->apps->writeClass('Porch', self::createAppSource('Porch', 'porch'));
@@ -274,7 +262,7 @@ final class CheckCommandTest extends TestCase
         self::assertStringContainsString('Did you mean ' . $this->apps->namespace . '\\RoomLight?', $tester->getErrorOutput());
     }
 
-    private static function createAppSource(string $class, string $id, string $constructorParameters = '', string $body = '', string $interfaces = ''): string
+    private static function createAppSource(string $class, string $id, string $constructorParameters = ''): string
     {
         $constructor = $constructorParameters === '' ? '' : "public function __construct({$constructorParameters}) {}\n\n    ";
 
@@ -283,11 +271,9 @@ final class CheckCommandTest extends TestCase
             use Stewart\\Contracts\\Automation;
 
             #[Automation(id: '{$id}')]
-            final class {$class} implements App{$interfaces}
+            final class {$class} implements App
             {
                 {$constructor}public function initialize(): void {}
-
-                {$body}
             }
             PHP;
     }

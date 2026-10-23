@@ -154,8 +154,7 @@ final class AppHarness
         EventLoopTicks::settle();
         $this->timers->handlerFibers->rethrowFailuresExceptAbandonedWaits();
 
-        // Until 2.0, an app that still declares dispose() without Disposable is disposed too.
-        if ($app instanceof Disposable || \is_callable([$app, 'dispose'])) {
+        if ($app instanceof Disposable) {
             async($app->dispose(...))->await();
         }
     }

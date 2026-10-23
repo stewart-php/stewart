@@ -7,8 +7,8 @@ namespace Stewart\Testing\Tests\Fixtures\App;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
 
-#[Automation(id: 'legacy-dispose')]
-final class LegacyDisposeApp implements App
+#[Automation(id: 'dispose-without-disposable')]
+final class DisposeWithoutDisposableApp implements App
 {
     public private(set) bool $disposed = false;
 
