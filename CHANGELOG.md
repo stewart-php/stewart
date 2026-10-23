@@ -5,72 +5,81 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
-## [Unreleased]
+## [1.8.0] - 2026-10-23
+
+Fewer copies, fewer typos: call actions by the names Home Assistant gives them, run one app class several times with
+its own settings, and let PhpStorm and PHPStan catch a mistyped entity ID or action name before it reaches Home
+Assistant. Prometheus gets a port of its own, so it no longer holds the token that can pause apps.
 
 ### Added
 
-- `http.metrics.listen` (`STEWART_HTTP__METRICS__LISTEN`) serves only `GET /metrics`, on a port of its own, so
-  Prometheus no longer needs the admin token that can pause apps. `http.metrics.token` is optional: without one,
-  anyone who reaches the port reads the metrics. `/metrics` on the admin port keeps working under the admin token
-- Chart: `metrics.enabled` opens the metrics port (9464) with a token the chart generates, or one from
-  `metrics.existingSecret`, and `metrics.podMonitor` scrapes it, so the admin API can stay on loopback
-- Chart: `networkPolicy.enabled` creates ingress NetworkPolicies. The probe port stays open, the metrics and admin
-  ports admit only `networkPolicy.metrics.from` and `networkPolicy.adminApi.from`, and Valkey admits only Stewart
 - `HaContext::callAction('light.turn_on', $data, $target)` and `callActionForResponse()` call a Home Assistant action
   by the name Home Assistant gives it; `Entity::callAction('turn_on')` calls one of the entity's own domain. A name
-  without exactly one dot throws `ServiceCallError::ActionNameInvalid` before anything is sent
-- `EntityState::isOn()` and `isOff()` read raw states as the typed state classes already do
-- `RecordingHaContext::stubActionAnswer('weather.get_forecasts', …)` and `stubActionFailure()` stub actions by the
-  same name, and recorded calls answer `getActionName()`
+  without exactly one dot throws `ServiceCallError::ActionNameInvalid` before anything is sent. In tests,
+  `RecordingHaContext::stubActionAnswer('weather.get_forecasts', …)` and `stubActionFailure()` stub actions by the same
+  name, and recorded calls answer `getActionName()` ([#118](https://github.com/stewart-php/stewart/pull/118))
+- `EntityState::isOn()` and `isOff()` read raw states as the typed state classes already do ([#118](https://github.com/stewart-php/stewart/pull/118))
 - `apps.<id>.class` runs a class once more under that ID, with the entry's own options and settings, so one class can
   serve several rooms. A class marked `#[AppTemplate]` instead of `#[Automation]` runs only through such entries, and
   the class may come from a Composer package. A reload applies added and removed entries; a mistyped class names the
-  closest one, and `stewart check` notes a template that no entry names
-- `AppHarness::startApp(…, appId: 'hall-light')` runs an app under the ID of one entry; an `#[AppTemplate]` needs it.
-  The ID also reaches the harness's store and `RecordingEntityExposure`
-- `stewart make:app PorchLight --template` writes an `#[AppTemplate]` class and a test for one entry, and prints the
-  `stewart.yaml` entry that runs it; `make:app` also refuses an ID that a `class` entry already uses
+  closest one, and `stewart check` notes a template that no entry names. `AppHarness::startApp(…, appId: 'hall-light')`
+  runs an app under the ID of one entry, which an `#[AppTemplate]` needs ([#120](https://github.com/stewart-php/stewart/pull/120))
+- `stewart make:app PorchLight --template` (`make app NAME=… TEMPLATE=1` in new projects) writes an `#[AppTemplate]`
+  class and a test for one entry, and prints the `stewart.yaml` entry that runs it; `make:app` also refuses an ID that
+  a `class` entry already uses ([#121](https://github.com/stewart-php/stewart/pull/121))
 - The test harness matches option names as Stewart does: `motion_sensor` reaches `$motionSensor`, a misspelled option
-  names the closest parameter, and two options for one parameter are refused
+  names the closest parameter, and two options for one parameter are refused ([#121](https://github.com/stewart-php/stewart/pull/121))
 - `stewart check` lists the apps by class, so the entries that run one class sit together, and shows a template that
-  no entry names
+  no entry names ([#121](https://github.com/stewart-php/stewart/pull/121))
 - `.phpstorm.meta.php` completes entity IDs wherever a method takes one (`HaContext`, `ServiceTarget::forEntities()`,
   `Scheduler::runAtEntityTime()`, `HaTrigger`, `Registry`, `EntityId`), zones for `onZoneTransition()`, and action
   names for `callAction()`. The generated `Manifest` lists the action names too, through the new
-  `Stewart\Contracts\Generated\ActionManifest`
+  `Stewart\Contracts\Generated\ActionManifest` ([#122](https://github.com/stewart-php/stewart/pull/122))
 - `stewart-php/phpstan`, a PHPStan extension, checks literal entity IDs and action names against the generated
   `Manifest`: a typo fails `make stan` with the closest known name, and a generated `getEntity()` for an entity left
   out of codegen is reported, since it throws at run time. Its errors use the identifiers `stewart.entityId` and
-  `stewart.actionName`
+  `stewart.actionName`. New projects from the skeleton have it ([#123](https://github.com/stewart-php/stewart/pull/123))
+- `http.metrics.listen` (`STEWART_HTTP__METRICS__LISTEN`) serves only `GET /metrics`, on a port of its own, so
+  Prometheus no longer needs the admin token that can pause apps. `http.metrics.token` is optional: without one,
+  anyone who reaches the port reads the metrics. `/metrics` on the admin port keeps working under the admin token
+  ([#116](https://github.com/stewart-php/stewart/pull/116))
 - `stewart check` notes, and `stewart doctor` and a reload refuse, an admin port without a token and two HTTP ports on
-  one port, which before showed only when the daemon refused to start
+  one port, which before showed only when the daemon refused to start ([#116](https://github.com/stewart-php/stewart/pull/116))
+- Chart: `metrics.enabled` opens the metrics port (9464) with a token the chart generates, or one from
+  `metrics.existingSecret`, and `metrics.podMonitor` scrapes it, so the admin API can stay on loopback ([#117](https://github.com/stewart-php/stewart/pull/117))
+- Chart: `networkPolicy.enabled` creates ingress NetworkPolicies. The probe port stays open, the metrics and admin
+  ports admit only `networkPolicy.metrics.from` and `networkPolicy.adminApi.from`, and Valkey admits only Stewart
+  ([#117](https://github.com/stewart-php/stewart/pull/117))
 
 ### Changed
 
-- The admin API logs a warning when it listens off loopback, as the control socket already does
-- A request refused for a missing or wrong token on the admin or metrics port logs a warning: the first, then every
-  100th
-- Chart: `helm upgrade` rolls the pod when a Secret named in an `existingSecret` has changed, since Stewart reads
-  secrets only at start
-
 - Generated services and entity methods call `callAction()`. The generated format is 8, so `stewart status` and the
-  start log ask for `stewart generate` until the classes are regenerated
+  start log ask for `stewart generate` until the classes are regenerated ([#118](https://github.com/stewart-php/stewart/pull/118)), ([#122](https://github.com/stewart-php/stewart/pull/122))
 - The guide "Calling services" is now "Call actions", at `guides/calling-actions/`; the old address redirects to it.
-  The scheduling guide says when to use a schedule and when a timer
+  The scheduling guide says when to use a schedule and when a timer ([#118](https://github.com/stewart-php/stewart/pull/118))
+- The admin API logs a warning when it listens off loopback, as the control socket already does ([#116](https://github.com/stewart-php/stewart/pull/116))
+- A request refused for a missing or wrong token on the admin or metrics port logs a warning: the first, then every
+  100th ([#116](https://github.com/stewart-php/stewart/pull/116))
+- Chart: `helm upgrade` rolls the pod when a Secret named in an `existingSecret` has changed, since Stewart reads
+  secrets only at start ([#117](https://github.com/stewart-php/stewart/pull/117))
 
 ### Deprecated
 
-- Chart: `adminApi.podMonitor`, which scrapes with the admin token; use `metrics.podMonitor`. It is removed in 2.0
 - `HaContext::callService()` and `callServiceForResponse()`, and the same on `Entity`: use `callAction()` and
   `callActionForResponse()`. In tests, `stubServiceAnswer()`, `stubServiceFailure()` and
   `RecordedServiceCall::getServiceName()`: use `stubActionAnswer()`, `stubActionFailure()` and `getActionName()`. They
-  keep working, each call prints a PHP deprecation line, and 2.0 removes them
+  keep working, each call prints a PHP deprecation line, and 2.0 removes them ([#119](https://github.com/stewart-php/stewart/pull/119))
+- Chart: `adminApi.podMonitor`, which scrapes with the admin token; use `metrics.podMonitor`. It is removed in 2.0
+  ([#117](https://github.com/stewart-php/stewart/pull/117))
 
 ### Upgrading
 
-1. Run `make generate`. The generated classes of 1.7 and earlier call `callService()`, so until they are regenerated
-   every generated call prints a deprecation line in the log.
-2. Move your apps and tests to the action names. This rewrites the calls whose names are written out; `make stan`
+1. Run `make upgrade VERSION=1.8`, then restart Stewart (`make up`, `make deploy` or a new image). The control and
+   worker protocols are unchanged, and so is the Home Assistant integration's.
+2. Run `make generate`. The generated classes of 1.7 and earlier call `callService()`, so until they are regenerated
+   every generated call prints a deprecation line in the log, and `make status` says the classes are of an older
+   format.
+3. Move your apps and tests to the action names. This rewrites the calls whose names are written out; `make stan`
    then points at the rest, such as names held in a variable:
 
    ```bash
@@ -80,13 +89,18 @@ release could break; a release's "Upgrading" section says what to change.
      -e 's/->callService(ForResponse)?\(/->callAction\1(/g' \
      -e 's/->getServiceName\(\)/->getActionName()/g'
    ```
-3. To have `make stan` check entity IDs and action names, add the PHPStan extension from `make sh`; new projects
+4. To have `make stan` check entity IDs and action names, add the PHPStan extension from `make sh`; new projects
    from the skeleton have it:
 
    ```bash
    composer config allow-plugins.phpstan/extension-installer true
    composer require --dev stewart-php/phpstan:^1.8 phpstan/extension-installer
    ```
+5. On Kubernetes with `adminApi.podMonitor.enabled`, switch to `metrics.enabled: true` and
+   `metrics.podMonitor.enabled: true`, and turn `adminApi.podMonitor` off. If Prometheus was the only reason for
+   `adminApi.host: 0.0.0.0`, set it back to `127.0.0.1`.
+6. The `TEMPLATE` variable of `make app` reaches only new projects. To use it, copy the `app` target from the
+   [skeleton's Makefile](https://github.com/stewart-php/skeleton/blob/main/Makefile).
 
 ## [1.7.0] - 2026-10-22
 
