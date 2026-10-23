@@ -20,4 +20,9 @@ final class UnversionedManifest implements Manifest
     {
         return GeneratedManifest::listIgnoredEntityIds();
     }
+
+    public static function listActionNames(): array
+    {
+        return GeneratedManifest::listActionNames();
+    }
 }

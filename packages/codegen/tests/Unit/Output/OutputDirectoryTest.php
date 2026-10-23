@@ -159,6 +159,17 @@ final class OutputDirectoryTest extends TestCase
         self::assertSame([FileOutcome::Unchanged, FileOutcome::Deleted, FileOutcome::Created], self::listOutcomes($changes));
     }
 
+    public function testRenamingEveryFileIsAllowed(): void
+    {
+        $output = new OutputDirectory($this->path);
+        self::writeFiles($output, self::createGeneratedFile('Services.php', 'root'), self::createGeneratedFile('LightServices.php', 'light'));
+
+        $changes = self::writeFiles($output, self::createGeneratedFile('Actions.php', 'root'), self::createGeneratedFile('LightActions.php', 'light'));
+
+        self::assertSame(2, $changes->countWithOutcome(FileOutcome::Deleted));
+        self::assertSame(['Actions.php', 'LightActions.php'], array_map(basename(...), glob($this->path . '/*') ?: []));
+    }
+
     private static function writeFiles(OutputDirectory $output, GeneratedFile ...$files): FileChangeCollection
     {
         return $output->writeChanges(array_values($files), ShrinkPolicy::Refuse);

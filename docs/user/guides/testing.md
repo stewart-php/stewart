@@ -33,7 +33,7 @@ exposed entities. Each constructor parameter is filled from:
 - a service passed to `provideService(Type::class, $object)` before the app starts, for what `services.php` would
   give it;
 - a fake for each type Stewart injects (see below);
-- a class that takes only a `HaContext`, such as the generated `Entities` and `Services`, built over `$harness->ha`;
+- a class that takes only a `HaContext`, such as the generated `Entities` and `Actions`, built over `$harness->ha`;
 - the parameter's default, or null when it is nullable.
 
 An option that matches no parameter (with the closest name), one that matches two, a parameter set twice, a required

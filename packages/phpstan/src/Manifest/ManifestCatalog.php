@@ -9,25 +9,25 @@ final readonly class ManifestCatalog
     /**
      * @param array<string, true> $entityIds
      * @param array<string, true> $ignoredEntityIds
-     * @param array<string, true>|null $actionNames
+     * @param array<string, true> $actionNames
      */
     private function __construct(
         private array $entityIds,
         private array $ignoredEntityIds,
-        private ?array $actionNames,
+        private array $actionNames,
     ) {}
 
     /**
      * @param list<string> $entityIds
      * @param list<string> $ignoredEntityIds
-     * @param list<string>|null $actionNames
+     * @param list<string> $actionNames
      */
-    public static function fromLists(array $entityIds, array $ignoredEntityIds, ?array $actionNames): self
+    public static function fromLists(array $entityIds, array $ignoredEntityIds, array $actionNames): self
     {
         return new self(
             array_fill_keys($entityIds, true),
             array_fill_keys($ignoredEntityIds, true),
-            $actionNames === null ? null : array_fill_keys($actionNames, true),
+            array_fill_keys($actionNames, true),
         );
     }
 
@@ -47,11 +47,6 @@ final readonly class ManifestCatalog
         return array_map(strval(...), [...array_keys($this->entityIds), ...array_keys($this->ignoredEntityIds)]);
     }
 
-    public function listsActionNames(): bool
-    {
-        return $this->actionNames !== null;
-    }
-
     public function knowsAction(string $actionName): bool
     {
         return isset($this->actionNames[$actionName]);
@@ -60,7 +55,7 @@ final readonly class ManifestCatalog
     /** @return list<string> */
     public function listActionNames(): array
     {
-        return array_map(strval(...), array_keys($this->actionNames ?? []));
+        return array_map(strval(...), array_keys($this->actionNames));
     }
 
     public function computeHash(): string

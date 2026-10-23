@@ -12,9 +12,9 @@ sidebar:
 ```
 
 - `Entities` has one property per domain: `$this->entities->light`, `$this->entities->binarySensor`.
-- `getEntity('light.hall')` returns a typed handle. Its methods are that domain's services: `turnOn()` takes the
+- `getEntity('light.hall')` returns a typed handle. Its methods are that domain's actions: `turnOn()` takes the
   light's real fields, such as `brightnessPct` and `colorTempKelvin`.
-- `Services` has one property per domain, with every service of it: `$this->services->notify->mobileAppPhone()`.
+- `Actions` has one property per domain, with every action of it: `$this->actions->notify->mobileAppPhone()`.
 - `LightState::fromNullableState($change->to)` turns a state into a typed one, with `isOn()` and an accessor per
   attribute, such as `getBrightness()`.
 
@@ -44,8 +44,8 @@ the same on its `generated` row (`up to date`, `2 added, 1 removed; run stewart 
 Stewart), and so do the metrics `stewart_generated_entities_drift{change}` and `stewart_generated_format_current`.
 
 `make generate ARGS=--check` reports what would change without writing anything, and fails if something would. When
-more than half of the files would be deleted, `make generate` stops, in case it reached the wrong Home Assistant;
-`ARGS=--allow-shrink` lets it go ahead.
+fewer than half as many files would be left as before, `make generate` stops, in case it reached the wrong Home
+Assistant; `ARGS=--allow-shrink` lets it go ahead.
 
 ## Entity IDs from options
 
@@ -73,18 +73,18 @@ Because IDs are written in full, searching your project for `light.hall` finds e
 |---|---|
 | `Entities` | One property per domain with entities |
 | `LightEntities` | `getEntity('light.…')` for the domain |
-| `LightEntity` | One entity: `getState()`, `requireState()`, `watchStateChanges()`, `waitForState()`, `getHistory()`, and the domain's services as methods |
+| `LightEntity` | One entity: `getState()`, `requireState()`, `watchStateChanges()`, `waitForState()`, `getHistory()`, and the domain's actions as methods |
 | `LightState` | A typed state: `isOn()`, `isOff()`, `isUnavailable()`, `getFriendlyName()`, one accessor per attribute, and `raw` for the plain `EntityState` |
-| `Services` | One property per domain with services |
-| `LightServices` | Every service of the domain |
+| `Actions` | One property per domain with actions |
+| `LightActions` | Every action of the domain |
 | `Manifest` | What Home Assistant looked like: its entity IDs and action names, so Stewart can notice changes |
 | `.phpstorm.meta.php` | Completion in PhpStorm: entity IDs wherever a method takes one (`getState()`, `watchStateChanges()`, `ActionTarget::forEntities()`, `runAtEntityTime()`, …), action names for `callAction()`, and area, floor and label IDs |
 
 A few naming rules:
 
 - Domains become camelCase properties: `binary_sensor` is `$entities->binarySensor`.
-- A service field with a fixed list of values accepts only those, so PHPStan rejects a value Home Assistant would.
-- A service named like an existing method gets a `Service` suffix, and an attribute named like an existing accessor
+- An action field with a fixed list of values accepts only those, so PHPStan rejects a value Home Assistant would.
+- An action named like an existing method gets an `Action` suffix, and an attribute named like an existing accessor
   gets an `Attribute` suffix.
 
 ## Choosing what to generate

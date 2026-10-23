@@ -14,7 +14,7 @@ final readonly class GenerationReport
         public FileChangeCollection $changes,
         public int $entities,
         public int $domains,
-        public int $services,
+        public int $actions,
         public int $ignored,
         public int $attributes,
         public array $warnings,
@@ -24,11 +24,11 @@ final readonly class GenerationReport
     public function summary(): string
     {
         return \sprintf(
-            'entities: %d in %d domains · attributes: %d typed · services: %d · files created/updated/unchanged/deleted: %d/%d/%d/%d · ignored: %d · from Home Assistant %s',
+            'entities: %d in %d domains · attributes: %d typed · actions: %d · files created/updated/unchanged/deleted: %d/%d/%d/%d · ignored: %d · from Home Assistant %s',
             $this->entities,
             $this->domains,
             $this->attributes,
-            $this->services,
+            $this->actions,
             $this->changes->countWithOutcome(FileOutcome::Created),
             $this->changes->countWithOutcome(FileOutcome::Updated),
             $this->changes->countWithOutcome(FileOutcome::Unchanged),

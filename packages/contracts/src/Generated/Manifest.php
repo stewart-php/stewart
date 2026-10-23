@@ -11,4 +11,7 @@ interface Manifest
 
     /** @return list<string> */
     public static function listIgnoredEntityIds(): array;
+
+    /** @return list<string> */
+    public static function listActionNames(): array;
 }

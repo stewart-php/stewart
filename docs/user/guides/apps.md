@@ -53,7 +53,7 @@ Stewart fills each constructor parameter by its type:
 | `Stewart\Contracts\Mqtt\Mqtt` | An MQTT client. See [MQTT](mqtt.md) |
 | `Stewart\Contracts\Exposure\EntityExposure` | Entities your app creates in Home Assistant. See [Exposed entities](exposed-entities.md) |
 | `Stewart\Contracts\Registry\RegistryEditor` | Changes to Home Assistant's entity registry. See [Areas, floors and labels](registry.md) |
-| `App\Generated\Entities`, `App\Generated\Services` | Typed classes for your entities. See [Typed entities](codegen.md) |
+| `App\Generated\Entities`, `App\Generated\Actions` | Typed classes for your entities and actions. See [Typed entities](codegen.md) |
 | A class from `services.php` | Your own services; see below |
 
 Parameters with a scalar or array type (`int`, `string`, `array`, …) are **options**.

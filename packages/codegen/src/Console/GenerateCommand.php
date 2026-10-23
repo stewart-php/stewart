@@ -31,7 +31,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: self::NAME, description: 'Write typed entity and service classes from your Home Assistant')]
+#[AsCommand(name: self::NAME, description: 'Write typed entity and action classes from your Home Assistant')]
 final class GenerateCommand extends StewartCommand
 {
     public const string NAME = 'generate';
@@ -57,7 +57,7 @@ final class GenerateCommand extends StewartCommand
             ->addOption('snapshot-in', null, InputOption::VALUE_REQUIRED, 'Generate from this file instead of connecting')
             ->addOption('snapshot-out', null, InputOption::VALUE_REQUIRED, 'Write what was read to this file')
             ->addOption('check', null, InputOption::VALUE_NONE, 'Report what would change and fail if anything would')
-            ->addOption('allow-shrink', null, InputOption::VALUE_NONE, 'Write even if that deletes more than half of the generated files');
+            ->addOption('allow-shrink', null, InputOption::VALUE_NONE, 'Write even if that leaves fewer than half as many generated files');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

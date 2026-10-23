@@ -131,7 +131,7 @@ generate_classes() {
         *) fail "STEWART_BOOT_GENERATE is \"$STEWART_BOOT_GENERATE\"; expected 0 or 1" ;;
     esac
 
-    log 'generating entity and service classes'
+    log 'generating entity and action classes'
     php "$1/vendor/bin/stewart" generate >&2 || log 'generation failed; starting with the committed classes'
 }
 

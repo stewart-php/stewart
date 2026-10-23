@@ -24,7 +24,7 @@ code:
       key: ssh-privatekey
   volume:
     claimName: ""
-  # Regenerate the entity and service classes from Home Assistant on every start; a failure keeps the committed ones.
+  # Regenerate the entity and action classes from Home Assistant on every start; a failure keeps the committed ones.
   # In image mode this turns off readOnlyRootFilesystem, since the classes are rewritten inside the image's /app.
   generateOnStart: false
 

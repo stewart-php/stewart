@@ -39,7 +39,7 @@ value objects or helpers that several apps share.
 [Testing apps](../guides/testing.md).
 
 **`generated/`** holds classes that `make generate` writes from your Home Assistant: one per entity domain, with
-methods for its services. Commit them, so a build or a server never needs Home Assistant to create them. Run
+methods for its actions. Commit them, so a build or a server never needs Home Assistant to create them. Run
 `make generate` again after you add devices. See [Typed entities](../guides/codegen.md).
 
 **`services.php`** registers your own classes, such as a weather API client, so apps can ask for them in their

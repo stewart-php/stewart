@@ -7,7 +7,7 @@ namespace Stewart\Support\Wire;
 /** @internal */
 final class GeneratedFormat
 {
-    public const int VERSION = 9;
+    public const int VERSION = 10;
 
     public const string MANIFEST_CONSTANT = 'FORMAT_VERSION';
 

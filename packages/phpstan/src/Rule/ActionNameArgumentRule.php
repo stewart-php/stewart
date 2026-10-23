@@ -60,13 +60,13 @@ final readonly class ActionNameArgumentRule implements Rule
             if ($called->isCallTo(HaContext::class, $method)) {
                 $catalog = $this->manifests->findCatalogTrackedBy($scope);
 
-                return $catalog?->listsActionNames() === true ? $this->checkActionNames($called, $scope, $catalog) : [];
+                return $catalog === null ? [] : $this->checkActionNames($called, $scope, $catalog);
             }
 
             if ($called->isCallTo(Entity::class, $method) && $node instanceof MethodCall) {
                 $catalog = $this->manifests->findCatalogTrackedBy($scope);
 
-                return $catalog?->listsActionNames() === true ? $this->checkEntityActions($called, $scope, $catalog, $this->findEntityDomain($node->var, $scope)) : [];
+                return $catalog === null ? [] : $this->checkEntityActions($called, $scope, $catalog, $this->findEntityDomain($node->var, $scope));
             }
         }
 

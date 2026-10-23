@@ -56,7 +56,7 @@ Assistant.
 | NetDaemon | Stewart |
 |---|---|
 | A class with `[NetDaemonApp]` | A class with `#[Automation]` |
-| Generated `Entities` and `Services` | Generated `Entities` and `Services` from `make generate`; see [Typed entities](../guides/codegen.md) |
+| Generated `Entities` and `Services` | Generated `Entities` and `Actions` from `make generate`; see [Typed entities](../guides/codegen.md) |
 | `entity.StateChanges().Where(…).Subscribe(…)` | `->watchStateChanges()->filter(…)->subscribe(…)` |
 | `.WhenStateIsFor(…, TimeSpan)` | `whenChangedTo(…, for: Duration::…)` |
 | `.Throttle(…)` | `->throttle(Duration::…)` |

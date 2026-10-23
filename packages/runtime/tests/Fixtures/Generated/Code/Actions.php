@@ -13,13 +13,13 @@ namespace Stewart\Runtime\Tests\Fixtures\Generated\Code;
 use Stewart\Contracts\HaContext;
 
 /**
- * Every service Home Assistant offers, by domain.
+ * Every action Home Assistant offers, by domain.
  */
-final class Services
+final class Actions
 {
-    /** Services in the `light` domain. */
-    public LightServices $light {
-        get => new LightServices($this->ha);
+    /** Actions in the `light` domain. */
+    public LightActions $light {
+        get => new LightActions($this->ha);
     }
 
     public function __construct(private readonly HaContext $ha)

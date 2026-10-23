@@ -60,8 +60,8 @@ use Stewart\Runtime\Tests\Fixtures\Container\ScalarConsumer;
 use Stewart\Runtime\Tests\Fixtures\Container\SharedStoreConsumer;
 use Stewart\Runtime\Tests\Fixtures\Container\TimerConsumer;
 use Stewart\Runtime\Tests\Fixtures\Container\TypedOptionsApp;
+use Stewart\Runtime\Tests\Fixtures\Generated\Code\Actions;
 use Stewart\Runtime\Tests\Fixtures\Generated\Code\Entities;
-use Stewart\Runtime\Tests\Fixtures\Generated\Code\Services as GeneratedServices;
 use Stewart\Runtime\Tests\Fixtures\Generated\GeneratedSet;
 use Stewart\Runtime\Tests\Fixtures\Ipc\NullTransport;
 use Stewart\Runtime\Tests\Fixtures\Worker\AppResourcesFixture;
@@ -576,12 +576,12 @@ final class AppContainerBuilderTest extends TestCase
         self::assertSame('light.hall', (string) $demo->entities->light->getEntity('light.hall')->getEntity()->id);
     }
 
-    public function testSharedAliasExistsForServicesOfTheUsersOwn(): void
+    public function testGeneratedRootsAreSharedForTheUsersOwnServices(): void
     {
         $services = $this->buildContainer([], generated: GeneratedRoots::fromNamespace(GeneratedSet::NAMESPACE));
 
         self::assertInstanceOf(Entities::class, $services->resolveService(Entities::class));
-        self::assertInstanceOf(GeneratedServices::class, $services->resolveService(GeneratedServices::class));
+        self::assertInstanceOf(Actions::class, $services->resolveService(Actions::class));
     }
 
     public function testMissingGeneratedCodeFailsOnlyItsApp(): void

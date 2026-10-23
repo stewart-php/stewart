@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App;
 
+use App\Generated\Actions;
 use App\Generated\Entities;
 use App\Generated\LightState;
-use App\Generated\Services;
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
@@ -17,7 +17,7 @@ final readonly class TypedHallLight implements App
 {
     public function __construct(
         private Entities $entities,
-        private Services $services,
+        private Actions $actions,
         private LoggerInterface $logger,
     ) {}
 
@@ -29,7 +29,7 @@ final readonly class TypedHallLight implements App
             ->whenChangedTo('on', from: 'off')
             ->subscribe(function () use ($hall): void {
                 $hall->turnOn(brightnessPct: 70);
-                $this->services->notify->mobileAppPhone(message: 'Motion in the hall');
+                $this->actions->notify->mobileAppPhone(message: 'Motion in the hall');
             });
 
         $hall->watchStateChanges()->subscribe(function (StateChange $change): void {

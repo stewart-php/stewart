@@ -94,7 +94,7 @@ final readonly class AppContainerBuilder
 
     private const string ENTITIES_SUFFIX = '.entities';
 
-    private const string SERVICES_SUFFIX = '.services';
+    private const string ACTIONS_SUFFIX = '.actions';
 
     private const array ALWAYS_AVAILABLE_SERVICE_IDS = [
         Clock::class,
@@ -364,7 +364,7 @@ final readonly class AppContainerBuilder
             return;
         }
 
-        foreach ([$generated->entitiesClass, $generated->servicesClass] as $class) {
+        foreach ([$generated->entitiesClass, $generated->actionsClass] as $class) {
             $container->register($class, $class)
                 ->setArguments([new Reference(self::CONTEXT)])
                 ->setPublic(true);
@@ -425,7 +425,7 @@ final readonly class AppContainerBuilder
             return;
         }
 
-        foreach ([self::ENTITIES_SUFFIX => $generated->entitiesClass, self::SERVICES_SUFFIX => $generated->servicesClass] as $suffix => $class) {
+        foreach ([self::ENTITIES_SUFFIX => $generated->entitiesClass, self::ACTIONS_SUFFIX => $generated->actionsClass] as $suffix => $class) {
             $container->register($serviceId . $suffix, $class)->setArguments([new Reference($serviceId . self::CONTEXT_SUFFIX)]);
         }
     }
@@ -448,7 +448,7 @@ final readonly class AppContainerBuilder
 
         if ($generated !== null) {
             $serviceIdsByType[$generated->entitiesClass] = $serviceId . self::ENTITIES_SUFFIX;
-            $serviceIdsByType[$generated->servicesClass] = $serviceId . self::SERVICES_SUFFIX;
+            $serviceIdsByType[$generated->actionsClass] = $serviceId . self::ACTIONS_SUFFIX;
         }
 
         return array_map(static fn(string $id): BoundArgument => new BoundArgument(new Reference($id), false), $serviceIdsByType);

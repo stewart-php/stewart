@@ -29,6 +29,6 @@ sidebar:
 | **Store** | Storage that survives restarts, kept in Valkey. Each app has its own; the global store is shared. |
 | **Stream** | What `watchStateChanges()`, `watchEvents()` and similar methods return: a sequence of events to shape with operators and `subscribe()` to. |
 | **Trigger** | A Home Assistant trigger, such as a zone or a template, used from an app with `watchTrigger()`. |
-| **Typed classes** | The PHP classes `make generate` writes into `generated/` for your entities and services. |
+| **Typed classes** | The PHP classes `make generate` writes into `generated/` for your entities and actions. |
 | **Valkey** | The open-source, Redis-compatible database that keeps the store's data. |
 | **Worker** | A process that runs apps. Apps on different workers cannot take each other down. |

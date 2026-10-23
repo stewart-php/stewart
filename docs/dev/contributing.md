@@ -25,7 +25,7 @@ make check      # every check CI runs
 | `packages/contracts` | Everything apps code against: interfaces, value objects, exceptions. No runtime code |
 | `packages/runtime` | The broker, the workers, the channel between them, the console commands, configuration |
 | `packages/client` | The Home Assistant WebSocket client |
-| `packages/codegen` | `stewart generate`: typed entity and service classes |
+| `packages/codegen` | `stewart generate`: typed entity and action classes |
 | `packages/store`, `packages/store-redis` | Key-value storage, and its Redis backend |
 | `packages/mqtt` | The MQTT client |
 | `packages/sun` | Sun times and positions |

@@ -14,9 +14,9 @@ use Stewart\Contracts\HaContext;
 use Stewart\Contracts\State\EventContext;
 
 /**
- * The `notify` services.
+ * The `notify` actions.
  */
-final readonly class NotifyServices
+final readonly class NotifyActions
 {
     public function __construct(private HaContext $ha)
     {

@@ -23,7 +23,7 @@ template" on GitHub works too. On Windows, run all of this inside WSL2.
 Fill in `STEWART_HOME_ASSISTANT__URL` and `STEWART_HOME_ASSISTANT__TOKEN` in `.env`, then:
 
 ```bash
-make generate     # typed entity and service classes from your Home Assistant, into generated/
+make generate     # typed entity and action classes from your Home Assistant, into generated/
 make doctor       # the connection to Home Assistant, the token's rights and the store
 make check        # the configuration loads and every app can be built; lists the apps and their workers
 make run          # run in the foreground; Ctrl-C stops it

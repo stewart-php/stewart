@@ -10,7 +10,8 @@ use PHPUnit\Framework\TestCase;
 use Random\Engine\Mt19937;
 use Random\Randomizer;
 use Stewart\Codegen\Emitter\Action\ActionMethodEmitter;
-use Stewart\Codegen\Emitter\Action\DomainServicesEmitter;
+use Stewart\Codegen\Emitter\Action\DomainActionsEmitter;
+use Stewart\Codegen\Emitter\ActionsRootEmitter;
 use Stewart\Codegen\Emitter\EmitContext;
 use Stewart\Codegen\Emitter\EntitiesRootEmitter;
 use Stewart\Codegen\Emitter\Entity\DomainEntitiesEmitter;
@@ -20,7 +21,6 @@ use Stewart\Codegen\Emitter\GeneratedCodePrinter;
 use Stewart\Codegen\Emitter\ManifestEmitter;
 use Stewart\Codegen\Emitter\PhpStormMetaEmitter;
 use Stewart\Codegen\Emitter\RootEmitter;
-use Stewart\Codegen\Emitter\ServicesRootEmitter;
 use Stewart\Codegen\Emitter\SourceTree;
 use Stewart\Codegen\Generator;
 use Stewart\Codegen\Model\GenerationModelFactory;
@@ -34,9 +34,9 @@ use Stewart\Testing\Filesystem\TempDirectory;
 #[CoversClass(DomainEntitiesEmitter::class)]
 #[CoversClass(EntityHandleEmitter::class)]
 #[CoversClass(EntityStateEmitter::class)]
-#[CoversClass(DomainServicesEmitter::class)]
+#[CoversClass(DomainActionsEmitter::class)]
 #[CoversClass(EntitiesRootEmitter::class)]
-#[CoversClass(ServicesRootEmitter::class)]
+#[CoversClass(ActionsRootEmitter::class)]
 #[CoversClass(ActionMethodEmitter::class)]
 #[CoversClass(ManifestEmitter::class)]
 #[CoversClass(PhpStormMetaEmitter::class)]

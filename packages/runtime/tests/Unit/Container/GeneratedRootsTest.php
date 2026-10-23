@@ -7,9 +7,9 @@ namespace Stewart\Runtime\Tests\Unit\Container;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Runtime\App\GeneratedRoots;
+use Stewart\Runtime\Tests\Fixtures\Generated\Code\Actions;
 use Stewart\Runtime\Tests\Fixtures\Generated\Code\Entities;
 use Stewart\Runtime\Tests\Fixtures\Generated\Code\Manifest;
-use Stewart\Runtime\Tests\Fixtures\Generated\Code\Services;
 use Stewart\Runtime\Tests\Fixtures\Generated\GeneratedSet;
 
 #[CoversClass(GeneratedRoots::class)]
@@ -21,7 +21,7 @@ final class GeneratedRootsTest extends TestCase
 
         self::assertNotNull($roots);
         self::assertSame(Entities::class, $roots->entitiesClass);
-        self::assertSame(Services::class, $roots->servicesClass);
+        self::assertSame(Actions::class, $roots->actionsClass);
         self::assertSame(Manifest::class, $roots->manifestClass);
     }
 

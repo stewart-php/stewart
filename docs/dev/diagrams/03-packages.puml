@@ -65,7 +65,7 @@ package "stewart-php/codegen\n(optional)" as codegen #F3E8FD {
 
 package "generated" as generated #E6F4EA {
     class Entities
-    class Services
+    class Actions
     class Manifest
 }
 

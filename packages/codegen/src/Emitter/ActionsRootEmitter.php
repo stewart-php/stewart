@@ -8,16 +8,16 @@ use Stewart\Codegen\Model\Collection\DomainModelCollection;
 use Stewart\Codegen\Model\DomainModel;
 use Stewart\Codegen\Model\GenerationModel;
 
-final readonly class ServicesRootEmitter extends RootEmitter
+final readonly class ActionsRootEmitter extends RootEmitter
 {
     protected function getClassName(): string
     {
-        return 'Services';
+        return 'Actions';
     }
 
     protected function getClassComment(): string
     {
-        return 'Every service Home Assistant offers, by domain.';
+        return 'Every action Home Assistant offers, by domain.';
     }
 
     protected function listDomains(GenerationModel $model): DomainModelCollection
@@ -27,11 +27,11 @@ final readonly class ServicesRootEmitter extends RootEmitter
 
     protected function getDomainClassName(DomainModel $domain): string
     {
-        return $domain->getServicesClass();
+        return $domain->getActionsClass();
     }
 
     protected function buildPropertyComment(string $domain): string
     {
-        return \sprintf('Services in the `%s` domain.', $domain);
+        return \sprintf('Actions in the `%s` domain.', $domain);
     }
 }

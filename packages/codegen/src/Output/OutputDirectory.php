@@ -92,11 +92,11 @@ final readonly class OutputDirectory
     /** @throws CodegenException */
     private function refuseLargeShrink(FileChangeCollection $changes): void
     {
-        $deleted = $changes->countWithOutcome(FileOutcome::Deleted);
         $existing = $changes->countExistingFiles();
+        $remaining = $changes->countFilesAfterWrite();
 
-        if ($deleted * 2 > $existing) {
-            throw CodegenException::createForReason(CodegenError::ShrinkRefused, deleted: $deleted, existing: $existing);
+        if ($remaining * 2 < $existing) {
+            throw CodegenException::createForReason(CodegenError::ShrinkRefused, remaining: $remaining, existing: $existing);
         }
     }
 

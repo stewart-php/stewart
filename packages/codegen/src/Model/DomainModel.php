@@ -41,9 +41,9 @@ final readonly class DomainModel
         return $this->classStem . 'State';
     }
 
-    public function getServicesClass(): string
+    public function getActionsClass(): string
     {
-        return $this->classStem . 'Services';
+        return $this->classStem . 'Actions';
     }
 
     public function isOnOff(): bool
