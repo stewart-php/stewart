@@ -28,7 +28,7 @@ enum CodegenError: string implements ExceptionReason
             self::FileNotWritable => 'Cannot write {path}.',
             self::FileNotDeletable => 'Cannot delete {path}.',
             self::UnmarkedFileInTheWay => '{path} was not written by stewart generate; move it out of the output directory.',
-            self::ShrinkRefused => 'Generating would delete {deleted} of {existing} generated files; run `make generate ARGS=--allow-shrink` if that is intended.',
+            self::ShrinkRefused => 'Generating would shrink the generated files from {existing} to {remaining}; run `make generate ARGS=--allow-shrink` if that is intended.',
             self::HomeAssistantNotRunning => 'Home Assistant is {state}; run `stewart generate` again once it has started.',
         };
     }

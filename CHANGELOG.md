@@ -14,8 +14,14 @@ release could break; a release's "Upgrading" section says what to change.
   `ServiceCallError` are `ActionCallException` and `ActionCallError`, with the same reasons; their messages and
   context name the `action`. `ActionResponse::$action` and the testing package's `RecordedActionCall::$action`
   replace `$service`
-- Generated classes use the new names. The generated format is 9, so `stewart status` and the start log ask for
-  `stewart generate` until the classes are regenerated
+- The generated root is `Actions`, and each domain's class is `<Domain>Actions` (`LightActions`), so apps write
+  `$this->actions->notify->mobileAppPhone()`. A generated member that clashes with another takes an `Action` suffix
+  instead of `Service`. The generated `Manifest` implements `Stewart\Contracts\Generated\Manifest`, which now lists
+  the action names itself
+- The generated format is 10, so `stewart status` and the start log ask for `stewart generate` until the classes are
+  regenerated
+- `stewart generate` refuses only a run that would leave fewer than half as many generated files as before, so
+  renamed classes no longer need `--allow-shrink`; its summary counts `actions`
 - The worker protocol is 34
 
 ### Removed
@@ -28,6 +34,7 @@ release could break; a release's "Upgrading" section says what to change.
   and `stewart check` no longer names such apps
 - `GET /metrics` on the admin port: only the metrics port (`http.metrics.listen`) serves metrics, and the admin port
   answers 404 with a pointer to it
+- `Stewart\Contracts\Generated\ActionManifest`: its `listActionNames()` is part of `Manifest`
 - Chart: `adminApi.podMonitor`, deprecated since 1.8; a release that still sets it fails to render and names
   `metrics.podMonitor`
 
@@ -48,9 +55,14 @@ release could break; a release's "Upgrading" section says what to change.
      -e 's/ServiceResponse/ActionResponse/g' \
      -e 's/ServiceCall(Exception|Error)/ActionCall\1/g' \
      -e 's/RecordedServiceCall/RecordedActionCall/g'
+   grep -rlsE '\\Generated\\' apps tests services.php \
+     | xargs -r sed -i -E 's/\b([A-Z][A-Za-z0-9]*)?Services\b/\1Actions/g'
    ```
 
-   The command leaves `->service` on an `ActionResponse` or a `RecordedActionCall` alone; it is `->action` now.
+   The second command renames the generated `Services` and `<Domain>Services` in files that import generated classes,
+   and a class of yours whose name ends in `Services` there too. It leaves `->service` on an `ActionResponse` or a
+   `RecordedActionCall` alone, which is `->action` now, and a call to a generated method with a `Service` suffix,
+   which has an `Action` suffix now.
 2. An app whose `dispose()` does something implements `Stewart\Contracts\Disposable`, or it no longer runs. Before
    upgrading, `stewart check` on 1.8 names every app this affects.
 3. If Prometheus scrapes the admin port, turn on the metrics port and scrape that: `http.metrics.listen`

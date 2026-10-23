@@ -25,7 +25,7 @@ Here is what each part does:
 - **`implements App`** gives the app its lifecycle method: `initialize()` runs once, when the app starts. What it
   sets up ends on its own when the app stops.
 - **The constructor** asks for what the app needs, and Stewart passes it in:
-  - `HaContext` talks to Home Assistant: reads states, watches changes, calls services.
+  - `HaContext` talks to Home Assistant: reads states, watches changes, calls actions.
   - `Scheduler` runs code at a time of day, at a sun event, or every few minutes.
   - `LoggerInterface` writes to Stewart's log, tagged with the app's ID.
   - `$light` and `$offAt` are **options**. Their defaults apply unless `stewart.yaml` sets them.

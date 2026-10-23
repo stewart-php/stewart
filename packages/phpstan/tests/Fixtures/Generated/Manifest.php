@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Stewart\PHPStan\Tests\Fixtures\Generated;
 
-use Stewart\Contracts\Generated\ActionManifest;
+use Stewart\Contracts\Generated\Manifest as ManifestContract;
 
-final class Manifest implements ActionManifest
+final class Manifest implements ManifestContract
 {
     public static function listEntityIds(): array
     {

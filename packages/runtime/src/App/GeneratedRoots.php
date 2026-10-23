@@ -10,12 +10,12 @@ final readonly class GeneratedRoots
 {
     /**
      * @param class-string $entitiesClass
-     * @param class-string $servicesClass
+     * @param class-string $actionsClass
      * @param class-string<Manifest>|null $manifestClass
      */
     private function __construct(
         public string $entitiesClass,
-        public string $servicesClass,
+        public string $actionsClass,
         public ?string $manifestClass,
     ) {}
 
@@ -23,14 +23,14 @@ final readonly class GeneratedRoots
     {
         $namespace = trim($generatedNamespace, '\\');
         $entities = $namespace . '\\Entities';
-        $services = $namespace . '\\Services';
+        $actions = $namespace . '\\Actions';
 
-        if (!class_exists($entities) || !class_exists($services)) {
+        if (!class_exists($entities) || !class_exists($actions)) {
             return null;
         }
 
         $manifest = $namespace . '\\Manifest';
 
-        return new self($entities, $services, is_a($manifest, Manifest::class, true) ? $manifest : null);
+        return new self($entities, $actions, is_a($manifest, Manifest::class, true) ? $manifest : null);
     }
 }

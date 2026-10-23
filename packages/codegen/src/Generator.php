@@ -29,7 +29,7 @@ final readonly class Generator
             changes: new OutputDirectory($target->directory)->writeChanges($this->sources->renderFiles($model, $target), $shrinkPolicy),
             entities: $model->countEntities(),
             domains: \count($model->listEntityDomains()),
-            services: $model->countActions(),
+            actions: $model->countActions(),
             ignored: \count($model->ignoredEntityIds),
             attributes: $model->countAttributes(),
             warnings: $model->warnings,

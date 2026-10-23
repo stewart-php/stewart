@@ -10,8 +10,8 @@ Write Home Assistant automations in PHP.
 
 An automation is an ordinary PHP class. Stewart holds one WebSocket connection to Home Assistant in a broker
 process, keeps the state of every entity, and runs your apps in worker processes, so one misbehaving app does not
-stall the connection. Apps subscribe to state changes and events, call services, keep state across restarts in a
-key-value store, and get IDE autocomplete over your own entities and services through generated classes.
+stall the connection. Apps subscribe to state changes and events, call actions, keep state across restarts in a
+key-value store, and get IDE autocomplete over your own entities and actions through generated classes.
 
 ## Documentation
 
@@ -48,7 +48,7 @@ and the skeleton (`skeleton/`) share one version; see [releasing](docs/dev/relea
 | `stewart-php/store-redis` | Non-blocking Redis/Valkey store backend |
 | `stewart-php/mqtt` | Non-blocking MQTT 3.1.1 client the broker uses when `mqtt.url` is set |
 | `stewart-php/sun` | Sunrise, sunset, twilight, golden hour and sun position, computed locally |
-| `stewart-php/codegen` | Generates typed entity and service classes |
+| `stewart-php/codegen` | Generates typed entity and action classes |
 | `stewart-php/support` | Internal helpers shared by the packages; not app-facing |
 | `stewart-php/testing` | App harness, recording fakes and virtual time for testing apps; a development dependency |
 | `stewart-php/phpstan` | PHPStan rules that catch mistyped entity IDs and action names; a development dependency |

@@ -39,7 +39,7 @@ helm install home oci://ghcr.io/stewart-php/charts/stewart \
 | `git` | `ghcr.io/stewart-php/runtime`; the container fetches `code.git.url` at `code.git.ref` into a release directory and installs its dependencies on start, then deploys each new commit without a pod restart | `code.git.url`; `code.git.tokenSecret` or `code.git.sshKeySecret` for a private repository |
 | `volume` | `ghcr.io/stewart-php/runtime` over a checkout in an existing PVC; dependencies are installed on start | `code.volume.claimName` |
 
-`code.generateOnStart: true` regenerates the entity and service classes from Home Assistant before the daemon starts.
+`code.generateOnStart: true` regenerates the entity and action classes from Home Assistant before the daemon starts.
 A failure keeps the committed classes. In `image` mode this turns off the read-only root filesystem, because the
 classes are rewritten inside the image.
 

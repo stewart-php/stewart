@@ -15,9 +15,9 @@ use Stewart\Contracts\HaContext;
 use Stewart\Contracts\State\EventContext;
 
 /**
- * The `homeassistant` services.
+ * The `homeassistant` actions.
  */
-final readonly class HomeassistantServices
+final readonly class HomeassistantActions
 {
     public function __construct(private HaContext $ha)
     {

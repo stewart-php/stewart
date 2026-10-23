@@ -15,9 +15,9 @@ use Stewart\Contracts\HaContext;
 use Stewart\Contracts\State\EventContext;
 
 /**
- * The `light` services.
+ * The `light` actions.
  */
-final readonly class LightServices
+final readonly class LightActions
 {
     public function __construct(private HaContext $ha)
     {

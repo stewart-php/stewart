@@ -32,6 +32,11 @@ final readonly class FileChangeCollection extends ListCollection
         return $this->filter(static fn(FileChange $change): bool => $change->outcome !== FileOutcome::Created)->count();
     }
 
+    public function countFilesAfterWrite(): int
+    {
+        return $this->filter(static fn(FileChange $change): bool => $change->outcome !== FileOutcome::Deleted)->count();
+    }
+
     public function isClean(): bool
     {
         return !$this->containsWhere(static fn(FileChange $change): bool => $change->outcome->isChange());

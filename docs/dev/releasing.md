@@ -29,6 +29,9 @@ This repository is the only place Stewart is developed. Everything else is publi
   apps may gain methods, and the `*Error` reason enums may gain cases. Add each new method to the package's roave
   baseline (`.roave-backward-compatibility-check.xml`), as `HaContext::callAction()` was in 1.8; the contracts and
   testing baselines already allow new reasons.
+- **What never grows in a minor.** Interfaces that generated code implements (`Manifest`, `TypedEntity`,
+  `ActionTargetSource`): a project that has not run `stewart generate` since the upgrade would fail to load its
+  classes. New generated members go on a new interface instead, until the next major folds it in.
 - **Trunk and tags.** Releases are cut from `main`. A fix for an older minor is not backported; upgrade instead.
 - **Branch alias.** `dev-main` is `X.x-dev` for the current major; at a new major change it in every
   `packages/*/composer.json`, the root path repository's `versions`, `PackageManifestTest::BRANCH_ALIAS`,

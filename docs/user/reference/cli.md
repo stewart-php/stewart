@@ -24,7 +24,7 @@ Your project runs these commands with `make`. The `stewart` commands below run i
 | `make sh` | Shell in the development container |
 | `make doctor` | Check the container, the settings, and the connections to Home Assistant and the store |
 | `make app` | Create an app in apps/ and its test in tests/; TEMPLATE=1 for an #[AppTemplate] [NAME=PorchLight] |
-| `make generate` | Write typed entity and service classes from Home Assistant into generated/ [ARGS=--allow-shrink] |
+| `make generate` | Write typed entity and action classes from Home Assistant into generated/ [ARGS=--allow-shrink] |
 | `make run` | Run in the foreground [ONLY="hello porch" to run only those apps, TRACE=hello to trace one, DRY_RUN=1 to send no service calls] |
 | `make watch` | Run in the foreground and reload after every saved change [ONLY="hello porch", TRACE=hello, DRY_RUN=1] |
 | `make debug` | Run in the foreground with Xdebug [ONLY="hello porch", TRACE=hello] |
@@ -151,7 +151,7 @@ stewart doctor [options]
 
 ### generate
 
-Write typed entity and service classes from your Home Assistant
+Write typed entity and action classes from your Home Assistant
 
 ```
 stewart generate [options]
@@ -163,7 +163,7 @@ stewart generate [options]
 | `--snapshot-in=…` | Generate from this file instead of connecting |  |
 | `--snapshot-out=…` | Write what was read to this file |  |
 | `--check` | Report what would change and fail if anything would |  |
-| `--allow-shrink` | Write even if that deletes more than half of the generated files |  |
+| `--allow-shrink` | Write even if that leaves fewer than half as many generated files |  |
 
 ### make:app
 

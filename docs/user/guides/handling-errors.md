@@ -27,7 +27,7 @@ own class:
 
 | Class | Thrown by |
 |---|---|
-| `ActionCallException` | `callAction()`, `callActionForResponse()` and the generated service methods |
+| `ActionCallException` | `callAction()`, `callActionForResponse()` and the generated action methods |
 | `HistoryException` | `getHistory()` |
 | `EventFireException` | `fireEvent()` |
 | `StateException` | `requireState()` for an entity that does not exist, and invalid operator settings |

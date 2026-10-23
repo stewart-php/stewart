@@ -14,9 +14,9 @@ use Stewart\Contracts\HaContext;
 use Stewart\Contracts\State\EventContext;
 
 /**
- * The `persistent_notification` services.
+ * The `persistent_notification` actions.
  */
-final readonly class PersistentNotificationServices
+final readonly class PersistentNotificationActions
 {
     public function __construct(private HaContext $ha)
     {

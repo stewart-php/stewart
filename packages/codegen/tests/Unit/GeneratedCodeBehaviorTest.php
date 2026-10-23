@@ -6,11 +6,11 @@ namespace Stewart\Codegen\Tests\Unit;
 
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
+use Stewart\Codegen\Tests\Fixtures\Expected\Actions;
 use Stewart\Codegen\Tests\Fixtures\Expected\Entities;
 use Stewart\Codegen\Tests\Fixtures\Expected\LightEntity;
 use Stewart\Codegen\Tests\Fixtures\Expected\LightState;
 use Stewart\Codegen\Tests\Fixtures\Expected\Manifest;
-use Stewart\Codegen\Tests\Fixtures\Expected\Services;
 use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\IdentifierError;
@@ -37,15 +37,15 @@ final class GeneratedCodeBehaviorTest extends TestCase
         self::assertSame(['light.hall'], $ha->getLastCall()->listTargetedEntityIds());
     }
 
-    public function testServiceMethodsReturnCallContext(): void
+    public function testActionMethodsReturnCallContext(): void
     {
         $ha = new RecordingHaContext();
 
         $fromHandle = new Entities($ha)->light->getEntity('light.hall')->turnOn();
-        $fromServices = new Services($ha)->light->turnOff(ActionTarget::forAreas('kitchen'));
+        $fromActions = new Actions($ha)->light->turnOff(ActionTarget::forAreas('kitchen'));
 
         self::assertSame($ha->calls->getFirst()?->context, $fromHandle);
-        self::assertSame($ha->getLastCall()->context, $fromServices);
+        self::assertSame($ha->getLastCall()->context, $fromActions);
     }
 
     public function testUnsetFieldsNeverReachHomeAssistant(): void
@@ -57,7 +57,7 @@ final class GeneratedCodeBehaviorTest extends TestCase
         self::assertSame([], $ha->getLastCall()->data);
     }
 
-    public function testServiceNamedStateKeepsItsName(): void
+    public function testActionNamedStateKeepsItsName(): void
     {
         $ha = new RecordingHaContext();
 
@@ -168,34 +168,34 @@ final class GeneratedCodeBehaviorTest extends TestCase
         self::assertTrue($history->hasBeenIn('on'));
     }
 
-    public function testRootServiceTakesTargetOrEntity(): void
+    public function testRootActionTakesTargetOrEntity(): void
     {
         $ha = new RecordingHaContext();
-        $services = new Services($ha);
+        $actions = new Actions($ha);
 
-        $services->light->turnOn(new Entities($ha)->light->getEntity('light.hall'), brightnessPct: 40);
+        $actions->light->turnOn(new Entities($ha)->light->getEntity('light.hall'), brightnessPct: 40);
         self::assertSame(['light.hall'], $ha->getLastCall()->listTargetedEntityIds());
 
-        $services->light->turnOn(ActionTarget::forAreas('kitchen'));
+        $actions->light->turnOn(ActionTarget::forAreas('kitchen'));
         self::assertSame(['kitchen'], $ha->getLastCall()->target?->areaIds);
     }
 
-    public function testUntargetedServiceSendsNoTarget(): void
+    public function testUntargetedActionSendsNoTarget(): void
     {
         $ha = new RecordingHaContext();
 
-        new Services($ha)->notify->mobileAppPhone('Hall light on', title: 'Stewart');
+        new Actions($ha)->notify->mobileAppPhone('Hall light on', title: 'Stewart');
 
         self::assertSame('notify.mobile_app_phone', $ha->getLastCall()->getActionName());
         self::assertNull($ha->getLastCall()->target);
         self::assertSame(['message' => 'Hall light on', 'title' => 'Stewart'], $ha->getLastCall()->data);
     }
 
-    public function testUntargetedServiceTakesFieldNamedTarget(): void
+    public function testUntargetedActionTakesFieldNamedTarget(): void
     {
         $ha = new RecordingHaContext();
 
-        new Services($ha)->notify->mobileAppPhone('Hall light on', target: ['phone']);
+        new Actions($ha)->notify->mobileAppPhone('Hall light on', target: ['phone']);
 
         self::assertSame(['message' => 'Hall light on', 'target' => ['phone']], $ha->getLastCall()->data);
         self::assertNull($ha->getLastCall()->target);
@@ -218,11 +218,11 @@ final class GeneratedCodeBehaviorTest extends TestCase
         self::assertNull($state->getEffect());
     }
 
-    public function testRespondingServiceAsksForResponse(): void
+    public function testRespondingActionAsksForResponse(): void
     {
         $ha = new RecordingHaContext()->stubActionAnswer('weather.get_forecasts', ['forecast' => []]);
 
-        $result = new Services($ha)->weather->getForecasts(ActionTarget::forEntities('weather.home'), 'daily');
+        $result = new Actions($ha)->weather->getForecasts(ActionTarget::forEntities('weather.home'), 'daily');
 
         self::assertTrue($ha->getLastCall()->returnsResponse);
         self::assertSame(['forecast' => []], $result->response);

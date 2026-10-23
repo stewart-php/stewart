@@ -8,33 +8,19 @@ declare(strict_types=1);
  * Do not edit: run `make generate` instead.
  */
 
-namespace Stewart\Codegen\Tests\Fixtures\Expected;
+namespace App\Generated;
 
 use Stewart\Contracts\Action\ActionTargetSource;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\State\EventContext;
 
 /**
- * The `light` services.
+ * The `light` actions.
  */
-final readonly class LightServices
+final readonly class LightActions
 {
     public function __construct(private HaContext $ha)
     {
-    }
-
-    /**
-     * Set state
-     *
-     * Writes a state straight onto a light, bypassing its integration.
-     *
-     * @param string|int|float $value Value. The state to write
-     */
-    public function state(ActionTargetSource $target, string|int|float $value): EventContext
-    {
-        return $this->ha->callAction('light.state', [
-            'value' => $value,
-        ], $target);
     }
 
     /**

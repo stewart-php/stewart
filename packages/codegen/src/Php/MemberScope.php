@@ -9,7 +9,7 @@ enum MemberScope
     case RootClasses;
     case ClassStems;
     case EntityHandle;
-    case DomainServices;
+    case DomainActions;
     case StateView;
     case Parameters;
     case TargetedParameters;
@@ -18,7 +18,7 @@ enum MemberScope
     {
         return match ($this) {
             self::RootClasses, self::ClassStems => 'Domain',
-            self::EntityHandle, self::DomainServices => 'Service',
+            self::EntityHandle, self::DomainActions => 'Action',
             self::StateView => 'Attribute',
             self::Parameters, self::TargetedParameters => 'Field',
         };

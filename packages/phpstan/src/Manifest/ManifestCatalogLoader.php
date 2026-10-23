@@ -6,7 +6,6 @@ namespace Stewart\PHPStan\Manifest;
 
 use PHPStan\Analyser\DependencyTracker;
 use PHPStan\Analyser\Scope;
-use Stewart\Contracts\Generated\ActionManifest;
 use Stewart\Contracts\Generated\Manifest;
 use Stewart\PHPStan\Cache\ManifestResultCacheValue;
 
@@ -46,10 +45,6 @@ final class ManifestCatalogLoader
             return null;
         }
 
-        return ManifestCatalog::fromLists(
-            $class::listEntityIds(),
-            $class::listIgnoredEntityIds(),
-            is_a($class, ActionManifest::class, true) ? $class::listActionNames() : null,
-        );
+        return ManifestCatalog::fromLists($class::listEntityIds(), $class::listIgnoredEntityIds(), $class::listActionNames());
     }
 }

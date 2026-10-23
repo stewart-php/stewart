@@ -1,6 +1,6 @@
 {
     "name": "stewart-php/codegen",
-    "description": "Generates typed entity and service classes from a Home Assistant instance",
+    "description": "Generates typed entity and action classes from a Home Assistant instance",
     "type": "library",
     "license": "MIT",
     "homepage": "https://github.com/stewart-php/stewart",

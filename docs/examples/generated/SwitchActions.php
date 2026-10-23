@@ -15,9 +15,9 @@ use Stewart\Contracts\HaContext;
 use Stewart\Contracts\State\EventContext;
 
 /**
- * The `switch` services.
+ * The `switch` actions.
  */
-final readonly class SwitchServices
+final readonly class SwitchActions
 {
     public function __construct(private HaContext $ha)
     {

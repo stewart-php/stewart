@@ -10,14 +10,14 @@ declare(strict_types=1);
 
 namespace App\Generated;
 
-use Stewart\Contracts\Generated\ActionManifest;
+use Stewart\Contracts\Generated\Manifest as ManifestContract;
 
 /**
  * What `stewart generate` saw.
  */
-final class Manifest implements ActionManifest
+final class Manifest implements ManifestContract
 {
-    public const int FORMAT_VERSION = 9;
+    public const int FORMAT_VERSION = 10;
 
     private function __construct()
     {

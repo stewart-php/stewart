@@ -6,7 +6,7 @@ namespace Stewart\Codegen\Emitter;
 
 use Stewart\Codegen\Model\GenerationModel;
 use Stewart\Codegen\Output\GeneratedFile;
-use Stewart\Contracts\Generated\ActionManifest;
+use Stewart\Contracts\Generated\Manifest;
 use Stewart\Support\Wire\GeneratedFormat;
 
 final readonly class ManifestEmitter implements ModelFileEmitter
@@ -16,13 +16,13 @@ final readonly class ManifestEmitter implements ModelFileEmitter
     public function emitFile(GenerationModel $model, EmitContext $context): GeneratedFile
     {
         $namespace = $context->createNamespace();
-        $context->importClass($namespace, ActionManifest::class, self::CLASS_NAME);
+        $context->importClass($namespace, Manifest::class, self::CLASS_NAME);
 
         $class = $namespace->addClass(self::CLASS_NAME)
             ->setFinal()
             ->addComment('What `stewart generate` saw.');
 
-        $class->addImplement(ActionManifest::class);
+        $class->addImplement(Manifest::class);
         $class->addConstant(GeneratedFormat::MANIFEST_CONSTANT, GeneratedFormat::VERSION)->setType('int')->setPublic();
         $class->addMethod('__construct')->setPrivate();
 

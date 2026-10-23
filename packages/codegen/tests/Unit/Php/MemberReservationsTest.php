@@ -22,8 +22,8 @@ final class MemberReservationsTest extends TestCase
             new FixedMemberReserver(MemberScope::EntityHandle, ['entity', 'state']),
         ])->createAllocatorFor(MemberScope::EntityHandle);
 
-        self::assertSame('stateService', $allocator->claim('state'));
-        self::assertSame('entityService', $allocator->claim('entity'));
+        self::assertSame('stateAction', $allocator->claim('state'));
+        self::assertSame('entityAction', $allocator->claim('entity'));
     }
 
     public function testIgnoresNamesReservedInOtherScopes(): void

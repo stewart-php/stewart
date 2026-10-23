@@ -16,7 +16,7 @@ use Stewart\Contracts\Action\ActionTargetSource;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\State\EventContext;
 
-final readonly class DomainServicesEmitter implements DomainFileEmitter, ReservesMemberNames
+final readonly class DomainActionsEmitter implements DomainFileEmitter, ReservesMemberNames
 {
     private const array RESERVED_MEMBER_NAMES = ['ha'];
 
@@ -30,24 +30,24 @@ final readonly class DomainServicesEmitter implements DomainFileEmitter, Reserve
     public function emitFile(DomainModel $domain, EmitContext $context): GeneratedFile
     {
         $namespace = $context->createNamespace();
-        $context->importClass($namespace, HaContext::class, $domain->getServicesClass());
+        $context->importClass($namespace, HaContext::class, $domain->getActionsClass());
 
         if ($this->anyReturnsResponse($domain)) {
-            $context->importClass($namespace, ActionResponse::class, $domain->getServicesClass());
+            $context->importClass($namespace, ActionResponse::class, $domain->getActionsClass());
         }
 
         if (array_any($domain->actions, static fn(ActionModel $action): bool => !$action->definition->returnsResponse)) {
-            $context->importClass($namespace, EventContext::class, $domain->getServicesClass());
+            $context->importClass($namespace, EventContext::class, $domain->getActionsClass());
         }
 
         if ($this->anyTargetable($domain)) {
-            $context->importClass($namespace, ActionTargetSource::class, $domain->getServicesClass());
+            $context->importClass($namespace, ActionTargetSource::class, $domain->getActionsClass());
         }
 
-        $class = $namespace->addClass($domain->getServicesClass())
+        $class = $namespace->addClass($domain->getActionsClass())
             ->setFinal()
             ->setReadOnly()
-            ->addComment(\sprintf('The `%s` services.', $domain->domain));
+            ->addComment(\sprintf('The `%s` actions.', $domain->domain));
 
         $class->addMethod('__construct')
             ->addPromotedParameter('ha')
@@ -58,7 +58,7 @@ final readonly class DomainServicesEmitter implements DomainFileEmitter, Reserve
             $this->methods->addDomainActionMethod($class, $action);
         }
 
-        return $context->printFile($namespace, $domain->getServicesClass());
+        return $context->printFile($namespace, $domain->getActionsClass());
     }
 
     private function anyTargetable(DomainModel $domain): bool
@@ -85,6 +85,6 @@ final readonly class DomainServicesEmitter implements DomainFileEmitter, Reserve
 
     public function listReservedMemberNames(MemberScope $scope): array
     {
-        return $scope === MemberScope::DomainServices ? self::RESERVED_MEMBER_NAMES : [];
+        return $scope === MemberScope::DomainActions ? self::RESERVED_MEMBER_NAMES : [];
     }
 }

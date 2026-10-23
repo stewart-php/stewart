@@ -71,7 +71,7 @@ final readonly class GenerationModelFactory
                 entityIds: $states->sortedByEntityId()->listEntityIds(),
                 attributes: $this->buildAttributeModels($attributes->typed),
                 handleActions: $this->buildActionModels($catalog->forEntityHandle($domain), MemberScope::EntityHandle),
-                actions: $this->buildActionModels($catalog->forDomain($domain), MemberScope::DomainServices),
+                actions: $this->buildActionModels($catalog->forDomain($domain), MemberScope::DomainActions),
             );
         }
 
@@ -136,7 +136,7 @@ final readonly class GenerationModelFactory
 
     private function selectParameterScope(MemberScope $methodScope, ActionDefinition $definition): MemberScope
     {
-        return $methodScope === MemberScope::DomainServices && $definition->target->isTargetable
+        return $methodScope === MemberScope::DomainActions && $definition->target->isTargetable
             ? MemberScope::TargetedParameters
             : MemberScope::Parameters;
     }

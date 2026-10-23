@@ -17,7 +17,7 @@ hero:
 ---
 
 Stewart connects to your Home Assistant and runs automations you write in PHP. Each automation is a small PHP class, which Stewart calls an **app**:
-it watches entities, reacts to events and schedules, and calls Home Assistant services. You keep the automations in
+it watches entities, reacts to events and schedules, and calls Home Assistant actions. You keep the automations in
 your own Git repository, check them with PHPStan, and test them with PHPUnit, without a running Home Assistant.
 
 This is a complete automation. It turns the porch light on at sunset and off at 23:00:

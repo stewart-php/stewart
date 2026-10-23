@@ -60,7 +60,7 @@ app: ## Create an app in apps/ and its test in tests/; TEMPLATE=1 for an #[AppTe
 	$(RUN) stewart make:app $(call required,NAME,PorchLight)$(if $(TEMPLATE), --template)
 
 .PHONY: generate
-generate: ## Write typed entity and service classes from Home Assistant into generated/ [ARGS=--allow-shrink]
+generate: ## Write typed entity and action classes from Home Assistant into generated/ [ARGS=--allow-shrink]
 	$(RUN) stewart generate $(ARGS)
 
 .PHONY: run

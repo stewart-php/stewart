@@ -54,7 +54,7 @@ configured) and the live `AppRuntimeServices`, which are set only after compilin
   matches. User code reaches them only through contract aliases, so the transport, the cache and the dispatcher are
   out of its reach.
 - Each app gets its own logger, context, scheduler, timers, store, read-only store, MQTT client, exposure and
-  registry editor, through `forApp($appId)` factories, and the generated `Entities` and `Services` bound to its
+  registry editor, through `forApp($appId)` factories, and the generated `Entities` and `Actions` bound to its
   context.
 - `StoreAttributesPass` maps `#[GlobalStore]` and `#[PeerStore]` parameters to store services; a writable peer store
   is an error, and a peer that names no app becomes an error definition.

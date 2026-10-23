@@ -1,6 +1,6 @@
 # stewart-php/codegen
 
-Generates typed entity and service classes from a Home Assistant instance.
+Generates typed entity and action classes from a Home Assistant instance.
 
 ```bash
 composer require stewart-php/codegen
