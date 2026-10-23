@@ -6,7 +6,7 @@ namespace App\Tests;
 
 use App\RainWarning;
 use PHPUnit\Framework\TestCase;
-use Stewart\Contracts\Exception\ServiceCallException;
+use Stewart\Contracts\Exception\ActionCallException;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Testing\App\AppHarness;
 
@@ -28,7 +28,7 @@ final class RainWarningTest extends TestCase
     public function testAMissingForecastIsLogged(): void
     {
         $harness = new AppHarness();
-        $harness->ha->stubActionFailure('weather.get_forecasts', ServiceCallException::unreachable('weather', 'get_forecasts', 'disconnected'));
+        $harness->ha->stubActionFailure('weather.get_forecasts', ActionCallException::unreachable('weather', 'get_forecasts', 'disconnected'));
         $harness->startApp(RainWarning::class);
 
         $harness->advanceTime(Duration::hours(7));

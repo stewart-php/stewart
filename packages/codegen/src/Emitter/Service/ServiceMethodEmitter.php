@@ -9,8 +9,8 @@ use Nette\PhpGenerator\Method;
 use Stewart\Codegen\Php\MemberScope;
 use Stewart\Codegen\Php\ReservesMemberNames;
 use Stewart\Codegen\Service\ServiceModel;
-use Stewart\Contracts\Service\ServiceResponse;
-use Stewart\Contracts\Service\ServiceTargetSource;
+use Stewart\Contracts\Action\ActionResponse;
+use Stewart\Contracts\Action\ActionTargetSource;
 use Stewart\Contracts\State\EventContext;
 
 final readonly class ServiceMethodEmitter implements ReservesMemberNames
@@ -39,7 +39,7 @@ final readonly class ServiceMethodEmitter implements ReservesMemberNames
         $method = $this->declareMethod($class, $service);
 
         if ($service->definition->target->isTargetable) {
-            $method->addParameter(self::TARGET_PARAMETER)->setType(ServiceTargetSource::class);
+            $method->addParameter(self::TARGET_PARAMETER)->setType(ActionTargetSource::class);
         }
 
         $this->addFieldParameters($method, $service);
@@ -56,7 +56,7 @@ final readonly class ServiceMethodEmitter implements ReservesMemberNames
     private function declareMethod(ClassType $class, ServiceModel $service): Method
     {
         $method = $class->addMethod($service->method)
-            ->setReturnType($service->definition->returnsResponse ? ServiceResponse::class : EventContext::class);
+            ->setReturnType($service->definition->returnsResponse ? ActionResponse::class : EventContext::class);
 
         foreach ($this->buildDocblock($service) as $line) {
             $method->addComment($line);

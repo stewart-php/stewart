@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Model;
 
+use Stewart\Contracts\Exception\ActionCallError;
 use Stewart\Contracts\Exception\EventFireError;
 use Stewart\Contracts\Exception\ExceptionReason;
 use Stewart\Contracts\Exception\RegistryEditError;
-use Stewart\Contracts\Exception\ServiceCallError;
 
 enum ServiceCallOutcome: string
 {
@@ -20,9 +20,9 @@ enum ServiceCallOutcome: string
     public static function failedWith(ExceptionReason $reason): self
     {
         return match ($reason) {
-            ServiceCallError::Unreachable, EventFireError::Unreachable, RegistryEditError::Unreachable => self::Unreachable,
-            ServiceCallError::TimedOut, EventFireError::TimedOut, RegistryEditError::TimedOut => self::TimedOut,
-            ServiceCallError::Overloaded, EventFireError::Overloaded, RegistryEditError::Overloaded => self::Refused,
+            ActionCallError::Unreachable, EventFireError::Unreachable, RegistryEditError::Unreachable => self::Unreachable,
+            ActionCallError::TimedOut, EventFireError::TimedOut, RegistryEditError::TimedOut => self::TimedOut,
+            ActionCallError::Overloaded, EventFireError::Overloaded, RegistryEditError::Overloaded => self::Refused,
             default => self::Rejected,
         };
     }

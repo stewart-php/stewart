@@ -10,9 +10,9 @@ declare(strict_types=1);
 
 namespace Stewart\Codegen\Tests\Fixtures\Expected;
 
+use Stewart\Contracts\Action\ActionResponse;
+use Stewart\Contracts\Action\ActionTargetSource;
 use Stewart\Contracts\HaContext;
-use Stewart\Contracts\Service\ServiceResponse;
-use Stewart\Contracts\Service\ServiceTargetSource;
 
 /**
  * The `weather` services.
@@ -30,7 +30,7 @@ final readonly class WeatherServices
      *
      * @param 'daily'|'hourly' $type Forecast type. The scope of the weather forecast
      */
-    public function getForecasts(ServiceTargetSource $target, string $type): ServiceResponse
+    public function getForecasts(ActionTargetSource $target, string $type): ActionResponse
     {
         return $this->ha->callActionForResponse('weather.get_forecasts', [
             'type' => $type,

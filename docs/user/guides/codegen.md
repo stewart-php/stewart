@@ -78,7 +78,7 @@ Because IDs are written in full, searching your project for `light.hall` finds e
 | `Services` | One property per domain with services |
 | `LightServices` | Every service of the domain |
 | `Manifest` | What Home Assistant looked like: its entity IDs and action names, so Stewart can notice changes |
-| `.phpstorm.meta.php` | Completion in PhpStorm: entity IDs wherever a method takes one (`getState()`, `watchStateChanges()`, `ServiceTarget::forEntities()`, `runAtEntityTime()`, …), action names for `callAction()`, and area, floor and label IDs |
+| `.phpstorm.meta.php` | Completion in PhpStorm: entity IDs wherever a method takes one (`getState()`, `watchStateChanges()`, `ActionTarget::forEntities()`, `runAtEntityTime()`, …), action names for `callAction()`, and area, floor and label IDs |
 
 A few naming rules:
 
@@ -148,7 +148,7 @@ goes for `generated/`, which names your entities.
 ```
 
 - It checks every method that takes an entity ID, such as `getState()`, `watchStateChanges()`,
-  `ServiceTarget::forEntities()`, `runAtEntityTime()` and `new EntityId(…)`, and the action names of `callAction()`,
+  `ActionTarget::forEntities()`, `runAtEntityTime()` and `new EntityId(…)`, and the action names of `callAction()`,
   including `$ha->getEntity('light.hall')->callAction('turn_on')`.
 - Only IDs written as literals are checked. Globs such as `light.*`, times such as `07:30`, and IDs from options are
   left alone, and so is code in your tests, which seed made-up entities.

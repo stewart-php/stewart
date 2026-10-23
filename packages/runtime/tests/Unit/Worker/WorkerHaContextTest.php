@@ -10,9 +10,9 @@ use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Exception\ActionCallError;
+use Stewart\Contracts\Exception\ActionCallException;
 use Stewart\Contracts\Exception\EventFireError;
-use Stewart\Contracts\Exception\ServiceCallError;
-use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exception\StateError;
 use Stewart\Contracts\Exception\TopicError;
 use Stewart\Contracts\Exception\TopicException;
@@ -61,30 +61,30 @@ final class WorkerHaContextTest extends TestCase
 {
     use AssertsReason;
 
-    /** @return iterable<string, array{Throwable, ServiceCallError}> */
+    /** @return iterable<string, array{Throwable, ActionCallError}> */
     public static function provideSendFailures(): iterable
     {
         yield 'a request that cannot be encoded' => [TransportException::createForReason(
             TransportError::Unencodable,
             new RuntimeException('NAN'),
             messageClass: ServiceCallRequest::class,
-        ), ServiceCallError::Rejected];
+        ), ActionCallError::Rejected];
         yield 'a channel that is gone' => [TransportException::createForReason(
             TransportError::SendFailed,
             new RuntimeException('broken pipe'),
-        ), ServiceCallError::Unreachable];
-        yield 'anything else' => [new RuntimeException('surprise'), ServiceCallError::Unreachable];
+        ), ActionCallError::Unreachable];
+        yield 'anything else' => [new RuntimeException('surprise'), ActionCallError::Unreachable];
     }
 
     #[DataProvider('provideSendFailures')]
-    public function testSendFailureIsMappedToItsReason(Throwable $failure, ServiceCallError $reason): void
+    public function testSendFailureIsMappedToItsReason(Throwable $failure, ActionCallError $reason): void
     {
         $transport = new FailingTransport($failure);
 
         try {
             self::createContext($transport)->callAction('light.turn_on');
             self::fail('The request never left the worker.');
-        } catch (ServiceCallException $e) {
+        } catch (ActionCallException $e) {
             self::assertSame($reason, $e->reason);
             self::assertSame($failure, $e->getPrevious());
         }
@@ -147,7 +147,7 @@ final class WorkerHaContextTest extends TestCase
     {
         $transport = new NullTransport();
 
-        $this->assertThrowsReason(ServiceCallError::ActionNameInvalid, static fn() => self::createContext($transport)->callAction('light/turn_on'));
+        $this->assertThrowsReason(ActionCallError::ActionNameInvalid, static fn() => self::createContext($transport)->callAction('light/turn_on'));
         self::assertSame([], $transport->sent);
     }
 
@@ -160,8 +160,8 @@ final class WorkerHaContextTest extends TestCase
         try {
             self::createContext($transport, $connection)->callAction('light.turn_on');
             self::fail('Home Assistant is disconnected.');
-        } catch (ServiceCallException $e) {
-            self::assertSame(ServiceCallError::Unreachable, $e->reason);
+        } catch (ActionCallException $e) {
+            self::assertSame(ActionCallError::Unreachable, $e->reason);
             self::assertStringContainsString('Home Assistant is disconnected', $e->getMessage());
         }
 

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stewart\PHPStan\Tests\Fixtures\Analysed;
 
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\Schedule\Scheduler;
-use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\PHPStan\Tests\Fixtures\Generated\LightEntities;
 
@@ -32,12 +32,12 @@ final readonly class EntityIdCalls
         HaTrigger::onZoneTransition('person.anna', 'zone.hom');
     }
 
-    public function target(): ServiceTarget
+    public function target(): ActionTarget
     {
         $this->scheduler->runAtEntityTime('input_datetime.wake_up', static function (): void {});
         new EntityId('light.hal');
 
-        return ServiceTarget::forEntities('light.hall', 'switch.fan', 'light.kitchne');
+        return ActionTarget::forEntities('light.hall', 'switch.fan', 'light.kitchne');
     }
 
     public function useGeneratedHandles(): void

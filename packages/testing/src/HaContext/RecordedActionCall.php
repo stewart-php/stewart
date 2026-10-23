@@ -4,24 +4,24 @@ declare(strict_types=1);
 
 namespace Stewart\Testing\HaContext;
 
-use Stewart\Contracts\Service\ServiceTarget;
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\State\EventContext;
 
-final readonly class RecordedServiceCall
+final readonly class RecordedActionCall
 {
     /** @param array<string, mixed> $data */
     public function __construct(
         public string $domain,
-        public string $service,
+        public string $action,
         public array $data,
-        public ?ServiceTarget $target,
+        public ?ActionTarget $target,
         public bool $returnsResponse,
         public EventContext $context,
     ) {}
 
     public function getActionName(): string
     {
-        return $this->domain . '.' . $this->service;
+        return $this->domain . '.' . $this->action;
     }
 
     /** @return list<string> */

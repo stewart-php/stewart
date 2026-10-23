@@ -7,13 +7,13 @@ namespace Stewart\Runtime\Tests\Unit\Broker\Exposure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use Stewart\Contracts\Action\ActionResponse;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\ExposureError;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Exposure\ExposedState;
 use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\Exposure\SensorConfig;
-use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppMetrics;
@@ -137,7 +137,7 @@ final class ExposureProxyTest extends TestCase
         $this->slots->runBounded($this->worker, $serviceCall, static function () use ($held, $serviceCall): ServiceCallResult {
             $held->waitUntilOpen();
 
-            return new ServiceCallResult($serviceCall->correlationId, new ServiceResponse('light', 'turn_on'));
+            return new ServiceCallResult($serviceCall->correlationId, new ActionResponse('light', 'turn_on'));
         });
 
         $this->forwardExpose(ResourceScope::forApp(new AppId('demo')));

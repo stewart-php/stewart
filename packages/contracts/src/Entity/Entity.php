@@ -4,23 +4,23 @@ declare(strict_types=1);
 
 namespace Stewart\Contracts\Entity;
 
+use Stewart\Contracts\Action\ActionResponse;
+use Stewart\Contracts\Action\ActionTarget;
+use Stewart\Contracts\Action\ActionTargetSource;
+use Stewart\Contracts\Exception\ActionCallException;
 use Stewart\Contracts\Exception\HistoryException;
-use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exception\StateException;
 use Stewart\Contracts\Exception\WaitException;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\History\EntityStateHistory;
 use Stewart\Contracts\History\HistoryQuery;
-use Stewart\Contracts\Service\ServiceResponse;
-use Stewart\Contracts\Service\ServiceTarget;
-use Stewart\Contracts\Service\ServiceTargetSource;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
 use Stewart\Contracts\Time\Duration;
 
-final readonly class Entity implements ServiceTargetSource
+final readonly class Entity implements ActionTargetSource
 {
     public function __construct(
         private HaContext $ha,
@@ -74,14 +74,14 @@ final readonly class Entity implements ServiceTargetSource
             ->waitForNext($timeout);
     }
 
-    public function toServiceTarget(): ServiceTarget
+    public function toActionTarget(): ActionTarget
     {
-        return ServiceTarget::forEntities($this->id);
+        return ActionTarget::forEntities($this->id);
     }
 
     /**
      * @param array<string, mixed> $data
-     * @throws ServiceCallException
+     * @throws ActionCallException
      */
     public function callAction(string $action, array $data = []): EventContext
     {
@@ -90,9 +90,9 @@ final readonly class Entity implements ServiceTargetSource
 
     /**
      * @param array<string, mixed> $data
-     * @throws ServiceCallException
+     * @throws ActionCallException
      */
-    public function callActionForResponse(string $action, array $data = []): ServiceResponse
+    public function callActionForResponse(string $action, array $data = []): ActionResponse
     {
         return $this->ha->callActionForResponse($this->getDomain() . '.' . $action, $data, $this);
     }

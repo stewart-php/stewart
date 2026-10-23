@@ -7,8 +7,8 @@ namespace Stewart\Runtime\Tests\Unit\Worker\Message;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
-use Stewart\Contracts\Exception\ServiceCallException;
-use Stewart\Contracts\Service\ServiceResponse;
+use Stewart\Contracts\Action\ActionResponse;
+use Stewart\Contracts\Exception\ActionCallException;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Ipc\Message\Shutdown;
@@ -52,8 +52,8 @@ final class BrokerMessageDispatcherTest extends TestCase
     public function testCorrelatedReplyResolvesItsPendingRequest(): void
     {
         $pending = new PendingRequests(new CorrelationIdSequence(new WorkerId(0)));
-        $call = $pending->open(ServiceResponse::class, static fn(string $detail): ServiceCallException => ServiceCallException::unreachable('light', 'turn_on', $detail));
-        $response = new ServiceResponse('light', 'turn_on');
+        $call = $pending->open(ActionResponse::class, static fn(string $detail): ActionCallException => ActionCallException::unreachable('light', 'turn_on', $detail));
+        $response = new ActionResponse('light', 'turn_on');
 
         new BrokerMessageDispatcher([new CorrelatedReplyHandler($pending)], new NullLogger())
             ->dispatch(new ServiceCallResult($call->correlationId, $response));

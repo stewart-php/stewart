@@ -23,12 +23,12 @@ use Stewart\Client\Connection\Command\SubscribeEvents;
 use Stewart\Client\Connection\Command\SubscribeTrigger;
 use Stewart\Client\Connection\Command\UnsubscribeEvents;
 use Stewart\Client\Connection\Command\UpdateEntityRegistryEntry;
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Registry\EntityAlias;
 use Stewart\Contracts\Registry\Update\EntityRegistryUpdate;
-use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
@@ -54,7 +54,7 @@ final class HaCommandTest extends TestCase
     {
         self::assertSame(
             ['type' => 'call_service', 'domain' => 'light', 'service' => 'turn_on'],
-            new CallService('light', 'turn_on', [], ServiceTarget::forEntities())->toMessage(),
+            new CallService('light', 'turn_on', [], ActionTarget::forEntities())->toMessage(),
         );
     }
 
@@ -69,7 +69,7 @@ final class HaCommandTest extends TestCase
                 'target' => ['entity_id' => ['light.hall']],
                 'return_response' => true,
             ],
-            new CallService('light', 'turn_on', ['brightness' => 100], ServiceTarget::forEntities('light.hall'), true)->toMessage(),
+            new CallService('light', 'turn_on', ['brightness' => 100], ActionTarget::forEntities('light.hall'), true)->toMessage(),
         );
     }
 

@@ -27,7 +27,7 @@ own class:
 
 | Class | Thrown by |
 |---|---|
-| `ServiceCallException` | `callAction()`, `callActionForResponse()` and the generated service methods |
+| `ActionCallException` | `callAction()`, `callActionForResponse()` and the generated service methods |
 | `HistoryException` | `getHistory()` |
 | `EventFireException` | `fireEvent()` |
 | `StateException` | `requireState()` for an entity that does not exist, and invalid operator settings |
@@ -40,7 +40,7 @@ own class:
 | `TopicException`, `MqttException`, `TriggerException`, `SunException` | Messages between apps, MQTT, triggers, the sun |
 
 `$e->reason` says what exactly failed. It is an enum named after the class: `StoreException` has `StoreError`,
-`ServiceCallException` has `ServiceCallError`, and so on. Compare the reason, as the example does, not the message:
+`ActionCallException` has `ActionCallError`, and so on. Compare the reason, as the example does, not the message:
 messages are written for people and may change, reasons do not. The [error reference](../reference/errors.md) lists
 every reason.
 
@@ -58,7 +58,7 @@ the log line. With `log_format: json`, that is the `extra.error` field:
   "context": {"app": "hall-light", "exception": "…"},
   "extra": {
     "error": {
-      "class": "Stewart\\Contracts\\Exception\\ServiceCallException",
+      "class": "Stewart\\Contracts\\Exception\\ActionCallException",
       "reason": "rejected",
       "context": {"domain": "light", "service": "turn_on", "detail": "Entity not found"}
     }

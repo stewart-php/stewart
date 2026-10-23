@@ -15,7 +15,7 @@ use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\HaEvent;
-use Stewart\Contracts\Exception\ServiceCallError;
+use Stewart\Contracts\Exception\ActionCallError;
 use Stewart\Contracts\Exception\StoreException;
 use Stewart\Contracts\Selector\Selector;
 use Stewart\Contracts\State\EntityState;
@@ -445,7 +445,7 @@ final class BrokerLifecycleTest extends TestCase
         $errors = $this->listSentToWorker(1, RequestFailed::class);
 
         self::assertCount(1, $errors);
-        self::assertSame(ServiceCallError::Unreachable->value, $errors[0]->details->reason);
+        self::assertSame(ActionCallError::Unreachable->value, $errors[0]->details->reason);
         self::assertSame([], $this->broker->homeAssistant->listReceivedCalls());
     }
 

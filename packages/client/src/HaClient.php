@@ -54,15 +54,17 @@ use Stewart\Client\Registry\Collection\EntityRegistryCollection;
 use Stewart\Client\Registry\EntityRegistryEntry;
 use Stewart\Client\Registry\RegistryDecoder;
 use Stewart\Client\State\EntityStateDecoder;
+use Stewart\Contracts\Action\ActionResponse;
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\Entity\Collection\EntityIdCollection;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\HaEvent;
+use Stewart\Contracts\Exception\ActionCallException;
 use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\Exception\HistoryError;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Exception\RegistryEditException;
-use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exposure\ExposedEntitySnapshot;
 use Stewart\Contracts\Exposure\ExposedStateChange;
 use Stewart\Contracts\History\Collection\HistoricalStateCollection;
@@ -74,8 +76,6 @@ use Stewart\Contracts\Registry\Collection\DeviceCollection;
 use Stewart\Contracts\Registry\Collection\FloorCollection;
 use Stewart\Contracts\Registry\Collection\LabelCollection;
 use Stewart\Contracts\Registry\Update\EntityRegistryUpdate;
-use Stewart\Contracts\Service\ServiceResponse;
-use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\State\StateChange;
@@ -274,25 +274,25 @@ final class HaClient
 
     /**
      * @param array<string, mixed> $data
-     * @throws ServiceCallException
+     * @throws ActionCallException
      */
     public function callService(
         string $domain,
         string $service,
         array $data = [],
-        ?ServiceTarget $target = null,
+        ?ActionTarget $target = null,
         bool $returnResponse = false,
-    ): ServiceResponse {
+    ): ActionResponse {
         try {
             $result = $this->connection->send(new CallService($domain, $service, $data, $target, $returnResponse));
         } catch (HaClientException $e) {
-            throw $this->toServiceCallException($domain, $service, $e);
+            throw $this->toActionCallException($domain, $service, $e);
         }
 
         $response = $result['response'] ?? null;
         $context = $result['context'] ?? null;
 
-        return new ServiceResponse(
+        return new ActionResponse(
             $domain,
             $service,
             \is_array($response) ? JsonShape::treatKeysAsStrings($response) : [],
@@ -597,20 +597,20 @@ final class HaClient
         };
     }
 
-    private function toServiceCallException(string $domain, string $service, HaClientException $e): ServiceCallException
+    private function toActionCallException(string $domain, string $service, HaClientException $e): ActionCallException
     {
         return match ($e->reason) {
             HaClientError::CommandRejected,
             HaClientError::CommandUnauthorized,
-            HaClientError::CommandUnencodable => ServiceCallException::rejected(
+            HaClientError::CommandUnencodable => ActionCallException::rejected(
                 $domain,
                 $service,
                 $e->findDetail() ?? $e->getMessage(),
                 $e->findErrorCode(),
                 $e,
             ),
-            HaClientError::CommandTimedOut => ServiceCallException::timedOut($domain, $service, $e->getMessage(), $e),
-            default => ServiceCallException::unreachable($domain, $service, $e->getMessage(), $e),
+            HaClientError::CommandTimedOut => ActionCallException::timedOut($domain, $service, $e->getMessage(), $e),
+            default => ActionCallException::unreachable($domain, $service, $e->getMessage(), $e),
         };
     }
 

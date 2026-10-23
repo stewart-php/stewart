@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App;
 
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
 use Stewart\Contracts\Exposure\Command\SwitchCommand;
 use Stewart\Contracts\Exposure\EntityExposure;
 use Stewart\Contracts\Exposure\SwitchConfig;
 use Stewart\Contracts\HaContext;
-use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\Store\GlobalStore;
 use Stewart\Contracts\Store\Store;
 
@@ -35,7 +35,7 @@ final readonly class GuestMode implements App
             $this->ha->callAction(
                 'climate.set_preset_mode',
                 ['preset_mode' => $command->isTurnOn() ? 'comfort' : 'eco'],
-                ServiceTarget::forEntities($this->guestRoomThermostat),
+                ActionTarget::forEntities($this->guestRoomThermostat),
             );
         });
     }

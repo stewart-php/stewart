@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
-use Stewart\Contracts\Exception\ServiceCallException;
+use Stewart\Contracts\Exception\ActionCallException;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\Time\Duration;
@@ -147,7 +147,7 @@ final class IpcCodecTest extends TestCase
 
     public function testRequestFailureSurvivesTheWire(): void
     {
-        $failure = ServiceCallException::rejected('light', 'turn_on', 'Entity not found', 'not_found');
+        $failure = ActionCallException::rejected('light', 'turn_on', 'Entity not found', 'not_found');
         $sent = RequestFailed::fromException(new CorrelationId('0:1'), $failure);
 
         self::assertEquals($sent, $this->codecs->decodeMessage($this->codecs->encodeMessage($sent)));

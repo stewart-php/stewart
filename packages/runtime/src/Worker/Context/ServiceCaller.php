@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Worker\Context;
 
 use Amp\CancelledException;
-use Stewart\Contracts\Exception\ServiceCallException;
-use Stewart\Contracts\Service\ServiceResponse;
-use Stewart\Contracts\Service\ServiceTarget;
+use Stewart\Contracts\Action\ActionResponse;
+use Stewart\Contracts\Action\ActionTarget;
+use Stewart\Contracts\Exception\ActionCallException;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
@@ -31,34 +31,34 @@ final readonly class ServiceCaller
         private WorkerSettings $workerSettings,
     ) {}
 
-    /** @throws ServiceCallException */
-    public function callService(ResourceScope $scope, string $domain, string $service, ServiceFields $data, ?ServiceTarget $target): EventContext
+    /** @throws ActionCallException */
+    public function callService(ResourceScope $scope, string $domain, string $service, ServiceFields $data, ?ActionTarget $target): EventContext
     {
         return $this->sendRequestAndAwait($scope, $domain, $service, $data, $target, returnResponse: false)->context ?? EventContext::unknown();
     }
 
-    /** @throws ServiceCallException */
-    public function callServiceForResponse(ResourceScope $scope, string $domain, string $service, ServiceFields $data, ?ServiceTarget $target): ServiceResponse
+    /** @throws ActionCallException */
+    public function callServiceForResponse(ResourceScope $scope, string $domain, string $service, ServiceFields $data, ?ActionTarget $target): ActionResponse
     {
         return $this->sendRequestAndAwait($scope, $domain, $service, $data, $target, returnResponse: true);
     }
 
-    /** @throws ServiceCallException */
+    /** @throws ActionCallException */
     private function sendRequestAndAwait(
         ResourceScope $scope,
         string $domain,
         string $service,
         ServiceFields $data,
-        ?ServiceTarget $target,
+        ?ActionTarget $target,
         bool $returnResponse,
-    ): ServiceResponse {
+    ): ActionResponse {
         if (!$this->connection->connected) {
-            throw ServiceCallException::unreachable($domain, $service, 'Home Assistant is disconnected');
+            throw ActionCallException::unreachable($domain, $service, 'Home Assistant is disconnected');
         }
 
         $call = $this->pending->open(
-            ServiceResponse::class,
-            static fn(string $detail): ServiceCallException => ServiceCallException::unreachable($domain, $service, $detail),
+            ActionResponse::class,
+            static fn(string $detail): ActionCallException => ActionCallException::unreachable($domain, $service, $detail),
         );
 
         try {
@@ -74,7 +74,7 @@ final readonly class ServiceCaller
 
             return $call->getFuture()->await($this->deadlines->timeout($this->workerSettings->callTimeout));
         } catch (CancelledException $e) {
-            throw ServiceCallException::timedOut(
+            throw ActionCallException::timedOut(
                 $domain,
                 $service,
                 \sprintf('no answer from the broker within %s', $this->workerSettings->callTimeout),
@@ -85,15 +85,15 @@ final readonly class ServiceCaller
         }
     }
 
-    /** @throws ServiceCallException */
+    /** @throws ActionCallException */
     private function sendRequest(ServiceCallRequest $request): void
     {
         try {
             $this->transport->send($request);
         } catch (Throwable $e) {
             throw $e instanceof TransportException && $e->reason === TransportError::Unencodable
-                ? ServiceCallException::rejected($request->domain, $request->service, $e->getMessage(), null, $e)
-                : ServiceCallException::unreachable($request->domain, $request->service, 'the broker is gone: ' . $e->getMessage(), $e);
+                ? ActionCallException::rejected($request->domain, $request->service, $e->getMessage(), null, $e)
+                : ActionCallException::unreachable($request->domain, $request->service, 'the broker is gone: ' . $e->getMessage(), $e);
         }
     }
 }

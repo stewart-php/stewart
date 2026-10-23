@@ -24,11 +24,11 @@ use Stewart\Client\Registry\RegistryDecoder;
 use Stewart\Client\State\EntityStateDecoder;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\HaEvent;
+use Stewart\Contracts\Exception\ActionCallError;
+use Stewart\Contracts\Exception\ActionCallException;
 use Stewart\Contracts\Exception\EventFireError;
 use Stewart\Contracts\Exception\HistoryError;
 use Stewart\Contracts\Exception\RegistryEditError;
-use Stewart\Contracts\Exception\ServiceCallError;
-use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\Registry\Update\EntityRegistryUpdate;
@@ -324,7 +324,7 @@ final class HaClientTest extends TestCase
     public function testServiceCallFailureMapsReason(
         ?array $reply,
         float $nan,
-        ServiceCallError $reason,
+        ActionCallError $reason,
         ?string $errorCode,
         ?string $detail,
     ): void {
@@ -337,7 +337,7 @@ final class HaClientTest extends TestCase
 
         try {
             $client->callService('light', 'turn_on', ['brightness' => $nan]);
-        } catch (ServiceCallException $e) {
+        } catch (ActionCallException $e) {
             self::assertSame($reason, $e->reason);
             self::assertSame($errorCode, $e->context['errorCode'] ?? null);
 
@@ -351,7 +351,7 @@ final class HaClientTest extends TestCase
         self::fail('The call should have failed.');
     }
 
-    /** @return iterable<string, array{array<string, mixed>|null, float, ServiceCallError, ?string, ?string}> */
+    /** @return iterable<string, array{array<string, mixed>|null, float, ActionCallError, ?string, ?string}> */
     public static function provideServiceCallFailures(): iterable
     {
         $failed = static fn(string $code, string $message): array => [
@@ -360,9 +360,9 @@ final class HaClientTest extends TestCase
             'error' => ['code' => $code, 'message' => $message],
         ];
 
-        yield 'rejected with a code' => [$failed('not_found', 'Entity not found'), 1.0, ServiceCallError::Rejected, 'not_found', 'Entity not found'];
-        yield 'unauthorized' => [$failed('unauthorized', 'Unauthorized'), 1.0, ServiceCallError::Rejected, 'unauthorized', 'Unauthorized'];
-        yield 'unencodable data' => [null, \NAN, ServiceCallError::Rejected, null, null];
+        yield 'rejected with a code' => [$failed('not_found', 'Entity not found'), 1.0, ActionCallError::Rejected, 'not_found', 'Entity not found'];
+        yield 'unauthorized' => [$failed('unauthorized', 'Unauthorized'), 1.0, ActionCallError::Rejected, 'unauthorized', 'Unauthorized'];
+        yield 'unencodable data' => [null, \NAN, ActionCallError::Rejected, null, null];
     }
 
     public function testServiceCallTimesOut(): void
@@ -371,7 +371,7 @@ final class HaClientTest extends TestCase
         $client = self::connect(FakeWebsocketConnector::createAuthenticatedConnection(), Duration::milliseconds(20), $timers);
         async(static fn() => $timers->delay(Duration::milliseconds(20)))->ignore();
 
-        $this->assertThrowsReason(ServiceCallError::TimedOut, fn() => $client->callService('light', 'turn_on'));
+        $this->assertThrowsReason(ActionCallError::TimedOut, fn() => $client->callService('light', 'turn_on'));
     }
 
     public function testServiceCallWithoutConnectionIsUnreachable(): void
@@ -379,12 +379,12 @@ final class HaClientTest extends TestCase
         $client = self::connect(FakeWebsocketConnector::createAuthenticatedConnection());
         $client->close();
 
-        $this->expectException(ServiceCallException::class);
+        $this->expectException(ActionCallException::class);
 
         try {
             $client->callService('light', 'turn_on');
-        } catch (ServiceCallException $e) {
-            self::assertSame(ServiceCallError::Unreachable, $e->reason);
+        } catch (ActionCallException $e) {
+            self::assertSame(ActionCallError::Unreachable, $e->reason);
 
             throw $e;
         }

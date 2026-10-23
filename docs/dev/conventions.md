@@ -22,6 +22,10 @@ architecture tests; `make check` reports the rest of the ones that can be checke
   `recordDetail()`.
 - Static methods are for named constructors of value objects and for pure formatting or lookups. Everything else
   lives on its owner or in an injected service.
+- Words follow Home Assistant. An *action* is what HA used to call a service, so code that calls one says action
+  (`callAction()`, `ActionTarget`, `ActionCallException`). An *exposed action* is one Stewart registers in HA
+  (`Contracts\Exposure\Action\*`), where `ActionCall` is HA calling Stewart. *Service* means only a DI service and
+  `services.php`; the client's `callService()` and `getServices()` keep HA's websocket names.
 
 ## Data
 

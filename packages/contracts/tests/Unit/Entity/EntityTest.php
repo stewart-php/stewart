@@ -6,11 +6,11 @@ namespace Stewart\Contracts\Tests\Unit\Entity;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\Entity\Entity;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\StateError;
 use Stewart\Contracts\History\HistoryQuery;
-use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
@@ -21,7 +21,7 @@ use Stewart\Testing\Time\EventLoopTicks;
 use function Amp\async;
 
 #[CoversClass(Entity::class)]
-#[CoversClass(ServiceTarget::class)]
+#[CoversClass(ActionTarget::class)]
 final class EntityTest extends TestCase
 {
     use AssertsReason;
@@ -35,7 +35,7 @@ final class EntityTest extends TestCase
         self::assertSame('hall', $entity->getObjectId());
         self::assertSame('on', $entity->requireState()->state);
         self::assertSame(180, $entity->getState()?->getAttribute('brightness'));
-        self::assertEquals([new EntityId('light.hall')], $entity->toServiceTarget()->entityIds);
+        self::assertEquals([new EntityId('light.hall')], $entity->toActionTarget()->entityIds);
     }
 
     public function testHistoryIsReadThroughContext(): void
@@ -143,12 +143,12 @@ final class EntityTest extends TestCase
         self::assertSame(['forecast' => []], $response->response);
     }
 
-    public function testTargetSourcesConvertToServiceTarget(): void
+    public function testTargetSourcesConvertToActionTarget(): void
     {
         $ha = new RecordingHaContext();
 
-        self::assertEquals([new EntityId('light.hall')], $ha->getEntity('light.hall')->toServiceTarget()->entityIds);
-        self::assertSame(['area.kitchen'], ServiceTarget::forAreas('area.kitchen')->toServiceTarget()->areaIds);
+        self::assertEquals([new EntityId('light.hall')], $ha->getEntity('light.hall')->toActionTarget()->entityIds);
+        self::assertSame(['area.kitchen'], ActionTarget::forAreas('area.kitchen')->toActionTarget()->areaIds);
     }
 
     public function testNullFieldsAreDroppedFromCalls(): void

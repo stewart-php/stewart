@@ -4,7 +4,7 @@
         "correlation_id": "w0:2",
         "result": {
             "domain": "weather",
-            "service": "get_forecasts",
+            "action": "get_forecasts",
             "response": {
                 "weather.home": {
                     "forecast": []

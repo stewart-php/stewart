@@ -7,9 +7,9 @@ namespace Stewart\Runtime\Tests\Process;
 use Amp\Parallel\Context\ProcessContextFactory;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
+use Stewart\Contracts\Action\ActionResponse;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
-use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\Time\Duration;
@@ -74,7 +74,7 @@ final class WorkerProcessSmokeTest extends TestCase
         $request = $worker->receiveUntil(ServiceCallRequest::class);
         self::assertSame([self::LIGHT], array_map(strval(...), $request->target->entityIds ?? []));
 
-        $worker->send(new ServiceCallResult($request->correlationId, new ServiceResponse('light', 'turn_on')));
+        $worker->send(new ServiceCallResult($request->correlationId, new ActionResponse('light', 'turn_on')));
         $completion = $worker->receiveUntil(LogRecord::class, static fn(LogRecord $log): bool => $log->message === 'Service call finished');
         self::assertTrue($completion->context['success'] ?? null);
 

@@ -11,10 +11,10 @@ use Stewart\Codegen\Tests\Fixtures\Expected\LightEntity;
 use Stewart\Codegen\Tests\Fixtures\Expected\LightState;
 use Stewart\Codegen\Tests\Fixtures\Expected\Manifest;
 use Stewart\Codegen\Tests\Fixtures\Expected\Services;
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\IdentifierError;
 use Stewart\Contracts\History\HistoryQuery;
-use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Support\Wire\GeneratedFormat;
@@ -26,7 +26,7 @@ final class GeneratedCodeBehaviorTest extends TestCase
 {
     use AssertsReason;
 
-    public function testHandleServiceTargetsOwnEntity(): void
+    public function testHandleActionTargetsOwnEntity(): void
     {
         $ha = new RecordingHaContext();
 
@@ -42,7 +42,7 @@ final class GeneratedCodeBehaviorTest extends TestCase
         $ha = new RecordingHaContext();
 
         $fromHandle = new Entities($ha)->light->getEntity('light.hall')->turnOn();
-        $fromServices = new Services($ha)->light->turnOff(ServiceTarget::forAreas('kitchen'));
+        $fromServices = new Services($ha)->light->turnOff(ActionTarget::forAreas('kitchen'));
 
         self::assertSame($ha->calls->getFirst()?->context, $fromHandle);
         self::assertSame($ha->getLastCall()->context, $fromServices);
@@ -176,7 +176,7 @@ final class GeneratedCodeBehaviorTest extends TestCase
         $services->light->turnOn(new Entities($ha)->light->getEntity('light.hall'), brightnessPct: 40);
         self::assertSame(['light.hall'], $ha->getLastCall()->listTargetedEntityIds());
 
-        $services->light->turnOn(ServiceTarget::forAreas('kitchen'));
+        $services->light->turnOn(ActionTarget::forAreas('kitchen'));
         self::assertSame(['kitchen'], $ha->getLastCall()->target?->areaIds);
     }
 
@@ -222,7 +222,7 @@ final class GeneratedCodeBehaviorTest extends TestCase
     {
         $ha = new RecordingHaContext()->stubActionAnswer('weather.get_forecasts', ['forecast' => []]);
 
-        $result = new Services($ha)->weather->getForecasts(ServiceTarget::forEntities('weather.home'), 'daily');
+        $result = new Services($ha)->weather->getForecasts(ActionTarget::forEntities('weather.home'), 'daily');
 
         self::assertTrue($ha->getLastCall()->returnsResponse);
         self::assertSame(['forecast' => []], $result->response);

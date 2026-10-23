@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace Stewart\Contracts;
 
+use Stewart\Contracts\Action\ActionResponse;
+use Stewart\Contracts\Action\ActionTargetSource;
 use Stewart\Contracts\Connection\ConnectionEvent;
 use Stewart\Contracts\Entity\Entity;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\HaEvent;
+use Stewart\Contracts\Exception\ActionCallException;
 use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Exception\SelectorException;
-use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exception\StateException;
 use Stewart\Contracts\Exception\TopicException;
 use Stewart\Contracts\Exception\TriggerException;
@@ -23,8 +25,6 @@ use Stewart\Contracts\Registry\EntityFilter;
 use Stewart\Contracts\Registry\Registry;
 use Stewart\Contracts\Selector\Collection\SelectorCollection;
 use Stewart\Contracts\Selector\Selector;
-use Stewart\Contracts\Service\ServiceResponse;
-use Stewart\Contracts\Service\ServiceTargetSource;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
@@ -75,15 +75,15 @@ interface HaContext
 
     /**
      * @param array<string, mixed> $data
-     * @throws ServiceCallException
+     * @throws ActionCallException
      */
-    public function callAction(string $action, array $data = [], ?ServiceTargetSource $target = null): EventContext;
+    public function callAction(string $action, array $data = [], ?ActionTargetSource $target = null): EventContext;
 
     /**
      * @param array<string, mixed> $data
-     * @throws ServiceCallException
+     * @throws ActionCallException
      */
-    public function callActionForResponse(string $action, array $data = [], ?ServiceTargetSource $target = null): ServiceResponse;
+    public function callActionForResponse(string $action, array $data = [], ?ActionTargetSource $target = null): ActionResponse;
 
     /**
      * @param array<string, mixed> $data

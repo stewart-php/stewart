@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App;
 
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
 use Stewart\Contracts\HaContext;
-use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\Time\Duration;
 
 #[Automation(id: 'presence-heating')]
@@ -34,6 +34,6 @@ final readonly class PresenceHeating implements App
 
     private function setPreset(string $preset): void
     {
-        $this->ha->callAction('climate.set_preset_mode', ['preset_mode' => $preset], ServiceTarget::forEntities(...$this->thermostats));
+        $this->ha->callAction('climate.set_preset_mode', ['preset_mode' => $preset], ActionTarget::forEntities(...$this->thermostats));
     }
 }

@@ -6,7 +6,7 @@ namespace Stewart\Runtime\Tests\Unit\Control\Protocol;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Stewart\Contracts\Exception\ServiceCallError;
+use Stewart\Contracts\Exception\ActionCallError;
 use Stewart\Contracts\Exception\StewartException;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
@@ -128,8 +128,8 @@ final class FrameCodecTest extends TestCase
 
     public function testFailureReasonMapsToAnOutcome(): void
     {
-        self::assertSame(ServiceCallOutcome::Refused, ServiceCallOutcome::failedWith(ServiceCallError::Overloaded));
-        self::assertSame(ServiceCallOutcome::TimedOut, ServiceCallOutcome::failedWith(ServiceCallError::TimedOut));
+        self::assertSame(ServiceCallOutcome::Refused, ServiceCallOutcome::failedWith(ActionCallError::Overloaded));
+        self::assertSame(ServiceCallOutcome::TimedOut, ServiceCallOutcome::failedWith(ActionCallError::TimedOut));
         self::assertFalse(ServiceCallOutcome::Succeeded->isFailure());
         self::assertTrue(ServiceCallOutcome::Rejected->isFailure());
     }

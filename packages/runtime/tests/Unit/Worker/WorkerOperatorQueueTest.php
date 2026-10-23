@@ -7,9 +7,9 @@ namespace Stewart\Runtime\Tests\Unit\Worker;
 use Amp\Future;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Stewart\Contracts\Action\ActionResponse;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
-use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\Time\Clock;
@@ -78,7 +78,7 @@ final class WorkerOperatorQueueTest extends TestCase
         EventLoopTicks::settle();
 
         $busyCall = $this->transport->listSentOfType(ServiceCallRequest::class)[0];
-        $this->transport->deliver(new ServiceCallResult($busyCall->correlationId, new ServiceResponse('script', 'record')));
+        $this->transport->deliver(new ServiceCallResult($busyCall->correlationId, new ActionResponse('script', 'record')));
         EventLoopTicks::settle(5);
 
         $calls = array_map(static fn(ServiceCallRequest $request): mixed => $request->data['entity'] ?? null, $this->transport->listSentOfType(ServiceCallRequest::class));

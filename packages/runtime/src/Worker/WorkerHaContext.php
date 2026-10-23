@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Worker;
 
+use Stewart\Contracts\Action\ActionName;
+use Stewart\Contracts\Action\ActionResponse;
+use Stewart\Contracts\Action\ActionTargetSource;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\Entity;
 use Stewart\Contracts\Entity\EntityId;
@@ -19,9 +22,6 @@ use Stewart\Contracts\Registry\EntityFilter;
 use Stewart\Contracts\Registry\Registry;
 use Stewart\Contracts\Selector\Collection\SelectorCollection;
 use Stewart\Contracts\Selector\Selector;
-use Stewart\Contracts\Service\ActionName;
-use Stewart\Contracts\Service\ServiceResponse;
-use Stewart\Contracts\Service\ServiceTargetSource;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
@@ -122,18 +122,18 @@ final readonly class WorkerHaContext implements HaContext
         return $this->streams->watchTrigger($this->resourceScope, TriggerSpec::fromSpec($trigger, $variables));
     }
 
-    public function callAction(string $action, array $data = [], ?ServiceTargetSource $target = null): EventContext
+    public function callAction(string $action, array $data = [], ?ActionTargetSource $target = null): EventContext
     {
         $name = new ActionName($action);
 
-        return $this->serviceCalls->callService($this->resourceScope, $name->domain, $name->action, ServiceFields::fromFieldsDroppingNulls($data), $target?->toServiceTarget());
+        return $this->serviceCalls->callService($this->resourceScope, $name->domain, $name->action, ServiceFields::fromFieldsDroppingNulls($data), $target?->toActionTarget());
     }
 
-    public function callActionForResponse(string $action, array $data = [], ?ServiceTargetSource $target = null): ServiceResponse
+    public function callActionForResponse(string $action, array $data = [], ?ActionTargetSource $target = null): ActionResponse
     {
         $name = new ActionName($action);
 
-        return $this->serviceCalls->callServiceForResponse($this->resourceScope, $name->domain, $name->action, ServiceFields::fromFieldsDroppingNulls($data), $target?->toServiceTarget());
+        return $this->serviceCalls->callServiceForResponse($this->resourceScope, $name->domain, $name->action, ServiceFields::fromFieldsDroppingNulls($data), $target?->toActionTarget());
     }
 
     public function fireEvent(string $eventType, array $data = []): EventContext

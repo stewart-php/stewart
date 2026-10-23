@@ -7,8 +7,8 @@ namespace Stewart\Runtime\Tests\Fixtures\Control;
 use LogicException;
 use Psr\Log\NullLogger;
 use Stewart\Client\Component\ComponentInstance;
+use Stewart\Contracts\Action\ActionResponse;
 use Stewart\Contracts\App\AppId;
-use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
@@ -148,7 +148,7 @@ final readonly class BrokerStateFixture
         $this->callSlots->runBounded($this->getLiveHandleOf($workerId), $request, static function () use ($held, $request): ServiceCallResult {
             $held->waitUntilOpen();
 
-            return new ServiceCallResult($request->correlationId, new ServiceResponse('light', 'turn_on'));
+            return new ServiceCallResult($request->correlationId, new ActionResponse('light', 'turn_on'));
         });
     }
 

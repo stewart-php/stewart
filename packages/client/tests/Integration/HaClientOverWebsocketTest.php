@@ -17,7 +17,7 @@ use Stewart\Client\HaClient;
 use Stewart\Client\Tests\Fixtures\FakeHaServer;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\HaEvent;
-use Stewart\Contracts\Exception\ServiceCallError;
+use Stewart\Contracts\Exception\ActionCallError;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
 use Stewart\Contracts\State\StateChange;
@@ -341,7 +341,7 @@ final class HaClientOverWebsocketTest extends TestCase
         EventLoopTicks::settle();
         $this->server->dropConnections();
 
-        $this->assertThrowsReason(ServiceCallError::Unreachable, fn() => $pending->await(new TimeoutCancellation(self::WAIT_SECONDS)));
+        $this->assertThrowsReason(ActionCallError::Unreachable, fn() => $pending->await(new TimeoutCancellation(self::WAIT_SECONDS)));
         self::assertSame(HaClientError::ConnectionDropped, $this->awaitFirstDisconnect()->reason);
         EventLoopTicks::settle();
         self::assertCount(1, $this->disconnects);

@@ -10,9 +10,9 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use Stewart\Contracts\Action\ActionResponse;
 use Stewart\Contracts\App\AppId;
-use Stewart\Contracts\Exception\ServiceCallError;
-use Stewart\Contracts\Service\ServiceResponse;
+use Stewart\Contracts\Exception\ActionCallError;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\AppMetrics;
@@ -131,7 +131,7 @@ final class HaCallSlotsTest extends TestCase
         $slots->runBounded($worker, self::createRequest('a'), static fn(): never => throw new RuntimeException('surprise'));
         EventLoopTicks::settle();
 
-        self::assertSame(ServiceCallError::Unreachable->value, self::listSentOfType($worker, RequestFailed::class)[0]->details->reason);
+        self::assertSame(ActionCallError::Unreachable->value, self::listSentOfType($worker, RequestFailed::class)[0]->details->reason);
         self::assertSame(0, $slots->inFlight);
     }
 
@@ -145,7 +145,7 @@ final class HaCallSlotsTest extends TestCase
         $slots->runCounted($worker, self::createRequest('b'), static function () use ($held): ServiceCallResult {
             $held->waitUntilOpen();
 
-            return new ServiceCallResult(new CorrelationId('b'), new ServiceResponse('light', 'turn_on'));
+            return new ServiceCallResult(new CorrelationId('b'), new ActionResponse('light', 'turn_on'));
         });
 
         self::assertSame(2, $slots->countInFlightCallsFor($worker));
@@ -159,7 +159,7 @@ final class HaCallSlotsTest extends TestCase
         $slots->runBounded($worker, self::createRequest($correlationId), static function () use ($held, $correlationId): ServiceCallResult {
             $held->waitUntilOpen();
 
-            return new ServiceCallResult(new CorrelationId($correlationId), new ServiceResponse('light', 'turn_on'));
+            return new ServiceCallResult(new CorrelationId($correlationId), new ActionResponse('light', 'turn_on'));
         });
         EventLoopTicks::settle();
     }

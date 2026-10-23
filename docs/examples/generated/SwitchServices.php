@@ -10,8 +10,8 @@ declare(strict_types=1);
 
 namespace App\Generated;
 
+use Stewart\Contracts\Action\ActionTargetSource;
 use Stewart\Contracts\HaContext;
-use Stewart\Contracts\Service\ServiceTargetSource;
 use Stewart\Contracts\State\EventContext;
 
 /**
@@ -28,7 +28,7 @@ final readonly class SwitchServices
      *
      * Turns a switch on.
      */
-    public function turnOn(ServiceTargetSource $target): EventContext
+    public function turnOn(ActionTargetSource $target): EventContext
     {
         return $this->ha->callAction('switch.turn_on', [], $target);
     }

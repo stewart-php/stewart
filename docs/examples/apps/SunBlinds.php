@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App;
 
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\Schedule\Scheduler;
-use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\Sun\SunCalendar;
 use Stewart\Contracts\Sun\SunEvent;
 use Stewart\Contracts\Time\Duration;
@@ -61,6 +61,6 @@ final readonly class SunBlinds implements App
 
     private function moveBlinds(string $action): void
     {
-        $this->ha->callAction($action, target: ServiceTarget::forEntities($this->blinds));
+        $this->ha->callAction($action, target: ActionTarget::forEntities($this->blinds));
     }
 }

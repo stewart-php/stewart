@@ -6,8 +6,8 @@ namespace Stewart\Runtime\Broker\Message;
 
 use Psr\Log\LoggerInterface;
 use Stewart\Client\HaClient;
-use Stewart\Contracts\Exception\ServiceCallException;
-use Stewart\Contracts\Service\ServiceResponse;
+use Stewart\Contracts\Action\ActionResponse;
+use Stewart\Contracts\Exception\ActionCallException;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Runtime\Broker\HaCallSlots;
 use Stewart\Runtime\Broker\HaSession;
@@ -44,7 +44,7 @@ final readonly class ServiceCallRequestHandler implements WorkerMessageHandler
         $this->slots->runBounded($handle, $message, fn(): ServiceCallResult => $this->callTracingHomeAssistant($message));
     }
 
-    /** @throws ServiceCallException */
+    /** @throws ActionCallException */
     private function callTracingHomeAssistant(ServiceCallRequest $request): ServiceCallResult
     {
         $this->tracer->traceCallSent($request);
@@ -63,7 +63,7 @@ final readonly class ServiceCallRequestHandler implements WorkerMessageHandler
         return $result;
     }
 
-    /** @throws ServiceCallException */
+    /** @throws ActionCallException */
     private function callHomeAssistant(ServiceCallRequest $request): ServiceCallResult
     {
         if ($this->policy->dryRun) {
@@ -77,7 +77,7 @@ final readonly class ServiceCallRequestHandler implements WorkerMessageHandler
 
             return new ServiceCallResult(
                 $request->correlationId,
-                new ServiceResponse($request->domain, $request->service, context: $this->policy->createDryRunContext($request->correlationId)),
+                new ActionResponse($request->domain, $request->service, context: $this->policy->createDryRunContext($request->correlationId)),
             );
         }
 

@@ -10,8 +10,8 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Tests\Fixtures\Generated\Code;
 
+use Stewart\Contracts\Action\ActionTargetSource;
 use Stewart\Contracts\HaContext;
-use Stewart\Contracts\Service\ServiceTargetSource;
 use Stewart\Contracts\State\EventContext;
 
 /**
@@ -30,7 +30,7 @@ final readonly class LightServices
      *
      * @param int|float|null $transition Transition. Duration it takes to get to the next state. 0 to 300 seconds
      */
-    public function turnOff(ServiceTargetSource $target, int|float|null $transition = null): EventContext
+    public function turnOff(ActionTargetSource $target, int|float|null $transition = null): EventContext
     {
         return $this->ha->callAction('light.turn_off', [
             'transition' => $transition,
@@ -44,7 +44,7 @@ final readonly class LightServices
      *
      * @param int|float|null $brightnessPct Brightness. Percentage of full brightness. 0 to 100 %
      */
-    public function turnOn(ServiceTargetSource $target, int|float|null $brightnessPct = null): EventContext
+    public function turnOn(ActionTargetSource $target, int|float|null $brightnessPct = null): EventContext
     {
         return $this->ha->callAction('light.turn_on', [
             'brightness_pct' => $brightnessPct,

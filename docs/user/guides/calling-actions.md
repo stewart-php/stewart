@@ -15,12 +15,12 @@ when it will rain:
 ## Calling an action
 
 ```php
-$this->ha->callAction('light.turn_on', ['brightness_pct' => 60], ServiceTarget::forEntities('light.hall'));
+$this->ha->callAction('light.turn_on', ['brightness_pct' => 60], ActionTarget::forEntities('light.hall'));
 ```
 
 The arguments are the action, its data, and the target. Data and target are optional. The action is written as Home
 Assistant writes it, `domain.action`; Home Assistant lists every action and its data under **Developer tools →
-Actions**. A name without exactly one dot throws `ServiceCallError::ActionNameInvalid` before anything is sent.
+Actions**. A name without exactly one dot throws `ActionCallError::ActionNameInvalid` before anything is sent.
 
 Stewart 2.0 removed the older `callService('light', 'turn_on', …)`; [Upgrading](../help/upgrading.md) has a command
 that rewrites such calls.
@@ -29,11 +29,11 @@ The target picks what the action acts on:
 
 | Target | Acts on |
 |---|---|
-| `ServiceTarget::forEntities('light.hall', 'light.porch')` | Those entities |
-| `ServiceTarget::forAreas('kitchen')` | Everything in the area |
-| `ServiceTarget::forFloors('upstairs')` | Everything on the floor |
-| `ServiceTarget::forLabels('night')` | Everything with the label |
-| `ServiceTarget::forDevices('a1b2c3…')` | Everything on the device |
+| `ActionTarget::forEntities('light.hall', 'light.porch')` | Those entities |
+| `ActionTarget::forAreas('kitchen')` | Everything in the area |
+| `ActionTarget::forFloors('upstairs')` | Everything on the floor |
+| `ActionTarget::forLabels('night')` | Everything with the label |
+| `ActionTarget::forDevices('a1b2c3…')` | Everything on the device |
 
 `callAction()` returns when Home Assistant has answered. Other apps keep running meanwhile. It returns an
 `EventContext` that identifies the call, which [Events](events.md#your-own-changes-or-someone-elses) explains.
@@ -50,22 +50,22 @@ entity ID. The example checks each level of that array before it reads it, becau
 
 ## When a call fails
 
-A failed call throws `ServiceCallException`. Its `reason` says why:
+A failed call throws `ActionCallException`. Its `reason` says why:
 
 | Reason | Means |
 |---|---|
-| `ServiceCallError::Rejected` | Home Assistant refused the call, for example an unknown action or wrong data |
-| `ServiceCallError::Unreachable` | Stewart is not connected to Home Assistant right now. The call is not queued |
-| `ServiceCallError::TimedOut` | Home Assistant did not answer within `home_assistant.command_timeout` (30 seconds) |
-| `ServiceCallError::Overloaded` | Too many calls were waiting for an answer at once; see below |
+| `ActionCallError::Rejected` | Home Assistant refused the call, for example an unknown action or wrong data |
+| `ActionCallError::Unreachable` | Stewart is not connected to Home Assistant right now. The call is not queued |
+| `ActionCallError::TimedOut` | Home Assistant did not answer within `home_assistant.command_timeout` (30 seconds) |
+| `ActionCallError::Overloaded` | Too many calls were waiting for an answer at once; see below |
 
 If your handler does not catch the exception, Stewart logs it as a failure of the app, and the app keeps running.
 Catch it where the app can do something useful, as the example does:
 
 ```php
 try {
-    $this->ha->callAction('lock.lock', target: ServiceTarget::forEntities('lock.front_door'));
-} catch (ServiceCallException $e) {
+    $this->ha->callAction('lock.lock', target: ActionTarget::forEntities('lock.front_door'));
+} catch (ActionCallException $e) {
     $this->logger->warning('Could not lock the door', ['reason' => $e->reason->value]);
 }
 ```

@@ -37,7 +37,7 @@ package "Broker → Worker" as bw #E8F0FE {
     }
     class ServiceCallResult {
         correlationId
-        response: ServiceResponse
+        response: ActionResponse
     }
     class RequestFailed {
         correlationId, message

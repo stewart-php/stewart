@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App;
 
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
 use Stewart\Contracts\HaContext;
-use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\Time\Duration;
 
 #[Automation(id: 'hall-motion-light')]
@@ -25,13 +25,13 @@ final readonly class HallMotionLight implements App
         $this->ha->watchStateChanges($this->motionSensor)
             ->whenChangedTo('on')
             ->subscribe(function (): void {
-                $this->ha->callAction('light.turn_on', target: ServiceTarget::forEntities($this->light));
+                $this->ha->callAction('light.turn_on', target: ActionTarget::forEntities($this->light));
             });
 
         $this->ha->watchStateChanges($this->motionSensor)
             ->whenChangedTo('off', for: Duration::minutes($this->offAfterMinutes))
             ->subscribe(function (): void {
-                $this->ha->callAction('light.turn_off', target: ServiceTarget::forEntities($this->light));
+                $this->ha->callAction('light.turn_off', target: ActionTarget::forEntities($this->light));
             });
     }
 }

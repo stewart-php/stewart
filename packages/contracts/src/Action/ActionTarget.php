@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Service;
+namespace Stewart\Contracts\Action;
 
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\IdentifierException;
@@ -13,7 +13,7 @@ use Stewart\Contracts\Registry\LabelId;
 use Stewart\Contracts\Registry\RegistryId;
 use Stewart\Contracts\Wire\ListOf;
 
-final readonly class ServiceTarget implements ServiceTargetSource
+final readonly class ActionTarget implements ActionTargetSource
 {
     /**
      * @param list<EntityId> $entityIds
@@ -61,7 +61,7 @@ final readonly class ServiceTarget implements ServiceTargetSource
         return new self(labelIds: self::listIdValues($labelIds));
     }
 
-    public function toServiceTarget(): self
+    public function toActionTarget(): self
     {
         return $this;
     }

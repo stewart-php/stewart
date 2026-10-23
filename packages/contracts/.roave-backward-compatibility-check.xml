@@ -3,5 +3,10 @@
     <baseline>
         <ignored-regex>#Case Stewart\\Contracts\\Exception\\[A-Za-z]+Error::[A-Za-z]+ was added#</ignored-regex>
         <ignored-regex>#Method Stewart\\Contracts\\(HaContext|Entity\\Entity)\#callService(ForResponse)?\(\) was removed#</ignored-regex>
+        <ignored-regex>#Class Stewart\\Contracts\\(Service\\[A-Za-z]+|Exception\\ServiceCall(Error|Exception)) has been deleted#</ignored-regex>
+        <ignored-regex>#Method Stewart\\Contracts\\(Entity\\Entity|Service\\ServiceTargetSource)\#toServiceTarget\(\) was removed#</ignored-regex>
+        <ignored-regex>#Method toActionTarget\(\) was added to interface Stewart\\Contracts\\Entity\\TypedEntity#</ignored-regex>
+        <ignored-regex>#These ancestors of Stewart\\Contracts\\Entity\\(Typed)?Entity have been removed: .*ServiceTargetSource#</ignored-regex>
+        <ignored-regex>#changed from Stewart\\Contracts\\Service\\Service(TargetSource|Response)\b.* to .*Stewart\\Contracts\\Action\\Action(TargetSource|Response)\b#</ignored-regex>
     </baseline>
 </roave-bc-check>

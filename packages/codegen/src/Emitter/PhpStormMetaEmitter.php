@@ -7,6 +7,7 @@ namespace Stewart\Codegen\Emitter;
 use Stewart\Codegen\Model\DomainModel;
 use Stewart\Codegen\Model\GenerationModel;
 use Stewart\Codegen\Output\GeneratedFile;
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\Registry\AreaId;
@@ -16,7 +17,6 @@ use Stewart\Contracts\Registry\LabelId;
 use Stewart\Contracts\Registry\Registry;
 use Stewart\Contracts\Registry\RegistryEditor;
 use Stewart\Contracts\Schedule\Scheduler;
-use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\Trigger\HaTrigger;
 
 final readonly class PhpStormMetaEmitter implements ModelFileEmitter
@@ -77,7 +77,7 @@ final readonly class PhpStormMetaEmitter implements ModelFileEmitter
                 EntityFilter::class . '::withArea',
                 Registry::class . '::findArea',
                 Registry::class . '::listDevicesInArea',
-                ServiceTarget::class . '::forAreas',
+                ActionTarget::class . '::forAreas',
                 AreaId::class . '::__construct',
             ]),
             ...$this->buildIdCompletion('stewart_floor_ids', $model->floorIds->toStrings(), [
@@ -85,14 +85,14 @@ final readonly class PhpStormMetaEmitter implements ModelFileEmitter
                 EntityFilter::class . '::withFloor',
                 Registry::class . '::findFloor',
                 Registry::class . '::listAreasOnFloor',
-                ServiceTarget::class . '::forFloors',
+                ActionTarget::class . '::forFloors',
                 FloorId::class . '::__construct',
             ]),
             ...$this->buildIdCompletion('stewart_label_ids', $model->labelIds->toStrings(), [
                 EntityFilter::class . '::labelled',
                 EntityFilter::class . '::withLabel',
                 Registry::class . '::findLabel',
-                ServiceTarget::class . '::forLabels',
+                ActionTarget::class . '::forLabels',
                 LabelId::class . '::__construct',
             ]),
         ];
@@ -112,7 +112,7 @@ final readonly class PhpStormMetaEmitter implements ModelFileEmitter
         }
 
         for ($argument = 0; $argument < self::COMPLETED_VARIADIC_ARGUMENTS; ++$argument) {
-            $statements[] = $this->buildExpectation(ServiceTarget::class . '::forEntities', 'stewart_entity_ids', $argument);
+            $statements[] = $this->buildExpectation(ActionTarget::class . '::forEntities', 'stewart_entity_ids', $argument);
         }
 
         return $statements;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Client\Connection\Command;
 
-use Stewart\Contracts\Service\ServiceTarget;
+use Stewart\Contracts\Action\ActionTarget;
 
 final readonly class CallService implements HaCommand
 {
@@ -13,7 +13,7 @@ final readonly class CallService implements HaCommand
         public string $domain,
         public string $service,
         public array $data = [],
-        public ?ServiceTarget $target = null,
+        public ?ActionTarget $target = null,
         public bool $returnResponse = false,
     ) {}
 

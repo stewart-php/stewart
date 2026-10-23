@@ -7,8 +7,8 @@ namespace Stewart\Runtime\Tests\Process;
 use Amp\Parallel\Context\ProcessContextFactory;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
+use Stewart\Contracts\Action\ActionResponse;
 use Stewart\Contracts\App\AppId;
-use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Broker\ProcessWorkerSpawner;
@@ -91,7 +91,7 @@ final class WorkerFaultIsolationProcessTest extends TestCase
         $startedAt = hrtime(true);
         $this->worker->send(new Shutdown('done', Duration::seconds(self::GRACE_SECONDS)));
         $request = $this->worker->receiveUntil(ServiceCallRequest::class);
-        $this->worker->send(new ServiceCallResult($request->correlationId, new ServiceResponse('light', 'turn_off')));
+        $this->worker->send(new ServiceCallResult($request->correlationId, new ActionResponse('light', 'turn_off')));
         $this->worker->receiveUntil(LogRecord::class, static fn(LogRecord $log): bool => $log->message === 'Dispose call finished');
         $abandoned = $this->worker->receiveUntil(LogRecord::class, static fn(LogRecord $log): bool => $log->message === 'Apps did not stop within the grace period');
 

@@ -8,14 +8,14 @@ use Amp\DeferredFuture;
 use Amp\Future;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Stewart\Contracts\Action\ActionResponse;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Exception\ActionCallError;
+use Stewart\Contracts\Exception\ActionCallException;
 use Stewart\Contracts\Exception\HistoryError;
 use Stewart\Contracts\Exception\HistoryException;
-use Stewart\Contracts\Exception\ServiceCallError;
-use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\History\Collection\HistoricalStateCollection;
-use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Container\AppContainerBuilder;
 use Stewart\Runtime\Container\AppOptionResolver;
@@ -170,7 +170,7 @@ final class WorkerShutdownTest extends TestCase
 
         $this->shutdown->stopAfterBrokerLoss('channel closed');
 
-        $this->assertThrowsReason(ServiceCallError::Unreachable, static fn() => $waiter->await());
+        $this->assertThrowsReason(ActionCallError::Unreachable, static fn() => $waiter->await());
         self::assertSame('channel closed', $this->shutdown->reason);
     }
 
@@ -195,7 +195,7 @@ final class WorkerShutdownTest extends TestCase
 
         $this->shutdown->stopAfterBrokerLoss('channel closed');
 
-        $this->assertThrowsReason(ServiceCallError::Unreachable, static fn() => $waiter->await());
+        $this->assertThrowsReason(ActionCallError::Unreachable, static fn() => $waiter->await());
         self::assertSame('broker asked', $this->shutdown->reason);
     }
 
@@ -250,7 +250,7 @@ final class WorkerShutdownTest extends TestCase
     /** @return Future<mixed> */
     private function awaitPendingCall(): Future
     {
-        $call = $this->pending->open(ServiceResponse::class, static fn(string $detail): ServiceCallException => ServiceCallException::unreachable('light', 'turn_on', $detail));
+        $call = $this->pending->open(ActionResponse::class, static fn(string $detail): ActionCallException => ActionCallException::unreachable('light', 'turn_on', $detail));
         $waiter = async(static fn() => $call->getFuture()->await());
         EventLoopTicks::settle();
 
