@@ -33,8 +33,7 @@ final readonly class AdminApiPage implements ReferencePage
             implode("\n", [
                 'The admin port is off by default. Every request needs `Authorization: Bearer <token>` with',
                 '`http.admin.token`. [Status and control](../guides/status.md#admin-api) shows how to turn it on, and the answers',
-                'and status codes. Prometheus can scrape the [metrics port](../guides/status.md#metrics) instead, which needs no',
-                'admin token.',
+                'and status codes. Metrics are not here: Prometheus scrapes the [metrics port](../guides/status.md#metrics).',
                 '',
                 MarkdownTable::formatTable(['Method', 'Path', 'Does'], $rows),
             ]),
@@ -51,7 +50,6 @@ final readonly class AdminApiPage implements ReferencePage
             AdminAction::ResetApp => '/api/apps/{id}/reset',
             AdminAction::RestartWorker => '/api/workers/{id}/restart',
             AdminAction::Reload => '/api/reload',
-            AdminAction::ShowMetrics => '/metrics',
         };
 
         if (AdminRoute::fromPath(str_replace('{id}', 'sample', $path))?->action !== $action) {
@@ -71,7 +69,6 @@ final readonly class AdminApiPage implements ReferencePage
             AdminAction::ResetApp => 'Forgets a stored pause or resume, like `stewart app:reset`',
             AdminAction::RestartWorker => 'Restarts a worker, like `stewart worker:restart`',
             AdminAction::Reload => 'Checks the project, then restarts every worker on the current code, like `stewart reload`',
-            AdminAction::ShowMetrics => 'Prometheus metrics; see the [metrics reference](metrics.md)',
         };
     }
 }

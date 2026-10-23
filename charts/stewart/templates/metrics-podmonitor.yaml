@@ -3,9 +3,6 @@
 {{- if not $.Values.metrics.enabled }}
 {{- fail "metrics.podMonitor.enabled needs metrics.enabled" }}
 {{- end }}
-{{- if $.Values.adminApi.podMonitor.enabled }}
-{{- fail "metrics.podMonitor and adminApi.podMonitor would create the same PodMonitor; turn adminApi.podMonitor off" }}
-{{- end }}
 {{- if not (include "stewart.metricsReachable" $) }}
 {{- fail (printf "metrics.host is %s, which Prometheus cannot reach; set metrics.host: 0.0.0.0" $.Values.metrics.host) }}
 {{- end }}

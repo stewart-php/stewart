@@ -9,8 +9,7 @@ sidebar:
 
 The admin port is off by default. Every request needs `Authorization: Bearer <token>` with
 `http.admin.token`. [Status and control](../guides/status.md#admin-api) shows how to turn it on, and the answers
-and status codes. Prometheus can scrape the [metrics port](../guides/status.md#metrics) instead, which needs no
-admin token.
+and status codes. Metrics are not here: Prometheus scrapes the [metrics port](../guides/status.md#metrics).
 
 | Method | Path | Does |
 | --- | --- | --- |
@@ -21,4 +20,3 @@ admin token.
 | POST | `/api/apps/{id}/reset` | Forgets a stored pause or resume, like `stewart app:reset` |
 | POST | `/api/workers/{id}/restart` | Restarts a worker, like `stewart worker:restart` |
 | POST | `/api/reload` | Checks the project, then restarts every worker on the current code, like `stewart reload` |
-| GET, HEAD | `/metrics` | Prometheus metrics; see the [metrics reference](metrics.md) |

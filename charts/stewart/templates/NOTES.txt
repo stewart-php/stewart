@@ -11,19 +11,10 @@ The admin API answers inside the cluster at http://{{ include "stewart.fullname"
 Metrics answer inside the cluster at http://{{ include "stewart.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.metrics.port }}/metrics,
 with the token in secret/{{ first (splitList "/" (include "stewart.metricsTokenSource" .)) }}.
 {{- end }}
-{{- if .Values.adminApi.podMonitor.enabled }}
-
-adminApi.podMonitor is deprecated and is removed in 2.0: set metrics.enabled and metrics.podMonitor.enabled instead,
-which scrape without the token that can pause apps.
-{{- end }}
 {{- if .Values.networkPolicy.enabled }}
 {{- if and .Values.metrics.podMonitor.enabled (not .Values.networkPolicy.metrics.from) }}
 
 The NetworkPolicy blocks Prometheus: list its namespace or pods in networkPolicy.metrics.from.
-{{- end }}
-{{- if and .Values.adminApi.podMonitor.enabled (not .Values.networkPolicy.adminApi.from) }}
-
-The NetworkPolicy blocks Prometheus from the admin port: list its namespace or pods in networkPolicy.adminApi.from.
 {{- end }}
 {{- end }}
 {{- if not .Values.control.existingSecret }}

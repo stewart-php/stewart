@@ -40,7 +40,6 @@ final readonly class HttpListenerFactory
             $requests = new AdminRequestHandler(
                 $this->admin,
                 $this->adminCodec,
-                $this->metricsExporter,
                 $this->logger,
                 new BearerTokenCheck($admin->requireToken()),
                 new UnauthorizedRequestWarnings(HttpListenerRole::Admin, $this->logger),
