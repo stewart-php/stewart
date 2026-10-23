@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Stewart\Testing\HaContext;
 
 use LogicException;
+use Stewart\Contracts\Action\ActionName;
+use Stewart\Contracts\Action\ActionResponse;
+use Stewart\Contracts\Action\ActionTargetSource;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Connection\ConnectionEvent;
 use Stewart\Contracts\Connection\ConnectionLost;
@@ -13,9 +16,9 @@ use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventOrigin;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\EventStream;
+use Stewart\Contracts\Exception\ActionCallException;
 use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\Exception\HistoryException;
-use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exception\StateException;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\History\EntityStateHistory;
@@ -24,9 +27,6 @@ use Stewart\Contracts\Registry\EntityFilter;
 use Stewart\Contracts\Registry\Registry;
 use Stewart\Contracts\Selector\Collection\SelectorCollection;
 use Stewart\Contracts\Selector\Selector;
-use Stewart\Contracts\Service\ActionName;
-use Stewart\Contracts\Service\ServiceResponse;
-use Stewart\Contracts\Service\ServiceTargetSource;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
@@ -47,9 +47,9 @@ use Stewart\Support\Wire\EventTypeSelector;
 use Stewart\Support\Wire\ServiceFields;
 use Stewart\Support\Wire\TopicPayload;
 use Stewart\Support\Wire\TriggerSpec;
+use Stewart\Testing\HaContext\Collection\RecordedActionCallCollection;
 use Stewart\Testing\HaContext\Collection\RecordedEventFireCollection;
 use Stewart\Testing\HaContext\Collection\RecordedHistoryQueryCollection;
-use Stewart\Testing\HaContext\Collection\RecordedServiceCallCollection;
 use Stewart\Testing\HaContext\Collection\WatchedTriggerCollection;
 use Stewart\Testing\Registry\InMemoryRegistry;
 use Stewart\Testing\Stream\PushSource;
@@ -62,7 +62,7 @@ final class RecordingHaContext implements HaContext
 
     private const string CONTEXT_ID_PREFIX = 'recorded-';
 
-    public private(set) RecordedServiceCallCollection $calls;
+    public private(set) RecordedActionCallCollection $calls;
 
     public private(set) TopicEventCollection $published;
 
@@ -77,8 +77,8 @@ final class RecordingHaContext implements HaContext
     /** @var array<string, HistoryException> */
     private array $historyFailures = [];
 
-    /** @var array<string, array<string, mixed>|ServiceCallException> */
-    private array $serviceOutcomes = [];
+    /** @var array<string, array<string, mixed>|ActionCallException> */
+    private array $actionOutcomes = [];
 
     /** @var array<string, EventFireException> */
     private array $eventFireFailures = [];
@@ -114,7 +114,7 @@ final class RecordingHaContext implements HaContext
     {
         $this->clock = $timers->clock;
         $this->registry = new InMemoryRegistry();
-        $this->calls = RecordedServiceCallCollection::empty();
+        $this->calls = RecordedActionCallCollection::empty();
         $this->published = TopicEventCollection::empty();
         $this->firedEvents = RecordedEventFireCollection::empty();
         $this->states = EntityStateCollection::empty();
@@ -157,19 +157,19 @@ final class RecordingHaContext implements HaContext
 
     /**
      * @param array<string, mixed> $response
-     * @throws ServiceCallException
+     * @throws ActionCallException
      */
     public function stubActionAnswer(string $action, array $response): self
     {
-        $this->serviceOutcomes[new ActionName($action)->value] = $response;
+        $this->actionOutcomes[new ActionName($action)->value] = $response;
 
         return $this;
     }
 
-    /** @throws ServiceCallException */
-    public function stubActionFailure(string $action, ServiceCallException $failure): self
+    /** @throws ActionCallException */
+    public function stubActionFailure(string $action, ActionCallException $failure): self
     {
-        $this->serviceOutcomes[new ActionName($action)->value] = $failure;
+        $this->actionOutcomes[new ActionName($action)->value] = $failure;
 
         return $this;
     }
@@ -238,9 +238,9 @@ final class RecordingHaContext implements HaContext
     }
 
     /** @throws LogicException */
-    public function getLastCall(): RecordedServiceCall
+    public function getLastCall(): RecordedActionCall
     {
-        return $this->calls->getLast() ?? throw new LogicException('No service has been called.');
+        return $this->calls->getLast() ?? throw new LogicException('No action has been called.');
     }
 
     public function getState(EntityId|string $entityId): ?EntityState
@@ -328,18 +328,14 @@ final class RecordingHaContext implements HaContext
             ->map(static fn(PushedTrigger $pushed): TriggerEvent => $pushed->event);
     }
 
-    public function callAction(string $action, array $data = [], ?ServiceTargetSource $target = null): EventContext
+    public function callAction(string $action, array $data = [], ?ActionTargetSource $target = null): EventContext
     {
-        $name = new ActionName($action);
-
-        return $this->callStubbedService($name->domain, $name->action, $data, $target, false)->context ?? EventContext::unknown();
+        return $this->callStubbedAction(new ActionName($action), $data, $target, false)->context ?? EventContext::unknown();
     }
 
-    public function callActionForResponse(string $action, array $data = [], ?ServiceTargetSource $target = null): ServiceResponse
+    public function callActionForResponse(string $action, array $data = [], ?ActionTargetSource $target = null): ActionResponse
     {
-        $name = new ActionName($action);
-
-        return $this->callStubbedService($name->domain, $name->action, $data, $target, true);
+        return $this->callStubbedAction(new ActionName($action), $data, $target, true);
     }
 
     public function fireEvent(string $eventType, array $data = []): EventContext
@@ -395,27 +391,27 @@ final class RecordingHaContext implements HaContext
 
     /**
      * @param array<string, mixed> $data
-     * @throws ServiceCallException
+     * @throws ActionCallException
      */
-    private function callStubbedService(string $domain, string $service, array $data, ?ServiceTargetSource $target, bool $returnsResponse): ServiceResponse
+    private function callStubbedAction(ActionName $action, array $data, ?ActionTargetSource $target, bool $returnsResponse): ActionResponse
     {
         if (!$this->connected) {
-            throw ServiceCallException::unreachable($domain, $service, 'Home Assistant is disconnected');
+            throw ActionCallException::unreachable($action->domain, $action->action, 'Home Assistant is disconnected');
         }
 
-        $call = new RecordedServiceCall(
-            $domain,
-            $service,
+        $call = new RecordedActionCall(
+            $action->domain,
+            $action->action,
             ServiceFields::fromFieldsDroppingNulls($data)->fields,
-            $target?->toServiceTarget(),
+            $target?->toActionTarget(),
             $returnsResponse,
             $this->issueContext(),
         );
 
         $this->calls = $this->calls->withRecordedCall($call);
-        $outcome = $this->serviceOutcomes[$call->getActionName()] ?? [];
+        $outcome = $this->actionOutcomes[$action->value] ?? [];
 
-        return $outcome instanceof ServiceCallException ? throw $outcome : new ServiceResponse($domain, $service, $outcome, $call->context);
+        return $outcome instanceof ActionCallException ? throw $outcome : new ActionResponse($action->domain, $action->action, $outcome, $call->context);
     }
 
     private function issueContext(): EventContext

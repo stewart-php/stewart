@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App;
 
 use Psr\Log\LoggerInterface;
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
 use Stewart\Contracts\HaContext;
-use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Duration;
@@ -43,7 +43,7 @@ final class ManualOverride implements App
                     return;
                 }
 
-                $this->ha->callAction('light.turn_on', target: ServiceTarget::forEntities($this->light));
+                $this->ha->callAction('light.turn_on', target: ActionTarget::forEntities($this->light));
             });
     }
 }

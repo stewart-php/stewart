@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Tests\Fixtures\Protocol;
 
 use Psr\Log\LoggerInterface;
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
-use Stewart\Contracts\Exception\ServiceCallException;
+use Stewart\Contracts\Exception\ActionCallException;
 use Stewart\Contracts\HaContext;
-use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 
@@ -43,9 +43,9 @@ final readonly class EdgeWatcher implements App
 
         if ($this->light !== null) {
             try {
-                $this->ha->callAction('light.turn_on', target: ServiceTarget::forEntities($this->light));
+                $this->ha->callAction('light.turn_on', target: ActionTarget::forEntities($this->light));
                 $this->logger->info('Service call finished', ['success' => true]);
-            } catch (ServiceCallException $e) {
+            } catch (ActionCallException $e) {
                 $this->logger->info('Service call finished', ['success' => false, 'exception' => $e]);
             }
         }

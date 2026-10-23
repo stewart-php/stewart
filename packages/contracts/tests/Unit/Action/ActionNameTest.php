@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Tests\Unit\Service;
+namespace Stewart\Contracts\Tests\Unit\Action;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Stewart\Contracts\Exception\ServiceCallError;
-use Stewart\Contracts\Service\ActionName;
+use Stewart\Contracts\Action\ActionName;
+use Stewart\Contracts\Exception\ActionCallError;
 use Stewart\Testing\Exception\AssertsReason;
 
 #[CoversClass(ActionName::class)]
@@ -38,6 +38,6 @@ final class ActionNameTest extends TestCase
     #[DataProvider('provideMalformedNames')]
     public function testMalformedNameIsRefused(string $name): void
     {
-        $this->assertThrowsReason(ServiceCallError::ActionNameInvalid, static fn() => new ActionName($name));
+        $this->assertThrowsReason(ActionCallError::ActionNameInvalid, static fn() => new ActionName($name));
     }
 }

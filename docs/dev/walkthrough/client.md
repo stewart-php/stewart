@@ -35,7 +35,7 @@ registered under its subscription's command ID, through `EventDelivery`, a bound
 The client does not reconnect; the broker's `WebsocketHaSession` does.
 
 **Errors.** Failures are `HaClientException` with a `HaClientError` reason. `callService()` maps them to
-`ServiceCallException` (rejected, timed out, unreachable); subscribing without administrator rights is
+`ActionCallException` (rejected, timed out, unreachable); subscribing without administrator rights is
 `AdministratorRequired`. URLs are `HomeAssistantUrl` values, whose string form is redacted, so a token in a URL never
 reaches a log.
 
@@ -49,7 +49,7 @@ Paths here are relative to `packages/testing/`.
 `HaContext/RecordingHaContext` is the second implementation of `HaContext`. Its streams use the same operators from
 `stewart-php/support`, over a `PushSource` instead of a dispatcher, so a test exercises the real `whenChangedTo()`,
 `debounce()` and the rest. `seedState()` and `pushState()` drive it; service calls are recorded as
-`RecordedServiceCall`s and answered from stubs.
+`RecordedActionCall`s and answered from stubs.
 
 `App/AppHarness::startApp()` builds the app the way a worker does: options by parameter name, `#[GlobalStore]` and
 `#[PeerStore]`, provided services, a fake for each injectable contract type. Like the worker, it holds deliveries

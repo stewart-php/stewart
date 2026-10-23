@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App;
 
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\HaContext;
-use Stewart\Contracts\Service\ServiceTarget;
 
 #[Automation(id: 'remote-toggle')]
 final readonly class RemoteToggle implements App
@@ -25,7 +25,7 @@ final readonly class RemoteToggle implements App
             ->filter(fn(HaEvent $event): bool => $event->getValue('device_ieee') === $this->remote)
             ->filter(static fn(HaEvent $event): bool => $event->getValue('command') === 'toggle')
             ->subscribe(function (): void {
-                $this->ha->callAction('light.toggle', target: ServiceTarget::forEntities($this->light));
+                $this->ha->callAction('light.toggle', target: ActionTarget::forEntities($this->light));
             });
     }
 }

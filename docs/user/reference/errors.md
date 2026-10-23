@@ -54,6 +54,18 @@ Thrown as `CodegenException`.
 | `ShrinkRefused` | Generating would delete {deleted} of {existing} generated files; run `make generate ARGS=--allow-shrink` if that is intended. |  |
 | `HomeAssistantNotRunning` | Home Assistant is {state}; run `stewart generate` again once it has started. |  |
 
+## ActionCallError
+
+Thrown as `ActionCallException`.
+
+| Reason | Message | What to do |
+| --- | --- | --- |
+| `Rejected` | {domain}.{action} was rejected by Home Assistant: {detail} | Try the same call under Developer tools → Actions in Home Assistant. |
+| `Unreachable` | {domain}.{action} could not reach Home Assistant: {detail} |  |
+| `TimedOut` | {domain}.{action} timed out: {detail} |  |
+| `Overloaded` | {domain}.{action} was refused: {detail} | Call fewer actions at once, for example one call with several targets. |
+| `ActionNameInvalid` | "{action}" is not an action name; write it as domain.action, such as light.turn_on. |  |
+
 ## CommandError
 
 Thrown as `CommandException`.
@@ -166,18 +178,6 @@ Thrown as `SelectorException`.
 | `Empty` | {selectorKind} cannot be empty. |  |
 | `RegexInvalid` | Regular expression selector {pattern} is invalid: {compileError}. |  |
 | `MqttFilterInvalid` | MQTT topic filter {filter} must use + and # only as whole levels, with # last. |  |
-
-## ServiceCallError
-
-Thrown as `ServiceCallException`.
-
-| Reason | Message | What to do |
-| --- | --- | --- |
-| `Rejected` | {domain}.{service} was rejected by Home Assistant: {detail} | Try the same call under Developer tools → Actions in Home Assistant. |
-| `Unreachable` | {domain}.{service} could not reach Home Assistant: {detail} |  |
-| `TimedOut` | {domain}.{service} timed out: {detail} |  |
-| `Overloaded` | {domain}.{service} was refused: {detail} | Call fewer services at once, for example one call with several targets. |
-| `ActionNameInvalid` | "{action}" is not an action name; write it as domain.action, such as light.turn_on. |  |
 
 ## StateError
 

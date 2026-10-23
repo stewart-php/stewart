@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Tests\Fixtures\Ipc;
 
+use Stewart\Contracts\Action\ActionResponse;
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventOrigin;
 use Stewart\Contracts\Event\HaEvent;
-use Stewart\Contracts\Exception\ServiceCallException;
+use Stewart\Contracts\Exception\ActionCallException;
 use Stewart\Contracts\Exposure\Command\SwitchAction;
 use Stewart\Contracts\Exposure\Command\SwitchCommand;
 use Stewart\Contracts\Exposure\DeviceInfo;
@@ -45,8 +47,6 @@ use Stewart\Contracts\Registry\LabelId;
 use Stewart\Contracts\Registry\RegisteredEntity;
 use Stewart\Contracts\Registry\Update\EntityRegistryUpdate;
 use Stewart\Contracts\Selector\Selector;
-use Stewart\Contracts\Service\ServiceResponse;
-use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
@@ -154,8 +154,8 @@ final class IpcMessageSamples
             'event_fired' => IpcMessageSample::createRoundTrip(new EventFired(new HaEvent('zha_event', ['args' => [1, 2], 'params' => ['duration' => 0.5]], EventOrigin::Remote, $at, new EventContext('c')), [new SubscriptionId('w0:1')])),
             'trigger_fired' => IpcMessageSample::createRoundTrip(new TriggerFired(new TriggerEvent(['platform' => 'sun', 'event' => 'sunset', 'offset' => -1800.0, 'id' => 'dusk', 'idx' => '0'], new EventContext('c'), $at), [new SubscriptionId('w0:4')])),
             'topic_message' => IpcMessageSample::createRoundTrip(new TopicMessage(new TopicEvent('presence.home', ['who' => 'resident', 'confidence' => 0.92], new AppId('presence'), $at), [new SubscriptionId('w1:2')])),
-            'service_call_result' => IpcMessageSample::createRoundTrip(new ServiceCallResult(new CorrelationId('w0:2'), new ServiceResponse('weather', 'get_forecasts', ['weather.home' => ['forecast' => []]], new EventContext('call-1', null, 'stewart-user')))),
-            'request_failed' => IpcMessageSample::createRoundTrip(RequestFailed::fromException(new CorrelationId('w0:2'), ServiceCallException::rejected('light', 'turn_on', 'Service not found', 'not_found'))),
+            'service_call_result' => IpcMessageSample::createRoundTrip(new ServiceCallResult(new CorrelationId('w0:2'), new ActionResponse('weather', 'get_forecasts', ['weather.home' => ['forecast' => []]], new EventContext('call-1', null, 'stewart-user')))),
+            'request_failed' => IpcMessageSample::createRoundTrip(RequestFailed::fromException(new CorrelationId('w0:2'), ActionCallException::rejected('light', 'turn_on', 'Service not found', 'not_found'))),
             'event_fire_result' => IpcMessageSample::createRoundTrip(new EventFireResult(new CorrelationId('w0:6'), new EventContext('fire-1', null, 'stewart-user'))),
             'registry_entity_update_result' => IpcMessageSample::createRoundTrip(new RegistryEntityUpdateResult(
                 new CorrelationId('w0:7'),
@@ -176,7 +176,7 @@ final class IpcMessageSamples
             'unsubscribe' => IpcMessageSample::createRoundTrip(new Unsubscribe(new SubscriptionId('w0:1'))),
             'history_request' => IpcMessageSample::createRoundTrip(new HistoryRequest(new CorrelationId('w0:3'), $demo, new EntityId('light.hall'), new HistoryWindow($at, $at->plus(Duration::minutes(30))), HistoryDetail::AllChanges)),
             'history_result' => new IpcMessageSample(self::createHistoryResult($at), self::createHistoryResult($at)),
-            'service_call_request' => IpcMessageSample::createRoundTrip(new ServiceCallRequest(new CorrelationId('w0:2'), $demo, 'light', 'turn_on', ['transition' => 1.5], new ServiceTarget(entityIds: [new EntityId('light.hall')], areaIds: ['hall']), false)),
+            'service_call_request' => IpcMessageSample::createRoundTrip(new ServiceCallRequest(new CorrelationId('w0:2'), $demo, 'light', 'turn_on', ['transition' => 1.5], new ActionTarget(entityIds: [new EntityId('light.hall')], areaIds: ['hall']), false)),
             'registry_entity_update_request' => IpcMessageSample::createRoundTrip(new RegistryEntityUpdateRequest(
                 new CorrelationId('w0:7'),
                 $demo,

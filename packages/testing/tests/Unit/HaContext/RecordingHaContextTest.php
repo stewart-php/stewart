@@ -10,13 +10,13 @@ use Stewart\Contracts\Connection\ConnectionLost;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\EventOrigin;
 use Stewart\Contracts\Event\HaEvent;
+use Stewart\Contracts\Exception\ActionCallError;
+use Stewart\Contracts\Exception\ActionCallException;
 use Stewart\Contracts\Exception\EventFireError;
 use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\Exception\HistoryError;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\IdentifierError;
-use Stewart\Contracts\Exception\ServiceCallError;
-use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exception\TopicError;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryQuery;
@@ -31,7 +31,7 @@ use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Testing\Exception\AssertsReason;
-use Stewart\Testing\HaContext\RecordedServiceCall;
+use Stewart\Testing\HaContext\RecordedActionCall;
 use Stewart\Testing\HaContext\RecordingHaContext;
 use Stewart\Testing\HaContext\SeededHistory;
 use Stewart\Testing\Time\EventLoopTicks;
@@ -40,7 +40,7 @@ use function Amp\async;
 
 #[CoversClass(RecordingHaContext::class)]
 #[CoversClass(SeededHistory::class)]
-#[CoversClass(RecordedServiceCall::class)]
+#[CoversClass(RecordedActionCall::class)]
 final class RecordingHaContextTest extends TestCase
 {
     use AssertsReason;
@@ -125,16 +125,16 @@ final class RecordingHaContextTest extends TestCase
     {
         $ha = new RecordingHaContext()
             ->stubActionAnswer('weather.get_forecasts', ['forecast' => []])
-            ->stubActionFailure('lock.lock', ServiceCallException::rejected('lock', 'lock', 'jammed'));
+            ->stubActionFailure('lock.lock', ActionCallException::rejected('lock', 'lock', 'jammed'));
 
         self::assertSame(['forecast' => []], $ha->callActionForResponse('weather.get_forecasts')->response);
-        $this->assertThrowsReason(ServiceCallError::Rejected, static fn() => $ha->callAction('lock.lock'));
-        self::assertSame(['weather.get_forecasts', 'lock.lock'], $ha->calls->mapToList(static fn(RecordedServiceCall $call): string => $call->getActionName()));
+        $this->assertThrowsReason(ActionCallError::Rejected, static fn() => $ha->callAction('lock.lock'));
+        self::assertSame(['weather.get_forecasts', 'lock.lock'], $ha->calls->mapToList(static fn(RecordedActionCall $call): string => $call->getActionName()));
     }
 
     public function testStubForAMalformedActionNameIsRefused(): void
     {
-        $this->assertThrowsReason(ServiceCallError::ActionNameInvalid, static fn() => new RecordingHaContext()->stubActionAnswer('get_forecasts', []));
+        $this->assertThrowsReason(ActionCallError::ActionNameInvalid, static fn() => new RecordingHaContext()->stubActionAnswer('get_forecasts', []));
     }
 
     public function testPushedStateCarriesCausingContext(): void

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Tests\Fixtures\Protocol;
 
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
 use Stewart\Contracts\HaContext;
-use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\State\EventContext;
 use Stewart\Contracts\State\StateChange;
 
@@ -29,6 +29,6 @@ final class OwnChangeReporter implements App
             ]);
         });
 
-        $this->lastCall = $this->ha->callAction('light.turn_on', target: ServiceTarget::forEntities(self::LIGHT));
+        $this->lastCall = $this->ha->callAction('light.turn_on', target: ActionTarget::forEntities(self::LIGHT));
     }
 }

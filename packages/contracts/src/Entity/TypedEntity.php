@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Stewart\Contracts\Entity;
 
-use Stewart\Contracts\Service\ServiceTargetSource;
+use Stewart\Contracts\Action\ActionTargetSource;
 
-interface TypedEntity extends ServiceTargetSource
+interface TypedEntity extends ActionTargetSource
 {
     public EntityId $id { get; }
 

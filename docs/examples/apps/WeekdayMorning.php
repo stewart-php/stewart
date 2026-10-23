@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App;
 
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\Schedule\DayOfWeek;
 use Stewart\Contracts\Schedule\Scheduler;
-use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\Sun\SunEvent;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\SunOffset;
@@ -27,7 +27,7 @@ final readonly class WeekdayMorning implements App
         $this->scheduler->runDailyAt(
             '06:45',
             function (): void {
-                $this->ha->callAction('switch.turn_on', target: ServiceTarget::forEntities('switch.coffee_machine'));
+                $this->ha->callAction('switch.turn_on', target: ActionTarget::forEntities('switch.coffee_machine'));
             },
             DayOfWeek::Monday,
             DayOfWeek::Tuesday,
@@ -39,7 +39,7 @@ final readonly class WeekdayMorning implements App
         $this->scheduler->runAtSunEvent(
             SunEvent::Sunset,
             function (): void {
-                $this->ha->callAction('cover.close_cover', target: ServiceTarget::forAreas('living_room'));
+                $this->ha->callAction('cover.close_cover', target: ActionTarget::forAreas('living_room'));
             },
             SunOffset::before(Duration::minutes(30)),
         );

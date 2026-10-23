@@ -17,7 +17,7 @@ use Stewart\Contracts\Generated\ActionManifest;
  */
 final class Manifest implements ActionManifest
 {
-    public const int FORMAT_VERSION = 8;
+    public const int FORMAT_VERSION = 9;
 
     private function __construct()
     {

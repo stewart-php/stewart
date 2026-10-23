@@ -7,6 +7,17 @@ release could break; a release's "Upgrading" section says what to change.
 
 ## [Unreleased]
 
+### Changed
+
+- `Stewart\Contracts\Service` is now `Stewart\Contracts\Action`, so the types for calling an action carry its name:
+  `ActionTarget`, `ActionTargetSource` and `ActionResponse`, with `toActionTarget()`. `ServiceCallException` and
+  `ServiceCallError` are `ActionCallException` and `ActionCallError`, with the same reasons; their messages and
+  context name the `action`. `ActionResponse::$action` and the testing package's `RecordedActionCall::$action`
+  replace `$service`
+- Generated classes use the new names. The generated format is 9, so `stewart status` and the start log ask for
+  `stewart generate` until the classes are regenerated
+- The worker protocol is 34
+
 ### Removed
 
 - `HaContext::callService()` and `callServiceForResponse()`, the same on `Entity`, and in tests
@@ -26,12 +37,20 @@ release could break; a release's "Upgrading" section says what to change.
    names it recognises; `make stan` then points at the rest, such as names held in a variable:
 
    ```bash
-   grep -rlsE 'callService|stubService|getServiceName' apps tests services.php | xargs -r sed -i -E \
+   grep -rlsE 'callService|stubService|getServiceName|Contracts\\Service|ServiceTarget|ServiceResponse|ServiceCall' \
+     apps tests services.php | xargs -r sed -i -E \
      -e "s/->callService(ForResponse)?\('([a-z0-9_]+)', *'([a-z0-9_]+)'/->callAction\1('\2.\3'/g" \
      -e "s/->stubService(Answer|Failure)\('([a-z0-9_]+)', *'([a-z0-9_]+)'/->stubAction\1('\2.\3'/g" \
      -e 's/->callService(ForResponse)?\(/->callAction\1(/g' \
-     -e 's/->getServiceName\(\)/->getActionName()/g'
+     -e 's/->getServiceName\(\)/->getActionName()/g' \
+     -e 's/Stewart\\Contracts\\Service\\/Stewart\\Contracts\\Action\\/g' \
+     -e 's/ServiceTarget/ActionTarget/g' \
+     -e 's/ServiceResponse/ActionResponse/g' \
+     -e 's/ServiceCall(Exception|Error)/ActionCall\1/g' \
+     -e 's/RecordedServiceCall/RecordedActionCall/g'
    ```
+
+   The command leaves `->service` on an `ActionResponse` or a `RecordedActionCall` alone; it is `->action` now.
 2. An app whose `dispose()` does something implements `Stewart\Contracts\Disposable`, or it no longer runs. Before
    upgrading, `stewart check` on 1.8 names every app this affects.
 3. If Prometheus scrapes the admin port, turn on the metrics port and scrape that: `http.metrics.listen`

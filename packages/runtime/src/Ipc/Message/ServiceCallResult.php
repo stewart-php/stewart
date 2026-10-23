@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Ipc\Message;
 
-use Stewart\Contracts\Service\ServiceResponse;
+use Stewart\Contracts\Action\ActionResponse;
 use Stewart\Runtime\Model\CorrelationId;
 
 #[IpcMessage(tag: 'service_call_result')]
@@ -12,10 +12,10 @@ final readonly class ServiceCallResult implements CorrelatedReply
 {
     public function __construct(
         public CorrelationId $correlationId,
-        public ServiceResponse $result,
+        public ActionResponse $result,
     ) {}
 
-    public function getAnswer(): ServiceResponse
+    public function getAnswer(): ActionResponse
     {
         return $this->result;
     }

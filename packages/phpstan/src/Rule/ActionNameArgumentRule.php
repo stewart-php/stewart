@@ -13,12 +13,12 @@ use PHPStan\Analyser\Scope;
 use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
+use Stewart\Contracts\Action\ActionName;
 use Stewart\Contracts\Entity\Entity;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Entity\TypedEntity;
-use Stewart\Contracts\Exception\ServiceCallException;
+use Stewart\Contracts\Exception\ActionCallException;
 use Stewart\Contracts\HaContext;
-use Stewart\Contracts\Service\ActionName;
 use Stewart\PHPStan\Manifest\GeneratedHandles;
 use Stewart\PHPStan\Manifest\ManifestCatalog;
 use Stewart\PHPStan\Manifest\ManifestCatalogLoader;
@@ -81,7 +81,7 @@ final readonly class ActionNameArgumentRule implements Rule
         foreach ($this->listLiterals($called, $scope) as $actionName) {
             try {
                 new ActionName($actionName);
-            } catch (ServiceCallException $e) {
+            } catch (ActionCallException $e) {
                 $errors[] = RuleErrorBuilder::message($e->getMessage())->identifier(self::IDENTIFIER)->build();
 
                 continue;

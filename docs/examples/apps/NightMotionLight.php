@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App;
 
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
 use Stewart\Contracts\HaContext;
-use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\Sun\SunCalendar;
 use Stewart\Contracts\Time\Clock;
 use Stewart\Contracts\Time\Duration;
@@ -33,14 +33,14 @@ final readonly class NightMotionLight implements App
             ->filter(fn(): bool => !$this->sun->isSunUp())
             ->subscribe(function (): void {
                 $brightness = $this->clock->isWithin('23:00', '06:00') ? $this->nightBrightness : $this->dayBrightness;
-                $this->ha->callAction('light.turn_on', ['brightness_pct' => $brightness], ServiceTarget::forEntities($this->light));
+                $this->ha->callAction('light.turn_on', ['brightness_pct' => $brightness], ActionTarget::forEntities($this->light));
             });
 
         $this->ha->watchStateChanges($this->motionSensor)
             ->whenChangedTo('off', for: Duration::minutes($this->offAfterMinutes))
             ->subscribe(function (): void {
                 if ($this->ha->getState($this->light)?->state === 'on') {
-                    $this->ha->callAction('light.turn_off', target: ServiceTarget::forEntities($this->light));
+                    $this->ha->callAction('light.turn_off', target: ActionTarget::forEntities($this->light));
                 }
             });
     }

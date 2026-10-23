@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App;
 
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
 use Stewart\Contracts\Exposure\Action\ActionCall;
@@ -13,7 +14,6 @@ use Stewart\Contracts\Exposure\Action\ActionFieldType;
 use Stewart\Contracts\Exposure\EntityExposure;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\Schedule\Scheduler;
-use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\Time\Duration;
 
 #[Automation(id: 'heating')]
@@ -43,7 +43,7 @@ final readonly class BoostAction implements App
                 return;
             }
 
-            $target = ServiceTarget::forEntities($room);
+            $target = ActionTarget::forEntities($room);
             $this->ha->callAction('climate.set_preset_mode', ['preset_mode' => 'boost'], $target);
             $this->scheduler->runAfter(Duration::minutes((int) ($call->findNumber('minutes') ?? 30)), function () use ($target): void {
                 $this->ha->callAction('climate.set_preset_mode', ['preset_mode' => 'comfort'], $target);

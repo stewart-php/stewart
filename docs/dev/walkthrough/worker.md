@@ -122,7 +122,7 @@ For a traced app, `Worker/AppTracer` turns both into `TRACE` lines.
    command timeout plus five seconds) as the backstop. This suspension is what makes a call read like a local one.
 4. The broker runs the call (see [The broker](broker.md#service-calls)) and always answers.
 5. `CorrelatedReplyHandler` resolves the pending request with the typed reply, or rebuilds the typed exception from
-   `RequestFailed`. The caller gets an `EventContext`, or a `ServiceCallException`.
+   `RequestFailed`. The caller gets an `EventContext`, or an `ActionCallException`.
 6. `finally` forgets the request, so a late reply is dropped.
 
 ## Schedules

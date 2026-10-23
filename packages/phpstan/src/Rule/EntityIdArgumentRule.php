@@ -12,13 +12,13 @@ use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
 use PHPStan\Type\ObjectType;
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Entity\TypedEntity;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\Registry\Registry;
 use Stewart\Contracts\Registry\RegistryEditor;
 use Stewart\Contracts\Schedule\Scheduler;
-use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\PHPStan\Manifest\GeneratedHandles;
 use Stewart\PHPStan\Manifest\ManifestCatalog;
@@ -50,7 +50,7 @@ final readonly class EntityIdArgumentRule implements Rule
             new EntityIdParameter(HaContext::class, 'waitForState', 'entityId'),
             new EntityIdParameter(HaContext::class, 'listStates', 'selector'),
             new EntityIdParameter(HaContext::class, 'watchStateChanges', 'selector'),
-            new EntityIdParameter(ServiceTarget::class, 'forEntities', 'entityIds', variadic: true),
+            new EntityIdParameter(ActionTarget::class, 'forEntities', 'entityIds', variadic: true),
             new EntityIdParameter(Scheduler::class, 'runAtEntityTime', 'entity'),
             new EntityIdParameter(HaTrigger::class, 'atTime', 'time'),
             new EntityIdParameter(HaTrigger::class, 'onZoneTransition', 'entity'),

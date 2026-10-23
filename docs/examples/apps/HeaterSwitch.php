@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App;
 
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
 use Stewart\Contracts\Exception\CommandException;
@@ -12,7 +13,6 @@ use Stewart\Contracts\Exposure\EntityExposure;
 use Stewart\Contracts\Exposure\SwitchConfig;
 use Stewart\Contracts\Exposure\SwitchDeviceClass;
 use Stewart\Contracts\HaContext;
-use Stewart\Contracts\Service\ServiceTarget;
 
 #[Automation(id: 'heater')]
 final readonly class HeaterSwitch implements App
@@ -33,7 +33,7 @@ final readonly class HeaterSwitch implements App
                 throw CommandException::rejected('Close the window first.');
             }
 
-            $this->ha->callAction($command->isTurnOn() ? 'switch.turn_on' : 'switch.turn_off', target: ServiceTarget::forEntities($this->plug));
+            $this->ha->callAction($command->isTurnOn() ? 'switch.turn_on' : 'switch.turn_off', target: ActionTarget::forEntities($this->plug));
         });
     }
 }

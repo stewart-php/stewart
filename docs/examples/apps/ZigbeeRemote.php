@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App;
 
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\Mqtt\Mqtt;
 use Stewart\Contracts\Mqtt\MqttMessage;
-use Stewart\Contracts\Service\ServiceTarget;
 
 #[Automation(id: 'zigbee-remote')]
 final readonly class ZigbeeRemote implements App
@@ -33,7 +33,7 @@ final readonly class ZigbeeRemote implements App
             };
 
             if ($action !== null) {
-                $this->ha->callAction($action, $data, ServiceTarget::forEntities($this->light));
+                $this->ha->callAction($action, $data, ActionTarget::forEntities($this->light));
             }
         });
     }

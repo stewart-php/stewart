@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Stewart\PHPStan\Tests\Fixtures\Generated;
 
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\Entity\Entity;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Entity\TypedEntity;
 use Stewart\Contracts\HaContext;
-use Stewart\Contracts\Service\ServiceTarget;
 
 final readonly class LightEntity implements TypedEntity
 {
@@ -36,8 +36,8 @@ final readonly class LightEntity implements TypedEntity
         return $this->entity;
     }
 
-    public function toServiceTarget(): ServiceTarget
+    public function toActionTarget(): ActionTarget
     {
-        return ServiceTarget::forEntities($this->id);
+        return ActionTarget::forEntities($this->id);
     }
 }

@@ -10,8 +10,8 @@ declare(strict_types=1);
 
 namespace Stewart\Codegen\Tests\Fixtures\Expected;
 
+use Stewart\Contracts\Action\ActionTargetSource;
 use Stewart\Contracts\HaContext;
-use Stewart\Contracts\Service\ServiceTargetSource;
 use Stewart\Contracts\State\EventContext;
 
 /**
@@ -30,7 +30,7 @@ final readonly class LightServices
      *
      * @param string|int|float $value Value. The state to write
      */
-    public function state(ServiceTargetSource $target, string|int|float $value): EventContext
+    public function state(ActionTargetSource $target, string|int|float $value): EventContext
     {
         return $this->ha->callAction('light.state', [
             'value' => $value,
@@ -44,7 +44,7 @@ final readonly class LightServices
      *
      * @param int|float|null $transition Transition. Duration it takes to get to the next state. 0 to 300 seconds
      */
-    public function turnOff(ServiceTargetSource $target, int|float|null $transition = null): EventContext
+    public function turnOff(ActionTargetSource $target, int|float|null $transition = null): EventContext
     {
         return $this->ha->callAction('light.turn_off', [
             'transition' => $transition,
@@ -66,7 +66,7 @@ final readonly class LightServices
      * @param true|null $white White. Set the light to white mode
      */
     public function turnOn(
-        ServiceTargetSource $target,
+        ActionTargetSource $target,
         int|float|null $brightnessPct = null,
         int|float|null $colorTempKelvin = null,
         string|int|float|null $effect = null,

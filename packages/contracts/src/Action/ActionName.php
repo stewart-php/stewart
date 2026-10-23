@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Service;
+namespace Stewart\Contracts\Action;
 
-use Stewart\Contracts\Exception\ServiceCallError;
-use Stewart\Contracts\Exception\ServiceCallException;
+use Stewart\Contracts\Exception\ActionCallError;
+use Stewart\Contracts\Exception\ActionCallException;
 use Stringable;
 
 final readonly class ActionName implements Stringable
@@ -18,11 +18,11 @@ final readonly class ActionName implements Stringable
 
     public string $action;
 
-    /** @throws ServiceCallException */
+    /** @throws ActionCallException */
     public function __construct(string $value)
     {
         if (preg_match(self::PATTERN, $value, $parts) !== 1) {
-            throw ServiceCallException::createForReason(ServiceCallError::ActionNameInvalid, action: $value);
+            throw ActionCallException::createForReason(ActionCallError::ActionNameInvalid, action: $value);
         }
 
         $this->value = $value;

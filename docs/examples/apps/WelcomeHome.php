@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App;
 
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
 use Stewart\Contracts\HaContext;
-use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
 use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Contracts\Trigger\TriggerEvent;
@@ -25,8 +25,8 @@ final readonly class WelcomeHome implements App
     {
         $this->ha->watchTrigger($this->createTriggers())->subscribe(function (TriggerEvent $event): void {
             match ($event->getTriggerId()) {
-                'arrived' => $this->ha->callAction('light.turn_on', target: ServiceTarget::forEntities('light.hall')),
-                'left' => $this->ha->callAction('light.turn_off', target: ServiceTarget::forFloors('ground')),
+                'arrived' => $this->ha->callAction('light.turn_on', target: ActionTarget::forEntities('light.hall')),
+                'left' => $this->ha->callAction('light.turn_off', target: ActionTarget::forFloors('ground')),
                 default => null,
             };
         });

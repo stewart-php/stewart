@@ -10,7 +10,7 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel as PsrLogLevel;
 use Psr\Log\NullLogger;
 use Stewart\Contracts\App\AppId;
-use Stewart\Contracts\Exception\ServiceCallError;
+use Stewart\Contracts\Exception\ActionCallError;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
@@ -98,7 +98,7 @@ final class ServiceCallRequestHandlerTest extends TestCase
         EventLoopTicks::settleUntil(static fn(): bool => \count(self::listSentErrors($worker)) === 3);
         $refusals = self::listSentErrors($worker);
         self::assertCount(3, $refusals);
-        self::assertSame(ServiceCallError::Overloaded->value, $refusals[0]->details->reason);
+        self::assertSame(ActionCallError::Overloaded->value, $refusals[0]->details->reason);
 
         $this->finishCalls();
 
@@ -180,7 +180,7 @@ final class ServiceCallRequestHandlerTest extends TestCase
         $handler->handle($worker, self::createRequest('dry'));
         EventLoopTicks::settleUntil(static fn(): bool => self::listSentResultsFor($worker) !== []);
 
-        self::assertSame('turn_on', self::listSentResultsFor($worker)[0]->result->service);
+        self::assertSame('turn_on', self::listSentResultsFor($worker)[0]->result->action);
         self::assertStringStartsWith('dry-run:', (string) self::listSentResultsFor($worker)[0]->result->context?->id);
         self::assertCount(0, $this->homeAssistant->listReceivedCalls());
         self::assertSame(0, $this->slots->inFlight);

@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use stdClass;
-use Stewart\Contracts\Service\ServiceResponse;
+use Stewart\Contracts\Action\ActionResponse;
 use Stewart\Runtime\Broker\Message\LogRecordHandler;
 use Stewart\Runtime\Exception\ContainerError;
 use Stewart\Runtime\Ipc\Message\BrokerMessage;
@@ -74,6 +74,6 @@ final class MessageHandlerIndexTest extends TestCase
 
     private static function createServiceCallResult(): ServiceCallResult
     {
-        return new ServiceCallResult(new CorrelationId('w0:1'), new ServiceResponse('light', 'turn_on'));
+        return new ServiceCallResult(new CorrelationId('w0:1'), new ActionResponse('light', 'turn_on'));
     }
 }

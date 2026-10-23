@@ -7,13 +7,13 @@ namespace Stewart\Runtime\Tests\Integration\Protocol;
 use Closure;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
+use Stewart\Contracts\Action\ActionResponse;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\HaEvent;
-use Stewart\Contracts\Exception\ServiceCallException;
+use Stewart\Contracts\Exception\ActionCallException;
 use Stewart\Contracts\Exception\TopicException;
 use Stewart\Contracts\Mqtt\MqttMessage;
-use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\EventContext;
@@ -388,7 +388,7 @@ final class WorkerProtocolTest extends TestCase
         $this->start([new WorkerApp(id: new AppId('init-caller'), class: InitCaller::class, options: [])], callTimeout: 5.0);
 
         $request = $this->receiveUntil(ServiceCallRequest::class);
-        $this->send(new ServiceCallResult($request->correlationId, new ServiceResponse('light', 'turn_on')));
+        $this->send(new ServiceCallResult($request->correlationId, new ActionResponse('light', 'turn_on')));
 
         $log = $this->receiveUntil(LogRecord::class, static fn(LogRecord $log): bool => $log->message === 'Initialize call finished');
         $ready = $this->receiveUntil(WorkerReady::class);
@@ -421,7 +421,7 @@ final class WorkerProtocolTest extends TestCase
         $this->start([new WorkerApp(id: new AppId('construct-caller'), class: ConstructCaller::class, options: [])], callTimeout: 5.0);
 
         $request = $this->receiveUntil(ServiceCallRequest::class);
-        $this->send(new ServiceCallResult($request->correlationId, new ServiceResponse('light', 'turn_on')));
+        $this->send(new ServiceCallResult($request->correlationId, new ActionResponse('light', 'turn_on')));
 
         $log = $this->receiveUntil(LogRecord::class, static fn(LogRecord $log): bool => $log->message === 'Construct call finished');
         $ready = $this->receiveUntil(WorkerReady::class);
@@ -439,7 +439,7 @@ final class WorkerProtocolTest extends TestCase
         $request = $this->receiveUntil(ServiceCallRequest::class);
 
         $this->sendToggle();
-        $this->send(new ServiceCallResult($request->correlationId, new ServiceResponse('light', 'turn_on')));
+        $this->send(new ServiceCallResult($request->correlationId, new ActionResponse('light', 'turn_on')));
 
         $order = [];
         $this->receiveUntil(
@@ -467,7 +467,7 @@ final class WorkerProtocolTest extends TestCase
         $request = $this->receiveUntil(ServiceCallRequest::class);
         self::assertSame('turn_off', $request->service);
 
-        $this->send(new ServiceCallResult($request->correlationId, new ServiceResponse('light', 'turn_off')));
+        $this->send(new ServiceCallResult($request->correlationId, new ActionResponse('light', 'turn_off')));
         $this->receiveUntil(LogRecord::class, static fn(LogRecord $log): bool => $log->message === 'Dispose call finished');
 
         self::assertStringContainsString('0 calls abandoned', $this->getWorkerHarness()->join());
@@ -489,13 +489,13 @@ final class WorkerProtocolTest extends TestCase
             self::assertNotInstanceOf(ServiceCallRequest::class, $message, 'The second event must wait for the first handler.');
         });
 
-        $this->send(new ServiceCallResult($first->correlationId, new ServiceResponse('script', 'record')));
+        $this->send(new ServiceCallResult($first->correlationId, new ActionResponse('script', 'record')));
         self::assertSame('2', $this->receiveUntil(LogRecord::class, static fn(LogRecord $log): bool => $log->message === 'Handled')->context['value'] ?? null);
 
         $second = $this->receiveUntil(ServiceCallRequest::class);
         self::assertSame(['value' => '3'], $second->data);
 
-        $this->send(new ServiceCallResult($second->correlationId, new ServiceResponse('script', 'record')));
+        $this->send(new ServiceCallResult($second->correlationId, new ActionResponse('script', 'record')));
         self::assertSame('3', $this->receiveUntil(LogRecord::class, static fn(LogRecord $log): bool => $log->message === 'Handled')->context['value'] ?? null);
 
         $this->shutDown('done');
@@ -509,11 +509,11 @@ final class WorkerProtocolTest extends TestCase
         $this->sendUpdates(self::createUpdate(SerialHandler::ENTITY, '2'));
         $request = $this->receiveUntil(ServiceCallRequest::class);
 
-        $this->send(RequestFailed::fromException($request->correlationId, ServiceCallException::rejected('script', 'record', 'Service not found', 'not_found')));
+        $this->send(RequestFailed::fromException($request->correlationId, ActionCallException::rejected('script', 'record', 'Service not found', 'not_found')));
         $failure = $this->receiveUntil(AppFailed::class);
 
         self::assertSame(AppFailurePhase::Handler, $failure->phase);
-        self::assertSame(ServiceCallException::class, $failure->class);
+        self::assertSame(ActionCallException::class, $failure->class);
         self::assertStringContainsString('script.record was rejected by Home Assistant: Service not found (not_found)', $failure->message);
         self::assertNotSame('', $failure->trace);
 
@@ -647,7 +647,7 @@ final class WorkerProtocolTest extends TestCase
         self::assertSame('on', $replayed->context['to'] ?? null, 'The off→on edge that happened during the outage reaches whenChangedTo().');
         self::assertSame([self::LIGHT], array_map(strval(...), $request->target->entityIds ?? []));
 
-        $this->send(new ServiceCallResult($request->correlationId, new ServiceResponse('light', 'turn_on')));
+        $this->send(new ServiceCallResult($request->correlationId, new ActionResponse('light', 'turn_on')));
         $this->receiveUntil(Publish::class);
 
         $this->shutDown('done');

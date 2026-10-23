@@ -7,10 +7,10 @@ namespace Stewart\Runtime\Tests\Unit\Broker;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use Stewart\Contracts\Action\ActionResponse;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Event\HaEvent;
-use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\State\StateChange;
@@ -43,7 +43,7 @@ final class WorkerOutboxTest extends TestCase
         $outbox = self::createOutbox(eventBuffer: 1);
 
         for ($i = 0; $i < 50; ++$i) {
-            $outbox->enqueue(new ServiceCallResult(new CorrelationId('0:' . $i), new ServiceResponse('light', 'turn_on')));
+            $outbox->enqueue(new ServiceCallResult(new CorrelationId('0:' . $i), new ActionResponse('light', 'turn_on')));
         }
 
         self::assertCount(50, self::drain($outbox));
@@ -289,7 +289,7 @@ final class WorkerOutboxTest extends TestCase
         $outbox = self::createOutbox();
 
         $outbox->enqueue(new Ping(1, Instant::fromEpochMicroseconds(0)));
-        $outbox->enqueue(new ServiceCallResult(new CorrelationId('0:1'), new ServiceResponse('light', 'turn_on')));
+        $outbox->enqueue(new ServiceCallResult(new CorrelationId('0:1'), new ActionResponse('light', 'turn_on')));
         $outbox->enqueue(new Ping(2, Instant::fromEpochMicroseconds(0)));
         $outbox->enqueue(new Ping(3, Instant::fromEpochMicroseconds(0)));
 

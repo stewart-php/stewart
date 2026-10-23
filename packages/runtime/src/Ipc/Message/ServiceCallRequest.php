@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Ipc\Message;
 
-use Stewart\Contracts\Exception\ServiceCallException;
-use Stewart\Contracts\Service\ServiceTarget;
+use Stewart\Contracts\Action\ActionTarget;
+use Stewart\Contracts\Exception\ActionCallException;
 use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
 use Throwable;
@@ -20,17 +20,17 @@ final readonly class ServiceCallRequest implements WorkerMessage, RefusableHaCal
         public string $domain,
         public string $service,
         public array $data,
-        public ?ServiceTarget $target,
+        public ?ActionTarget $target,
         public bool $returnResponse,
     ) {}
 
-    public function createUnreachableFailure(string $detail, ?Throwable $previous = null): ServiceCallException
+    public function createUnreachableFailure(string $detail, ?Throwable $previous = null): ActionCallException
     {
-        return ServiceCallException::unreachable($this->domain, $this->service, $detail, $previous);
+        return ActionCallException::unreachable($this->domain, $this->service, $detail, $previous);
     }
 
-    public function createOverloadedFailure(string $detail): ServiceCallException
+    public function createOverloadedFailure(string $detail): ActionCallException
     {
-        return ServiceCallException::overloaded($this->domain, $this->service, $detail);
+        return ActionCallException::overloaded($this->domain, $this->service, $detail);
     }
 }

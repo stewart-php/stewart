@@ -37,7 +37,7 @@ an ID in Home Assistant under **Settings → Areas, labels & zones**, or look it
 
 ## How Home Assistant places an entity
 
-Stewart follows Home Assistant's rules, so a filter and `ServiceTarget::forAreas('kitchen')` reach the same entities:
+Stewart follows Home Assistant's rules, so a filter and `ActionTarget::forAreas('kitchen')` reach the same entities:
 
 - An entity's **area** is its own, or else its device's.
 - Its **floor** is the floor of that area.

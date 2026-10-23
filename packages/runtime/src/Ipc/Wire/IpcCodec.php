@@ -24,7 +24,7 @@ use Throwable;
 
 final readonly class IpcCodec
 {
-    public const int PROTOCOL_VERSION = 33;
+    public const int PROTOCOL_VERSION = 34;
 
     private const string UNKNOWN_TYPE = '?';
 

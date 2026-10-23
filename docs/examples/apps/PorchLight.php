@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App;
 
 use Psr\Log\LoggerInterface;
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\Schedule\Scheduler;
-use Stewart\Contracts\Service\ServiceTarget;
 use Stewart\Contracts\Sun\SunEvent;
 
 #[Automation(id: 'porch-light')]
@@ -27,12 +27,12 @@ final readonly class PorchLight implements App
     {
         $this->scheduler->runAtSunEvent(SunEvent::Sunset, function (): void {
             $this->logger->info('Sunset, turning the porch light on');
-            $this->ha->callAction('light.turn_on', target: ServiceTarget::forEntities($this->light));
+            $this->ha->callAction('light.turn_on', target: ActionTarget::forEntities($this->light));
         });
 
         $this->scheduler->runDailyAt($this->offAt, function (): void {
             $this->logger->info('Bedtime, turning the porch light off');
-            $this->ha->callAction('light.turn_off', target: ServiceTarget::forEntities($this->light));
+            $this->ha->callAction('light.turn_off', target: ActionTarget::forEntities($this->light));
         });
     }
 }

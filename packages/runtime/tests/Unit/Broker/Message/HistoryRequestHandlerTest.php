@@ -7,12 +7,12 @@ namespace Stewart\Runtime\Tests\Unit\Broker\Message;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use Stewart\Contracts\Action\ActionResponse;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\EntityId;
 use Stewart\Contracts\Exception\HistoryError;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryWindow;
-use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\Time\Instant;
 use Stewart\Runtime\App\AppDefinition;
@@ -112,7 +112,7 @@ final class HistoryRequestHandlerTest extends TestCase
         $this->slots->runBounded($this->worker, $serviceCall, static function () use ($held, $serviceCall): ServiceCallResult {
             $held->waitUntilOpen();
 
-            return new ServiceCallResult($serviceCall->correlationId, new ServiceResponse('light', 'turn_on'));
+            return new ServiceCallResult($serviceCall->correlationId, new ActionResponse('light', 'turn_on'));
         });
 
         $this->forwardRequest();

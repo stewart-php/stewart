@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App;
 
+use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\App;
 use Stewart\Contracts\Automation;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\Registry\EntityFilter;
-use Stewart\Contracts\Service\ServiceTarget;
 
 #[Automation(id: 'room-motion')]
 final readonly class RoomMotion implements App
@@ -23,7 +23,7 @@ final readonly class RoomMotion implements App
         $this->ha->watchStateChanges(EntityFilter::inArea($this->area)->withDomain('binary_sensor')->withLabel('motion'))
             ->whenChangedTo('on')
             ->subscribe(function (): void {
-                $this->ha->callAction('light.turn_on', target: ServiceTarget::forAreas($this->area));
+                $this->ha->callAction('light.turn_on', target: ActionTarget::forAreas($this->area));
             });
     }
 }

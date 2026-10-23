@@ -6,13 +6,13 @@ namespace Stewart\Runtime\Tests\Unit\Worker;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Stewart\Contracts\Action\ActionResponse;
 use Stewart\Contracts\Entity\EntityId;
+use Stewart\Contracts\Exception\ActionCallError;
+use Stewart\Contracts\Exception\ActionCallException;
 use Stewart\Contracts\Exception\HistoryError;
 use Stewart\Contracts\Exception\HistoryException;
-use Stewart\Contracts\Exception\ServiceCallError;
-use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\History\Collection\HistoricalStateCollection;
-use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Model\ExceptionDetails;
 use Stewart\Runtime\Model\WorkerId;
@@ -40,8 +40,8 @@ final class PendingRequestsTest extends TestCase
 
     public function testAnswerReachesWaiter(): void
     {
-        $call = $this->pending->open(ServiceResponse::class, static fn(string $detail): ServiceCallException => ServiceCallException::unreachable('light', 'turn_on', $detail));
-        $response = new ServiceResponse('light', 'turn_on');
+        $call = $this->pending->open(ActionResponse::class, static fn(string $detail): ActionCallException => ActionCallException::unreachable('light', 'turn_on', $detail));
+        $response = new ActionResponse('light', 'turn_on');
 
         $this->pending->resolve($call->correlationId, $response);
 
@@ -65,28 +65,28 @@ final class PendingRequestsTest extends TestCase
 
     public function testUnknownFailureReasonDegradesToUnreachable(): void
     {
-        $call = $this->pending->open(ServiceResponse::class, static fn(string $detail): ServiceCallException => ServiceCallException::unreachable('light', 'turn_on', $detail));
+        $call = $this->pending->open(ActionResponse::class, static fn(string $detail): ActionCallException => ActionCallException::unreachable('light', 'turn_on', $detail));
 
-        $this->pending->rejectFromWire(new RequestFailed($call->correlationId, 'something odd', new ExceptionDetails(ServiceCallException::class, 'melted', null)));
+        $this->pending->rejectFromWire(new RequestFailed($call->correlationId, 'something odd', new ExceptionDetails(ActionCallException::class, 'melted', null)));
 
         $restored = $this->catchFailureOf($call);
-        self::assertInstanceOf(ServiceCallException::class, $restored);
-        self::assertSame(ServiceCallError::Unreachable, $restored->reason);
+        self::assertInstanceOf(ActionCallException::class, $restored);
+        self::assertSame(ActionCallError::Unreachable, $restored->reason);
         self::assertSame('something odd', $restored->getMessage());
     }
 
     public function testAnswerOfWrongTypeFailsAsUnreachable(): void
     {
-        $call = $this->pending->open(ServiceResponse::class, static fn(string $detail): ServiceCallException => ServiceCallException::unreachable('light', 'turn_on', $detail));
+        $call = $this->pending->open(ActionResponse::class, static fn(string $detail): ActionCallException => ActionCallException::unreachable('light', 'turn_on', $detail));
 
         $this->pending->resolve($call->correlationId, HistoricalStateCollection::fromList([]));
 
-        $this->assertThrowsReason(ServiceCallError::Unreachable, static fn() => $call->getFuture()->await());
+        $this->assertThrowsReason(ActionCallError::Unreachable, static fn() => $call->getFuture()->await());
     }
 
     public function testFailAllFailsEveryLiveWaiterWithItsOwnFailure(): void
     {
-        $call = $this->pending->open(ServiceResponse::class, static fn(string $detail): ServiceCallException => ServiceCallException::unreachable('light', 'turn_on', $detail));
+        $call = $this->pending->open(ActionResponse::class, static fn(string $detail): ActionCallException => ActionCallException::unreachable('light', 'turn_on', $detail));
         $query = $this->pending->open(HistoricalStateCollection::class, static fn(string $detail): HistoryException => HistoryException::unreachable(new EntityId('light.hall'), $detail));
         $callWaiter = async(static fn() => $call->getFuture()->await());
         $queryWaiter = async(static fn() => $query->getFuture()->await());
@@ -94,19 +94,19 @@ final class PendingRequestsTest extends TestCase
 
         self::assertSame(2, $this->pending->failAll('the broker is gone'));
 
-        $this->assertThrowsReason(ServiceCallError::Unreachable, static fn() => $callWaiter->await());
+        $this->assertThrowsReason(ActionCallError::Unreachable, static fn() => $callWaiter->await());
         $this->assertThrowsReason(HistoryError::Unreachable, static fn() => $queryWaiter->await());
     }
 
     public function testAnswerAfterFailAllIsIgnored(): void
     {
-        $call = $this->pending->open(ServiceResponse::class, static fn(string $detail): ServiceCallException => ServiceCallException::unreachable('light', 'turn_on', $detail));
+        $call = $this->pending->open(ActionResponse::class, static fn(string $detail): ActionCallException => ActionCallException::unreachable('light', 'turn_on', $detail));
         $this->pending->failAll('the broker is gone');
 
-        $this->pending->resolve($call->correlationId, new ServiceResponse('light', 'turn_on'));
+        $this->pending->resolve($call->correlationId, new ActionResponse('light', 'turn_on'));
 
         self::assertSame(0, $this->pending->failAll('again'));
-        $this->assertThrowsReason(ServiceCallError::Unreachable, static fn() => $call->getFuture()->await());
+        $this->assertThrowsReason(ActionCallError::Unreachable, static fn() => $call->getFuture()->await());
     }
 
     /**

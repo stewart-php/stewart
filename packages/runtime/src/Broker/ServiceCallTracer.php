@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Broker;
 
 use Psr\Log\LoggerInterface;
-use Stewart\Contracts\Exception\ServiceCallException;
+use Stewart\Contracts\Exception\ActionCallException;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Logging\LogOrigin;
@@ -48,7 +48,7 @@ final readonly class ServiceCallTracer
 
         $outcome = match (true) {
             $failure === null => ServiceCallOutcome::Succeeded,
-            $failure instanceof ServiceCallException => ServiceCallOutcome::failedWith($failure->reason),
+            $failure instanceof ActionCallException => ServiceCallOutcome::failedWith($failure->reason),
             default => ServiceCallOutcome::Unreachable,
         };
 

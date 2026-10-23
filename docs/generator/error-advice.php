@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 // What a user can do about a failure, keyed by reason enum and case; the errors reference shows it next to the message.
 return [
+    'ActionCallError::Rejected' => 'Try the same call under Developer tools → Actions in Home Assistant.',
+    'ActionCallError::Overloaded' => 'Call fewer actions at once, for example one call with several targets.',
     'BrokerError::NoWorkersStarted' => 'The log lines above name why each worker failed; `stewart doctor` checks the PHP setup.',
     'ConfigurationError::AdminTokenMissing' => 'Create one with `openssl rand -hex 16` and set it as `STEWART_HTTP__ADMIN__TOKEN`.',
     'ConfigurationError::ConfigFileMissing' => 'Fix the `--config` path; without the option, Stewart reads `stewart.yaml` in the project root, or the environment alone.',
@@ -33,8 +35,6 @@ return [
     'ScaffoldError::FileExists' => 'Choose another class name, or remove the existing file and its test first.',
     'ScaffoldError::IdTaken' => 'Pass another ID with `--id`, or rename the class.',
     'ScheduleError::SunLocationUnknown' => 'Set a location in Home Assistant under Settings → System → General, then restart Stewart.',
-    'ServiceCallError::Rejected' => 'Try the same call under Developer tools → Actions in Home Assistant.',
-    'ServiceCallError::Overloaded' => 'Call fewer services at once, for example one call with several targets.',
     'StoreError::NotConfigured' => 'Set `STEWART_PERSISTENCE__URL`.',
     'StoreError::TimedOut' => 'Check that Valkey is not overloaded; `docker compose logs valkey` shows its state.',
     'StoreError::TypeMismatch' => 'Read the key with the type it was written with, or delete it.',
