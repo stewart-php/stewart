@@ -1,6 +1,7 @@
 # Publishes the user and developer documentation to stewart-php.github.io/docs and /docs-dev on every release tag,
 # and the user documentation of main to /docs/next on every push to main that changes docs/.
-# Run it by hand to republish a tag, or another ref, after a docs-only fix.
+# Run it by hand to republish a tag, or another ref, after a docs-only fix; with archive set to an older major's last
+# tag, it publishes that release's user documentation to /docs/<major>.x/ instead.
 # Needs the split GitHub App installed on stewart-php/stewart-php.github.io with contents write.
 name: Docs
 
@@ -13,6 +14,10 @@ on:
     inputs:
       ref:
         description: Tag, branch or commit to publish; the latest release tag when empty
+        required: false
+        default: ''
+      archive:
+        description: An older major's last tag, such as v1.8.0, to publish under /docs/<major>.x/ with this branch's tooling
         required: false
         default: ''
 
@@ -41,6 +46,19 @@ jobs:
         run: |
           ref="${INPUT_REF:-}"
           target=release
+          if [ -n "${INPUT_ARCHIVE:-}" ]; then
+            git rev-parse --verify --quiet "$INPUT_ARCHIVE^{commit}" > /dev/null || { echo "::error::$INPUT_ARCHIVE is not a commit."; exit 1; }
+            # The old release's pages, built with this branch's tooling, which knows the archive base and banner.
+            rm -rf docs/user docs/examples
+            git checkout --quiet "$INPUT_ARCHIVE" -- docs/user docs/examples
+            major="${INPUT_ARCHIVE#v}"
+            {
+              echo "ref=$INPUT_ARCHIVE"
+              echo "target=archive"
+              echo "major=${major%%.*}"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF_TYPE" = branch ]; then
             ref="$GITHUB_REF_NAME"
             target=next
@@ -56,11 +74,17 @@ jobs:
           echo "target=$target" >> "$GITHUB_OUTPUT"
         env:
           INPUT_REF: ${{ inputs.ref }}
+          INPUT_ARCHIVE: ${{ inputs.archive }}
       - run: make docs-install
       - run: make docs-build
         if: steps.ref.outputs.target == 'release'
       - run: make docs-build-next
         if: steps.ref.outputs.target == 'next'
+      - run: make docs-build-archive MAJOR="$MAJOR" REF="$REF"
+        if: steps.ref.outputs.target == 'archive'
+        env:
+          MAJOR: ${{ steps.ref.outputs.major }}
+          REF: ${{ steps.ref.outputs.ref }}
       - id: token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
@@ -76,6 +100,9 @@ jobs:
           if [ "$TARGET" = next ]; then
             mkdir -p "$site/docs/next"
             rsync --archive --delete docs/site/dist/docs/next/ "$site/docs/next/"
+          elif [ "$TARGET" = archive ]; then
+            mkdir -p "$site/docs/$MAJOR.x"
+            rsync --archive --delete "docs/site/dist/docs/$MAJOR.x/" "$site/docs/$MAJOR.x/"
           else
             # Frozen major versions (/docs/1.x/) and the preview (/docs/next/) are published separately and kept.
             rsync --archive --delete --exclude '/[0-9]*.x/' --exclude '/next/' docs/site/dist/docs/ "$site/docs/"
@@ -94,6 +121,7 @@ jobs:
           TOKEN: ${{ steps.token.outputs.token }}
           REF: ${{ steps.ref.outputs.ref }}
           TARGET: ${{ steps.ref.outputs.target }}
+          MAJOR: ${{ steps.ref.outputs.major }}
           GIT_AUTHOR_NAME: stewart-split[bot]
           GIT_AUTHOR_EMAIL: stewart-split[bot]@users.noreply.github.com
           GIT_COMMITTER_NAME: stewart-split[bot]

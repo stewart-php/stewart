@@ -41,8 +41,8 @@ final readonly class UpgradingPage implements ReferencePage
             '4. Commit `composer.lock` and the changed files, and deploy as usual.',
             '5. If you use the Stewart integration in Home Assistant, update it to the same version.',
             '',
-            'Within a major version, such as 1.x, a new release does not break your apps. Notes appear here only when a',
-            'release asks you to do something.',
+            'Within a major version, such as 2.x, a new release does not break your apps. A new major lists everything it',
+            'asks you to change; the other notes appear only when a release asks you to do something.',
         ];
 
         if ($current !== []) {

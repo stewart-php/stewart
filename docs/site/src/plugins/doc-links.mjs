@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url';
 export const DOCS_ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 export const REPO_ROOT = path.resolve(DOCS_ROOT, '..');
 
-const REPO_BLOB = 'https://github.com/stewart-php/stewart/blob/main';
+// An archived version links to the files of the release it describes.
+const REPO_BLOB = `https://github.com/stewart-php/stewart/blob/${process.env.DOCS_SOURCE_REF || 'main'}`;
 const ABSOLUTE = /^([a-z][a-z0-9+.-]*:|\/\/|#|\/)/i;
 const MARKDOWN = /\.mdx?$/i;
 
