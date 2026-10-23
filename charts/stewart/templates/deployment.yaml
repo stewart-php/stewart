@@ -2,6 +2,9 @@
 {{- if not (has $mode (list "image" "git" "volume")) }}
 {{- fail (printf "code.mode is %q; expected image, git or volume" $mode) }}
 {{- end }}
+{{- if hasKey .Values.adminApi "podMonitor" }}
+{{- fail "adminApi.podMonitor was removed in 2.0; set metrics.enabled and metrics.podMonitor instead" }}
+{{- end }}
 {{- $homeAssistantToken := include "stewart.homeAssistantTokenSource" . -}}
 {{- $persistenceUrl := include "stewart.persistenceUrlSource" . -}}
 {{- $controlToken := include "stewart.controlTokenSource" . -}}

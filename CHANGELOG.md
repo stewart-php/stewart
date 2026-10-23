@@ -15,6 +15,10 @@ release could break; a release's "Upgrading" section says what to change.
   `getActionName()`
 - Stewart no longer calls a public `dispose()` on an app that does not implement `Disposable`, deprecated since 1.5,
   and `stewart check` no longer names such apps
+- `GET /metrics` on the admin port: only the metrics port (`http.metrics.listen`) serves metrics, and the admin port
+  answers 404 with a pointer to it
+- Chart: `adminApi.podMonitor`, deprecated since 1.8; a release that still sets it fails to render and names
+  `metrics.podMonitor`
 
 ### Upgrading
 
@@ -30,6 +34,10 @@ release could break; a release's "Upgrading" section says what to change.
    ```
 2. An app whose `dispose()` does something implements `Stewart\Contracts\Disposable`, or it no longer runs. Before
    upgrading, `stewart check` on 1.8 names every app this affects.
+3. If Prometheus scrapes the admin port, turn on the metrics port and scrape that: `http.metrics.listen`
+   (`STEWART_HTTP__METRICS__LISTEN`, port 9464 by convention) with Docker, or `metrics.enabled` and
+   `metrics.podMonitor.enabled` instead of `adminApi.podMonitor` with the chart. If Prometheus was the only reason for
+   `adminApi.host: 0.0.0.0`, set it back to `127.0.0.1`.
 
 ## [1.8.0] - 2026-10-23
 

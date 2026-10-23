@@ -87,8 +87,7 @@
                 "host": {"type": "string", "minLength": 1},
                 "port": {"type": "integer", "minimum": 1, "maximum": 65535},
                 "existingSecret": {"type": "string"},
-                "existingSecretKey": {"type": "string", "minLength": 1},
-                "podMonitor": {"$ref": "#/definitions/podMonitor"}
+                "existingSecretKey": {"type": "string", "minLength": 1}
             }
         },
         "metrics": {

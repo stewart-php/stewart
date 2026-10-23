@@ -65,7 +65,6 @@ classes are rewritten inside the image.
 | `adminApi.enabled` | `false` | Start the HTTP admin API (`http.admin`) that lists, pauses and resumes apps and restarts workers |
 | `adminApi.host`, `.port` | `127.0.0.1`, `8081` | Where it binds; loopback is reachable through `kubectl port-forward`, `0.0.0.0` from other pods through the Service `<release>-stewart` |
 | `adminApi.existingSecret`, `.existingSecretKey` | `""`, `token` | Secret with the admin bearer token; name one when rendering with `helm template`, or the generated token changes on every render |
-| `adminApi.podMonitor.*` | | Deprecated, removed in 2.0: the same as `metrics.podMonitor.*`, but scraping the admin port with the admin token; needs `adminApi.host: 0.0.0.0` |
 | `metrics.enabled` | `false` | Start the metrics port (`http.metrics`), which serves only `/metrics`; needs `stewart-php/runtime` 1.8 |
 | `metrics.host`, `.port` | `0.0.0.0`, `9464` | Where it binds; other pods reach it through the Service `<release>-stewart` |
 | `metrics.existingSecret`, `.existingSecretKey` | `""`, `token` | Secret with the bearer token Prometheus presents; generated like the control token when empty |
@@ -113,14 +112,13 @@ TOKEN=$(kubectl get secret home-stewart -o jsonpath='{.data.admin-token}' | base
 curl -H "Authorization: Bearer $TOKEN" localhost:8081/api/apps
 curl -X POST -H "Authorization: Bearer $TOKEN" localhost:8081/api/apps/porch/pause   # resume, reset
 curl -X POST -H "Authorization: Bearer $TOKEN" localhost:8081/api/workers/0/restart
-curl -H "Authorization: Bearer $TOKEN" localhost:8081/metrics                        # Prometheus text format
 ```
 
 Binding `adminApi.host: 0.0.0.0` makes the admin API reachable from other pods, behind its token, at
 `http://<release>-stewart.<namespace>.svc:8081` through the Service the chart then creates.
 
-For Prometheus, turn on the metrics port instead, which serves only `/metrics` and needs a token of its own, so the
-admin API can stay on loopback:
+For Prometheus, turn on the metrics port, the only one that serves `/metrics`. It has a token of its own, so the admin
+API can stay on loopback:
 
 ```yaml
 metrics:
@@ -132,8 +130,7 @@ metrics:
 ```
 
 The `PodMonitor` reads the token from `secret/<release>-stewart`; another Prometheus reads it from there too, or from
-`metrics.existingSecret`. `adminApi.podMonitor` still scrapes the admin port with the admin token, but is deprecated
-and cannot be on together with `metrics.podMonitor`; the chart refuses to render a PodMonitor against a loopback host.
+`metrics.existingSecret`. The chart refuses to render a PodMonitor against a loopback host.
 
 `networkPolicy.enabled: true` admits only the listed peers to the metrics and admin ports:
 

@@ -220,8 +220,8 @@ rest_command:
 
 ## Metrics
 
-A third HTTP port serves only `GET /metrics`, so Prometheus needs neither the admin API nor its token. It is off by
-default:
+A third HTTP port serves `GET /metrics`, so Prometheus needs neither the admin API nor its token. It is the only port
+that serves metrics, and it is off by default:
 
 ```yaml
 http:
@@ -231,8 +231,8 @@ http:
 
 Without a token, anyone who reaches the port reads the metrics, as with most exporters; Stewart logs that at start.
 Set `STEWART_HTTP__METRICS__TOKEN` to require a bearer token, which can only read metrics. A missing or wrong token is
-401, any other path 404, and anything but `GET` or `HEAD` 405. `GET /metrics` on the admin port still answers too,
-under the admin token. Each HTTP port needs a port of its own; the daemon refuses to start when two share one.
+401, any other path 404, and anything but `GET` or `HEAD` 405. Each HTTP port needs a port of its own; the daemon
+refuses to start when two share one.
 
 The answer is the Prometheus text format (every series is in the
 [metrics reference](../reference/metrics.md)), built from

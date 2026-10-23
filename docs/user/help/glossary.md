@@ -8,7 +8,7 @@ sidebar:
 | Term | Meaning |
 |---|---|
 | **Action** | What Home Assistant calls with `callAction()`, such as `light.turn_on`; older releases called it a service. Also an [exposed action](../guides/exposed-entities.md#actions): an action your app answers. |
-| **Admin API** | An optional HTTP port to list, pause and resume apps, and read [metrics](../reference/metrics.md). |
+| **Admin API** | An optional HTTP port to list, pause and resume apps; [metrics](../reference/metrics.md) have a port of their own. |
 | **App** | One automation: a class in `apps/` with `#[Automation]` that implements `App`. |
 | **App ID** | The name in `#[Automation(id: '…')]`. It names the app in logs, settings and stored data. |
 | **Broker** | Stewart's main process. It holds the connection to Home Assistant and passes events to the workers. |

@@ -37,11 +37,11 @@ final readonly class MetricsPage implements ReferencePage
 
         return new MarkdownPage(
             'Metrics reference',
-            'Every Prometheus metric Stewart serves on its metrics and admin ports.',
+            'Every Prometheus metric Stewart serves on its metrics port.',
             4,
             implode("\n", [
                 'Stewart serves these metrics at `GET /metrics` in the Prometheus text format, on the metrics port',
-                '(`http.metrics.listen`, with an optional token of its own) and on the admin port under the admin token.',
+                '(`http.metrics.listen`, with an optional token of its own).',
                 '[Status and control](../guides/status.md#metrics) explains how to turn the port on and scrape it.',
                 '',
                 MarkdownTable::formatTable(['Metric', 'Type', 'Labels', 'Meaning'], $rows),

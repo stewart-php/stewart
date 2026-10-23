@@ -64,13 +64,6 @@ adminApi:
   port: 8081
   existingSecret: ""
   existingSecretKey: token
-  # Deprecated, removed in 2.0: use metrics.podMonitor, which needs no admin token. A Prometheus Operator PodMonitor
-  # scraping /metrics with the admin token; needs host 0.0.0.0.
-  podMonitor:
-    enabled: false
-    interval: ""
-    scrapeTimeout: ""
-    labels: {}
 
 # The metrics port (http.metrics) serves only /metrics, so Prometheus needs no admin token. Its token is generated like
 # the control token. Needs stewart-php/runtime 1.8 or later in the project's composer.lock.

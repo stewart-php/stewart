@@ -15,7 +15,7 @@ use Throwable;
 
 final readonly class MetricsRequestHandler implements RequestHandler
 {
-    public const array RESPONSE_HEADERS = ['content-type' => PrometheusTextEncoder::CONTENT_TYPE, 'cache-control' => 'no-store'];
+    private const array RESPONSE_HEADERS = ['content-type' => PrometheusTextEncoder::CONTENT_TYPE, 'cache-control' => 'no-store'];
 
     private const string METRICS_PATH = '/metrics';
 
