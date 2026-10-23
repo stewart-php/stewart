@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Codegen\Service;
+namespace Stewart\Codegen\Action;
 
 use Stewart\Codegen\Php\PhpType;
 
@@ -10,7 +10,7 @@ final readonly class FieldModel
 {
     public function __construct(
         public string $parameter,
-        public ServiceField $field,
+        public ActionField $field,
     ) {}
 
     public function type(): PhpType

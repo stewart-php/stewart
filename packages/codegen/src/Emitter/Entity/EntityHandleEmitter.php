@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Stewart\Codegen\Emitter\Entity;
 
+use Stewart\Codegen\Action\ActionModel;
+use Stewart\Codegen\Emitter\Action\ActionMethodEmitter;
 use Stewart\Codegen\Emitter\DomainFileEmitter;
 use Stewart\Codegen\Emitter\EmitContext;
-use Stewart\Codegen\Emitter\Service\ServiceMethodEmitter;
 use Stewart\Codegen\Model\DomainModel;
 use Stewart\Codegen\Output\GeneratedFile;
 use Stewart\Codegen\Php\MemberScope;
 use Stewart\Codegen\Php\ReservesMemberNames;
-use Stewart\Codegen\Service\ServiceModel;
 use Stewart\Contracts\Action\ActionResponse;
 use Stewart\Contracts\Action\ActionTarget;
 use Stewart\Contracts\Entity\Entity;
@@ -34,7 +34,7 @@ final readonly class EntityHandleEmitter implements DomainFileEmitter, ReservesM
 
     private const string ENTITY_IDS_CONSTANT = 'GENERATED_ENTITY_IDS';
 
-    public function __construct(private ServiceMethodEmitter $services) {}
+    public function __construct(private ActionMethodEmitter $actionMethods) {}
 
     public function supportsDomain(DomainModel $domain): bool
     {
@@ -54,11 +54,11 @@ final readonly class EntityHandleEmitter implements DomainFileEmitter, ReservesM
             $context->importClass($namespace, $import, $declared);
         }
 
-        if (array_any($domain->handleServices, static fn(ServiceModel $service): bool => $service->definition->returnsResponse)) {
+        if (array_any($domain->handleActions, static fn(ActionModel $action): bool => $action->definition->returnsResponse)) {
             $context->importClass($namespace, ActionResponse::class, $declared);
         }
 
-        if (array_any($domain->handleServices, static fn(ServiceModel $service): bool => !$service->definition->returnsResponse)) {
+        if (array_any($domain->handleActions, static fn(ActionModel $action): bool => !$action->definition->returnsResponse)) {
             $context->importClass($namespace, EventContext::class, $declared);
         }
 
@@ -134,8 +134,8 @@ final readonly class EntityHandleEmitter implements DomainFileEmitter, ReservesM
             ->setReturnType(ActionTarget::class)
             ->setBody('return $this->entity->toActionTarget();');
 
-        foreach ($domain->handleServices as $service) {
-            $this->services->addHandleMethod($class, $service);
+        foreach ($domain->handleActions as $action) {
+            $this->actionMethods->addHandleMethod($class, $action);
         }
 
         return $context->printFile($namespace, $declared);

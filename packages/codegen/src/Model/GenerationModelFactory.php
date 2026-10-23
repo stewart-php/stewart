@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace Stewart\Codegen\Model;
 
+use Stewart\Codegen\Action\ActionCatalog;
+use Stewart\Codegen\Action\ActionCatalogParser;
+use Stewart\Codegen\Action\ActionDefinition;
+use Stewart\Codegen\Action\ActionModel;
+use Stewart\Codegen\Action\Collection\ActionDefinitionCollection;
+use Stewart\Codegen\Action\FieldModel;
 use Stewart\Codegen\Attribute\AttributeKind;
 use Stewart\Codegen\Attribute\AttributeKindInference;
 use Stewart\Codegen\Attribute\AttributeModel;
@@ -16,12 +22,6 @@ use Stewart\Codegen\Model\Collection\DomainModelCollection;
 use Stewart\Codegen\Php\Identifier;
 use Stewart\Codegen\Php\MemberReservations;
 use Stewart\Codegen\Php\MemberScope;
-use Stewart\Codegen\Service\Collection\ServiceDefinitionCollection;
-use Stewart\Codegen\Service\FieldModel;
-use Stewart\Codegen\Service\ServiceCatalog;
-use Stewart\Codegen\Service\ServiceCatalogParser;
-use Stewart\Codegen\Service\ServiceDefinition;
-use Stewart\Codegen\Service\ServiceModel;
 use Stewart\Codegen\Snapshot\Snapshot;
 use Stewart\Contracts\Registry\Area;
 use Stewart\Contracts\Registry\AreaId;
@@ -41,7 +41,7 @@ final readonly class GenerationModelFactory
         private AttributeKindInference $attributeKinds,
         private EntitySelector $entitySelector,
         private AttributeSelector $attributeSelector,
-        private ServiceCatalogParser $serviceCatalogParser,
+        private ActionCatalogParser $actionCatalogParser,
         private MemberReservations $memberReservations,
         private DomainCatalog $domainCatalog,
     ) {}
@@ -50,7 +50,7 @@ final readonly class GenerationModelFactory
     public function buildModelFromSnapshot(Snapshot $snapshot, GenerationOptions $options): GenerationModel
     {
         $selection = $this->entitySelector->selectEntities($snapshot, $options->inclusionRules);
-        $catalog = $this->serviceCatalogParser->parseServicesResponse($snapshot->services);
+        $catalog = $this->actionCatalogParser->parseServicesResponse($snapshot->services);
         $byDomain = $selection->generated->groupByDomain();
 
         $accessors = $this->memberReservations->createAllocatorFor(MemberScope::RootClasses);
@@ -70,8 +70,8 @@ final readonly class GenerationModelFactory
                 traits: $this->domainCatalog->getTraitsForDomain($domain),
                 entityIds: $states->sortedByEntityId()->listEntityIds(),
                 attributes: $this->buildAttributeModels($attributes->typed),
-                handleServices: $this->buildServiceModels($catalog->forEntityHandle($domain), MemberScope::EntityHandle),
-                services: $this->buildServiceModels($catalog->forDomain($domain), MemberScope::DomainServices),
+                handleActions: $this->buildActionModels($catalog->forEntityHandle($domain), MemberScope::EntityHandle),
+                actions: $this->buildActionModels($catalog->forDomain($domain), MemberScope::DomainServices),
             );
         }
 
@@ -92,7 +92,7 @@ final readonly class GenerationModelFactory
     }
 
     /** @return list<string> */
-    private function sortedDomainNames(EntityStateCollection $states, ServiceCatalog $catalog): array
+    private function sortedDomainNames(EntityStateCollection $states, ActionCatalog $catalog): array
     {
         $domains = array_values(array_unique([...$states->listDomains(), ...$catalog->listDomains()]));
         sort($domains);
@@ -117,24 +117,24 @@ final readonly class GenerationModelFactory
         return $attributes;
     }
 
-    /** @return list<ServiceModel> */
-    private function buildServiceModels(ServiceDefinitionCollection $definitions, MemberScope $methodScope): array
+    /** @return list<ActionModel> */
+    private function buildActionModels(ActionDefinitionCollection $definitions, MemberScope $methodScope): array
     {
         $names = $this->memberReservations->createAllocatorFor($methodScope);
-        $services = [];
+        $actions = [];
 
         foreach ($definitions as $definition) {
-            $services[] = new ServiceModel(
+            $actions[] = new ActionModel(
                 $names->claim(Identifier::convertToCamelCase($definition->name)),
                 $definition,
                 $this->buildFieldModels($definition, $this->selectParameterScope($methodScope, $definition)),
             );
         }
 
-        return $services;
+        return $actions;
     }
 
-    private function selectParameterScope(MemberScope $methodScope, ServiceDefinition $definition): MemberScope
+    private function selectParameterScope(MemberScope $methodScope, ActionDefinition $definition): MemberScope
     {
         return $methodScope === MemberScope::DomainServices && $definition->target->isTargetable
             ? MemberScope::TargetedParameters
@@ -142,7 +142,7 @@ final readonly class GenerationModelFactory
     }
 
     /** @return list<FieldModel> */
-    private function buildFieldModels(ServiceDefinition $definition, MemberScope $parameterScope): array
+    private function buildFieldModels(ActionDefinition $definition, MemberScope $parameterScope): array
     {
         $names = $this->memberReservations->createAllocatorFor($parameterScope);
         $models = [];

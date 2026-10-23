@@ -15,9 +15,9 @@ final readonly class DomainModelCollection extends ListCollection
         return $this->filter(static fn(DomainModel $domain): bool => $domain->hasEntities());
     }
 
-    public function havingServices(): self
+    public function havingActions(): self
     {
-        return $this->filter(static fn(DomainModel $domain): bool => $domain->hasServices());
+        return $this->filter(static fn(DomainModel $domain): bool => $domain->hasActions());
     }
 
     public function countAttributes(): int

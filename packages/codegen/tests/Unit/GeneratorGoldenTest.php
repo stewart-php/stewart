@@ -9,6 +9,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Random\Engine\Mt19937;
 use Random\Randomizer;
+use Stewart\Codegen\Emitter\Action\ActionMethodEmitter;
+use Stewart\Codegen\Emitter\Action\DomainServicesEmitter;
 use Stewart\Codegen\Emitter\EmitContext;
 use Stewart\Codegen\Emitter\EntitiesRootEmitter;
 use Stewart\Codegen\Emitter\Entity\DomainEntitiesEmitter;
@@ -18,8 +20,6 @@ use Stewart\Codegen\Emitter\GeneratedCodePrinter;
 use Stewart\Codegen\Emitter\ManifestEmitter;
 use Stewart\Codegen\Emitter\PhpStormMetaEmitter;
 use Stewart\Codegen\Emitter\RootEmitter;
-use Stewart\Codegen\Emitter\Service\DomainServicesEmitter;
-use Stewart\Codegen\Emitter\Service\ServiceMethodEmitter;
 use Stewart\Codegen\Emitter\ServicesRootEmitter;
 use Stewart\Codegen\Emitter\SourceTree;
 use Stewart\Codegen\Generator;
@@ -37,7 +37,7 @@ use Stewart\Testing\Filesystem\TempDirectory;
 #[CoversClass(DomainServicesEmitter::class)]
 #[CoversClass(EntitiesRootEmitter::class)]
 #[CoversClass(ServicesRootEmitter::class)]
-#[CoversClass(ServiceMethodEmitter::class)]
+#[CoversClass(ActionMethodEmitter::class)]
 #[CoversClass(ManifestEmitter::class)]
 #[CoversClass(PhpStormMetaEmitter::class)]
 #[CoversClass(GeneratedCodePrinter::class)]

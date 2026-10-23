@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Codegen\Service;
+namespace Stewart\Codegen\Action;
 
 use Stewart\Codegen\Snapshot\RawMap;
 
-final readonly class ServiceTargetSpec
+final readonly class ActionTargetSpec
 {
     /** @param list<string> $entityDomains */
     private function __construct(
@@ -20,13 +20,13 @@ final readonly class ServiceTargetSpec
         return new self(false, false, []);
     }
 
-    public static function fromRaw(RawMap $service): self
+    public static function fromRaw(RawMap $action): self
     {
-        if (!$service->hasKey('target')) {
+        if (!$action->hasKey('target')) {
             return self::none();
         }
 
-        $target = $service->readMap('target');
+        $target = $action->readMap('target');
 
         if (!$target->hasKey('entity')) {
             return new self(true, false, []);

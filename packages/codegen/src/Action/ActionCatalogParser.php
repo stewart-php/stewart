@@ -2,51 +2,51 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Codegen\Service;
+namespace Stewart\Codegen\Action;
 
-use Stewart\Codegen\Service\Collection\ServiceDefinitionCollection;
+use Stewart\Codegen\Action\Collection\ActionDefinitionCollection;
 use Stewart\Codegen\Snapshot\RawMap;
 
-final readonly class ServiceCatalogParser
+final readonly class ActionCatalogParser
 {
     /** @param array<string, mixed> $raw */
-    public function parseServicesResponse(array $raw): ServiceCatalog
+    public function parseServicesResponse(array $raw): ActionCatalog
     {
         $byDomain = [];
 
         $response = RawMap::fromValue($raw);
 
         foreach ($response->listKeys() as $domain) {
-            $services = $response->readMap($domain);
+            $actions = $response->readMap($domain);
             $definitions = [];
 
-            foreach ($services->listKeys() as $name) {
-                $definitions[$name] = $this->parseDefinition($domain, $name, $services->readMap($name));
+            foreach ($actions->listKeys() as $name) {
+                $definitions[$name] = $this->parseDefinition($domain, $name, $actions->readMap($name));
             }
 
             ksort($definitions);
-            $byDomain[$domain] = ServiceDefinitionCollection::fromList($definitions);
+            $byDomain[$domain] = ActionDefinitionCollection::fromList($definitions);
         }
 
         ksort($byDomain);
 
-        return new ServiceCatalog($byDomain);
+        return new ActionCatalog($byDomain);
     }
 
-    private function parseDefinition(string $domain, string $name, RawMap $service): ServiceDefinition
+    private function parseDefinition(string $domain, string $name, RawMap $action): ActionDefinition
     {
-        return new ServiceDefinition(
+        return new ActionDefinition(
             domain: $domain,
             name: $name,
-            title: $service->readString('name'),
-            description: $service->readString('description'),
-            fields: $this->sortRequiredFirstThenByName($this->flattenFields($service->readMap('fields'))),
-            target: ServiceTargetSpec::fromRaw($service),
-            returnsResponse: $service->hasKey('response'),
+            title: $action->readString('name'),
+            description: $action->readString('description'),
+            fields: $this->sortRequiredFirstThenByName($this->flattenFields($action->readMap('fields'))),
+            target: ActionTargetSpec::fromRaw($action),
+            returnsResponse: $action->hasKey('response'),
         );
     }
 
-    /** @return list<ServiceField> */
+    /** @return list<ActionField> */
     private function flattenFields(RawMap $fields): array
     {
         $flat = [];
@@ -66,12 +66,12 @@ final readonly class ServiceCatalogParser
         return $flat;
     }
 
-    private function parseField(string $name, RawMap $field): ServiceField
+    private function parseField(string $name, RawMap $field): ActionField
     {
-        $selector = new ServiceSelector($field->readMap('selector'));
+        $selector = new ActionSelector($field->readMap('selector'));
         $configuration = $selector->configuration;
 
-        return new ServiceField(
+        return new ActionField(
             name: $name,
             type: $selector->resolvePhpType(),
             required: $field->readBool('required'),
@@ -84,12 +84,12 @@ final readonly class ServiceCatalogParser
     }
 
     /**
-     * @param list<ServiceField> $fields
-     * @return list<ServiceField>
+     * @param list<ActionField> $fields
+     * @return list<ActionField>
      */
     private function sortRequiredFirstThenByName(array $fields): array
     {
-        usort($fields, static fn(ServiceField $a, ServiceField $b): int => [!$a->required, $a->name] <=> [!$b->required, $b->name]);
+        usort($fields, static fn(ActionField $a, ActionField $b): int => [!$a->required, $a->name] <=> [!$b->required, $b->name]);
 
         return $fields;
     }

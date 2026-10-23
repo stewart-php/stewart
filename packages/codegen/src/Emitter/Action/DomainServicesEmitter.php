@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Codegen\Emitter\Service;
+namespace Stewart\Codegen\Emitter\Action;
 
+use Stewart\Codegen\Action\ActionModel;
 use Stewart\Codegen\Emitter\DomainFileEmitter;
 use Stewart\Codegen\Emitter\EmitContext;
 use Stewart\Codegen\Model\DomainModel;
 use Stewart\Codegen\Output\GeneratedFile;
 use Stewart\Codegen\Php\MemberScope;
 use Stewart\Codegen\Php\ReservesMemberNames;
-use Stewart\Codegen\Service\ServiceModel;
 use Stewart\Contracts\Action\ActionResponse;
 use Stewart\Contracts\Action\ActionTargetSource;
 use Stewart\Contracts\HaContext;
@@ -20,11 +20,11 @@ final readonly class DomainServicesEmitter implements DomainFileEmitter, Reserve
 {
     private const array RESERVED_MEMBER_NAMES = ['ha'];
 
-    public function __construct(private ServiceMethodEmitter $methods) {}
+    public function __construct(private ActionMethodEmitter $methods) {}
 
     public function supportsDomain(DomainModel $domain): bool
     {
-        return $domain->hasServices();
+        return $domain->hasActions();
     }
 
     public function emitFile(DomainModel $domain, EmitContext $context): GeneratedFile
@@ -36,7 +36,7 @@ final readonly class DomainServicesEmitter implements DomainFileEmitter, Reserve
             $context->importClass($namespace, ActionResponse::class, $domain->getServicesClass());
         }
 
-        if (array_any($domain->services, static fn(ServiceModel $service): bool => !$service->definition->returnsResponse)) {
+        if (array_any($domain->actions, static fn(ActionModel $action): bool => !$action->definition->returnsResponse)) {
             $context->importClass($namespace, EventContext::class, $domain->getServicesClass());
         }
 
@@ -54,8 +54,8 @@ final readonly class DomainServicesEmitter implements DomainFileEmitter, Reserve
             ->setType(HaContext::class)
             ->setPrivate();
 
-        foreach ($domain->services as $service) {
-            $this->methods->addDomainServiceMethod($class, $service);
+        foreach ($domain->actions as $action) {
+            $this->methods->addDomainActionMethod($class, $action);
         }
 
         return $context->printFile($namespace, $domain->getServicesClass());
@@ -63,8 +63,8 @@ final readonly class DomainServicesEmitter implements DomainFileEmitter, Reserve
 
     private function anyTargetable(DomainModel $domain): bool
     {
-        foreach ($domain->services as $service) {
-            if ($service->definition->target->isTargetable) {
+        foreach ($domain->actions as $action) {
+            if ($action->definition->target->isTargetable) {
                 return true;
             }
         }
@@ -74,8 +74,8 @@ final readonly class DomainServicesEmitter implements DomainFileEmitter, Reserve
 
     private function anyReturnsResponse(DomainModel $domain): bool
     {
-        foreach ($domain->services as $service) {
-            if ($service->definition->returnsResponse) {
+        foreach ($domain->actions as $action) {
+            if ($action->definition->returnsResponse) {
                 return true;
             }
         }

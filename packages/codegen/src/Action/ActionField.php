@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Codegen\Service;
+namespace Stewart\Codegen\Action;
 
 use Stewart\Codegen\Php\PhpType;
 
-final readonly class ServiceField
+final readonly class ActionField
 {
     public function __construct(
         public string $name,

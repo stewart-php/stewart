@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Codegen\Service;
+namespace Stewart\Codegen\Action;
 
 use Stewart\Codegen\Php\PhpType;
 use Stewart\Codegen\Snapshot\RawMap;
 
-final readonly class ServiceSelector
+final readonly class ActionSelector
 {
     private const string ANY_ARRAY = 'array<array-key, mixed>';
 

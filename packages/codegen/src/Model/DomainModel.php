@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Stewart\Codegen\Model;
 
+use Stewart\Codegen\Action\ActionModel;
 use Stewart\Codegen\Attribute\AttributeModel;
-use Stewart\Codegen\Service\ServiceModel;
 use Stewart\Contracts\Entity\Collection\EntityIdCollection;
 
 final readonly class DomainModel
 {
     /**
      * @param list<AttributeModel> $attributes
-     * @param list<ServiceModel> $handleServices
-     * @param list<ServiceModel> $services
+     * @param list<ActionModel> $handleActions
+     * @param list<ActionModel> $actions
      */
     public function __construct(
         public string $domain,
@@ -22,8 +22,8 @@ final readonly class DomainModel
         public DomainTraits $traits,
         public EntityIdCollection $entityIds,
         public array $attributes,
-        public array $handleServices,
-        public array $services,
+        public array $handleActions,
+        public array $actions,
     ) {}
 
     public function getEntitiesClass(): string
@@ -61,8 +61,8 @@ final readonly class DomainModel
         return !$this->entityIds->isEmpty();
     }
 
-    public function hasServices(): bool
+    public function hasActions(): bool
     {
-        return $this->services !== [];
+        return $this->actions !== [];
     }
 }
