@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Stewart\Testing\Tests\Unit\HaContext;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\Connection\ConnectionLost;
 use Stewart\Contracts\Entity\EntityId;
@@ -351,5 +352,56 @@ final class RecordingHaContextTest extends TestCase
         $ha->pushState('light.hall', 'off');
 
         self::assertSame(['initial:light.hall', 'live:light.hall'], $received);
+    }
+
+
+    #[IgnoreDeprecations]
+    public function testDeprecatedCallServiceIsRecordedAsTheAction(): void
+    {
+        $ha = new RecordingHaContext();
+        $this->expectUserDeprecationMessageMatches('/RecordingHaContext::callService\(\) is deprecated since 1\.8, use callAction/');
+
+        $ha->callService('light', 'turn_on');
+
+        self::assertSame('light.turn_on', $ha->getLastCall()->getActionName());
+    }
+
+    #[IgnoreDeprecations]
+    public function testDeprecatedCallServiceForResponseAnswersTheStub(): void
+    {
+        $ha = new RecordingHaContext()->stubActionAnswer('weather.get_forecasts', ['forecast' => []]);
+        $this->expectUserDeprecationMessageMatches('/RecordingHaContext::callServiceForResponse\(\) is deprecated since 1\.8, use callActionForResponse/');
+
+        self::assertSame(['forecast' => []], $ha->callServiceForResponse('weather', 'get_forecasts')->response);
+    }
+
+    #[IgnoreDeprecations]
+    public function testDeprecatedStubServiceAnswerStubsTheAction(): void
+    {
+        $this->expectUserDeprecationMessageMatches('/RecordingHaContext::stubServiceAnswer\(\) is deprecated since 1\.8, use stubActionAnswer/');
+
+        $ha = new RecordingHaContext()->stubServiceAnswer('weather', 'get_forecasts', ['forecast' => []]);
+
+        self::assertSame(['forecast' => []], $ha->callActionForResponse('weather.get_forecasts')->response);
+    }
+
+    #[IgnoreDeprecations]
+    public function testDeprecatedStubServiceFailureStubsTheAction(): void
+    {
+        $this->expectUserDeprecationMessageMatches('/RecordingHaContext::stubServiceFailure\(\) is deprecated since 1\.8, use stubActionFailure/');
+
+        $ha = new RecordingHaContext()->stubServiceFailure('lock', 'lock', ServiceCallException::rejected('lock', 'lock', 'jammed'));
+
+        $this->assertThrowsReason(ServiceCallError::Rejected, static fn() => $ha->callAction('lock.lock'));
+    }
+
+    #[IgnoreDeprecations]
+    public function testDeprecatedGetServiceNameIsTheActionName(): void
+    {
+        $ha = new RecordingHaContext();
+        $ha->callAction('light.turn_on');
+        $this->expectUserDeprecationMessageMatches('/RecordedServiceCall::getServiceName\(\) is deprecated since 1\.8, use getActionName/');
+
+        self::assertSame('light.turn_on', $ha->getLastCall()->getServiceName());
     }
 }

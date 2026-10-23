@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Runtime\Worker;
 
+use Deprecated;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Entity\Entity;
 use Stewart\Contracts\Entity\EntityId;
@@ -136,11 +137,13 @@ final readonly class WorkerHaContext implements HaContext
         return $this->serviceCalls->callServiceForResponse($this->resourceScope, $name->domain, $name->action, ServiceFields::fromFieldsDroppingNulls($data), $target?->toServiceTarget());
     }
 
+    #[Deprecated(message: "use callAction('domain.action'); it is removed in 2.0", since: '1.8')]
     public function callService(string $domain, string $service, array $data = [], ?ServiceTargetSource $target = null): EventContext
     {
         return $this->serviceCalls->callService($this->resourceScope, $domain, $service, ServiceFields::fromFieldsDroppingNulls($data), $target?->toServiceTarget());
     }
 
+    #[Deprecated(message: "use callActionForResponse('domain.action'); it is removed in 2.0", since: '1.8')]
     public function callServiceForResponse(string $domain, string $service, array $data = [], ?ServiceTargetSource $target = null): ServiceResponse
     {
         return $this->serviceCalls->callServiceForResponse($this->resourceScope, $domain, $service, ServiceFields::fromFieldsDroppingNulls($data), $target?->toServiceTarget());

@@ -75,6 +75,18 @@ generates are declared through `ReservesMemberNames`.
 - Packages require each other as `self.version`: everything is released together.
 - `contracts` depends on nothing of Stewart's. Apps import only `contracts` (and `testing` in tests).
 
+## Deprecations
+
+A public method that a minor replaces stays until the next major:
+
+- `#[Deprecated(message: 'use …; it is removed in 2.0', since: 'X.Y')]` goes on the interface method and on every
+  implementation, because PHP raises the deprecation only from the method that runs.
+- The deprecated method delegates to its replacement, and no Stewart code calls a deprecated method, so one old call
+  raises one deprecation.
+- Each deprecated method keeps one test, with `#[IgnoreDeprecations]` and `expectUserDeprecationMessageMatches()`;
+  `phpstan.neon.dist` allows `method.deprecated` in those test files only.
+- The release's CHANGELOG lists it under Deprecated, and its Upgrading section says how to move off it.
+
 ## Tests
 
 See [Testing](testing.md).

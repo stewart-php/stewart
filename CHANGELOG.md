@@ -41,6 +41,25 @@ release could break; a release's "Upgrading" section says what to change.
 ### Deprecated
 
 - Chart: `adminApi.podMonitor`, which scrapes with the admin token; use `metrics.podMonitor`. It is removed in 2.0
+- `HaContext::callService()` and `callServiceForResponse()`, and the same on `Entity`: use `callAction()` and
+  `callActionForResponse()`. In tests, `stubServiceAnswer()`, `stubServiceFailure()` and
+  `RecordedServiceCall::getServiceName()`: use `stubActionAnswer()`, `stubActionFailure()` and `getActionName()`. They
+  keep working, each call prints a PHP deprecation line, and 2.0 removes them
+
+### Upgrading
+
+1. Run `make generate`. The generated classes of 1.7 and earlier call `callService()`, so until they are regenerated
+   every generated call prints a deprecation line in the log.
+2. Move your apps and tests to the action names. This rewrites the calls whose names are written out; `make stan`
+   then points at the rest, such as names held in a variable:
+
+   ```bash
+   grep -rlE 'callService|stubService|getServiceName' apps tests | xargs sed -i -E \
+     -e "s/->callService(ForResponse)?\('([a-z0-9_]+)', *'([a-z0-9_]+)'/->callAction\1('\2.\3'/g" \
+     -e "s/->stubService(Answer|Failure)\('([a-z0-9_]+)', *'([a-z0-9_]+)'/->stubAction\1('\2.\3'/g" \
+     -e 's/->callService(ForResponse)?\(/->callAction\1(/g' \
+     -e 's/->getServiceName\(\)/->getActionName()/g'
+   ```
 
 ## [1.7.0] - 2026-10-22
 

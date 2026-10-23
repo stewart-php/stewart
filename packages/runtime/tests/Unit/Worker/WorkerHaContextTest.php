@@ -6,6 +6,7 @@ namespace Stewart\Runtime\Tests\Unit\Worker;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Stewart\Contracts\App\AppId;
@@ -224,5 +225,26 @@ final class WorkerHaContextTest extends TestCase
             scope: ResourceScope::forApp(new AppId('demo')),
             connection: $connection,
         );
+    }
+
+
+    #[IgnoreDeprecations]
+    public function testDeprecatedCallServiceStillCalls(): void
+    {
+        $connection = new ConnectionStatus();
+        $connection->markLost();
+        $this->expectUserDeprecationMessageMatches('/WorkerHaContext::callService\(\) is deprecated since 1\.8, use callAction/');
+
+        $this->assertThrowsReason(ServiceCallError::Unreachable, static fn() => self::createContext(new NullTransport(), $connection)->callService('light', 'turn_on'));
+    }
+
+    #[IgnoreDeprecations]
+    public function testDeprecatedCallServiceForResponseStillCalls(): void
+    {
+        $connection = new ConnectionStatus();
+        $connection->markLost();
+        $this->expectUserDeprecationMessageMatches('/WorkerHaContext::callServiceForResponse\(\) is deprecated since 1\.8, use callActionForResponse/');
+
+        $this->assertThrowsReason(ServiceCallError::Unreachable, static fn() => self::createContext(new NullTransport(), $connection)->callServiceForResponse('weather', 'get_forecasts'));
     }
 }

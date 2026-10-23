@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Stewart\Contracts\Entity;
 
+use Deprecated;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exception\StateException;
@@ -101,17 +102,19 @@ final readonly class Entity implements ServiceTargetSource
      * @param array<string, mixed> $data
      * @throws ServiceCallException
      */
+    #[Deprecated(message: "use callAction('action'); it is removed in 2.0", since: '1.8')]
     public function callService(string $service, array $data = []): EventContext
     {
-        return $this->ha->callService($this->getDomain(), $service, $data, $this);
+        return $this->callAction($service, $data);
     }
 
     /**
      * @param array<string, mixed> $data
      * @throws ServiceCallException
      */
+    #[Deprecated(message: "use callActionForResponse('action'); it is removed in 2.0", since: '1.8')]
     public function callServiceForResponse(string $service, array $data = []): ServiceResponse
     {
-        return $this->ha->callServiceForResponse($this->getDomain(), $service, $data, $this);
+        return $this->callActionForResponse($service, $data);
     }
 }
