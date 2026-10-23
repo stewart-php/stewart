@@ -11,8 +11,8 @@ final readonly class BrokerStats
     public function __construct(
         public int $workers,
         public int $liveWorkers,
-        public int $inFlightServiceCalls,
-        public int $refusedServiceCalls,
+        public int $inFlightHaCalls,
+        public int $refusedHaCalls,
         public RoutingStats $routing,
     ) {}
 }

@@ -59,6 +59,8 @@ use Stewart\Contracts\Trigger\Collection\HaTriggerCollection;
 use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Runtime\Ipc\Collection\WorkerAppCollection;
+use Stewart\Runtime\Ipc\Message\ActionCallRequest;
+use Stewart\Runtime\Ipc\Message\ActionCallResult;
 use Stewart\Runtime\Ipc\Message\AppActivityReport;
 use Stewart\Runtime\Ipc\Message\AppFailed;
 use Stewart\Runtime\Ipc\Message\Bootstrap;
@@ -89,8 +91,6 @@ use Stewart\Runtime\Ipc\Message\RegistrySnapshot;
 use Stewart\Runtime\Ipc\Message\RemoveExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\ScheduleActivityReport;
-use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
-use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Ipc\Message\Shutdown;
 use Stewart\Runtime\Ipc\Message\StateResynced;
 use Stewart\Runtime\Ipc\Message\StateSnapshot;
@@ -154,7 +154,7 @@ final class IpcMessageSamples
             'event_fired' => IpcMessageSample::createRoundTrip(new EventFired(new HaEvent('zha_event', ['args' => [1, 2], 'params' => ['duration' => 0.5]], EventOrigin::Remote, $at, new EventContext('c')), [new SubscriptionId('w0:1')])),
             'trigger_fired' => IpcMessageSample::createRoundTrip(new TriggerFired(new TriggerEvent(['platform' => 'sun', 'event' => 'sunset', 'offset' => -1800.0, 'id' => 'dusk', 'idx' => '0'], new EventContext('c'), $at), [new SubscriptionId('w0:4')])),
             'topic_message' => IpcMessageSample::createRoundTrip(new TopicMessage(new TopicEvent('presence.home', ['who' => 'resident', 'confidence' => 0.92], new AppId('presence'), $at), [new SubscriptionId('w1:2')])),
-            'service_call_result' => IpcMessageSample::createRoundTrip(new ServiceCallResult(new CorrelationId('w0:2'), new ActionResponse('weather', 'get_forecasts', ['weather.home' => ['forecast' => []]], new EventContext('call-1', null, 'stewart-user')))),
+            'action_call_result' => IpcMessageSample::createRoundTrip(new ActionCallResult(new CorrelationId('w0:2'), new ActionResponse('weather', 'get_forecasts', ['weather.home' => ['forecast' => []]], new EventContext('call-1', null, 'stewart-user')))),
             'request_failed' => IpcMessageSample::createRoundTrip(RequestFailed::fromException(new CorrelationId('w0:2'), ActionCallException::rejected('light', 'turn_on', 'Service not found', 'not_found'))),
             'event_fire_result' => IpcMessageSample::createRoundTrip(new EventFireResult(new CorrelationId('w0:6'), new EventContext('fire-1', null, 'stewart-user'))),
             'registry_entity_update_result' => IpcMessageSample::createRoundTrip(new RegistryEntityUpdateResult(
@@ -176,7 +176,7 @@ final class IpcMessageSamples
             'unsubscribe' => IpcMessageSample::createRoundTrip(new Unsubscribe(new SubscriptionId('w0:1'))),
             'history_request' => IpcMessageSample::createRoundTrip(new HistoryRequest(new CorrelationId('w0:3'), $demo, new EntityId('light.hall'), new HistoryWindow($at, $at->plus(Duration::minutes(30))), HistoryDetail::AllChanges)),
             'history_result' => new IpcMessageSample(self::createHistoryResult($at), self::createHistoryResult($at)),
-            'service_call_request' => IpcMessageSample::createRoundTrip(new ServiceCallRequest(new CorrelationId('w0:2'), $demo, 'light', 'turn_on', ['transition' => 1.5], new ActionTarget(entityIds: [new EntityId('light.hall')], areaIds: ['hall']), false)),
+            'action_call_request' => IpcMessageSample::createRoundTrip(new ActionCallRequest(new CorrelationId('w0:2'), $demo, 'light', 'turn_on', ['transition' => 1.5], new ActionTarget(entityIds: [new EntityId('light.hall')], areaIds: ['hall']), false)),
             'registry_entity_update_request' => IpcMessageSample::createRoundTrip(new RegistryEntityUpdateRequest(
                 new CorrelationId('w0:7'),
                 $demo,

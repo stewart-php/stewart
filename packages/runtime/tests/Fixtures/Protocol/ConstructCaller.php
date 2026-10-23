@@ -18,7 +18,7 @@ final readonly class ConstructCaller implements App
     ) {
         $ha->callAction('light.turn_on');
 
-        $logger->info('Construct call finished', ['service' => 'light.turn_on']);
+        $logger->info('Construct call finished', ['action' => 'light.turn_on']);
     }
 
     public function initialize(): void

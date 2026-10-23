@@ -22,8 +22,8 @@ final readonly class BrokerMetricSource implements RuntimeMetricSource
         return [
             MetricFamily::createWithSample('stewart_workers', 'Worker slots the broker supervises.', MetricType::Gauge, $none, $broker->workers),
             MetricFamily::createWithSample('stewart_workers_live', 'Worker processes currently running.', MetricType::Gauge, $none, $broker->liveWorkers),
-            MetricFamily::createWithSample('stewart_service_calls_in_flight', 'Home Assistant calls awaiting an answer.', MetricType::Gauge, $none, $broker->inFlightServiceCalls),
-            MetricFamily::createWithSample('stewart_service_calls_refused_total', 'Home Assistant calls refused for lack of a free slot.', MetricType::Counter, $none, $broker->refusedServiceCalls),
+            MetricFamily::createWithSample('stewart_ha_calls_in_flight', 'Home Assistant calls awaiting an answer.', MetricType::Gauge, $none, $broker->inFlightHaCalls),
+            MetricFamily::createWithSample('stewart_ha_calls_refused_total', 'Home Assistant calls refused for lack of a free slot.', MetricType::Counter, $none, $broker->refusedHaCalls),
             MetricFamily::createWithSample('stewart_routing_subscriptions', 'Subscriptions in the broker routing index.', MetricType::Gauge, $none, $routing->subscriptions),
             MetricFamily::createWithSample('stewart_routing_patterns', 'Wildcard patterns in the broker routing index.', MetricType::Gauge, $none, $routing->patterns),
             MetricFamily::createWithSample('stewart_routing_cached_keys', 'Routing keys with a cached match.', MetricType::Gauge, $none, $routing->cachedKeys),

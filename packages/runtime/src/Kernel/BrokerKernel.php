@@ -85,7 +85,7 @@ final readonly class BrokerKernel
         $commandTimeout = $config->requireHomeAssistant()->commandTimeout;
 
         if ($initializeTimeout !== null && $commandTimeout->isLongerThan($initializeTimeout)) {
-            $logger->warning('An app initializing with a single slow service call will be dropped before that call times out', [
+            $logger->warning('An app initializing with a single slow action call will be dropped before that call times out', [
                 'initialize_timeout' => (string) $initializeTimeout,
                 'command_timeout' => (string) $commandTimeout,
             ]);

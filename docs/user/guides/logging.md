@@ -85,8 +85,8 @@ A trace reads like this:
 … TRACE [porch-light] Event received {"subscription":"state_change exact:binary_sensor.porch_motion","id":"w0:3","change":"on → off"}
 … TRACE [porch-light] Event received {"subscription":"state_change exact:binary_sensor.porch_motion","id":"w0:3","change":"off → on"}
 … TRACE [porch-light] Handler called {"subscription":"state_change exact:binary_sensor.porch_motion","id":"w0:3"}
-… TRACE [porch-light] Service call sent {"service":"light.turn_on","target":{"entity_id":["light.porch"]}}
-… TRACE [porch-light] Service call answered {"service":"light.turn_on","outcome":"succeeded","took":"42ms"}
+… TRACE [porch-light] Action call sent {"action":"light.turn_on","target":{"entity_id":["light.porch"]}}
+… TRACE [porch-light] Action call answered {"action":"light.turn_on","outcome":"succeeded","took":"42ms"}
 ```
 
 | Line | Means |
@@ -95,7 +95,7 @@ A trace reads like this:
 | `Handler called` | The event got through the operators (`filter()`, `whenChangedTo()`, `debounce()`, …) and the app's handler ran |
 | `Event skipped while paused` | The app is paused, so the event went nowhere |
 | `Schedule ran`, `Schedule run skipped while paused` | A schedule or a timer came due |
-| `Service call sent`, `Service call answered` | A call to Home Assistant, how it went and how long it took |
+| `Action call sent`, `Action call answered` | A call to Home Assistant, how it went and how long it took |
 
 An `Event received` with no `Handler called` after it means an operator stopped the event: a `filter()` said no, or
 `whenChangedTo('on')` saw a change from `unavailable`. A `debounce()` or `whenStableFor()` calls the handler later, so

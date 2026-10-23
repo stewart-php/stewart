@@ -1,6 +1,6 @@
 ---
 title: 'The broker'
-description: 'Broker boot, the Home Assistant session, spawning workers, routing, the outbox, service calls, supervision and shutdown.'
+description: 'Broker boot, the Home Assistant session, spawning workers, routing, the outbox, action calls, supervision and shutdown.'
 ---
 
 ## Boot
@@ -68,7 +68,7 @@ The broker does not block on `WorkerReady`. `armReadyDeadline()` kills a worker 
 **From workers.** `Broker/WorkerMessageReader` runs one fiber per worker. A clean EOF and a broken channel both end in
 the gone callback; an undecodable frame is logged and skipped. Each message goes to
 `Broker/Message/WorkerMessageDispatcher`, which looks up the one handler for its class (19 `WorkerMessageHandler`s:
-subscribe, unsubscribe, service call, event fire, history, publish, MQTT publish, pong, ready, app failed, log record,
+subscribe, unsubscribe, action call, event fire, history, publish, MQTT publish, pong, ready, app failed, log record,
 the exposure and registry requests). A handler that throws is logged per message.
 
 **From Home Assistant.** `Broker/BrokerHaEvents` receives the session's callbacks:
@@ -100,11 +100,11 @@ batch goes out whole. Once a full batch is queued, further updates coalesce per 
 and the latest replaces the tail. The update carries no `from`, so the merged tail is the latest shared encoding.
 Drops are logged on a throttled schedule.
 
-## Service calls
+## Action calls
 
-`Broker/Message/ServiceCallRequestHandler` runs each call through `Broker/HaCallSlots::runBounded()`. Over
+`Broker/Message/ActionCallRequestHandler` runs each call through `Broker/HaCallSlots::runBounded()`. Over
 `ha_calls.max_in_flight` or the per-worker limit, the call is refused with `Overloaded`. Otherwise it runs in its
-own fiber and always answers on the same handle it came from: `ServiceCallResult`, or `RequestFailed` with the
+own fiber and always answers on the same handle it came from: `ActionCallResult`, or `RequestFailed` with the
 exception's class, reason and context. Under dry run it logs and answers with a `dry-run:` context; while Home
 Assistant is disconnected it fails at once as unreachable. The broker keeps no map of calls; the reply carries the
 correlation ID.

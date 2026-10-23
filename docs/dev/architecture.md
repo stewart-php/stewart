@@ -328,7 +328,7 @@ Both the schedule registry and the subscription queues stay dormant per app
 until that app's `initialize()` returns — otherwise a schedule armed in a
 constructor would fire against an empty world, and an event matched during
 initialization would reach a half-built app. The IPC reader starts *before*
-construction, so a constructor may await a service call; initialization waits on
+construction, so a constructor may await an action call; initialization waits on
 a barrier for construction to finish, whichever arrives first. An app that does
 not return from `initialize()` within `supervision.initialize_timeout` is
 dropped and the rest start without it; the broker's
@@ -343,7 +343,7 @@ re-reading the wall clock. Accumulating instead would drift, and would replay
 every occurrence a suspend went past. Sun schedules are wall-clock schedules
 like any other: the next sunrise is asked of the `SunCalendar` each time.
 
-**Every service call and history request gets a reply.** Including on failure, and
+**Every action call and history request gets a reply.** Including on failure, and
 including when the connection dropped. The worker's fiber is suspended on that
 reply; a missing one is not a lost message but a permanently stuck automation
 with nothing in the logs. The worker-side call timeout is the backstop.
@@ -387,7 +387,7 @@ deadline cannot fire against a slot that has moved on. `WorkerMessageReader` rea
 channel, `WorkerWatchdog` probes, and `SnapshotAssembler` reports; the pool
 only drives the transitions.
 
-**A service call's reply goes to the handle captured in its closure, never to a
+**An action call's reply goes to the handle captured in its closure, never to a
 lookup.** Correlation ids also restart per process, so resolving through the
 worker map would let a dead worker's `0:7` complete a new worker's unrelated
 `0:7`. `HaCallSlots` counts in-flight calls per handle for the same

@@ -7,20 +7,20 @@ namespace Stewart\Runtime\Broker;
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\Exception\ActionCallException;
 use Stewart\Contracts\Time\Duration;
-use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
+use Stewart\Runtime\Ipc\Message\ActionCallRequest;
 use Stewart\Runtime\Logging\LogOrigin;
 use Stewart\Runtime\Logging\LogVerbosityPolicy;
-use Stewart\Runtime\Model\ServiceCallOutcome;
+use Stewart\Runtime\Model\HaCallOutcome;
 use Throwable;
 
-final readonly class ServiceCallTracer
+final readonly class ActionCallTracer
 {
     public function __construct(
         private LoggerInterface $logger,
         private LogVerbosityPolicy $verbosity,
     ) {}
 
-    public function traceCallSent(ServiceCallRequest $request): void
+    public function traceCallSent(ActionCallRequest $request): void
     {
         if (!$this->verbosity->isTracing($request->scope)) {
             return;
@@ -37,19 +37,19 @@ final readonly class ServiceCallTracer
             $details['data'] = $request->data;
         }
 
-        $this->logger->debug('Service call sent', [...$details, LogOrigin::CONTEXT_KEY => LogOrigin::forScope($request->scope, traced: true)]);
+        $this->logger->debug('Action call sent', [...$details, LogOrigin::CONTEXT_KEY => LogOrigin::forScope($request->scope, traced: true)]);
     }
 
-    public function traceCallAnswered(ServiceCallRequest $request, Duration $took, ?Throwable $failure = null): void
+    public function traceCallAnswered(ActionCallRequest $request, Duration $took, ?Throwable $failure = null): void
     {
         if (!$this->verbosity->isTracing($request->scope)) {
             return;
         }
 
         $outcome = match (true) {
-            $failure === null => ServiceCallOutcome::Succeeded,
-            $failure instanceof ActionCallException => ServiceCallOutcome::failedWith($failure->reason),
-            default => ServiceCallOutcome::Unreachable,
+            $failure === null => HaCallOutcome::Succeeded,
+            $failure instanceof ActionCallException => HaCallOutcome::failedWith($failure->reason),
+            default => HaCallOutcome::Unreachable,
         };
 
         $details = [...$this->describeCall($request), 'outcome' => $outcome->value, 'took' => (string) $took];
@@ -58,12 +58,12 @@ final readonly class ServiceCallTracer
             $details['error'] = $failure->getMessage();
         }
 
-        $this->logger->debug('Service call answered', [...$details, LogOrigin::CONTEXT_KEY => LogOrigin::forScope($request->scope, traced: true)]);
+        $this->logger->debug('Action call answered', [...$details, LogOrigin::CONTEXT_KEY => LogOrigin::forScope($request->scope, traced: true)]);
     }
 
     /** @return array<string, mixed> */
-    private function describeCall(ServiceCallRequest $request): array
+    private function describeCall(ActionCallRequest $request): array
     {
-        return ['service' => $request->domain . '.' . $request->service];
+        return ['action' => $request->domain . '.' . $request->action];
     }
 }

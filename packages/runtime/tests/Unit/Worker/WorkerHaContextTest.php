@@ -33,8 +33,8 @@ use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Exception\TransportError;
 use Stewart\Runtime\Exception\TransportException;
+use Stewart\Runtime\Ipc\Message\ActionCallRequest;
 use Stewart\Runtime\Ipc\Message\EventFireRequest;
-use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Transport;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
@@ -67,7 +67,7 @@ final class WorkerHaContextTest extends TestCase
         yield 'a request that cannot be encoded' => [TransportException::createForReason(
             TransportError::Unencodable,
             new RuntimeException('NAN'),
-            messageClass: ServiceCallRequest::class,
+            messageClass: ActionCallRequest::class,
         ), ActionCallError::Rejected];
         yield 'a channel that is gone' => [TransportException::createForReason(
             TransportError::SendFailed,

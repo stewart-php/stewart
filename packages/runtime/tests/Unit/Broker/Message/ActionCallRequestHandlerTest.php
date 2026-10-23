@@ -14,29 +14,29 @@ use Stewart\Contracts\Exception\ActionCallError;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\App\AppDefinition;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
+use Stewart\Runtime\Broker\ActionCallTracer;
 use Stewart\Runtime\Broker\AppMetrics;
 use Stewart\Runtime\Broker\AppPauseRegistry;
 use Stewart\Runtime\Broker\Collection\WorkerSlotCollection;
 use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\HaCallSlots;
-use Stewart\Runtime\Broker\Message\ServiceCallRequestHandler;
+use Stewart\Runtime\Broker\Message\ActionCallRequestHandler;
 use Stewart\Runtime\Broker\OutboxLimits;
-use Stewart\Runtime\Broker\ServiceCallTracer;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Config\HaCallPolicy;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
-use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
+use Stewart\Runtime\Control\Protocol\Status\HaCallStats;
+use Stewart\Runtime\Ipc\Message\ActionCallRequest;
+use Stewart\Runtime\Ipc\Message\ActionCallResult;
 use Stewart\Runtime\Ipc\Message\RequestFailed;
-use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
-use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Logging\LogOrigin;
 use Stewart\Runtime\Logging\LogVerbosityPolicy;
 use Stewart\Runtime\Model\AppVerbosity;
 use Stewart\Runtime\Model\CorrelationId;
+use Stewart\Runtime\Model\HaCallOutcome;
 use Stewart\Runtime\Model\LogLevel;
 use Stewart\Runtime\Model\ResourceScope;
-use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Apps\Demo;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
@@ -49,9 +49,9 @@ use Stewart\Testing\Time\EventLoopTicks;
 use Stewart\Testing\Time\ManualTimers;
 use Stewart\Testing\Time\VirtualClock;
 
-#[CoversClass(ServiceCallRequestHandler::class)]
+#[CoversClass(ActionCallRequestHandler::class)]
 #[CoversClass(HaCallPolicy::class)]
-final class ServiceCallRequestHandlerTest extends TestCase
+final class ActionCallRequestHandlerTest extends TestCase
 {
     private FakeHaSession $session;
 
@@ -118,10 +118,10 @@ final class ServiceCallRequestHandlerTest extends TestCase
         $this->timers->delay(Duration::milliseconds(30));
         $this->finishCalls();
 
-        $calls = new AppStatusBuilder($this->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock())), FakeHomeAssistant::createUnreachable()->exposures)->buildAppStatuses()[0]->serviceCalls;
+        $calls = new AppStatusBuilder($this->metrics, new AppPauseRegistry(AppDefinitionCollection::keyedByAppId([]), new DaemonStartTime(new VirtualClock())), FakeHomeAssistant::createUnreachable()->exposures)->buildAppStatuses()[0]->haCalls;
         self::assertSame(
-            [ServiceCallOutcome::Refused, ServiceCallOutcome::Succeeded],
-            array_map(static fn(ServiceCallStats $stats): ServiceCallOutcome => $stats->outcome, $calls),
+            [HaCallOutcome::Refused, HaCallOutcome::Succeeded],
+            array_map(static fn(HaCallStats $stats): HaCallOutcome => $stats->outcome, $calls),
         );
         self::assertSame(1, $calls[0]->count);
         self::assertNull($calls[0]->latency, 'A refused call never waited on Home Assistant.');
@@ -187,11 +187,11 @@ final class ServiceCallRequestHandlerTest extends TestCase
         self::assertSame(['Action call not sent: ha_calls.dry_run is on'], $logger->listMessagesAt(PsrLogLevel::INFO));
     }
 
-    private function createHandler(HaCallPolicy $policy, LoggerInterface $logger, LogVerbosityPolicy $verbosity = new LogVerbosityPolicy(LogLevel::Info)): ServiceCallRequestHandler
+    private function createHandler(HaCallPolicy $policy, LoggerInterface $logger, LogVerbosityPolicy $verbosity = new LogVerbosityPolicy(LogLevel::Info)): ActionCallRequestHandler
     {
         $this->slots = new HaCallSlots($policy, $this->metrics, $this->timers->clock, new NullLogger());
 
-        return new ServiceCallRequestHandler($this->session, $this->homeAssistant->client, $this->slots, $policy, new ServiceCallTracer($logger, $verbosity), $this->timers->clock, $logger);
+        return new ActionCallRequestHandler($this->session, $this->homeAssistant->client, $this->slots, $policy, new ActionCallTracer($logger, $verbosity), $this->timers->clock, $logger);
     }
 
     public function testTracedAppLogsEachCallItSendsAndItsAnswer(): void
@@ -206,9 +206,9 @@ final class ServiceCallRequestHandlerTest extends TestCase
         $this->timers->delay(Duration::milliseconds(30));
         $this->finishCalls();
 
-        self::assertSame(['Service call sent', 'Service call answered'], $logger->listMessagesAt(PsrLogLevel::DEBUG), 'A refused call never reached Home Assistant.');
+        self::assertSame(['Action call sent', 'Action call answered'], $logger->listMessagesAt(PsrLogLevel::DEBUG), 'A refused call never reached Home Assistant.');
         $answer = $logger->records->getLast()->context ?? [];
-        self::assertSame('light.turn_on', $answer['service'] ?? null);
+        self::assertSame('light.turn_on', $answer['action'] ?? null);
         self::assertSame('succeeded', $answer['outcome'] ?? null);
         self::assertSame('30ms', $answer['took'] ?? null);
         self::assertTrue(LogOrigin::findInContext($answer)?->traced);
@@ -258,13 +258,13 @@ final class ServiceCallRequestHandlerTest extends TestCase
         );
     }
 
-    private static function createRequest(string $correlationId): ServiceCallRequest
+    private static function createRequest(string $correlationId): ActionCallRequest
     {
-        return new ServiceCallRequest(
+        return new ActionCallRequest(
             correlationId: new CorrelationId($correlationId),
             scope: ResourceScope::forApp(new AppId('demo')),
             domain: 'light',
-            service: 'turn_on',
+            action: 'turn_on',
             data: [],
             target: null,
             returnResponse: false,
@@ -277,10 +277,10 @@ final class ServiceCallRequestHandlerTest extends TestCase
         return self::listSentOfType($handle, RequestFailed::class);
     }
 
-    /** @return list<ServiceCallResult> */
+    /** @return list<ActionCallResult> */
     private static function listSentResultsFor(WorkerHandle $handle): array
     {
-        return self::listSentOfType($handle, ServiceCallResult::class);
+        return self::listSentOfType($handle, ActionCallResult::class);
     }
 
     /**

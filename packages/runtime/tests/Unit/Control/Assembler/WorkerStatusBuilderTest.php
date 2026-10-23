@@ -86,11 +86,11 @@ final class WorkerStatusBuilderTest extends TestCase
 
         $this->broker->startHeldServiceCall(0);
 
-        self::assertSame(1, $this->buildStatusOf(0)->inFlightServiceCalls);
+        self::assertSame(1, $this->buildStatusOf(0)->inFlightHaCalls);
 
         $this->broker->crashWorker(0);
 
-        self::assertSame(0, $this->buildStatusOf(0)->inFlightServiceCalls, 'A dead worker has nothing in flight of its own.');
+        self::assertSame(0, $this->buildStatusOf(0)->inFlightHaCalls, 'A dead worker has nothing in flight of its own.');
     }
 
     public function testRestartOnItsWaySaysWhenItIsDue(): void

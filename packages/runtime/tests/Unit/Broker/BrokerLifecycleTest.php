@@ -38,15 +38,15 @@ use Stewart\Runtime\Broker\DaemonStartTime;
 use Stewart\Runtime\Broker\EventRouter;
 use Stewart\Runtime\Broker\GeneratedCodeDrift;
 use Stewart\Runtime\Broker\GeneratedManifest;
+use Stewart\Runtime\Broker\HaCallStatsRecorder;
 use Stewart\Runtime\Broker\Http\Collection\HttpListenerCollection;
 use Stewart\Runtime\Broker\LoopErrorLogger;
+use Stewart\Runtime\Broker\Message\ActionCallRequestHandler;
 use Stewart\Runtime\Broker\Message\AppFailedHandler;
 use Stewart\Runtime\Broker\Message\EventFireRequestHandler;
 use Stewart\Runtime\Broker\Message\PongHandler;
-use Stewart\Runtime\Broker\Message\ServiceCallRequestHandler;
 use Stewart\Runtime\Broker\Message\WorkerMessageDispatcher;
 use Stewart\Runtime\Broker\OutboxLimits;
-use Stewart\Runtime\Broker\ServiceCallStatsRecorder;
 use Stewart\Runtime\Broker\SubscriptionRegistry;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Broker\WorkerSlotRegistry;
@@ -55,6 +55,8 @@ use Stewart\Runtime\Config\SupervisionConfig;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
 use Stewart\Runtime\Control\Protocol\Status\AppStatus;
 use Stewart\Runtime\Exception\BrokerError;
+use Stewart\Runtime\Ipc\Message\ActionCallRequest;
+use Stewart\Runtime\Ipc\Message\ActionCallResult;
 use Stewart\Runtime\Ipc\Message\AppActivityReport;
 use Stewart\Runtime\Ipc\Message\AppFailed;
 use Stewart\Runtime\Ipc\Message\Bootstrap;
@@ -65,8 +67,6 @@ use Stewart\Runtime\Ipc\Message\HaConnectionLost;
 use Stewart\Runtime\Ipc\Message\Pong;
 use Stewart\Runtime\Ipc\Message\RegistrySnapshot;
 use Stewart\Runtime\Ipc\Message\RequestFailed;
-use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
-use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Ipc\Message\StateResynced;
 use Stewart\Runtime\Ipc\Message\StateSnapshot;
 use Stewart\Runtime\Ipc\Message\StateUpdateBatch;
@@ -80,8 +80,8 @@ use Stewart\Runtime\Lifecycle\AppState;
 use Stewart\Runtime\Lifecycle\BrokerStopOutcome;
 use Stewart\Runtime\Lifecycle\ConnectionPhase;
 use Stewart\Runtime\Model\CorrelationId;
+use Stewart\Runtime\Model\HaCallOutcome;
 use Stewart\Runtime\Model\ResourceScope;
-use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\SubscriptionId;
 use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Runtime\Model\WorkerId;
@@ -122,14 +122,14 @@ use function Amp\async;
 #[CoversClass(AppFailedHandler::class)]
 #[CoversClass(PongHandler::class)]
 #[CoversClass(EventRouter::class)]
-#[CoversClass(ServiceCallRequestHandler::class)]
+#[CoversClass(ActionCallRequestHandler::class)]
 #[CoversClass(EventFireRequestHandler::class)]
 #[CoversClass(GeneratedManifest::class)]
 #[CoversClass(GeneratedCodeDrift::class)]
 #[CoversClass(AppMetrics::class)]
 #[CoversClass(AppStatusBuilder::class)]
 #[CoversClass(AppRunningTotals::class)]
-#[CoversClass(ServiceCallStatsRecorder::class)]
+#[CoversClass(HaCallStatsRecorder::class)]
 #[CoversClass(ConnectionTracker::class)]
 #[CoversClass(DaemonStartTime::class)]
 #[CoversClass(LoopErrorLogger::class)]
@@ -317,14 +317,14 @@ final class BrokerLifecycleTest extends TestCase
     {
         $this->startBroker();
 
-        $this->spawner->getLatestProcess(1)->channel->deliver(new ServiceCallRequest(new CorrelationId('1:0'), self::createScope('echo'), 'light', 'turn_on', [], null, false));
-        EventLoopTicks::settleUntil(fn(): bool => \count($this->listSentToWorker(1, ServiceCallResult::class)) === 1);
+        $this->spawner->getLatestProcess(1)->channel->deliver(new ActionCallRequest(new CorrelationId('1:0'), self::createScope('echo'), 'light', 'turn_on', [], null, false));
+        EventLoopTicks::settleUntil(fn(): bool => \count($this->listSentToWorker(1, ActionCallResult::class)) === 1);
 
-        $results = $this->listSentToWorker(1, ServiceCallResult::class);
+        $results = $this->listSentToWorker(1, ActionCallResult::class);
 
         self::assertCount(1, $results);
         self::assertSame('1:0', $results[0]->correlationId->value);
-        self::assertSame([], $this->listSentToWorker(0, ServiceCallResult::class));
+        self::assertSame([], $this->listSentToWorker(0, ActionCallResult::class));
     }
 
     public function testEventFireIsAnsweredOnTheWorkerThatAsked(): void
@@ -439,7 +439,7 @@ final class BrokerLifecycleTest extends TestCase
         $this->startBroker();
         $this->session->connected = false;
 
-        $this->spawner->getLatestProcess(1)->channel->deliver(new ServiceCallRequest(new CorrelationId('1:0'), self::createScope('echo'), 'light', 'turn_on', [], null, false));
+        $this->spawner->getLatestProcess(1)->channel->deliver(new ActionCallRequest(new CorrelationId('1:0'), self::createScope('echo'), 'light', 'turn_on', [], null, false));
         EventLoopTicks::settleUntil(fn(): bool => \count($this->listSentToWorker(1, RequestFailed::class)) === 1);
 
         $errors = $this->listSentToWorker(1, RequestFailed::class);
@@ -693,16 +693,16 @@ final class BrokerLifecycleTest extends TestCase
         self::assertSame(ConnectionPhase::Connected, $this->connection->state->phase);
 
         $worker = $this->spawner->getLatestProcess(1)->channel;
-        $worker->deliver(new ServiceCallRequest(new CorrelationId('1:0'), self::createScope('echo'), 'light', 'turn_on', [], null, false));
+        $worker->deliver(new ActionCallRequest(new CorrelationId('1:0'), self::createScope('echo'), 'light', 'turn_on', [], null, false));
         $worker->deliver(new Pong(1, Duration::zero(), 0, [new AppActivityReport(self::createScope('echo'), AppState::Running, 2, 1, 5, 0, 1, 0, 1, 0)]));
         $worker->deliver(new AppFailed(self::createScope('echo'), AppFailurePhase::Handler, 'RuntimeException', 'boom', '', null, 1, null));
-        EventLoopTicks::settleUntil(fn(): bool => $this->readAppStatusAt(1)->lastFailure !== null && \count($this->readAppStatusAt(1)->serviceCalls) === 1);
+        EventLoopTicks::settleUntil(fn(): bool => $this->readAppStatusAt(1)->lastFailure !== null && \count($this->readAppStatusAt(1)->haCalls) === 1);
 
         $echo = $this->readAppStatusAt(1);
         self::assertSame(['echo', AppState::Running, 2, 5, 1], [$echo->id, $echo->state, $echo->subscriptions, $echo->counters->delivered, $echo->counters->failures]);
         self::assertSame('boom', $echo->lastFailure?->message);
-        self::assertCount(1, $echo->serviceCalls);
-        self::assertSame(ServiceCallOutcome::Succeeded, $echo->serviceCalls[0]->outcome);
+        self::assertCount(1, $echo->haCalls);
+        self::assertSame(HaCallOutcome::Succeeded, $echo->haCalls[0]->outcome);
 
         $this->session->listener?->connectionLost('gone', Instant::fromEpochMicroseconds(0));
         self::assertSame(ConnectionPhase::Reconnecting, $this->connection->state->phase);

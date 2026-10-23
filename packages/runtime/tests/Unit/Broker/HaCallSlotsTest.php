@@ -22,9 +22,9 @@ use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Config\HaCallPolicy;
+use Stewart\Runtime\Ipc\Message\ActionCallRequest;
+use Stewart\Runtime\Ipc\Message\ActionCallResult;
 use Stewart\Runtime\Ipc\Message\RequestFailed;
-use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
-use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Model\CorrelationId;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\WorkerId;
@@ -93,7 +93,7 @@ final class HaCallSlotsTest extends TestCase
         EventLoopTicks::settle();
 
         self::assertSame(0, $slots->inFlight);
-        self::assertCount(1, self::listSentOfType($second, ServiceCallResult::class));
+        self::assertCount(1, self::listSentOfType($second, ActionCallResult::class));
     }
 
     public function testReplacementStartsWithoutPredecessorCalls(): void
@@ -142,10 +142,10 @@ final class HaCallSlotsTest extends TestCase
         $this->runHeldCall($slots, $worker, 'a');
         $held = $this->held;
 
-        $slots->runCounted($worker, self::createRequest('b'), static function () use ($held): ServiceCallResult {
+        $slots->runCounted($worker, self::createRequest('b'), static function () use ($held): ActionCallResult {
             $held->waitUntilOpen();
 
-            return new ServiceCallResult(new CorrelationId('b'), new ActionResponse('light', 'turn_on'));
+            return new ActionCallResult(new CorrelationId('b'), new ActionResponse('light', 'turn_on'));
         });
 
         self::assertSame(2, $slots->countInFlightCallsFor($worker));
@@ -156,10 +156,10 @@ final class HaCallSlotsTest extends TestCase
     {
         $held = $this->held;
 
-        $slots->runBounded($worker, self::createRequest($correlationId), static function () use ($held, $correlationId): ServiceCallResult {
+        $slots->runBounded($worker, self::createRequest($correlationId), static function () use ($held, $correlationId): ActionCallResult {
             $held->waitUntilOpen();
 
-            return new ServiceCallResult(new CorrelationId($correlationId), new ActionResponse('light', 'turn_on'));
+            return new ActionCallResult(new CorrelationId($correlationId), new ActionResponse('light', 'turn_on'));
         });
         EventLoopTicks::settle();
     }
@@ -171,9 +171,9 @@ final class HaCallSlotsTest extends TestCase
         return new HaCallSlots($policy, new AppMetrics(WorkerSlotCollection::fromList([self::createSlot(0), self::createSlot(1)]), $timers->clock), $timers->clock, $logger);
     }
 
-    private static function createRequest(string $correlationId): ServiceCallRequest
+    private static function createRequest(string $correlationId): ActionCallRequest
     {
-        return new ServiceCallRequest(new CorrelationId($correlationId), ResourceScope::forApp(new AppId('demo')), 'light', 'turn_on', [], null, false);
+        return new ActionCallRequest(new CorrelationId($correlationId), ResourceScope::forApp(new AppId('demo')), 'light', 'turn_on', [], null, false);
     }
 
     /** @return list<RequestFailed> */

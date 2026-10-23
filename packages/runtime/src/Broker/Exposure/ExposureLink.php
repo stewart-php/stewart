@@ -350,7 +350,7 @@ final class ExposureLink
     private function sendUnavailable(array $orphaned): void
     {
         foreach ($orphaned as $live) {
-            // An action keeps its service; the broker refuses its calls while it is orphaned.
+            // An action stays registered in Home Assistant; the broker refuses its calls while it is orphaned.
             if ($live->definition->isAction()) {
                 continue;
             }

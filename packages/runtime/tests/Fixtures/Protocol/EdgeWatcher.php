@@ -44,9 +44,9 @@ final readonly class EdgeWatcher implements App
         if ($this->light !== null) {
             try {
                 $this->ha->callAction('light.turn_on', target: ActionTarget::forEntities($this->light));
-                $this->logger->info('Service call finished', ['success' => true]);
+                $this->logger->info('Action call finished', ['success' => true]);
             } catch (ActionCallException $e) {
-                $this->logger->info('Service call finished', ['success' => false, 'exception' => $e]);
+                $this->logger->info('Action call finished', ['success' => false, 'exception' => $e]);
             }
         }
 

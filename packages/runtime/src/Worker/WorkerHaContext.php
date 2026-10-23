@@ -34,15 +34,15 @@ use Stewart\Runtime\Exception\TransportException;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Registry\RegistryCache;
 use Stewart\Runtime\State\StateCache;
+use Stewart\Runtime\Worker\Context\ActionCaller;
 use Stewart\Runtime\Worker\Context\DispatchStreams;
 use Stewart\Runtime\Worker\Context\EventFirer;
 use Stewart\Runtime\Worker\Context\HistoryReader;
-use Stewart\Runtime\Worker\Context\ServiceCaller;
 use Stewart\Runtime\Worker\Context\TopicPublisher;
 use Stewart\Support\State\StewartIdentity;
+use Stewart\Support\Wire\ActionFields;
 use Stewart\Support\Wire\EventPayload;
 use Stewart\Support\Wire\EventTypeSelector;
-use Stewart\Support\Wire\ServiceFields;
 use Stewart\Support\Wire\TopicPayload;
 use Stewart\Support\Wire\TriggerSpec;
 
@@ -52,7 +52,7 @@ final readonly class WorkerHaContext implements HaContext
         private StateCache $states,
         private RegistryCache $registry,
         private ConnectionStatus $connection,
-        private ServiceCaller $serviceCalls,
+        private ActionCaller $actions,
         private HistoryReader $history,
         private EventFirer $eventFires,
         private DispatchStreams $streams,
@@ -63,7 +63,7 @@ final readonly class WorkerHaContext implements HaContext
 
     public function forApp(AppId $appId): self
     {
-        return new self($this->states, $this->registry, $this->connection, $this->serviceCalls, $this->history, $this->eventFires, $this->streams, $this->topics, $this->identity, ResourceScope::forApp($appId));
+        return new self($this->states, $this->registry, $this->connection, $this->actions, $this->history, $this->eventFires, $this->streams, $this->topics, $this->identity, ResourceScope::forApp($appId));
     }
 
     public function getState(EntityId|string $entityId): ?EntityState
@@ -124,16 +124,12 @@ final readonly class WorkerHaContext implements HaContext
 
     public function callAction(string $action, array $data = [], ?ActionTargetSource $target = null): EventContext
     {
-        $name = new ActionName($action);
-
-        return $this->serviceCalls->callService($this->resourceScope, $name->domain, $name->action, ServiceFields::fromFieldsDroppingNulls($data), $target?->toActionTarget());
+        return $this->actions->callAction($this->resourceScope, new ActionName($action), ActionFields::fromFieldsDroppingNulls($data), $target?->toActionTarget());
     }
 
     public function callActionForResponse(string $action, array $data = [], ?ActionTargetSource $target = null): ActionResponse
     {
-        $name = new ActionName($action);
-
-        return $this->serviceCalls->callServiceForResponse($this->resourceScope, $name->domain, $name->action, ServiceFields::fromFieldsDroppingNulls($data), $target?->toActionTarget());
+        return $this->actions->callActionForResponse($this->resourceScope, new ActionName($action), ActionFields::fromFieldsDroppingNulls($data), $target?->toActionTarget());
     }
 
     public function fireEvent(string $eventType, array $data = []): EventContext

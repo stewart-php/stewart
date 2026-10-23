@@ -37,9 +37,9 @@ final readonly class AppMetricSource implements RuntimeMetricSource
         $failures = new MetricFamily('stewart_app_failures_total', 'Handler failures of the app.', MetricType::Counter, $appLabels);
         $suppressed = new MetricFamily('stewart_app_suppressed_total', 'Work skipped while the app was paused.', MetricType::Counter, $appLabels);
         $lastFailure = new MetricFamily('stewart_app_last_failure_timestamp_seconds', 'Unix time of the last app failure.', MetricType::Gauge, $appLabels);
-        $serviceCalls = new MetricFamily('stewart_app_service_calls_total', 'Home Assistant calls of the app by outcome.', MetricType::Counter, $outcomeLabels);
+        $haCalls = new MetricFamily('stewart_app_ha_calls_total', 'Home Assistant calls of the app by outcome.', MetricType::Counter, $outcomeLabels);
         $exposedCommands = new MetricFamily('stewart_app_exposed_commands_total', 'Home Assistant commands on the app\'s exposed entities by outcome.', MetricType::Counter, $outcomeLabels);
-        $serviceCallDuration = new MetricFamily('stewart_app_service_call_duration_seconds', 'Home Assistant call latency of the app by outcome.', MetricType::Histogram, $outcomeLabels);
+        $haCallDuration = new MetricFamily('stewart_app_ha_call_duration_seconds', 'Home Assistant call latency of the app by outcome.', MetricType::Histogram, $outcomeLabels);
 
         foreach ($snapshot->apps as $app) {
             $labels = MetricLabels::fromLabel('app', $app->id)->withLabel('worker', $app->workerId === null ? '' : (string) $app->workerId);
@@ -81,19 +81,19 @@ final readonly class AppMetricSource implements RuntimeMetricSource
                 $exposedCommands->recordSample($labels->withLabel('outcome', $commands->outcome->value), $commands->count);
             }
 
-            foreach ($app->serviceCalls as $calls) {
+            foreach ($app->haCalls as $calls) {
                 $outcomeLabels = $labels->withLabel('outcome', $calls->outcome->value);
-                $serviceCalls->recordSample($outcomeLabels, $calls->count);
+                $haCalls->recordSample($outcomeLabels, $calls->count);
 
                 if ($calls->latency !== null) {
-                    $serviceCallDuration->recordHistogram($outcomeLabels, Histogram::fromLatencyHistogram($calls->latency));
+                    $haCallDuration->recordHistogram($outcomeLabels, Histogram::fromLatencyHistogram($calls->latency));
                 }
             }
         }
 
         return [
             $info, $states, $paused, $subscriptions, $schedules, $exposedEntities, $delivered, $handled, $lastHandled, $nextRun, $subscriptionDropped,
-            $scheduleRuns, $publishes, $failures, $suppressed, $lastFailure, $serviceCalls, $serviceCallDuration, $exposedCommands,
+            $scheduleRuns, $publishes, $failures, $suppressed, $lastFailure, $haCalls, $haCallDuration, $exposedCommands,
         ];
     }
 }

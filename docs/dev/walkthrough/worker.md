@@ -1,6 +1,6 @@
 ---
 title: 'The worker'
-description: 'Worker boot, building apps, HaContext, streams and dispatch, a service call end to end, schedules, pause and logging.'
+description: 'Worker boot, building apps, HaContext, streams and dispatch, an action call end to end, schedules, pause and logging.'
 ---
 
 ## Entry
@@ -30,7 +30,7 @@ throws is logged and reading goes on.
 
 1. applies the paused app IDs from `Bootstrap`;
 2. constructs every app (`AppLifecycle::constructApps()`). The reader is already running, so a constructor may await
-   a service call;
+   an action call;
 3. waits for the first `StateSnapshot` (`StateCacheSync::awaitFirstSeed()`). `StateSnapshotHandler` seeds the cache
    with `StateCache::replaceAll()`, **in place**: every app's context already holds that `StateCache`, so replacing
    the object would leave them reading an empty world. A later snapshot only reseeds;
@@ -83,7 +83,7 @@ same.
 `Worker/WorkerHaContext` is `final readonly`; `forApp()` copies it with another `ResourceScope`, so every app shares
 the cache and the dispatcher but owns its subscriptions. Reads (`getState()`, `requireState()`, `listStates()`) are
 hash lookups on the shared `StateCache` and never suspend. Everything that talks to the broker is in
-`Worker/Context/`: `ServiceCaller`, `HistoryReader`, `EventFirer`, `TopicPublisher`, `DispatchStreams`.
+`Worker/Context/`: `ActionCaller`, `HistoryReader`, `EventFirer`, `TopicPublisher`, `DispatchStreams`.
 
 ## Streams and dispatch
 
@@ -112,15 +112,15 @@ The queue tells its `DispatchListener` (`Worker/AppActivityRecorder`) when an ev
 dispatcher points the scope at its queue. A received event with no handler call was held or dropped by an operator.
 For a traced app, `Worker/AppTracer` turns both into `TRACE` lines.
 
-## A service call, end to end
+## An action call, end to end
 
 1. `WorkerHaContext::callAction()` splits `light.turn_on` into domain and service through `ActionName`, then calls
-   `Worker/Context/ServiceCaller::sendRequestAndAwait()`. While disconnected, it fails at once.
+   `Worker/Context/ActionCaller::sendRequestAndAwait()`. While disconnected, it fails at once.
 2. `PendingRequests::open()` registers the request before sending, with an ID from `CorrelationIdSequence`
    (`<workerId>:<n>`, unique without coordination).
-3. It sends `ServiceCallRequest` and suspends the fiber, with `WorkerSettings::callTimeout` (the Home Assistant
+3. It sends `ActionCallRequest` and suspends the fiber, with `WorkerSettings::callTimeout` (the Home Assistant
    command timeout plus five seconds) as the backstop. This suspension is what makes a call read like a local one.
-4. The broker runs the call (see [The broker](broker.md#service-calls)) and always answers.
+4. The broker runs the call (see [The broker](broker.md#action-calls)) and always answers.
 5. `CorrelatedReplyHandler` resolves the pending request with the typed reply, or rebuilds the typed exception from
    `RequestFailed`. The caller gets an `EventContext`, or an `ActionCallException`.
 6. `finally` forgets the request, so a late reply is dropped.

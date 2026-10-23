@@ -6,16 +6,16 @@ namespace Stewart\Support\Tests\Unit\Wire;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Stewart\Support\Wire\ServiceFields;
+use Stewart\Support\Wire\ActionFields;
 
-#[CoversClass(ServiceFields::class)]
-final class ServiceFieldsTest extends TestCase
+#[CoversClass(ActionFields::class)]
+final class ActionFieldsTest extends TestCase
 {
     public function testDropsOnlyTheFieldsNobodySet(): void
     {
         self::assertSame(
             ['brightness' => 0, 'transition' => 1.5, 'flash' => false, 'effect' => '', 'rgb_color' => []],
-            ServiceFields::fromFieldsDroppingNulls([
+            ActionFields::fromFieldsDroppingNulls([
                 'brightness' => 0,
                 'transition' => 1.5,
                 'flash' => false,
@@ -28,6 +28,6 @@ final class ServiceFieldsTest extends TestCase
 
     public function testNothingSetIsAnEmptyPayload(): void
     {
-        self::assertSame([], ServiceFields::fromFieldsDroppingNulls(['a' => null, 'b' => null])->fields);
+        self::assertSame([], ActionFields::fromFieldsDroppingNulls(['a' => null, 'b' => null])->fields);
     }
 }

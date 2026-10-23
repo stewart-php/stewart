@@ -32,7 +32,16 @@ release could break; a release's "Upgrading" section says what to change.
 - `service_calls` is now `ha_calls` (`STEWART_HA_CALLS__*`), since its limits and dry run also cover event fires and
   registry edits. An old `service_calls` key or `STEWART_SERVICE_CALLS__*` variable stops the start with the new name.
   Dry-run log lines name `ha_calls.dry_run`, and an action says `Action call not sent`
-- The worker protocol is 34
+- Metrics and status name what they count, every call to Home Assistant: `stewart_app_service_calls_total`,
+  `stewart_app_service_call_duration_seconds`, `stewart_service_calls_in_flight`, `stewart_service_calls_refused_total`
+  and `stewart_worker_service_calls_in_flight` are now `stewart_app_ha_calls_total`,
+  `stewart_app_ha_call_duration_seconds`, `stewart_ha_calls_in_flight`, `stewart_ha_calls_refused_total` and
+  `stewart_worker_ha_calls_in_flight`. In the status JSON, `in_flight_service_calls`, `refused_service_calls` and
+  `service_calls` are `in_flight_ha_calls`, `refused_ha_calls` and `ha_calls`, and `stewart status` shows an
+  `HA calls` row
+- Trace lines say `Action call sent` and `Action call answered`, with the name under `action`
+- The worker protocol is 35 and the control protocol 34, so `make status` and the other control targets refuse to talk
+  to a daemon that still runs 1.x
 
 ### Removed
 
@@ -83,6 +92,8 @@ release could break; a release's "Upgrading" section says what to change.
    (`STEWART_HTTP__METRICS__LISTEN`, port 9464 by convention) with Docker, or `metrics.enabled` and
    `metrics.podMonitor.enabled` instead of `adminApi.podMonitor` with the chart. If Prometheus was the only reason for
    `adminApi.host: 0.0.0.0`, set it back to `127.0.0.1`.
+5. Rename the metrics in dashboards and alerts, and the status JSON keys in scripts that read `stewart status --json`;
+   both lists are under Changed.
 
 ## [1.8.0] - 2026-10-23
 

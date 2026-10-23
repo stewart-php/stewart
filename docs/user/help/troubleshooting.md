@@ -65,10 +65,10 @@ The [error reference](../reference/errors.md) lists every message.
      `unavailable`, and a first state is not a change. A `filter()` before a time window can hide the change the
      window needs; see [Put time windows first](../guides/state-changes.md#put-time-windows-first).
 3. **Trace it**: `make run TRACE=<app-id>` (or `make watch TRACE=…`) logs each event the app receives, each call of its
-   handler and each service call. See [Tracing an app](../guides/logging.md#tracing-an-app).
+   handler and each action call. See [Tracing an app](../guides/logging.md#tracing-an-app).
 4. **Write a test** that pushes the state you expect; it shows whether the app or the input is wrong.
 
-## Service calls fail
+## Action calls fail
 
 **`was rejected by Home Assistant`.** Try the same call under **Developer tools → Actions**; Home Assistant's reason is
 in the message.

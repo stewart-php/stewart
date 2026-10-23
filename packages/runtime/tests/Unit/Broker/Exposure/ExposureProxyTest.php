@@ -24,13 +24,13 @@ use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
 use Stewart\Runtime\Config\HaCallPolicy;
+use Stewart\Runtime\Ipc\Message\ActionCallRequest;
+use Stewart\Runtime\Ipc\Message\ActionCallResult;
 use Stewart\Runtime\Ipc\Message\ExposeEntityRequest;
 use Stewart\Runtime\Ipc\Message\ExposeEntityResult;
 use Stewart\Runtime\Ipc\Message\ExposureAcknowledged;
 use Stewart\Runtime\Ipc\Message\ReconfigureExposedEntityRequest;
 use Stewart\Runtime\Ipc\Message\RequestFailed;
-use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
-use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Ipc\Message\UpdateExposedEntityRequest;
 use Stewart\Runtime\Lifecycle\ComponentState;
 use Stewart\Runtime\Model\CorrelationId;
@@ -132,12 +132,12 @@ final class ExposureProxyTest extends TestCase
 
     public function testExposureIsNotRefusedWhenTheCallBudgetIsFull(): void
     {
-        $serviceCall = new ServiceCallRequest(new CorrelationId('w0:9'), ResourceScope::forApp(new AppId('demo')), 'light', 'turn_on', [], null, false);
+        $serviceCall = new ActionCallRequest(new CorrelationId('w0:9'), ResourceScope::forApp(new AppId('demo')), 'light', 'turn_on', [], null, false);
         $held = new Latch();
-        $this->slots->runBounded($this->worker, $serviceCall, static function () use ($held, $serviceCall): ServiceCallResult {
+        $this->slots->runBounded($this->worker, $serviceCall, static function () use ($held, $serviceCall): ActionCallResult {
             $held->waitUntilOpen();
 
-            return new ServiceCallResult($serviceCall->correlationId, new ActionResponse('light', 'turn_on'));
+            return new ActionCallResult($serviceCall->correlationId, new ActionResponse('light', 'turn_on'));
         });
 
         $this->forwardExpose(ResourceScope::forApp(new AppId('demo')));

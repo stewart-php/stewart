@@ -18,10 +18,10 @@ use Stewart\Contracts\Time\Instant;
 use Stewart\Contracts\Topic\TopicEvent;
 use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Broker\WorkerOutbox;
+use Stewart\Runtime\Ipc\Message\ActionCallResult;
 use Stewart\Runtime\Ipc\Message\BrokerMessage;
 use Stewart\Runtime\Ipc\Message\EventFired;
 use Stewart\Runtime\Ipc\Message\Ping;
-use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Ipc\Message\StateSnapshot;
 use Stewart\Runtime\Ipc\Message\StateUpdateBatch;
 use Stewart\Runtime\Ipc\Message\TopicMessage;
@@ -43,7 +43,7 @@ final class WorkerOutboxTest extends TestCase
         $outbox = self::createOutbox(eventBuffer: 1);
 
         for ($i = 0; $i < 50; ++$i) {
-            $outbox->enqueue(new ServiceCallResult(new CorrelationId('0:' . $i), new ActionResponse('light', 'turn_on')));
+            $outbox->enqueue(new ActionCallResult(new CorrelationId('0:' . $i), new ActionResponse('light', 'turn_on')));
         }
 
         self::assertCount(50, self::drain($outbox));
@@ -289,7 +289,7 @@ final class WorkerOutboxTest extends TestCase
         $outbox = self::createOutbox();
 
         $outbox->enqueue(new Ping(1, Instant::fromEpochMicroseconds(0)));
-        $outbox->enqueue(new ServiceCallResult(new CorrelationId('0:1'), new ActionResponse('light', 'turn_on')));
+        $outbox->enqueue(new ActionCallResult(new CorrelationId('0:1'), new ActionResponse('light', 'turn_on')));
         $outbox->enqueue(new Ping(2, Instant::fromEpochMicroseconds(0)));
         $outbox->enqueue(new Ping(3, Instant::fromEpochMicroseconds(0)));
 

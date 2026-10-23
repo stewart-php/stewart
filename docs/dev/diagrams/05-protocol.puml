@@ -35,7 +35,7 @@ package "Broker → Worker" as bw #E8F0FE {
         event: TopicEvent
         deliverTo[]
     }
-    class ServiceCallResult {
+    class ActionCallResult {
         correlationId
         response: ActionResponse
     }
@@ -66,7 +66,7 @@ package "Worker → Broker" as wb #E6F4EA {
         appIds[], failedAppIds[]
         memoryBytes
     }
-    class ServiceCallRequest {
+    class ActionCallRequest {
         correlationId, appId
         domain, service, data
         target, returnResponse
@@ -96,7 +96,7 @@ BrokerMessage <|.. HaConnectionLost
 BrokerMessage <|.. StateResynced
 BrokerMessage <|.. EventFired
 BrokerMessage <|.. TopicMessage
-BrokerMessage <|.. ServiceCallResult
+BrokerMessage <|.. ActionCallResult
 BrokerMessage <|.. RequestFailed
 BrokerMessage <|.. SubscriptionAck
 BrokerMessage <|.. Shutdown
@@ -105,7 +105,7 @@ BrokerMessage <|.. Ping
 WorkerMessage <|.. Subscribe
 WorkerMessage <|.. Unsubscribe
 WorkerMessage <|.. WorkerReady
-WorkerMessage <|.. ServiceCallRequest
+WorkerMessage <|.. ActionCallRequest
 WorkerMessage <|.. Publish
 WorkerMessage <|.. AppFailed
 WorkerMessage <|.. Pong

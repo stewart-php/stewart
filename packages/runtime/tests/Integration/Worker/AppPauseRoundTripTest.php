@@ -33,7 +33,7 @@ use Stewart\Runtime\Model\WorkerId;
 use Stewart\Runtime\Tests\Fixtures\Broker\BootedBroker;
 use Stewart\Runtime\Tests\Fixtures\Broker\BrokerKernelFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\FakeHaSession;
-use Stewart\Runtime\Tests\Fixtures\Broker\ReceivedServiceCall;
+use Stewart\Runtime\Tests\Fixtures\Broker\ReceivedActionCall;
 use Stewart\Runtime\Tests\Fixtures\Broker\WorkerPoolFixture;
 use Stewart\Runtime\Tests\Fixtures\Protocol\SerialHandler;
 use Stewart\Runtime\Tests\Fixtures\Worker\InMemoryWorkerSpawner;
@@ -132,7 +132,7 @@ final class AppPauseRoundTripTest extends TestCase
             $called->await(new TimeoutCancellation(self::WAIT_SECONDS));
         }
 
-        self::assertSame([['value' => '2'], ['value' => '3']], array_map(static fn(ReceivedServiceCall $call): array => $call->data, $broker->homeAssistant->listReceivedCalls()));
+        self::assertSame([['value' => '2'], ['value' => '3']], array_map(static fn(ReceivedActionCall $call): array => $call->data, $broker->homeAssistant->listReceivedCalls()));
 
         $broker->run->stop('test done');
         $run->await(new TimeoutCancellation(self::WAIT_SECONDS));
@@ -162,7 +162,7 @@ final class AppPauseRoundTripTest extends TestCase
         $this->changeSerial($session, '3');
         $called->await(new TimeoutCancellation(self::WAIT_SECONDS));
 
-        self::assertSame([['value' => '3']], array_map(static fn(ReceivedServiceCall $call): array => $call->data, $second->homeAssistant->listReceivedCalls()));
+        self::assertSame([['value' => '3']], array_map(static fn(ReceivedActionCall $call): array => $call->data, $second->homeAssistant->listReceivedCalls()));
         $this->stopBroker($second);
     }
 

@@ -97,8 +97,8 @@ final readonly class SnapshotAssembler implements SnapshotSource
         return new BrokerStats(
             workers: $this->slots->countSpawnedSlots(),
             liveWorkers: $this->slots->countLiveWorkers(),
-            inFlightServiceCalls: $this->callSlots->inFlight,
-            refusedServiceCalls: $this->callSlots->refusedCalls,
+            inFlightHaCalls: $this->callSlots->inFlight,
+            refusedHaCalls: $this->callSlots->refusedCalls,
             routing: $this->registry->getRoutingStats(),
         );
     }

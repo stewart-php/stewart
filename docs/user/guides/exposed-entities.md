@@ -54,10 +54,10 @@ A button works the same way: `exposeButton('boost')->watchCommands()` receives a
 
 - When the handler returns, the command is accepted: the switch takes the
   requested state and `getValue()` returns it.
-- `CommandException::rejected()` fails the service call with your message and
+- `CommandException::rejected()` fails the action call with your message and
   leaves the state as it was. Any other exception fails it too, with a generic
   message, and counts as a handler failure.
-- The handler may await, for example a service call. Commands for one entity
+- The handler may await, for example an action call. Commands for one entity
   run one at a time.
 - A switch nobody watches accepts every command, so it works as a stored toggle
   your app reads with `getValue()`.

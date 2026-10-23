@@ -48,7 +48,7 @@ Paths here are relative to `packages/testing/`.
 
 `HaContext/RecordingHaContext` is the second implementation of `HaContext`. Its streams use the same operators from
 `stewart-php/support`, over a `PushSource` instead of a dispatcher, so a test exercises the real `whenChangedTo()`,
-`debounce()` and the rest. `seedState()` and `pushState()` drive it; service calls are recorded as
+`debounce()` and the rest. `seedState()` and `pushState()` drive it; action calls are recorded as
 `RecordedActionCall`s and answered from stubs.
 
 `App/AppHarness::startApp()` builds the app the way a worker does: options by parameter name, `#[GlobalStore]` and

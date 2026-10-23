@@ -13,12 +13,12 @@ use Stewart\Runtime\Control\Protocol\Status\AppPauseStatus;
 use Stewart\Runtime\Control\Protocol\Status\AppStatus;
 use Stewart\Runtime\Control\Protocol\Status\ExposedCommandStats;
 use Stewart\Runtime\Control\Protocol\Status\FailureReport;
-use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
+use Stewart\Runtime\Control\Protocol\Status\HaCallStats;
 use Stewart\Runtime\Ipc\Message\AppActivityReport;
 use Stewart\Runtime\Lifecycle\AppState;
 use Stewart\Runtime\Model\ExposedCommandOutcome;
+use Stewart\Runtime\Model\HaCallOutcome;
 use Stewart\Runtime\Model\ResourceScope;
-use Stewart\Runtime\Model\ServiceCallOutcome;
 use Stewart\Runtime\Model\WorkerId;
 
 final class AppRunningTotals
@@ -51,7 +51,7 @@ final class AppRunningTotals
 
     private ?FailureReport $lastFailure = null;
 
-    /** @var array<string, ServiceCallStatsRecorder> */
+    /** @var array<string, HaCallStatsRecorder> */
     private array $calls = [];
 
     /** @var array<string, int> */
@@ -107,9 +107,9 @@ final class AppRunningTotals
         $this->suppressed += max(0, $report->suppressed - ($previous->suppressed ?? 0));
     }
 
-    public function recordCall(ServiceCallOutcome $outcome, ?Duration $latency): void
+    public function recordCall(HaCallOutcome $outcome, ?Duration $latency): void
     {
-        ($this->calls[$outcome->value] ??= new ServiceCallStatsRecorder($outcome))->recordCall($latency);
+        ($this->calls[$outcome->value] ??= new HaCallStatsRecorder($outcome))->recordCall($latency);
     }
 
     public function recordExposedCommand(ExposedCommandOutcome $outcome): void
@@ -149,7 +149,7 @@ final class AppRunningTotals
                 failures: $this->failures,
                 suppressed: $this->suppressed,
             ),
-            serviceCalls: array_values(array_map(static fn(ServiceCallStatsRecorder $recorder): ServiceCallStats => $recorder->buildServiceCallStats(), $calls)),
+            haCalls: array_values(array_map(static fn(HaCallStatsRecorder $recorder): HaCallStats => $recorder->buildHaCallStats(), $calls)),
             lastFailure: $this->lastFailure,
             exposedCommands: $this->buildExposedCommandStats(),
             lastHandledAt: $this->lastHandledAt,

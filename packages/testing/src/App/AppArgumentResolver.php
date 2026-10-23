@@ -145,7 +145,7 @@ final readonly class AppArgumentResolver
         return $peer === null ? null : new ReadOnlyStore($this->stores->openAppStore(new AppId($peer->appId)));
     }
 
-    // The generated Entities and Services roots take the app's HaContext and nothing else.
+    // The generated Entities and Actions roots take the app's HaContext and nothing else.
     private static function isBuiltOnHaContext(string $typeName): bool
     {
         if (!class_exists($typeName)) {

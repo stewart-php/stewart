@@ -9,7 +9,7 @@ use Stewart\Contracts\Exception\EventFireError;
 use Stewart\Contracts\Exception\ExceptionReason;
 use Stewart\Contracts\Exception\RegistryEditError;
 
-enum ServiceCallOutcome: string
+enum HaCallOutcome: string
 {
     case Succeeded = 'succeeded';
     case Rejected = 'rejected';

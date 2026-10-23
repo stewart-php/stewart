@@ -60,7 +60,7 @@ the log line. With `log_format: json`, that is the `extra.error` field:
     "error": {
       "class": "Stewart\\Contracts\\Exception\\ActionCallException",
       "reason": "rejected",
-      "context": {"domain": "light", "service": "turn_on", "detail": "Entity not found"}
+      "context": {"domain": "light", "action": "turn_on", "detail": "Entity not found"}
     }
   }
 }

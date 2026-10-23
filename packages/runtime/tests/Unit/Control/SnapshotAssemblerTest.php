@@ -91,15 +91,15 @@ final class SnapshotAssemblerTest extends TestCase
 
         self::assertSame(2, $snapshot->broker->workers);
         self::assertSame(1, $snapshot->broker->liveWorkers);
-        self::assertSame(1, $snapshot->broker->inFlightServiceCalls);
+        self::assertSame(1, $snapshot->broker->inFlightHaCalls);
         self::assertSame(2, $snapshot->broker->routing->subscriptions);
 
         [$live, $down] = $snapshot->workers;
         self::assertSame(WorkerPhase::Live, $live->phase);
-        self::assertSame(1, $live->inFlightServiceCalls);
+        self::assertSame(1, $live->inFlightHaCalls);
         self::assertSame(WorkerPhase::RestartScheduled, $down->phase);
         self::assertSame(['echo'], $down->appIds);
-        self::assertSame(0, $down->inFlightServiceCalls);
+        self::assertSame(0, $down->inFlightHaCalls);
 
         [$demo, $echo] = $snapshot->apps;
         self::assertSame(['demo', 0, AppState::Running, 3], [$demo->id, $demo->workerId, $demo->state, $demo->counters->delivered]);

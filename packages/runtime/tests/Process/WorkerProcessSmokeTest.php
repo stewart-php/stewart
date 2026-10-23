@@ -14,11 +14,11 @@ use Stewart\Contracts\State\Collection\EntityStateCollection;
 use Stewart\Contracts\State\EntityState;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Broker\ProcessWorkerSpawner;
+use Stewart\Runtime\Ipc\Message\ActionCallRequest;
+use Stewart\Runtime\Ipc\Message\ActionCallResult;
 use Stewart\Runtime\Ipc\Message\LogRecord;
 use Stewart\Runtime\Ipc\Message\Ping;
 use Stewart\Runtime\Ipc\Message\Pong;
-use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
-use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Ipc\Message\WorkerReady;
 use Stewart\Runtime\Ipc\StoreSettings;
 use Stewart\Runtime\Ipc\Wire\EntityStatesFragment;
@@ -71,11 +71,11 @@ final class WorkerProcessSmokeTest extends TestCase
         self::assertSame(['edge-watcher'], $ready->appIds->collection->toStrings());
 
         $worker->sendUpdates(self::createToggleUpdate());
-        $request = $worker->receiveUntil(ServiceCallRequest::class);
+        $request = $worker->receiveUntil(ActionCallRequest::class);
         self::assertSame([self::LIGHT], array_map(strval(...), $request->target->entityIds ?? []));
 
-        $worker->send(new ServiceCallResult($request->correlationId, new ActionResponse('light', 'turn_on')));
-        $completion = $worker->receiveUntil(LogRecord::class, static fn(LogRecord $log): bool => $log->message === 'Service call finished');
+        $worker->send(new ActionCallResult($request->correlationId, new ActionResponse('light', 'turn_on')));
+        $completion = $worker->receiveUntil(LogRecord::class, static fn(LogRecord $log): bool => $log->message === 'Action call finished');
         self::assertTrue($completion->context['success'] ?? null);
 
         $worker->send(new Ping(nonce: 42, sentAt: SystemClock::inUtc()->getNow()));

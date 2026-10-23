@@ -68,7 +68,7 @@ final class FakeHomeAssistant
 
     private ?Latch $replies = null;
 
-    /** @var list<ReceivedServiceCall> */
+    /** @var list<ReceivedActionCall> */
     private array $receivedCalls = [];
 
     /** @var list<ReceivedEventFire> */
@@ -95,7 +95,7 @@ final class FakeHomeAssistant
     /** @var list<AnsweredExposedCommand> */
     private array $commandAnswers = [];
 
-    /** @var DeferredFuture<ReceivedServiceCall>|null */
+    /** @var DeferredFuture<ReceivedActionCall>|null */
     private ?DeferredFuture $nextCall = null;
 
     /** @var DeferredFuture<RegisteredEntity>|null */
@@ -159,13 +159,13 @@ final class FakeHomeAssistant
         return $this->replies = new Latch();
     }
 
-    /** @return Future<ReceivedServiceCall> */
+    /** @return Future<ReceivedActionCall> */
     public function waitForNextCall(): Future
     {
         return ($this->nextCall ??= new DeferredFuture())->getFuture();
     }
 
-    /** @return list<ReceivedServiceCall> */
+    /** @return list<ReceivedActionCall> */
     public function listReceivedCalls(): array
     {
         return $this->receivedCalls;
@@ -266,7 +266,7 @@ final class FakeHomeAssistant
      */
     private function answerServiceCall(array $command): ?array
     {
-        $call = new ReceivedServiceCall(self::readText($command, 'domain'), self::readText($command, 'service'), self::readFields($command, 'service_data'));
+        $call = new ReceivedActionCall(self::readText($command, 'domain'), self::readText($command, 'service'), self::readFields($command, 'service_data'));
         $this->receivedCalls[] = $call;
         $context = ['id' => self::CALL_CONTEXT_PREFIX . \count($this->receivedCalls), 'parent_id' => null, 'user_id' => self::HA_USER_ID];
 

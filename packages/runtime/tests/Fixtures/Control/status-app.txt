@@ -15,7 +15,7 @@ generated      2 added, 1 removed; run stewart generate
 entities       2000                                                                                                      
 time zone      Europe/Budapest                                                                                           
 workers        1 live of 2                                                                                               
-service calls  1 in flight, 0 refused                                                                                    
+HA calls       1 in flight, 0 refused                                                                                    
 routing        2 subscriptions, 1 patterns, cache 100 hits / 7 misses                                                    
 
 Workers
