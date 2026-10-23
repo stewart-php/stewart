@@ -40,5 +40,34 @@ apps:
 
 - Skip the dimming when someone is watching TV: add a check of `media_player.living_room` in the handler.
 - Leave a light alone after someone switched it by hand: see [Your own changes](../guides/events.md#your-own-changes-or-someone-elses).
-- Several rooms: an app runs once, so copy the class under another name and ID, or watch an
-  [area filter](../guides/registry.md) and turn on the lights of the area where the motion was.
+- Several rooms: see below, or watch an [area filter](../guides/registry.md) and turn on the lights of the area where
+  the motion was.
+
+## Several rooms
+
+Mark the class `#[AppTemplate]` instead of `#[Automation]`, and give each room an entry of its own that names the
+class. Each entry is an app with its own ID, options and status. This template leaves out the night dimming to stay
+short:
+
+```php file=../../examples/apps/MotionLight.php
+```
+
+```yaml
+apps:
+  hall-motion-light:
+    class: App\MotionLight
+    options:
+      motionSensor: binary_sensor.hall_motion
+      light: light.hall
+  landing-motion-light:
+    class: App\MotionLight
+    options:
+      motionSensor: binary_sensor.landing_motion
+      light: light.landing
+      offAfterMinutes: 1
+```
+
+A test starts the template under the ID of one entry:
+
+```php file=../../examples/tests/MotionLightTest.php
+```

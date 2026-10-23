@@ -11,8 +11,10 @@ use ReflectionClass;
 use Stewart\Contracts\App;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\App\Collection\AppIdCollection;
+use Stewart\Contracts\AppTemplate;
 use Stewart\Contracts\Automation;
 use Stewart\Contracts\Disposable;
+use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Exposure\EntityExposure;
 use Stewart\Contracts\HaContext;
 use Stewart\Contracts\Mqtt\Mqtt;
@@ -110,12 +112,14 @@ final class AppHarness
      * @param array<string, mixed> $options
      * @return T
      * @throws HarnessException
+     * @throws IdentifierException
      */
-    public function startApp(string $class, array $options = []): App
+    public function startApp(string $class, array $options = [], ?string $appId = null): App
     {
         $this->requireNotStarted();
         $reflection = new ReflectionClass($class);
-        $appId = $this->readAppId($reflection);
+        $appId = $this->resolveAppId($reflection, $appId);
+        $this->entities->assignAppId($appId);
         $resolver = new AppArgumentResolver([...$this->createFakesFor($appId), ...$this->providedServices], $this->stores, $this->ha);
         $app = $reflection->newInstanceArgs($resolver->resolveArguments($reflection, $options));
         $this->app = $app;
@@ -191,13 +195,24 @@ final class AppHarness
      * @template T of App
      * @param ReflectionClass<T> $reflection
      * @throws HarnessException
+     * @throws IdentifierException
      */
-    private function readAppId(ReflectionClass $reflection): AppId
+    private function resolveAppId(ReflectionClass $reflection, ?string $appId): AppId
     {
-        $automation = ($reflection->getAttributes(Automation::class)[0] ?? null)?->newInstance()
-            ?? throw HarnessException::createForReason(HarnessError::AutomationMissing, class: $reflection->getName());
+        $automation = ($reflection->getAttributes(Automation::class)[0] ?? null)?->newInstance();
+        $isTemplate = $reflection->getAttributes(AppTemplate::class) !== [];
 
-        return new AppId($automation->id);
+        if ($automation === null && !$isTemplate) {
+            throw HarnessException::createForReason(HarnessError::AutomationMissing, class: $reflection->getName());
+        }
+
+        if ($appId !== null) {
+            return new AppId($appId);
+        }
+
+        return $automation === null
+            ? throw HarnessException::createForReason(HarnessError::TemplateNeedsAppId, class: $reflection->getName())
+            : new AppId($automation->id);
     }
 
     /** @throws HarnessException */

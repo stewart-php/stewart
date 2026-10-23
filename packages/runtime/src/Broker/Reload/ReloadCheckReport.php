@@ -21,6 +21,7 @@ final readonly class ReloadCheckReport
      * @param list<ReloadCheckApp> $apps
      * @param list<class-string> $unmarkedClasses
      * @param list<string> $errors
+     * @param list<class-string> $templateClasses
      */
     public function __construct(
         #[ListOf(ReloadCheckApp::class)]
@@ -31,16 +32,19 @@ final readonly class ReloadCheckReport
         public array $errors,
         public string $configFingerprint,
         public ?GeneratedManifest $generated = null,
+        #[ListOf('string')]
+        public array $templateClasses = [],
     ) {}
 
     public static function fromDiscovery(DiscoveryResult $discovered, string $configFingerprint, ?GeneratedManifest $generated): self
     {
         return new self(
-            $discovered->apps->mapToList(static fn(DiscoveredApp $app): ReloadCheckApp => new ReloadCheckApp($app->id->value, $app->class)),
+            $discovered->apps->mapToList(static fn(DiscoveredApp $app): ReloadCheckApp => new ReloadCheckApp($app->id->value, $app->class, $app->origin)),
             $discovered->unmarked->mapToList(static fn(UnmarkedApp $app): string => $app->class),
             [],
             $configFingerprint,
             $generated,
+            $discovered->templateClasses,
         );
     }
 
@@ -58,9 +62,10 @@ final readonly class ReloadCheckReport
     public function restoreDiscovery(): DiscoveryResult
     {
         return new DiscoveryResult(
-            DiscoveredAppCollection::fromApps(array_map(static fn(ReloadCheckApp $app): DiscoveredApp => new DiscoveredApp($app->class, new AppId($app->id)), $this->apps)),
+            DiscoveredAppCollection::fromApps(array_map(static fn(ReloadCheckApp $app): DiscoveredApp => new DiscoveredApp($app->class, new AppId($app->id), $app->origin), $this->apps)),
             UnmarkedAppCollection::fromList(array_map(static fn(string $class): UnmarkedApp => new UnmarkedApp($class), $this->unmarkedClasses)),
             UnloadableAppFileCollection::empty(),
+            $this->templateClasses,
         );
     }
 }

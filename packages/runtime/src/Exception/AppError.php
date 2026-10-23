@@ -16,18 +16,28 @@ enum AppError: string implements ExceptionReason
     case InitializeTimedOut = 'initialize_timed_out';
     case Unknown = 'unknown';
     case Disabled = 'disabled';
+    case TemplateAndAutomation = 'template_and_automation';
+    case InstanceClassMissing = 'instance_class_missing';
+    case InstanceClassNotMarked = 'instance_class_not_marked';
+    case InstanceIdTaken = 'instance_id_taken';
+    case InstanceIdsCollide = 'instance_ids_collide';
 
     public function messageTemplate(): string
     {
         return match ($this) {
             self::DuplicateId => 'Automations {firstClass} and {secondClass} both use ID "{appId}"; "-" and "_" count as the same character.',
             self::DirectoryNotAutoloadable => '{directory} is not covered by a PSR-4 autoload rule. Add it to "autoload" in composer.json and run `make install`.',
-            self::NotAnApp => '{className} has #[Automation] but does not implement {appInterface}.',
-            self::NotInstantiable => '{className} has #[Automation] but cannot be instantiated.',
+            self::NotAnApp => '{className} has {attribute} but does not implement {appInterface}.',
+            self::NotInstantiable => '{className} has {attribute} but cannot be instantiated.',
             self::IdInvalid => '{className}: automation ID "{appId}" is invalid; use lowercase letters, digits, "-" and "_", starting with a letter.',
             self::InitializeTimedOut => '{appId} initialize() did not return within {timeout}. Raise supervision.initialize_timeout if needed.',
             self::Unknown => 'No automation with ID "{appId}".',
             self::Disabled => 'Automation "{appId}" is not loaded because apps.{appId}.enabled is false.',
+            self::TemplateAndAutomation => '{className} has both #[Automation] and #[AppTemplate]; keep #[Automation] to run it under its own ID, or #[AppTemplate] to run it only through apps.<id>.class.',
+            self::InstanceClassMissing => 'apps.{appId}.class names {className}, which does not exist.',
+            self::InstanceClassNotMarked => 'apps.{appId}.class names {className}, which has neither #[AppTemplate] nor #[Automation].',
+            self::InstanceIdTaken => 'apps.{appId}.class runs {className} under "{appId}", which is already the ID of automation {takenBy}.',
+            self::InstanceIdsCollide => 'apps.{appId} and apps.{otherAppId} both name a class, and "-" and "_" count as the same character.',
         };
     }
 }

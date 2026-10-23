@@ -20,6 +20,7 @@ use Stewart\Testing\Tests\Fixtures\App\Notifier;
 use Stewart\Testing\Tests\Fixtures\App\NotifyingApp;
 use Stewart\Testing\Tests\Fixtures\App\PorchStatsApp;
 use Stewart\Testing\Tests\Fixtures\App\RecordingNotifier;
+use Stewart\Testing\Tests\Fixtures\App\RoomCounterTemplate;
 use Stewart\Testing\Tests\Fixtures\App\UnmarkedApp;
 use Stewart\Testing\Tests\Fixtures\App\WaitingInitializeApp;
 
@@ -164,6 +165,26 @@ final class AppHarnessTest extends TestCase
     public function testClassWithoutAutomationIsRefused(): void
     {
         $this->assertThrowsReason(HarnessError::AutomationMissing, fn() => $this->harness->startApp(UnmarkedApp::class));
+    }
+
+    public function testTemplateRunsUnderTheIdItIsGiven(): void
+    {
+        $this->harness->startApp(RoomCounterTemplate::class, ['room' => 'hall'], appId: 'hall-counter');
+
+        self::assertSame('hall', $this->harness->stores->openAppStore(new AppId('hall-counter'))->getString('room'));
+        self::assertSame('hall-counter', $this->harness->entities->appId->value);
+    }
+
+    public function testTemplateWithoutAnIdIsRefused(): void
+    {
+        $this->assertThrowsReason(HarnessError::TemplateNeedsAppId, fn() => $this->harness->startApp(RoomCounterTemplate::class, ['room' => 'hall']));
+    }
+
+    public function testAutomationRunsUnderAnotherIdWhenGivenOne(): void
+    {
+        $this->harness->startApp(PorchStatsApp::class, appId: 'garage-stats');
+
+        self::assertSame(0, $this->harness->stores->openAppStore(new AppId('garage-stats'))->getInt('hall_motions_seen'));
     }
 
     public function testHarnessRunsOneApp(): void

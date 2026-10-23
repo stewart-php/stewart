@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Stewart\Contracts\App\AppId;
 use Stewart\Runtime\App\AppDefinition;
+use Stewart\Runtime\App\AppOrigin;
 use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\DaemonLaunchOptions;
 use Stewart\Runtime\Broker\GeneratedManifest;
@@ -35,6 +36,7 @@ use Stewart\Runtime\Tests\Fixtures\Broker\RecordingPoolListener;
 use Stewart\Runtime\Tests\Fixtures\Broker\ReloadCoordinatorFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\WorkerPoolFixture;
 use Stewart\Runtime\Tests\Fixtures\Deploy\ScriptedCommandRunner;
+use Stewart\Runtime\Tests\Fixtures\Templates\RoomLight;
 use Stewart\Support\Wire\GeneratedFormat;
 use Stewart\Testing\Async\Latch;
 use Stewart\Testing\Filesystem\TempDirectory;
@@ -115,6 +117,21 @@ final class ReloadCoordinatorTest extends TestCase
 
         self::assertSame(['demo', 'porch'], $this->reloads->topology->getCatalog()->enabled->listAppIds()->toStrings());
         self::assertSame(['demo', 'porch'], $this->listRunningAppIds());
+    }
+
+    public function testReloadStartsAConfiguredInstanceWithItsOptions(): void
+    {
+        $config = $this->project->getFilePath('stewart.yaml');
+        file_put_contents($config, "apps:\n  hall-light:\n    class: Stewart\\Runtime\\Tests\\Fixtures\\Templates\\RoomLight\n    options:\n      light: light.hall\n");
+        $this->reloads = $this->createReloads(new DaemonLaunchOptions($config));
+        $apps = [new ReloadCheckApp('demo', Demo::class), new ReloadCheckApp('hall-light', RoomLight::class, AppOrigin::Configured)];
+        $this->commands->queueResult(ReloadCoordinatorFixture::CONSOLE_SCRIPT, 0, $this->reports->encodeReport(new ReloadCheckReport($apps, [], [], (string) hash_file('xxh128', $config), templateClasses: [RoomLight::class])));
+
+        $this->reload();
+
+        self::assertSame(['light' => 'light.hall'], $this->reloads->topology->getCatalog()->enabled->find(new AppId('hall-light'))?->options);
+        self::assertSame(['demo', 'hall-light'], $this->listRunningAppIds());
+        self::assertSame([], $this->logger->listMessagesAt('notice'));
     }
 
     public function testReloadRetiresAWorkerLeftWithoutApps(): void

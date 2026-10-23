@@ -22,6 +22,12 @@ release could break; a release's "Upgrading" section says what to change.
 - `EntityState::isOn()` and `isOff()` read raw states as the typed state classes already do
 - `RecordingHaContext::stubActionAnswer('weather.get_forecasts', …)` and `stubActionFailure()` stub actions by the
   same name, and recorded calls answer `getActionName()`
+- `apps.<id>.class` runs a class once more under that ID, with the entry's own options and settings, so one class can
+  serve several rooms. A class marked `#[AppTemplate]` instead of `#[Automation]` runs only through such entries, and
+  the class may come from a Composer package. A reload applies added and removed entries; a mistyped class names the
+  closest one, and `stewart check` notes a template that no entry names
+- `AppHarness::startApp(…, appId: 'hall-light')` runs an app under the ID of one entry; an `#[AppTemplate]` needs it.
+  The ID also reaches the harness's store and `RecordingEntityExposure`
 - `stewart check` notes, and `stewart doctor` and a reload refuse, an admin port without a token and two HTTP ports on
   one port, which before showed only when the daemon refused to start
 

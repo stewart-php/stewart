@@ -50,10 +50,16 @@ final class RecordingEntityExposure implements EntityExposure
     private ?ExposureException $refusal = null;
 
     public function __construct(
-        public readonly AppId $appId = new AppId('test-app'),
+        public private(set) AppId $appId = new AppId('test-app'),
         private readonly ManualTimers $timers = new ManualTimers(),
     ) {
         $this->exposures = RecordedExposureCollection::empty();
+    }
+
+    /** @internal */
+    public function assignAppId(AppId $appId): void
+    {
+        $this->appId = $appId;
     }
 
     // Stands in for what Home Assistant restored or assigned, applied when the app exposes the key.

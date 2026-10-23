@@ -20,6 +20,7 @@ final readonly class AppOverride
         public array $options,
         public ?LogLevel $logLevel = null,
         public bool $trace = false,
+        public ?string $class = null,
     ) {}
 
     /**
@@ -29,6 +30,7 @@ final readonly class AppOverride
     public static function fromSection(ConfigSection $app, string $id): self
     {
         $logLevel = $app->findString('log_level');
+        $class = ltrim($app->findString('class') ?? '', '\\');
 
         return new self(
             id: new AppId($id),
@@ -38,6 +40,7 @@ final readonly class AppOverride
             options: $app->readMap('options'),
             logLevel: $logLevel === null ? null : LogLevel::from($logLevel),
             trace: $app->readBool('trace'),
+            class: $class === '' ? null : $class,
         );
     }
 }

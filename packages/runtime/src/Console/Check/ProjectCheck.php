@@ -8,6 +8,7 @@ use Stewart\Contracts\Exception\StewartException;
 use Stewart\Runtime\App\AppCatalog;
 use Stewart\Runtime\App\AppCatalogResolver;
 use Stewart\Runtime\App\AppDiscovery;
+use Stewart\Runtime\App\AppInstanceResolver;
 use Stewart\Runtime\App\AppSelection;
 use Stewart\Runtime\App\UnloadableAppFile;
 use Stewart\Runtime\Broker\AppPlacement;
@@ -23,6 +24,7 @@ final readonly class ProjectCheck
     public function __construct(
         private ConfigLoader $config,
         private AppDiscovery $discovery,
+        private AppInstanceResolver $instances,
         private AppCatalogResolver $catalogs,
         private AppPlacement $placement,
         private AppContainerBuilder $containers,
@@ -35,7 +37,7 @@ final readonly class ProjectCheck
         try {
             $config = $this->config->loadConfig($configFile);
             $config->requireHomeAssistant();
-            $discovered = $this->discovery->discover();
+            $discovered = $this->instances->resolveInstances($this->discovery->discover(), $config->apps);
             $catalog = $this->catalogs->resolveCatalog($discovered, $config->apps, $config->workers, $selection);
         } catch (StewartException $e) {
             return ProjectCheckResult::failed([$e->getMessage()]);

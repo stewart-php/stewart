@@ -11,8 +11,14 @@ final readonly class CatalogWarnings
     public function logCatalogWarnings(DiscoveryResult $discovered, AppCatalog $apps, string $configPath, LoggerInterface $logger): void
     {
         foreach ($discovered->unmarked as $unmarked) {
-            $logger->warning('A class in apps/ implements App but is not marked #[Automation], so it will not run.', [
+            $logger->warning('A class in apps/ implements App but is not marked #[Automation] or #[AppTemplate], so it will not run.', [
                 'class' => $unmarked->class,
+            ]);
+        }
+
+        foreach ($discovered->listUnusedTemplateClasses() as $template) {
+            $logger->notice('An #[AppTemplate] class runs only through apps.<id>.class, and no entry names it.', [
+                'class' => $template,
             ]);
         }
 

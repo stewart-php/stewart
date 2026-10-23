@@ -251,6 +251,14 @@ final class ConfigLoaderTest extends TestCase
         self::assertTrue($porch->trace);
     }
 
+    public function testAppClassIsReadWithoutItsLeadingBackslash(): void
+    {
+        $config = $this->loadConfig(self::CONNECTION . "\napps:\n  hall-light:\n    class: '\\App\\MotionLight'\n", ['STEWART_APPS__PORCH__CLASS' => 'App\\MotionLight']);
+
+        self::assertSame('App\\MotionLight', $config->apps->find(new AppId('hall-light'))?->class);
+        self::assertSame('App\\MotionLight', $config->apps->find(new AppId('porch'))?->class);
+    }
+
     public function testLoaderDoesNotLookForAutomations(): void
     {
         $config = $this->loadConfig(self::CONNECTION . "\napps:\n  nonesuch:\n    worker: 0\n");

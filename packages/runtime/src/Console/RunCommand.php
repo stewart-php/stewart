@@ -8,6 +8,7 @@ use Psr\Log\LoggerInterface;
 use Stewart\Contracts\Exception\StewartException;
 use Stewart\Runtime\App\AppCatalogResolver;
 use Stewart\Runtime\App\AppDiscovery;
+use Stewart\Runtime\App\AppInstanceResolver;
 use Stewart\Runtime\App\CatalogWarnings;
 use Stewart\Runtime\Broker\DaemonLaunchOptions;
 use Stewart\Runtime\Config\ConfigLoader;
@@ -34,6 +35,7 @@ final class RunCommand extends StewartCommand
     public function __construct(
         private readonly ConfigLoader $config,
         private readonly AppDiscovery $discovery,
+        private readonly AppInstanceResolver $instances,
         private readonly AppCatalogResolver $catalogs,
         private readonly BrokerKernel $brokers,
         private readonly LoggerFactory $loggers,
@@ -89,7 +91,7 @@ final class RunCommand extends StewartCommand
         $config = $this->config->loadConfig($launch->configFile, $launch->listConfigOverrides());
         // Validated before the logger exists, so a missing home_assistant section fails as a config error.
         $config->requireHomeAssistant();
-        $discovered = $this->discovery->discover();
+        $discovered = $this->instances->resolveInstances($this->discovery->discover(), $config->apps);
         $selection = $launch->selection;
         $apps = $this->catalogs->resolveCatalog($discovered, $config->apps, $config->workers, $selection);
         $verbosity = new LogVerbosityPolicy($config->logLevel, $apps->enabled->listVerbositiesByAppId());

@@ -459,7 +459,7 @@ final class StewartConfigSchema implements ConfigurationInterface
         $root
             ->children()
                 ->append($this->requireKeysMatching(new ArrayNodeDefinition('apps'), static fn(string $id): bool => AppId::tryFromString($id) !== null, 'an automation ID. IDs start with a letter and hold only lowercase letters, digits, "-" and "_"')
-                    ->info('Per-app overrides, keyed by the ID in the automation\'s #[Automation] attribute. Automations are found by scanning, not listed here.')
+                    ->info('Per-app settings, keyed by the ID in the automation\'s #[Automation] attribute. Automations are found by scanning; an entry with class runs one more under its own ID.')
                     ->normalizeKeys(false)
                     ->arrayPrototype()
                         // integerNode() and enumNode() reject an explicit null, so a `~` there is removed before validation.
@@ -472,6 +472,10 @@ final class StewartConfigSchema implements ConfigurationInterface
                             ))
                         ->end()
                         ->children()
+                            ->scalarNode('class')
+                                ->info('Run this class under this ID with the settings here: an #[AppTemplate] class, or an #[Automation] class once more. Omit for the automation with this ID.')
+                                ->defaultNull()
+                            ->end()
                             ->booleanNode('enabled')->defaultTrue()->end()
                             ->booleanNode('paused')
                                 ->info('Start loaded but paused: no events or schedule runs reach it until resumed.')

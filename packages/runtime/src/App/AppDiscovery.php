@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Runtime\App;
 
 use ReflectionClass;
-use Stewart\Contracts\App;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Automation;
 use Stewart\Runtime\App\Collection\DiscoveredAppCollection;
@@ -40,34 +39,38 @@ final readonly class AppDiscovery
             directory: $directory,
         );
         $apps = [];
+        $templates = [];
         $unmarked = [];
         $unloadable = [];
         $classesByKey = [];
 
         foreach (Finder::create()->files()->in($directory)->name('*.php')->sortByName() as $file) {
             try {
-                $reflection = $this->findClassForFile($root, $file);
+                $class = $this->findClassForFile($root, $file);
             } catch (Throwable $e) {
                 $unloadable[] = new UnloadableAppFile($file->getRealPath() ?: $file->getPathname(), $e);
 
                 continue;
             }
 
-            if ($reflection === null) {
+            if ($class === null) {
                 continue;
             }
 
-            $automation = $reflection->getAttributes(Automation::class)[0] ?? null;
+            $automation = $class->findAutomation();
 
             if ($automation === null) {
-                if ($this->isRunnableApp($reflection)) {
-                    $unmarked[] = new UnmarkedApp($reflection->getName());
+                if ($class->isTemplate()) {
+                    $class->requireRunnableApp('#[AppTemplate]');
+                    $templates[] = $class->getName();
+                } elseif ($class->isRunnableApp()) {
+                    $unmarked[] = new UnmarkedApp($class->getName());
                 }
 
                 continue;
             }
 
-            $app = new DiscoveredApp($reflection->getName(), $this->validateAppId($reflection, $automation->newInstance()));
+            $app = new DiscoveredApp($class->getName(), $this->validateAppId($class, $automation));
             $key = $app->id->toEnvironmentKey();
 
             if (isset($classesByKey[$key])) {
@@ -82,40 +85,23 @@ final readonly class AppDiscovery
             DiscoveredAppCollection::fromApps($apps),
             UnmarkedAppCollection::fromList($unmarked),
             UnloadableAppFileCollection::fromList($unloadable),
+            $templates,
         );
     }
 
-    /** @return ReflectionClass<object>|null */
-    private function findClassForFile(AutoloadRoot $root, SplFileInfo $file): ?ReflectionClass
+    private function findClassForFile(AutoloadRoot $root, SplFileInfo $file): ?AppClassReflection
     {
         $path = $file->getRealPath();
         $class = $path === false ? null : $root->findClassNameForFile($path);
 
-        return $class === null || !class_exists($class) ? null : new ReflectionClass($class);
+        return $class === null || !class_exists($class) ? null : new AppClassReflection(new ReflectionClass($class));
     }
 
-    /** @param ReflectionClass<object> $reflection */
-    private function isRunnableApp(ReflectionClass $reflection): bool
+    /** @throws AppException */
+    private function validateAppId(AppClassReflection $class, Automation $automation): AppId
     {
-        return $reflection->isInstantiable() && $reflection->implementsInterface(App::class);
-    }
+        $class->requireRunnableApp('#[Automation]');
 
-    /**
-     * @param ReflectionClass<object> $reflection
-     * @throws AppException
-     */
-    private function validateAppId(ReflectionClass $reflection, Automation $automation): AppId
-    {
-        $class = $reflection->getName();
-
-        if (!$reflection->implementsInterface(App::class)) {
-            throw AppException::createForReason(AppError::NotAnApp, className: $class, appInterface: App::class);
-        }
-
-        if (!$reflection->isInstantiable()) {
-            throw AppException::createForReason(AppError::NotInstantiable, className: $class);
-        }
-
-        return AppId::tryFromString($automation->id) ?? throw AppException::createForReason(AppError::IdInvalid, className: $class, appId: $automation->id);
+        return AppId::tryFromString($automation->id) ?? throw AppException::createForReason(AppError::IdInvalid, className: $class->getName(), appId: $automation->id);
     }
 }

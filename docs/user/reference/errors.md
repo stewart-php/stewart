@@ -287,12 +287,17 @@ Thrown as `AppException`.
 | --- | --- | --- |
 | `DuplicateId` | Automations {firstClass} and {secondClass} both use ID "{appId}"; "-" and "_" count as the same character. |  |
 | `DirectoryNotAutoloadable` | {directory} is not covered by a PSR-4 autoload rule. Add it to "autoload" in composer.json and run `make install`. |  |
-| `NotAnApp` | {className} has #[Automation] but does not implement {appInterface}. |  |
-| `NotInstantiable` | {className} has #[Automation] but cannot be instantiated. |  |
+| `NotAnApp` | {className} has {attribute} but does not implement {appInterface}. |  |
+| `NotInstantiable` | {className} has {attribute} but cannot be instantiated. |  |
 | `IdInvalid` | {className}: automation ID "{appId}" is invalid; use lowercase letters, digits, "-" and "_", starting with a letter. |  |
 | `InitializeTimedOut` | {appId} initialize() did not return within {timeout}. Raise supervision.initialize_timeout if needed. |  |
 | `Unknown` | No automation with ID "{appId}". |  |
 | `Disabled` | Automation "{appId}" is not loaded because apps.{appId}.enabled is false. |  |
+| `TemplateAndAutomation` | {className} has both #[Automation] and #[AppTemplate]; keep #[Automation] to run it under its own ID, or #[AppTemplate] to run it only through apps.<id>.class. |  |
+| `InstanceClassMissing` | apps.{appId}.class names {className}, which does not exist. |  |
+| `InstanceClassNotMarked` | apps.{appId}.class names {className}, which has neither #[AppTemplate] nor #[Automation]. |  |
+| `InstanceIdTaken` | apps.{appId}.class runs {className} under "{appId}", which is already the ID of automation {takenBy}. |  |
+| `InstanceIdsCollide` | apps.{appId} and apps.{otherAppId} both name a class, and "-" and "_" count as the same character. |  |
 
 ## BrokerError
 
@@ -465,7 +470,8 @@ Thrown as `HarnessException`.
 | Reason | Message | What to do |
 | --- | --- | --- |
 | `AlreadyStarted` | The harness already runs {class}; use one harness per app. |  |
-| `AutomationMissing` | {class} has no #[Automation] attribute, so it is not an app. |  |
+| `AutomationMissing` | {class} has neither #[Automation] nor #[AppTemplate], so it is not an app. |  |
+| `TemplateNeedsAppId` | {class} is an #[AppTemplate]; pass the ID of the instance to test as startApp(appId: '…'). |  |
 | `NotStarted` | No app is running; call startApp() first. |  |
 | `OptionMissing` | {class}::__construct() needs option "{option}"; pass it to startApp(). |  |
 | `OptionUnknown` | Option "{option}" matches no parameter of {class}::__construct(). |  |
