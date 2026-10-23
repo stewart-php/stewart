@@ -27,8 +27,8 @@ from its `#[Automation]` attribute. An [`#[AppTemplate]`](apps.md#one-class-seve
 to test: `startApp(MotionLight::class, $options, appId: 'hall-motion-light')`. The ID reaches the app's store and
 exposed entities. Each constructor parameter is filled from:
 
-- an option with the parameter's exact name; the array stands in for `options:` in `stewart.yaml`, with PHP values
-  rather than strings;
+- an option with the parameter's name; the array stands in for `options:` in `stewart.yaml`, with PHP values
+  rather than strings, and as there, case, `-` and `_` do not matter (`motion_sensor` reaches `$motionSensor`);
 - `#[GlobalStore]` and `#[PeerStore('…')]`, from the harness's stores;
 - a service passed to `provideService(Type::class, $object)` before the app starts, for what `services.php` would
   give it;
@@ -36,8 +36,8 @@ exposed entities. Each constructor parameter is filled from:
 - a class that takes only a `HaContext`, such as the generated `Entities` and `Services`, built over `$harness->ha`;
 - the parameter's default, or null when it is nullable.
 
-An option that matches no parameter, a required option that is missing, and a parameter nothing can fill all fail
-with `HarnessException`, naming the parameter. One harness runs one app; `stopApp()` cancels its subscriptions and
+An option that matches no parameter (with the closest name), one that matches two, a parameter set twice, a required
+option that is missing, and a parameter nothing can fill all fail with `HarnessException`, naming the parameter. One harness runs one app; `stopApp()` cancels its subscriptions and
 schedules, then calls `dispose()` if the app has one.
 
 Seed what the app reads at start (states, registry entries, store values, restored exposures) before `startApp()`.

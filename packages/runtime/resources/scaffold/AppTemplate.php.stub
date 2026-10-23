@@ -1,0 +1,23 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{namespace}};
+
+use Psr\Log\LoggerInterface;
+use Stewart\Contracts\App;
+use Stewart\Contracts\AppTemplate;
+
+#[AppTemplate]
+final readonly class {{class}} implements App
+{
+    public function __construct(
+        private LoggerInterface $logger,
+        private string $entity,
+    ) {}
+
+    public function initialize(): void
+    {
+        $this->logger->info('{{class}} started', ['entity' => $this->entity]);
+    }
+}

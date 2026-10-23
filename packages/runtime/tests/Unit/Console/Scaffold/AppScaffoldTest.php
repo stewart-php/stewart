@@ -7,11 +7,14 @@ namespace Stewart\Runtime\Tests\Unit\Console\Scaffold;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Stewart\Runtime\Config\EnvironmentVariables;
 use Stewart\Runtime\Config\ProjectRoot;
 use Stewart\Runtime\Config\Psr4Map;
 use Stewart\Runtime\Console\Scaffold\AppScaffold;
+use Stewart\Runtime\Console\Scaffold\AppScaffoldKind;
 use Stewart\Runtime\Exception\ScaffoldError;
 use Stewart\Runtime\Tests\Fixtures\Apps\TemporaryAppsDirectory;
+use Stewart\Runtime\Tests\Fixtures\Config\ConfigLoaderFixture;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Filesystem\TempDirectory;
 use Symfony\Component\Filesystem\Filesystem;
@@ -114,12 +117,31 @@ final class AppScaffoldTest extends TestCase
         self::assertSame('porch_light', $e->context['appId'] ?? null);
     }
 
+    public function testIdOfAConfiguredInstanceIsRefused(): void
+    {
+        file_put_contents($this->project->getFilePath('stewart.yaml'), "apps:\n  porch-light:\n    class: App\\Lamp\n");
+
+        $e = $this->assertThrowsReason(ScaffoldError::IdTaken, fn() => $this->createScaffold()->scaffoldApp('PorchLight', kind: AppScaffoldKind::Template));
+
+        self::assertSame('porch-light', $e->context['appId'] ?? null);
+    }
+
+    public function testTemplateIsWrittenWithATestForOneEntry(): void
+    {
+        $app = $this->createScaffold()->scaffoldApp('PorchLight', 'porch', AppScaffoldKind::Template);
+
+        self::assertSame($this->apps->namespace . '\\PorchLight', $app->className);
+        self::assertSame([$app->className], $this->apps->createDiscovery()->discover()->templateClasses);
+        self::assertStringContainsString("appId: 'porch'", (string) file_get_contents($this->project->getFilePath($app->testFile)));
+    }
+
     private function createScaffold(?Psr4Map $psr4Map = null): AppScaffold
     {
         return new AppScaffold(
             $psr4Map ?? new Psr4Map([$this->apps->namespace . '\\' => [$this->apps->path]]),
             new ProjectRoot($this->project->path),
             $this->apps->createDiscovery(),
+            ConfigLoaderFixture::createLoader(new EnvironmentVariables(), new ProjectRoot($this->project->path)),
             new Filesystem(),
             $this->apps->path,
         );

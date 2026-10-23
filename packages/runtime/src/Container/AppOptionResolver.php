@@ -15,7 +15,7 @@ use Stewart\Runtime\Config\BooleanSpelling;
 use Stewart\Runtime\Exception\ContainerError;
 use Stewart\Runtime\Exception\ContainerException;
 use Stewart\Runtime\Ipc\WorkerApp;
-use Stewart\Support\Text\ClosestNameFinder;
+use Stewart\Support\Text\OptionNameMatcher;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DependencyInjection\Attribute\AutowireDecorated;
 use Symfony\Component\DependencyInjection\Attribute\Lazy;
@@ -24,7 +24,7 @@ final readonly class AppOptionResolver
 {
     private const array COERCIBLE_TYPES = ['bool', 'int', 'float'];
 
-    public function __construct(private ClosestNameFinder $closestNameFinder) {}
+    public function __construct(private OptionNameMatcher $optionNames) {}
 
     /**
      * @return array<string, mixed>
@@ -42,13 +42,14 @@ final readonly class AppOptionResolver
 
         foreach ($app->options as $option => $value) {
             $option = (string) $option;
-            $parameter = $this->findParameterForOption($app, $parameters, $option) ?? throw ContainerException::appOptionUnknown(
-                $app->id,
-                $option,
-                $app->class,
-                $this->closestNameFinder->findClosestName($option, array_keys($parameters)),
-            );
-            $name = $parameter->getName();
+            $match = $this->optionNames->matchOption($option, array_keys($parameters));
+
+            if ($match->isAmbiguous()) {
+                throw ContainerException::appOptionAmbiguous($app->id, $option, $app->class, $match->candidates);
+            }
+
+            $name = $match->parameter ?? throw ContainerException::appOptionUnknown($app->id, $option, $app->class, $match->suggestion);
+            $parameter = $parameters[$name];
 
             if (isset($optionsByParameter[$name])) {
                 throw ContainerException::createForReason(
@@ -72,32 +73,6 @@ final readonly class AppOptionResolver
         }
 
         return $arguments;
-    }
-
-    /**
-     * @param array<string, ReflectionParameter> $parameters
-     * @throws ContainerException
-     */
-    private function findParameterForOption(WorkerApp $app, array $parameters, string $option): ?ReflectionParameter
-    {
-        if (isset($parameters[$option])) {
-            return $parameters[$option];
-        }
-
-        $folded = self::foldOptionName($option);
-        $matches = array_values(array_filter($parameters, static fn(ReflectionParameter $parameter): bool => self::foldOptionName($parameter->getName()) === $folded));
-
-        if (\count($matches) > 1) {
-            throw ContainerException::appOptionAmbiguous($app->id, $option, $app->class, array_map(static fn(ReflectionParameter $parameter): string => $parameter->getName(), $matches));
-        }
-
-        return $matches[0] ?? null;
-    }
-
-    // Environment variable names lose case and word breaks, so MOTION_SENSOR has to reach $motionSensor.
-    private static function foldOptionName(string $name): string
-    {
-        return strtolower(str_replace(['_', '-'], '', $name));
     }
 
     /**

@@ -12,6 +12,7 @@ use Stewart\Runtime\Time\ProcessTimeZone;
 use Stewart\Store\StoreBackendConnector;
 use Stewart\Store\StoreBackendRegistry;
 use Stewart\Support\Text\ClosestNameFinder;
+use Stewart\Support\Text\OptionNameMatcher;
 use Stewart\Support\Time\Deadlines;
 use Stewart\Support\Time\RevoltTimers;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -27,6 +28,7 @@ return static function (ContainerConfigurator $container): void {
     $services->alias(Deadlines::class, RevoltTimers::class);
 
     $services->set(ClosestNameFinder::class);
+    $services->set(OptionNameMatcher::class);
 
     $services->set(ProcessMemory::class);
 

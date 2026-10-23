@@ -36,6 +36,7 @@ use Stewart\Runtime\Worker\PendingRequests;
 use Stewart\Runtime\Worker\StderrFallback;
 use Stewart\Runtime\Worker\WorkerShutdown;
 use Stewart\Support\Text\ClosestNameFinder;
+use Stewart\Support\Text\OptionNameMatcher;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Logging\RecordedLog;
 use Stewart\Testing\Logging\RecordingLogger;
@@ -232,7 +233,7 @@ final class WorkerShutdownTest extends TestCase
             AppRuntimeServicesFixture::createAppRuntimeServices(transport: $transport, resources: $resources),
             $resources->resources,
             new AppFailureReporter($transport, new StderrFallback(new WorkerId(0)), new AppActivityCounters(), new HandlerFailureSampler()),
-            new AppContainerBuilder(new AppOptionResolver(new ClosestNameFinder()), new ClosestNameFinder()),
+            new AppContainerBuilder(new AppOptionResolver(new OptionNameMatcher(new ClosestNameFinder())), new ClosestNameFinder()),
         );
 
         $this->shutdown = new WorkerShutdown($this->apps, $resources->resources, $this->pending, $this->timers, $this->logger, TestBootstrap::createWorkerSettings(shutdownGrace: Duration::seconds(5)));

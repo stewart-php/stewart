@@ -247,6 +247,23 @@ final class CheckCommandTest extends TestCase
         self::assertStringContainsString($this->apps->namespace . '\\RoomLight is an #[AppTemplate], but no apps.<id>.class names it', $tester->getErrorOutput());
     }
 
+    public function testTheTableGroupsTheEntriesOfAClassAndNotesAnUnusedTemplate(): void
+    {
+        $this->apps->writeClass('Attic', self::createAppSource('Attic', 'attic'));
+        $this->apps->writeClass('RoomLight', "#[\\Stewart\\Contracts\\AppTemplate]\nfinal class RoomLight implements \\Stewart\\Contracts\\App\n{\n    public function initialize(): void {}\n}");
+        $this->apps->writeClass('Spare', "#[\\Stewart\\Contracts\\AppTemplate]\nfinal class Spare implements \\Stewart\\Contracts\\App\n{\n    public function initialize(): void {}\n}");
+        $class = $this->apps->namespace . '\\RoomLight';
+
+        $tester = $this->runCheck(self::VALID_CONFIG . "apps:\n  zz-hall:\n    class: {$class}\n  aa-landing:\n    class: {$class}\n");
+
+        $rows = array_values(array_filter(array_map(trim(...), explode("\n", $tester->getDisplay())), static fn(string $line): bool => str_contains($line, 'Attic') || str_contains($line, 'RoomLight') || str_contains($line, 'Spare')));
+        self::assertCount(4, $rows);
+        self::assertMatchesRegularExpression('/^attic\s/', $rows[0]);
+        self::assertMatchesRegularExpression('/^aa-landing\s/', $rows[1]);
+        self::assertMatchesRegularExpression('/^zz-hall\s/', $rows[2]);
+        self::assertMatchesRegularExpression('/^-\s+\S+Spare\s+-\s+no entry$/', $rows[3]);
+    }
+
     public function testAMistypedClassFailsWithTheClosestName(): void
     {
         $this->apps->writeClass('RoomLight', "#[\\Stewart\\Contracts\\AppTemplate]\nfinal class RoomLight implements \\Stewart\\Contracts\\App\n{\n    public function initialize(): void {}\n}");

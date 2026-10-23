@@ -14,6 +14,8 @@ enum HarnessError: string implements ExceptionReason
     case NotStarted = 'harness_not_started';
     case OptionMissing = 'harness_option_missing';
     case OptionUnknown = 'harness_option_unknown';
+    case OptionAmbiguous = 'harness_option_ambiguous';
+    case OptionRepeated = 'harness_option_repeated';
     case ParameterUnresolvable = 'harness_parameter_unresolvable';
 
     public function messageTemplate(): string
@@ -25,6 +27,8 @@ enum HarnessError: string implements ExceptionReason
             self::NotStarted => 'No app is running; call startApp() first.',
             self::OptionMissing => '{class}::__construct() needs option "{option}"; pass it to startApp().',
             self::OptionUnknown => 'Option "{option}" matches no parameter of {class}::__construct().',
+            self::OptionAmbiguous => 'Option "{option}" matches parameters {parameters} of {class}::__construct(); use the exact name.',
+            self::OptionRepeated => '{class}::__construct() gets ${parameter} twice, as options "{firstOption}" and "{secondOption}".',
             self::ParameterUnresolvable => '{class}::__construct() takes ${parameter} as {type}, which the harness has no fake for; pass one with provideService().',
         };
     }

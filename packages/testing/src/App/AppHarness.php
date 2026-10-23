@@ -32,6 +32,7 @@ use Stewart\Store\StorePrefix;
 use Stewart\Store\Stores;
 use Stewart\Store\StoreValueCodec;
 use Stewart\Support\Text\ClosestNameFinder;
+use Stewart\Support\Text\OptionNameMatcher;
 use Stewart\Testing\Exception\HarnessError;
 use Stewart\Testing\Exception\HarnessException;
 use Stewart\Testing\Exposure\RecordingEntityExposure;
@@ -120,7 +121,7 @@ final class AppHarness
         $reflection = new ReflectionClass($class);
         $appId = $this->resolveAppId($reflection, $appId);
         $this->entities->assignAppId($appId);
-        $resolver = new AppArgumentResolver([...$this->createFakesFor($appId), ...$this->providedServices], $this->stores, $this->ha);
+        $resolver = new AppArgumentResolver([...$this->createFakesFor($appId), ...$this->providedServices], $this->stores, $this->ha, new OptionNameMatcher(new ClosestNameFinder()));
         $app = $reflection->newInstanceArgs($resolver->resolveArguments($reflection, $options));
         $this->app = $app;
 

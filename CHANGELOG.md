@@ -28,6 +28,12 @@ release could break; a release's "Upgrading" section says what to change.
   closest one, and `stewart check` notes a template that no entry names
 - `AppHarness::startApp(…, appId: 'hall-light')` runs an app under the ID of one entry; an `#[AppTemplate]` needs it.
   The ID also reaches the harness's store and `RecordingEntityExposure`
+- `stewart make:app PorchLight --template` writes an `#[AppTemplate]` class and a test for one entry, and prints the
+  `stewart.yaml` entry that runs it; `make:app` also refuses an ID that a `class` entry already uses
+- The test harness matches option names as Stewart does: `motion_sensor` reaches `$motionSensor`, a misspelled option
+  names the closest parameter, and two options for one parameter are refused
+- `stewart check` lists the apps by class, so the entries that run one class sit together, and shows a template that
+  no entry names
 - `stewart check` notes, and `stewart doctor` and a reload refuse, an admin port without a token and two HTTP ports on
   one port, which before showed only when the daemon refused to start
 

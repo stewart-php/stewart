@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Console\Scaffold;
 
 use Stewart\Contracts\App\AppId;
+use Stewart\Contracts\App\Collection\AppIdCollection;
 use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Runtime\App\AppDiscovery;
+use Stewart\Runtime\Config\AppOverride;
 use Stewart\Runtime\Config\AutoloadRoot;
+use Stewart\Runtime\Config\ConfigLoader;
 use Stewart\Runtime\Config\ProjectRoot;
 use Stewart\Runtime\Config\Psr4Map;
 use Stewart\Runtime\Exception\AppError;
 use Stewart\Runtime\Exception\AppException;
+use Stewart\Runtime\Exception\ConfigurationException;
 use Stewart\Runtime\Exception\ScaffoldError;
 use Stewart\Runtime\Exception\ScaffoldException;
 use Symfony\Component\Filesystem\Filesystem;
@@ -33,12 +37,13 @@ final readonly class AppScaffold
         private Psr4Map $psr4Map,
         private ProjectRoot $projectRoot,
         private AppDiscovery $discovery,
+        private ConfigLoader $configs,
         private Filesystem $filesystem,
         private string $appsDirectory,
     ) {}
 
-    /** @throws AppException|IdentifierException|ScaffoldException */
-    public function scaffoldApp(string $className, ?string $appId = null): ScaffoldedApp
+    /** @throws AppException|ConfigurationException|IdentifierException|ScaffoldException */
+    public function scaffoldApp(string $className, ?string $appId = null, AppScaffoldKind $kind = AppScaffoldKind::Automation): ScaffoldedApp
     {
         if (preg_match(self::CLASS_NAME_PATTERN, $className) !== 1) {
             throw ScaffoldException::createForReason(ScaffoldError::ClassNameInvalid, name: $className);
@@ -60,10 +65,16 @@ final readonly class AppScaffold
             '{{class}}' => $className,
             '{{id}}' => $id->value,
         ];
-        $this->filesystem->dumpFile($appFile, $this->renderStub('App.php.stub', $placeholders));
-        $this->filesystem->dumpFile($testFile, $this->renderStub('AppTest.php.stub', $placeholders));
+        $this->filesystem->dumpFile($appFile, $this->renderStub($kind->getAppStub(), $placeholders));
+        $this->filesystem->dumpFile($testFile, $this->renderStub($kind->getTestStub(), $placeholders));
 
-        return new ScaffoldedApp($id, Path::makeRelative($appFile, $this->projectRoot->path), Path::makeRelative($testFile, $this->projectRoot->path));
+        return new ScaffoldedApp(
+            $id,
+            $appsRoot->namespacePrefix . $className,
+            $kind,
+            Path::makeRelative($appFile, $this->projectRoot->path),
+            Path::makeRelative($testFile, $this->projectRoot->path),
+        );
     }
 
     private function deriveAppId(string $className): string
@@ -93,14 +104,24 @@ final readonly class AppScaffold
         }
     }
 
-    /** @throws AppException|ScaffoldException */
+    /** @throws AppException|ConfigurationException|ScaffoldException */
     private function refuseTakenId(AppId $id): void
     {
-        $taken = $this->discovery->discover()->apps->listAppIds()->findFirstWhere(static fn(AppId $known): bool => $known->collidesWith($id));
+        $taken = $this->listTakenIds()->findFirstWhere(static fn(AppId $known): bool => $known->collidesWith($id));
 
         if ($taken !== null) {
             throw ScaffoldException::createForReason(ScaffoldError::IdTaken, appId: $taken->value);
         }
+    }
+
+    /** @throws AppException|ConfigurationException */
+    private function listTakenIds(): AppIdCollection
+    {
+        $configured = $this->configs->loadConfig(null)->apps
+            ->filter(static fn(AppOverride $override): bool => $override->class !== null)
+            ->mapToList(static fn(AppOverride $override): AppId => $override->id);
+
+        return AppIdCollection::fromList([...$this->discovery->discover()->apps->listAppIds()->listValues(), ...$configured]);
     }
 
     /** @param array<string, string> $placeholders */

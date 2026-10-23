@@ -101,7 +101,7 @@ commands. These are the ones you use most:
 | `make run` | Run in the foreground; Ctrl-C stops it. `ONLY="porch-light"` runs only those apps, `TRACE=porch-light` [traces](../guides/logging.md#tracing-an-app) one, `DRY_RUN=1` sends no service calls |
 | `make watch` | Like `make run`, and reloads after every saved change to the apps, `services.php` or `stewart.yaml` |
 | `make debug` | Like `make run`, with Xdebug on |
-| `make app NAME=…` | Create an app in `apps/` and its test in `tests/` |
+| `make app NAME=…` | Create an app in `apps/` and its test in `tests/`; `TEMPLATE=1` creates an [`#[AppTemplate]`](../guides/apps.md#one-class-several-apps) |
 | `make test` | Run the tests |
 | `make stan` | Run PHPStan |
 | `make generate` | Write the typed classes from Home Assistant into `generated/` |
