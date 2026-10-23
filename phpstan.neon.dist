@@ -18,6 +18,7 @@ parameters:
         - packages/codegen/src
         - packages/runtime/src
         - packages/testing/src
+        - packages/phpstan/src
         - packages/contracts/tests
         - packages/support/tests
         - packages/client/tests
@@ -28,6 +29,7 @@ parameters:
         - packages/codegen/tests
         - packages/runtime/tests
         - packages/testing/tests
+        - packages/phpstan/tests
         - packages/runtime/bin
         - packages/runtime/config
         - packages/codegen/config
@@ -40,6 +42,10 @@ parameters:
         - docs/examples
         - docs/generator
         - bin/docs-reference.php
+    excludePaths:
+        analyse:
+            # Code the package's own rule tests analyse, with entity IDs that are wrong on purpose.
+            - packages/phpstan/tests/Fixtures/Analysed
     tmpDir: var/phpstan
     treatPhpDocTypesAsCertain: false
     checkExplicitMixed: true

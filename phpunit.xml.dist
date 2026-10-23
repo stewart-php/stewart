@@ -46,6 +46,7 @@
             <directory>packages/sun/src</directory>
             <directory>packages/runtime/src</directory>
             <directory>packages/testing/src</directory>
+            <directory>packages/phpstan/src</directory>
         </include>
     </source>
     <php>

@@ -1,0 +1,6 @@
+includes:
+    - ../../extension.neon
+
+parameters:
+    stewart:
+        manifest: Stewart\PHPStan\Tests\Fixtures\Generated\NotGeneratedYet

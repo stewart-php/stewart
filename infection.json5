@@ -6,6 +6,7 @@
             "packages/codegen/src",
             "packages/contracts/src",
             "packages/mqtt/src",
+            "packages/phpstan/src",
             "packages/runtime/src",
             "packages/store/src",
             "packages/store-redis/src",

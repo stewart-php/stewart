@@ -134,6 +134,23 @@ final class PackageDependencyRules
             ->because('the sun calendar is pure arithmetic over a location and a clock');
     }
 
+    public function testPhpstanExtensionReadsOnlyTheContracts(): Rule
+    {
+        return PHPat::rule()
+            ->classes(Selector::inNamespace('Stewart\PHPStan'))
+            ->excluding(TestCodeSelector::selectTestCode())
+            ->canOnly()
+            ->dependOn()
+            ->classes(
+                Selector::inNamespace('Stewart\PHPStan'),
+                Selector::inNamespace('Stewart\Contracts'),
+                Selector::inNamespace('Stewart\Support'),
+                Selector::inNamespace('PHPStan'),
+                Selector::inNamespace('PhpParser'),
+            )
+            ->because('a project installs the extension for development only, next to whatever runtime it runs');
+    }
+
     /** PHPStan reports `@internal` only across root namespaces, so inside `Stewart\*` this rule enforces it. */
     public function testOnlyTheFrameworkReachesSupport(): Rule
     {
@@ -147,6 +164,7 @@ final class PackageDependencyRules
                 Selector::inNamespace('Stewart\Store'),
                 Selector::inNamespace('Stewart\Codegen'),
                 Selector::inNamespace('Stewart\Mqtt'),
+                Selector::inNamespace('Stewart\PHPStan'),
             )
             ->shouldNot()
             ->dependOn()
@@ -296,6 +314,7 @@ final class PackageDependencyRules
                 Selector::inNamespace('Stewart\Runtime'),
                 Selector::inNamespace('Stewart\Mqtt'),
                 Selector::inNamespace('Stewart\Sun'),
+                Selector::inNamespace('Stewart\PHPStan'),
             )
             ->excluding(TestCodeSelector::selectTestCode())
             ->shouldNot()

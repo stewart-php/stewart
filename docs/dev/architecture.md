@@ -93,6 +93,7 @@ sends only the new state.
 | `mqtt` | `contracts`, `runtime`, `support` |
 | `codegen` (optional) | `contracts`, `client`, `runtime`, `support` |
 | `testing` (development only) | `contracts`, `store`, `support` |
+| `phpstan` (development only) | `contracts`, `support` |
 
 **`stewart-php/contracts`** is the sink of the dependency graph, holds only the
 API apps see, and depends on PHP alone. That is a rule, not a

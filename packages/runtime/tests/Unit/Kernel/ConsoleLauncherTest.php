@@ -34,12 +34,15 @@ final class ConsoleLauncherTest extends TestCase
         $this->project->remove();
     }
 
-    public function testProjectDirIsRootPackageDirectory(): void
+    public function testProjectDirIsTheRootPackageOfItsLoader(): void
     {
-        $launcher = ConsoleLauncher::createForInstalledProject(new ClassLoader());
+        $vendorDir = array_find_key(ClassLoader::getRegisteredLoaders(), static fn(ClassLoader $loader): bool => $loader->findFile(self::class) !== false)
+            ?? self::fail('No registered autoloader loads this test.');
 
+        $launcher = ConsoleLauncher::createForInstalledProject(ClassLoader::getRegisteredLoaders()[$vendorDir]);
+
+        self::assertSame(realpath(\dirname($vendorDir)), $launcher->projectDir);
         self::assertFileExists($launcher->projectDir . '/composer.json');
-        self::assertFileExists($launcher->projectDir . '/vendor/autoload.php');
     }
 
     public function testEnvironmentFileReachesProcessEnvironment(): void
