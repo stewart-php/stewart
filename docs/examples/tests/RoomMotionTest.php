@@ -30,6 +30,6 @@ final class RoomMotionTest extends TestCase
         self::assertTrue($harness->ha->calls->isEmpty());
 
         $harness->ha->pushState('binary_sensor.kitchen_pir', 'on');
-        self::assertSame('light.turn_on', $harness->ha->getLastCall()->getServiceName());
+        self::assertSame('light.turn_on', $harness->ha->getLastCall()->getActionName());
     }
 }

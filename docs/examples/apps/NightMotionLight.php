@@ -33,14 +33,14 @@ final readonly class NightMotionLight implements App
             ->filter(fn(): bool => !$this->sun->isSunUp())
             ->subscribe(function (): void {
                 $brightness = $this->clock->isWithin('23:00', '06:00') ? $this->nightBrightness : $this->dayBrightness;
-                $this->ha->callService('light', 'turn_on', ['brightness_pct' => $brightness], ServiceTarget::forEntities($this->light));
+                $this->ha->callAction('light.turn_on', ['brightness_pct' => $brightness], ServiceTarget::forEntities($this->light));
             });
 
         $this->ha->watchStateChanges($this->motionSensor)
             ->whenChangedTo('off', for: Duration::minutes($this->offAfterMinutes))
             ->subscribe(function (): void {
                 if ($this->ha->getState($this->light)?->state === 'on') {
-                    $this->ha->callService('light', 'turn_off', target: ServiceTarget::forEntities($this->light));
+                    $this->ha->callAction('light.turn_off', target: ServiceTarget::forEntities($this->light));
                 }
             });
     }

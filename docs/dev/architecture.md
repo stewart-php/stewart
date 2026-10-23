@@ -293,7 +293,7 @@ The things that are easy to break by accident, and what breaks when you do.
 cache. If one starts awaiting, apps that read state in a loop change behavior,
 and code that works in a worker breaks in-process. The interface would be lying
 about itself. `getHistory()` is a request to Home Assistant, not a state read;
-it suspends like `callService()`.
+it suspends like `callAction()`.
 
 **The state cache is mutated, never replaced.** A worker hands the same
 `StateCache` object to every app's context when it constructs them — which

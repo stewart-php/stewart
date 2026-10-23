@@ -35,6 +35,16 @@ final readonly class EntityState
         return $this->entityId->objectId;
     }
 
+    public function isOn(): bool
+    {
+        return $this->state === 'on';
+    }
+
+    public function isOff(): bool
+    {
+        return $this->state === 'off';
+    }
+
     public function isUnavailable(): bool
     {
         return $this->state === self::UNAVAILABLE || $this->state === self::UNKNOWN;

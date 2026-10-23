@@ -126,7 +126,7 @@ final readonly class LightEntity implements TypedEntity
      */
     public function state(string|int|float $value): EventContext
     {
-        return $this->entity->callService('state', [
+        return $this->entity->callAction('state', [
             'value' => $value,
         ]);
     }
@@ -140,7 +140,7 @@ final readonly class LightEntity implements TypedEntity
      */
     public function turnOff(int|float|null $transition = null): EventContext
     {
-        return $this->entity->callService('turn_off', [
+        return $this->entity->callAction('turn_off', [
             'transition' => $transition,
         ]);
     }
@@ -169,7 +169,7 @@ final readonly class LightEntity implements TypedEntity
         int|float|null $transition = null,
         ?bool $white = null,
     ): EventContext {
-        return $this->entity->callService('turn_on', [
+        return $this->entity->callAction('turn_on', [
             'brightness_pct' => $brightnessPct,
             'color_temp_kelvin' => $colorTempKelvin,
             'effect' => $effect,

@@ -177,6 +177,7 @@ Thrown as `ServiceCallException`.
 | `Unreachable` | {domain}.{service} could not reach Home Assistant: {detail} |  |
 | `TimedOut` | {domain}.{service} timed out: {detail} |  |
 | `Overloaded` | {domain}.{service} was refused: {detail} | Call fewer services at once, for example one call with several targets. |
+| `ActionNameInvalid` | "{action}" is not an action name; write it as domain.action, such as light.turn_on. |  |
 
 ## StateError
 

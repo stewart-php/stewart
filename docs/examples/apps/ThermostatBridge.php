@@ -23,7 +23,7 @@ final readonly class ThermostatBridge implements App
     public function initialize(): void
     {
         $this->mqtt->watchMessages('zigbee2mqtt/+/temperature')->subscribe(function (MqttMessage $message): void {
-            $this->ha->callService('input_number', 'set_value', ['value' => (float) $message->payload]);
+            $this->ha->callAction('input_number.set_value', ['value' => (float) $message->payload]);
         });
 
         $this->ha->watchStateChanges('climate.living_room')->subscribe(function (StateChange $change): void {

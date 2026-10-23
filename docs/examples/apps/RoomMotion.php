@@ -23,7 +23,7 @@ final readonly class RoomMotion implements App
         $this->ha->watchStateChanges(EntityFilter::inArea($this->area)->withDomain('binary_sensor')->withLabel('motion'))
             ->whenChangedTo('on')
             ->subscribe(function (): void {
-                $this->ha->callService('light', 'turn_on', target: ServiceTarget::forAreas($this->area));
+                $this->ha->callAction('light.turn_on', target: ServiceTarget::forAreas($this->area));
             });
     }
 }

@@ -27,12 +27,12 @@ final readonly class PorchLight implements App
     {
         $this->scheduler->runAtSunEvent(SunEvent::Sunset, function (): void {
             $this->logger->info('Sunset, turning the porch light on');
-            $this->ha->callService('light', 'turn_on', target: ServiceTarget::forEntities($this->light));
+            $this->ha->callAction('light.turn_on', target: ServiceTarget::forEntities($this->light));
         });
 
         $this->scheduler->runDailyAt($this->offAt, function (): void {
             $this->logger->info('Bedtime, turning the porch light off');
-            $this->ha->callService('light', 'turn_off', target: ServiceTarget::forEntities($this->light));
+            $this->ha->callAction('light.turn_off', target: ServiceTarget::forEntities($this->light));
         });
     }
 }

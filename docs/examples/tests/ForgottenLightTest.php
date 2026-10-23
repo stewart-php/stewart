@@ -25,7 +25,7 @@ final class ForgottenLightTest extends TestCase
     {
         $this->harness->advanceTime(Duration::minutes(15));
 
-        self::assertSame('light.turn_off', $this->harness->ha->getLastCall()->getServiceName());
+        self::assertSame('light.turn_off', $this->harness->ha->getLastCall()->getActionName());
     }
 
     public function testRecentMotionKeepsTheLightOn(): void

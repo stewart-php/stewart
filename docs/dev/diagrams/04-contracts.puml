@@ -19,8 +19,8 @@ interface HaContext {
     +watchTopic(pattern): EventStream
     +watchConnection(): EventStream
     .. actions — suspend ..
-    +callService(domain, service, data, target): EventContext
-    +callServiceForResponse(domain, service, data, target): ServiceResponse
+    +callAction(action, data, target): EventContext
+    +callActionForResponse(action, data, target): ServiceResponse
     +fireEvent(type, data): EventContext
     +getHistory(id, query): EntityStateHistory
     +waitForState(id, state, timeout): ?EntityState

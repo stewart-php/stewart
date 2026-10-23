@@ -91,7 +91,7 @@ It throws `RegistryEditException`:
 | `NotFound` | The entity has no registry entry |
 | `NothingToUpdate` | The update changes nothing |
 | `Rejected` | Home Assistant refused it, for example enabling an entity of a disabled device |
-| `Unreachable`, `TimedOut`, `Overloaded` | As for [service calls](calling-services.md#when-a-call-fails) |
+| `Unreachable`, `TimedOut`, `Overloaded` | As for [action calls](calling-actions.md#when-a-call-fails) |
 
 ## Testing
 

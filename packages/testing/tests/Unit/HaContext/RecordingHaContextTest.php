@@ -15,6 +15,8 @@ use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Contracts\Exception\HistoryError;
 use Stewart\Contracts\Exception\HistoryException;
 use Stewart\Contracts\Exception\IdentifierError;
+use Stewart\Contracts\Exception\ServiceCallError;
+use Stewart\Contracts\Exception\ServiceCallException;
 use Stewart\Contracts\Exception\TopicError;
 use Stewart\Contracts\History\HistoryDetail;
 use Stewart\Contracts\History\HistoryQuery;
@@ -29,6 +31,7 @@ use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Trigger\HaTrigger;
 use Stewart\Contracts\Trigger\TriggerEvent;
 use Stewart\Testing\Exception\AssertsReason;
+use Stewart\Testing\HaContext\RecordedServiceCall;
 use Stewart\Testing\HaContext\RecordingHaContext;
 use Stewart\Testing\HaContext\SeededHistory;
 use Stewart\Testing\Time\EventLoopTicks;
@@ -37,6 +40,7 @@ use function Amp\async;
 
 #[CoversClass(RecordingHaContext::class)]
 #[CoversClass(SeededHistory::class)]
+#[CoversClass(RecordedServiceCall::class)]
 final class RecordingHaContextTest extends TestCase
 {
     use AssertsReason;
@@ -108,13 +112,29 @@ final class RecordingHaContextTest extends TestCase
     {
         $ha = new RecordingHaContext();
 
-        $first = $ha->callService('light', 'turn_on');
-        $second = $ha->callServiceForResponse('weather', 'get_forecasts')->context;
+        $first = $ha->callAction('light.turn_on');
+        $second = $ha->callActionForResponse('weather.get_forecasts')->context;
 
         self::assertSame('recorded-1', $first->id);
         self::assertSame('recorded-2', $second?->id);
         self::assertSame(RecordingHaContext::STEWART_USER_ID, $first->userId);
         self::assertSame($first, $ha->calls->getFirst()?->context);
+    }
+
+    public function testStubbedActionsAnswerOrFail(): void
+    {
+        $ha = new RecordingHaContext()
+            ->stubActionAnswer('weather.get_forecasts', ['forecast' => []])
+            ->stubActionFailure('lock.lock', ServiceCallException::rejected('lock', 'lock', 'jammed'));
+
+        self::assertSame(['forecast' => []], $ha->callActionForResponse('weather.get_forecasts')->response);
+        $this->assertThrowsReason(ServiceCallError::Rejected, static fn() => $ha->callAction('lock.lock'));
+        self::assertSame(['weather.get_forecasts', 'lock.lock'], $ha->calls->mapToList(static fn(RecordedServiceCall $call): string => $call->getActionName()));
+    }
+
+    public function testStubForAMalformedActionNameIsRefused(): void
+    {
+        $this->assertThrowsReason(ServiceCallError::ActionNameInvalid, static fn() => new RecordingHaContext()->stubActionAnswer('get_forecasts', []));
     }
 
     public function testPushedStateCarriesCausingContext(): void
@@ -124,7 +144,7 @@ final class RecordingHaContextTest extends TestCase
         $ha->watchStateChanges('light.hall')->subscribe(static function (StateChange $change) use (&$changes): void {
             $changes[] = $change;
         });
-        $call = $ha->callService('light', 'turn_on');
+        $call = $ha->callAction('light.turn_on');
 
         $ha->pushState('light.hall', 'on', context: $call);
         $ha->pushState('light.hall', 'off', context: new EventContext('manual', userId: 'resident'));
@@ -255,7 +275,7 @@ final class RecordingHaContextTest extends TestCase
     {
         $ha = new RecordingHaContext();
 
-        $call = $ha->callService('light', 'turn_on');
+        $call = $ha->callAction('light.turn_on');
         $fire = $ha->fireEvent('doorbell_pressed');
 
         self::assertSame(['recorded-1', 'recorded-2'], [$call->id, $fire->id]);

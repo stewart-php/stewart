@@ -8,7 +8,7 @@ participant "PendingRequests" as pc $worker
 participant "Broker" as b $broker
 participant "Home Assistant" as ha $ha
 
-app -> ctx : callService('light','turn_on', [...])
+app -> ctx : callAction('light.turn_on', [...])
 ctx -> pc : nextId() → "0:17"
 ctx -> pc : expect("0:17") → Future
 ctx -> b : **ServiceCallRequest** { correlationId: "0:17" }

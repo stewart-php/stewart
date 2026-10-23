@@ -26,7 +26,7 @@ final readonly class SubscribesThenCalls implements App
             $this->logger->info('Handled', ['to' => $change->to?->state]);
         });
 
-        $this->ha->callService('light', 'turn_on');
+        $this->ha->callAction('light.turn_on');
         $this->logger->info('Initialize returned');
     }
 }

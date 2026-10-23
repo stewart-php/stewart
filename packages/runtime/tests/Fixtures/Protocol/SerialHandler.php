@@ -23,7 +23,7 @@ final readonly class SerialHandler implements App
     public function initialize(): void
     {
         $this->ha->watchStateChanges(self::ENTITY)->subscribe(function (StateChange $change): void {
-            $this->ha->callService('script', 'record', ['value' => $change->to?->state]);
+            $this->ha->callAction('script.record', ['value' => $change->to?->state]);
 
             $this->logger->info('Handled', ['value' => $change->to?->state]);
         });

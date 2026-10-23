@@ -15,6 +15,8 @@ export default defineConfig({
     // Separate caches keep one site's content store out of the other's build.
     cacheDir: `./node_modules/.astro/${site.tree}`,
     server: { port: site.port },
+    // Astro prefixes the base to where a redirect starts, but not to where it leads.
+    redirects: Object.fromEntries(Object.entries(site.redirects ?? {}).map(([from, to]) => [from, `${site.base}${to}`])),
     markdown: {
         processor: satteri({ mdastPlugins: [mdastIncludeCode(), mdastRelativeDocLinks(site, listOtherTrees(site))] }),
     },

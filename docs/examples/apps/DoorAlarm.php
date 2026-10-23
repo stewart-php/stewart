@@ -22,7 +22,7 @@ final readonly class DoorAlarm implements App
         $this->ha->watchStateChanges($this->door)
             ->whenChangedTo('on', for: Duration::minutes(5))
             ->subscribe(function (): void {
-                $this->ha->callService('notify', 'notify', ['message' => 'The door has been open for 5 minutes.']);
+                $this->ha->callAction('notify.notify', ['message' => 'The door has been open for 5 minutes.']);
             });
     }
 }

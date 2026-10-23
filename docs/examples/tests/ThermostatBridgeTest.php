@@ -26,7 +26,7 @@ final class ThermostatBridgeTest extends TestCase
         $this->harness->mqtt->pushMessage(new MqttMessage('zigbee2mqtt/kitchen/temperature', '21.5'));
 
         $call = $this->harness->ha->getLastCall();
-        self::assertSame('input_number.set_value', $call->getServiceName());
+        self::assertSame('input_number.set_value', $call->getActionName());
         self::assertSame(['value' => 21.5], $call->data);
     }
 

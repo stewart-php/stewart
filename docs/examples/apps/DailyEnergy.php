@@ -37,7 +37,7 @@ final readonly class DailyEnergy implements App
             $this->store->set($this->createDayKey(0), $today, Duration::hours(24 * self::DAYS_KEPT));
             $week = array_sum(array_map(fn(int $daysAgo): float => $this->store->getFloat($this->createDayKey($daysAgo)) ?? 0.0, range(0, self::DAYS_KEPT - 1)));
 
-            $this->ha->callService('notify', 'notify', [
+            $this->ha->callAction('notify.notify', [
                 'title' => 'Energy',
                 'message' => \sprintf('Today %.1f kWh, last 7 days %.1f kWh.', $today, $week),
             ]);

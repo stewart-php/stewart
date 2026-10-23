@@ -23,7 +23,7 @@ final class NightLockTest extends TestCase
 
     public function testTheDoorIsLockedAtElevenPm(): void
     {
-        self::assertSame('lock.lock', $this->harness->ha->getLastCall()->getServiceName());
+        self::assertSame('lock.lock', $this->harness->ha->getLastCall()->getActionName());
     }
 
     public function testNothingIsSentWhenTheDoorLocks(): void
@@ -31,13 +31,13 @@ final class NightLockTest extends TestCase
         $this->harness->ha->pushState('lock.front_door', 'locked');
         $this->harness->advanceTime(Duration::minutes(1));
 
-        self::assertSame('lock.lock', $this->harness->ha->getLastCall()->getServiceName());
+        self::assertSame('lock.lock', $this->harness->ha->getLastCall()->getActionName());
     }
 
     public function testANotificationIsSentWhenTheDoorStaysUnlocked(): void
     {
         $this->harness->advanceTime(Duration::seconds(30));
 
-        self::assertSame('notify.notify', $this->harness->ha->getLastCall()->getServiceName());
+        self::assertSame('notify.notify', $this->harness->ha->getLastCall()->getActionName());
     }
 }

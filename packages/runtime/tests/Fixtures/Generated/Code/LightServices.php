@@ -32,7 +32,7 @@ final readonly class LightServices
      */
     public function turnOff(ServiceTargetSource $target, int|float|null $transition = null): EventContext
     {
-        return $this->ha->callService('light', 'turn_off', [
+        return $this->ha->callAction('light.turn_off', [
             'transition' => $transition,
         ], $target);
     }
@@ -46,7 +46,7 @@ final readonly class LightServices
      */
     public function turnOn(ServiceTargetSource $target, int|float|null $brightnessPct = null): EventContext
     {
-        return $this->ha->callService('light', 'turn_on', [
+        return $this->ha->callAction('light.turn_on', [
             'brightness_pct' => $brightnessPct,
         ], $target);
     }

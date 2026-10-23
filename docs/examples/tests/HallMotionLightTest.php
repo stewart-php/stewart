@@ -24,7 +24,7 @@ final class HallMotionLightTest extends TestCase
     {
         $this->harness->ha->pushState('binary_sensor.hall_motion', 'on');
 
-        self::assertSame('light.turn_on', $this->harness->ha->getLastCall()->getServiceName());
+        self::assertSame('light.turn_on', $this->harness->ha->getLastCall()->getActionName());
     }
 
     public function testTheLightTurnsOffTwoMinutesAfterTheLastMotion(): void
@@ -33,7 +33,7 @@ final class HallMotionLightTest extends TestCase
         $this->harness->ha->pushState('binary_sensor.hall_motion', 'off');
         $this->harness->advanceTime(Duration::minutes(2));
 
-        self::assertSame('light.turn_off', $this->harness->ha->getLastCall()->getServiceName());
+        self::assertSame('light.turn_off', $this->harness->ha->getLastCall()->getActionName());
     }
 
     public function testMotionWithinTwoMinutesKeepsTheLightOn(): void
@@ -44,6 +44,6 @@ final class HallMotionLightTest extends TestCase
         $this->harness->ha->pushState('binary_sensor.hall_motion', 'on');
         $this->harness->advanceTime(Duration::minutes(5));
 
-        self::assertSame('light.turn_on', $this->harness->ha->getLastCall()->getServiceName());
+        self::assertSame('light.turn_on', $this->harness->ha->getLastCall()->getActionName());
     }
 }

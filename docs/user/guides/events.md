@@ -43,8 +43,8 @@ button.
 
 - The data must be an array keyed by name, holding only strings, numbers, booleans, `null`, and arrays of those.
   Anything else throws `EventFireException` before the event is sent.
-- A fired event counts as a call to Home Assistant: it shares the limits of service calls, and with dry run on, it
-  is logged but not sent. See [Calling services](calling-services.md).
+- A fired event counts as a call to Home Assistant: it shares the limits of action calls, and with dry run on, it
+  is logged but not sent. See [Call actions](calling-actions.md).
 - Home Assistant lets only administrators fire events.
 
 ## Your own changes, or someone else's
@@ -60,9 +60,9 @@ behind the change with the user of Stewart's token, so it needs Stewart to have 
 user](../start/install.md#1-create-a-home-assistant-user-for-stewart). With a token from your own account,
 everything you do counts as Stewart's.
 
-Every `callService()` returns an `EventContext`, which identifies that call. `$change->wasCausedBy($context)` is `true`
+Every `callAction()` returns an `EventContext`, which identifies that call. `$change->wasCausedBy($context)` is `true`
 for changes made by that exact call, including through a script or scene it started. Home Assistant often reports
-the first change before `callService()` returns, so you may not have the context yet. To ask "did a person do
+the first change before `callAction()` returns, so you may not have the context yet. To ask "did a person do
 this?", use `wasCausedByStewart()` instead.
 
 | Method | Answers |

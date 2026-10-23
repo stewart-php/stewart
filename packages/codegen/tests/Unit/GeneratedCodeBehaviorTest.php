@@ -32,7 +32,7 @@ final class GeneratedCodeBehaviorTest extends TestCase
 
         new Entities($ha)->light->getEntity('light.hall')->turnOn(brightnessPct: 60, flash: 'short');
 
-        self::assertSame('light.turn_on', $ha->getLastCall()->getServiceName());
+        self::assertSame('light.turn_on', $ha->getLastCall()->getActionName());
         self::assertSame(['brightness_pct' => 60, 'flash' => 'short'], $ha->getLastCall()->data);
         self::assertSame(['light.hall'], $ha->getLastCall()->listTargetedEntityIds());
     }
@@ -63,7 +63,7 @@ final class GeneratedCodeBehaviorTest extends TestCase
 
         new Entities($ha)->light->getEntity('light.hall')->state('on');
 
-        self::assertSame('light.state', $ha->getLastCall()->getServiceName());
+        self::assertSame('light.state', $ha->getLastCall()->getActionName());
     }
 
     public function testTypedStateAccessorsReadTheAttributeBag(): void
@@ -186,7 +186,7 @@ final class GeneratedCodeBehaviorTest extends TestCase
 
         new Services($ha)->notify->mobileAppPhone('Hall light on', title: 'Stewart');
 
-        self::assertSame('notify.mobile_app_phone', $ha->getLastCall()->getServiceName());
+        self::assertSame('notify.mobile_app_phone', $ha->getLastCall()->getActionName());
         self::assertNull($ha->getLastCall()->target);
         self::assertSame(['message' => 'Hall light on', 'title' => 'Stewart'], $ha->getLastCall()->data);
     }
@@ -220,7 +220,7 @@ final class GeneratedCodeBehaviorTest extends TestCase
 
     public function testRespondingServiceAsksForResponse(): void
     {
-        $ha = new RecordingHaContext()->stubServiceAnswer('weather', 'get_forecasts', ['forecast' => []]);
+        $ha = new RecordingHaContext()->stubActionAnswer('weather.get_forecasts', ['forecast' => []]);
 
         $result = new Services($ha)->weather->getForecasts(ServiceTarget::forEntities('weather.home'), 'daily');
 

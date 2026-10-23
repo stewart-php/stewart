@@ -16,6 +16,12 @@ release could break; a release's "Upgrading" section says what to change.
   `metrics.existingSecret`, and `metrics.podMonitor` scrapes it, so the admin API can stay on loopback
 - Chart: `networkPolicy.enabled` creates ingress NetworkPolicies. The probe port stays open, the metrics and admin
   ports admit only `networkPolicy.metrics.from` and `networkPolicy.adminApi.from`, and Valkey admits only Stewart
+- `HaContext::callAction('light.turn_on', $data, $target)` and `callActionForResponse()` call a Home Assistant action
+  by the name Home Assistant gives it; `Entity::callAction('turn_on')` calls one of the entity's own domain. A name
+  without exactly one dot throws `ServiceCallError::ActionNameInvalid` before anything is sent
+- `EntityState::isOn()` and `isOff()` read raw states as the typed state classes already do
+- `RecordingHaContext::stubActionAnswer('weather.get_forecasts', …)` and `stubActionFailure()` stub actions by the
+  same name, and recorded calls answer `getActionName()`
 - `stewart check` notes, and `stewart doctor` and a reload refuse, an admin port without a token and two HTTP ports on
   one port, which before showed only when the daemon refused to start
 
@@ -26,6 +32,11 @@ release could break; a release's "Upgrading" section says what to change.
   100th
 - Chart: `helm upgrade` rolls the pod when a Secret named in an `existingSecret` has changed, since Stewart reads
   secrets only at start
+
+- Generated services and entity methods call `callAction()`. The generated format is 7, so `stewart status` and the
+  start log ask for `stewart generate` until the classes are regenerated
+- The guide "Calling services" is now "Call actions", at `guides/calling-actions/`; the old address redirects to it.
+  The scheduling guide says when to use a schedule and when a timer
 
 ### Deprecated
 

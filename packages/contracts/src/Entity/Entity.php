@@ -83,6 +83,24 @@ final readonly class Entity implements ServiceTargetSource
      * @param array<string, mixed> $data
      * @throws ServiceCallException
      */
+    public function callAction(string $action, array $data = []): EventContext
+    {
+        return $this->ha->callAction($this->getDomain() . '.' . $action, $data, $this);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @throws ServiceCallException
+     */
+    public function callActionForResponse(string $action, array $data = []): ServiceResponse
+    {
+        return $this->ha->callActionForResponse($this->getDomain() . '.' . $action, $data, $this);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @throws ServiceCallException
+     */
     public function callService(string $service, array $data = []): EventContext
     {
         return $this->ha->callService($this->getDomain(), $service, $data, $this);

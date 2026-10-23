@@ -24,6 +24,7 @@ use Stewart\Contracts\Registry\EntityFilter;
 use Stewart\Contracts\Registry\Registry;
 use Stewart\Contracts\Selector\Collection\SelectorCollection;
 use Stewart\Contracts\Selector\Selector;
+use Stewart\Contracts\Service\ActionName;
 use Stewart\Contracts\Service\ServiceResponse;
 use Stewart\Contracts\Service\ServiceTargetSource;
 use Stewart\Contracts\State\Collection\EntityStateCollection;
@@ -150,6 +151,25 @@ final class RecordingHaContext implements HaContext
     public function stubHistoryFailure(string $entityId, HistoryException $failure): self
     {
         $this->historyFailures[new EntityId($entityId)->value] = $failure;
+
+        return $this;
+    }
+
+    /**
+     * @param array<string, mixed> $response
+     * @throws ServiceCallException
+     */
+    public function stubActionAnswer(string $action, array $response): self
+    {
+        $this->serviceOutcomes[new ActionName($action)->value] = $response;
+
+        return $this;
+    }
+
+    /** @throws ServiceCallException */
+    public function stubActionFailure(string $action, ServiceCallException $failure): self
+    {
+        $this->serviceOutcomes[new ActionName($action)->value] = $failure;
 
         return $this;
     }
@@ -323,6 +343,20 @@ final class RecordingHaContext implements HaContext
             ->map(static fn(PushedTrigger $pushed): TriggerEvent => $pushed->event);
     }
 
+    public function callAction(string $action, array $data = [], ?ServiceTargetSource $target = null): EventContext
+    {
+        $name = new ActionName($action);
+
+        return $this->callStubbedService($name->domain, $name->action, $data, $target, false)->context ?? EventContext::unknown();
+    }
+
+    public function callActionForResponse(string $action, array $data = [], ?ServiceTargetSource $target = null): ServiceResponse
+    {
+        $name = new ActionName($action);
+
+        return $this->callStubbedService($name->domain, $name->action, $data, $target, true);
+    }
+
     public function callService(string $domain, string $service, array $data = [], ?ServiceTargetSource $target = null): EventContext
     {
         return $this->callStubbedService($domain, $service, $data, $target, false)->context ?? EventContext::unknown();
@@ -404,7 +438,7 @@ final class RecordingHaContext implements HaContext
         );
 
         $this->calls = $this->calls->withRecordedCall($call);
-        $outcome = $this->serviceOutcomes[$call->getServiceName()] ?? [];
+        $outcome = $this->serviceOutcomes[$call->getActionName()] ?? [];
 
         return $outcome instanceof ServiceCallException ? throw $outcome : new ServiceResponse($domain, $service, $outcome, $call->context);
     }

@@ -25,7 +25,7 @@ final readonly class HelloApp implements App
         $this->logger->info('Hello from Stewart', ['entities' => $entities, 'watching' => $this->watch]);
 
         // A fixed ID replaces the notification on every start instead of adding another one.
-        $this->ha->callService('persistent_notification', 'create', [
+        $this->ha->callAction('persistent_notification.create', [
             'notification_id' => 'stewart_hello',
             'title' => 'Hello from Stewart',
             'message' => \sprintf('Stewart is connected and can see %d entities.', $entities),

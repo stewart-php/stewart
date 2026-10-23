@@ -20,7 +20,7 @@ final readonly class KitchenWatcher implements App
     public function initialize(): void
     {
         $this->ha->watchStateChanges(EntityFilter::inArea(self::AREA))->subscribe(function (StateChange $change): void {
-            $this->ha->callService('script', 'record', ['entity_id' => $change->entityId->value]);
+            $this->ha->callAction('script.record', ['entity_id' => $change->entityId->value]);
         });
     }
 }

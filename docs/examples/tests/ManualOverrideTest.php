@@ -26,7 +26,7 @@ final class ManualOverrideTest extends TestCase
     {
         $this->harness->ha->pushState('binary_sensor.hall_motion', 'on');
 
-        self::assertSame('light.turn_on', $this->harness->ha->getLastCall()->getServiceName());
+        self::assertSame('light.turn_on', $this->harness->ha->getLastCall()->getActionName());
     }
 
     public function testAChangeByHandPausesTheAppForAnHour(): void
@@ -40,6 +40,6 @@ final class ManualOverrideTest extends TestCase
         $this->harness->ha->pushState('binary_sensor.hall_motion', 'off');
         $this->harness->ha->pushState('binary_sensor.hall_motion', 'on');
 
-        self::assertSame('light.turn_on', $this->harness->ha->getLastCall()->getServiceName());
+        self::assertSame('light.turn_on', $this->harness->ha->getLastCall()->getActionName());
     }
 }

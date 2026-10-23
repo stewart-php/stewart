@@ -38,7 +38,7 @@ final readonly class NotifyServices
         ?array $target = null,
         string|int|float|null $title = null,
     ): EventContext {
-        return $this->ha->callService('notify', 'mobile_app_phone', [
+        return $this->ha->callAction('notify.mobile_app_phone', [
             'message' => $message,
             'data' => $data,
             'target' => $target,

@@ -12,6 +12,7 @@ use stdClass;
 use Stewart\Contracts\App\AppId;
 use Stewart\Contracts\Exception\ExceptionReason;
 use Stewart\Contracts\Exception\IdentifierError;
+use Stewart\Contracts\Exception\ServiceCallError;
 use Stewart\Contracts\Exception\StateError;
 use Stewart\Contracts\Exception\TopicError;
 use Stewart\Contracts\Exception\TriggerError;
@@ -44,6 +45,9 @@ final class HaContextParityTest extends TestCase
         yield 'empty trigger list' => [static fn(HaContext $ha) => $ha->watchTrigger([]), TriggerError::ListEmpty];
         yield 'trigger without platform' => [static fn(HaContext $ha) => $ha->watchTrigger(['entity_id' => 'light.hall']), TriggerError::ConfigInvalid];
         yield 'trigger variables as list' => [static fn(HaContext $ha) => $ha->watchTrigger(HaTrigger::onSunset(), ['hall']), TriggerError::VariablesNotMap];
+        yield 'action without a domain' => [static fn(HaContext $ha) => $ha->callAction('turn_on'), ServiceCallError::ActionNameInvalid];
+        yield 'response action without a domain' => [static fn(HaContext $ha) => $ha->callActionForResponse('get_forecasts'), ServiceCallError::ActionNameInvalid];
+        yield 'entity action with its domain' => [static fn(HaContext $ha) => $ha->getEntity('light.hall')->callAction('light.turn_on'), ServiceCallError::ActionNameInvalid];
         yield 'non-finite payload' => [static fn(HaContext $ha) => $ha->publish('hall.motion', ['level' => NAN]), TopicError::PayloadInvalid];
         yield 'object payload' => [static fn(HaContext $ha) => $ha->publish('hall.motion', ['level' => [new stdClass()]]), TopicError::PayloadInvalid];
     }

@@ -408,7 +408,7 @@ and drained onto the cache straight after the seed. Seeding before subscribing
 would lose every change in that window permanently.
 
 Every live worker hears `HaConnectionLost` when the connection drops. From
-then on `isConnected()` is false and `callService()` fails at once as
+then on `isConnected()` is false and `callAction()` fails at once as
 `Unreachable`. Schedules keep running.
 
 Each attempt also reads the five registries after `get_states`. The seed, the

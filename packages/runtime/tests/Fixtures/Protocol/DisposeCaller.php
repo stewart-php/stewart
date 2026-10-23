@@ -22,7 +22,7 @@ final readonly class DisposeCaller implements App, Disposable
 
     public function dispose(): void
     {
-        $this->ha->callService('light', 'turn_off');
+        $this->ha->callAction('light.turn_off');
 
         $this->logger->info('Dispose call finished');
     }

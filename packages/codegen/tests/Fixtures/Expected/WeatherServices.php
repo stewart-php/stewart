@@ -32,7 +32,7 @@ final readonly class WeatherServices
      */
     public function getForecasts(ServiceTargetSource $target, string $type): ServiceResponse
     {
-        return $this->ha->callServiceForResponse('weather', 'get_forecasts', [
+        return $this->ha->callActionForResponse('weather.get_forecasts', [
             'type' => $type,
         ], $target);
     }

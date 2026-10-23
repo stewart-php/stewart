@@ -30,6 +30,6 @@ final readonly class SwitchServices
      */
     public function turnOn(ServiceTargetSource $target): EventContext
     {
-        return $this->ha->callService('switch', 'turn_on', [], $target);
+        return $this->ha->callAction('switch.turn_on', [], $target);
     }
 }

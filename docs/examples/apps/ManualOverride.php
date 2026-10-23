@@ -43,7 +43,7 @@ final class ManualOverride implements App
                     return;
                 }
 
-                $this->ha->callService('light', 'turn_on', target: ServiceTarget::forEntities($this->light));
+                $this->ha->callAction('light.turn_on', target: ServiceTarget::forEntities($this->light));
             });
     }
 }

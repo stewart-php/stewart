@@ -20,6 +20,6 @@ final class DoorAlarmTest extends TestCase
         $harness->ha->pushState('binary_sensor.front_door', 'on');
         $harness->advanceTime(Duration::minutes(5));
 
-        self::assertSame('notify.notify', $harness->ha->getLastCall()->getServiceName());
+        self::assertSame('notify.notify', $harness->ha->getLastCall()->getActionName());
     }
 }

@@ -119,7 +119,7 @@ other setting, and anything in `.env`, needs a restart.
 | `home_assistant.url`, `.token` | none | Where Home Assistant is, and the token |
 | `persistence.url` | none | The storage server, for example `redis://valkey:6379/0`. See [Persistence](persistence.md) |
 | `mqtt.url` | none | The MQTT server. See [MQTT](mqtt.md) |
-| `service_calls.dry_run` | `false` | Log service calls instead of sending them. See [Calling services](calling-services.md#dry-run) |
+| `service_calls.dry_run` | `false` | Log service calls instead of sending them. See [Call actions](calling-actions.md#dry-run) |
 | `apps.<id>.options` | none | An app's options. See [Anatomy of an app](apps.md#options) |
 | `apps.<id>.log_level` | `log_level` | One app's log level, louder or quieter than the rest. See [Logs](logging.md#one-apps-log-level) |
 | `apps.<id>.trace` | `false` | Log what reaches one app and what it does with it. See [Logs](logging.md#tracing-an-app) |

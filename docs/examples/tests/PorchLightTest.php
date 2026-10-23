@@ -25,7 +25,7 @@ final class PorchLightTest extends TestCase
         $this->harness->advanceTime(Duration::hours(18));
 
         $call = $this->harness->ha->getLastCall();
-        self::assertSame('light.turn_on', $call->getServiceName());
+        self::assertSame('light.turn_on', $call->getActionName());
         self::assertSame(['light.front_porch'], $call->listTargetedEntityIds());
     }
 
@@ -33,6 +33,6 @@ final class PorchLightTest extends TestCase
     {
         $this->harness->advanceTime(Duration::hours(23));
 
-        self::assertSame('light.turn_off', $this->harness->ha->getLastCall()->getServiceName());
+        self::assertSame('light.turn_off', $this->harness->ha->getLastCall()->getActionName());
     }
 }

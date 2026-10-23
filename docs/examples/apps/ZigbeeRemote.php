@@ -24,16 +24,16 @@ final readonly class ZigbeeRemote implements App
     public function initialize(): void
     {
         $this->mqtt->watchMessages("zigbee2mqtt/{$this->remote}/action")->subscribe(function (MqttMessage $message): void {
-            [$service, $data] = match ($message->payload) {
-                'on' => ['turn_on', []],
-                'off' => ['turn_off', []],
-                'brightness_up' => ['turn_on', ['brightness_step_pct' => 10]],
-                'brightness_down' => ['turn_on', ['brightness_step_pct' => -10]],
+            [$action, $data] = match ($message->payload) {
+                'on' => ['light.turn_on', []],
+                'off' => ['light.turn_off', []],
+                'brightness_up' => ['light.turn_on', ['brightness_step_pct' => 10]],
+                'brightness_down' => ['light.turn_on', ['brightness_step_pct' => -10]],
                 default => [null, []],
             };
 
-            if ($service !== null) {
-                $this->ha->callService('light', $service, $data, ServiceTarget::forEntities($this->light));
+            if ($action !== null) {
+                $this->ha->callAction($action, $data, ServiceTarget::forEntities($this->light));
             }
         });
     }

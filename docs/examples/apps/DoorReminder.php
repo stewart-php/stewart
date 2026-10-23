@@ -44,6 +44,6 @@ final class DoorReminder implements App
     private function remind(): void
     {
         $name = $this->ha->getState($this->door)?->getFriendlyName() ?? $this->door;
-        $this->ha->callService('notify', 'notify', ['title' => 'Door open', 'message' => "{$name} is still open."]);
+        $this->ha->callAction('notify.notify', ['title' => 'Door open', 'message' => "{$name} is still open."]);
     }
 }

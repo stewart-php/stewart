@@ -27,7 +27,7 @@ final readonly class WeekdayMorning implements App
         $this->scheduler->runDailyAt(
             '06:45',
             function (): void {
-                $this->ha->callService('switch', 'turn_on', target: ServiceTarget::forEntities('switch.coffee_machine'));
+                $this->ha->callAction('switch.turn_on', target: ServiceTarget::forEntities('switch.coffee_machine'));
             },
             DayOfWeek::Monday,
             DayOfWeek::Tuesday,
@@ -39,7 +39,7 @@ final readonly class WeekdayMorning implements App
         $this->scheduler->runAtSunEvent(
             SunEvent::Sunset,
             function (): void {
-                $this->ha->callService('cover', 'close_cover', target: ServiceTarget::forAreas('living_room'));
+                $this->ha->callAction('cover.close_cover', target: ServiceTarget::forAreas('living_room'));
             },
             SunOffset::before(Duration::minutes(30)),
         );

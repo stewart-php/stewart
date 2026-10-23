@@ -25,7 +25,7 @@ final readonly class RemoteToggle implements App
             ->filter(fn(HaEvent $event): bool => $event->getValue('device_ieee') === $this->remote)
             ->filter(static fn(HaEvent $event): bool => $event->getValue('command') === 'toggle')
             ->subscribe(function (): void {
-                $this->ha->callService('light', 'toggle', target: ServiceTarget::forEntities($this->light));
+                $this->ha->callAction('light.toggle', target: ServiceTarget::forEntities($this->light));
             });
     }
 }
