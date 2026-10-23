@@ -8,6 +8,7 @@ use Stewart\Contracts\Generated\Manifest;
 use Stewart\Contracts\Wire\ListOf;
 use Stewart\Runtime\App\GeneratedRoots;
 use Stewart\Runtime\Config\CodegenConfig;
+use Stewart\Runtime\Exception\AppException;
 use Stewart\Support\Wire\GeneratedFormat;
 
 // Data rather than the class, because a reload after stewart generate brings it from a process that loaded the new one.
@@ -34,6 +35,7 @@ final readonly class GeneratedManifest
         return new self(\is_int($version) ? $version : 0, $manifest::listEntityIds(), $manifest::listIgnoredEntityIds());
     }
 
+    /** @throws AppException */
     public static function findForGeneratedCode(CodegenConfig $codegen): ?self
     {
         $manifest = GeneratedRoots::fromNamespace($codegen->namespace->value)?->manifestClass;

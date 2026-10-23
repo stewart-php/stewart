@@ -7,6 +7,12 @@ release could break; a release's "Upgrading" section says what to change.
 
 ## [Unreleased]
 
+### Added
+
+- `stewart check`, the deploy gate, `stewart run` and a reload refuse generated classes written by Stewart 1.x with
+  one line that says to run `stewart generate`, instead of failing to load them; the PHPStan extension reports such a
+  tree once (`stewart.generatedCode`) and checks no entity IDs or action names until it is regenerated
+
 ### Changed
 
 - `Stewart\Contracts\Service` is now `Stewart\Contracts\Action`, so the types for calling an action carry its name:
@@ -40,7 +46,8 @@ release could break; a release's "Upgrading" section says what to change.
 
 ### Upgrading
 
-1. From `make sh`, rewrite the names that 2.0 changed in your apps, tests and `services.php`. The command rewrites the
+1. Run `make generate` and commit `generated/`: Stewart 2.0 refuses the classes 1.x generated.
+2. From `make sh`, rewrite the names that 2.0 changed in your apps, tests and `services.php`. The command rewrites the
    names it recognises; `make stan` then points at the rest, such as names held in a variable:
 
    ```bash
@@ -63,9 +70,9 @@ release could break; a release's "Upgrading" section says what to change.
    and a class of yours whose name ends in `Services` there too. It leaves `->service` on an `ActionResponse` or a
    `RecordedActionCall` alone, which is `->action` now, and a call to a generated method with a `Service` suffix,
    which has an `Action` suffix now.
-2. An app whose `dispose()` does something implements `Stewart\Contracts\Disposable`, or it no longer runs. Before
+3. An app whose `dispose()` does something implements `Stewart\Contracts\Disposable`, or it no longer runs. Before
    upgrading, `stewart check` on 1.8 names every app this affects.
-3. If Prometheus scrapes the admin port, turn on the metrics port and scrape that: `http.metrics.listen`
+4. If Prometheus scrapes the admin port, turn on the metrics port and scrape that: `http.metrics.listen`
    (`STEWART_HTTP__METRICS__LISTEN`, port 9464 by convention) with Docker, or `metrics.enabled` and
    `metrics.podMonitor.enabled` instead of `adminApi.podMonitor` with the chart. If Prometheus was the only reason for
    `adminApi.host: 0.0.0.0`, set it back to `127.0.0.1`.

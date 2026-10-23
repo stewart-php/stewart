@@ -8,6 +8,8 @@ final class GeneratedSet
 {
     public const string NAMESPACE = 'Stewart\Runtime\Tests\Fixtures\Generated\Code';
 
+    public const string OLDER_MAJOR_NAMESPACE = 'Stewart\Runtime\Tests\Fixtures\Generated\OlderMajor';
+
     public const array IGNORED_ENTITY_PATTERNS = ['light.debug_*'];
 
     private function __construct() {}

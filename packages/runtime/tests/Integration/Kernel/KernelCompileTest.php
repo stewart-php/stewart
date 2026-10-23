@@ -15,6 +15,7 @@ use Stewart\Runtime\App\Collection\AppDefinitionCollection;
 use Stewart\Runtime\Broker\BrokerLifecycle;
 use Stewart\Runtime\Config\ProjectRoot;
 use Stewart\Runtime\Container\TypedContainer;
+use Stewart\Runtime\Exception\AppError;
 use Stewart\Runtime\Kernel\BrokerKernel;
 use Stewart\Runtime\Kernel\ConsoleKernel;
 use Stewart\Runtime\Kernel\ContainerProfile;
@@ -26,6 +27,8 @@ use Stewart\Runtime\Logging\LogVerbosityPolicy;
 use Stewart\Runtime\Model\LogLevel;
 use Stewart\Runtime\Model\StewartVersion;
 use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
+use Stewart\Runtime\Tests\Fixtures\Generated\GeneratedSet;
+use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Logging\RecordingLogger;
 
 #[CoversClass(ConsoleKernel::class)]
@@ -38,6 +41,8 @@ use Stewart\Testing\Logging\RecordingLogger;
 #[CoversClass(NamedArgumentsPass::class)]
 final class KernelCompileTest extends TestCase
 {
+    use AssertsReason;
+
     private const string EMPTY_SERVICES_FILE = __DIR__ . '/../../Fixtures/Kernel/empty-services.php';
 
     public function testConsoleOffersEveryCommand(): void
@@ -54,6 +59,11 @@ final class KernelCompileTest extends TestCase
         $this->expectNotToPerformAssertions();
 
         self::bootBroker(['control' => ['listen' => 'off']]);
+    }
+
+    public function testBrokerRefusesGeneratedCodeFromOlderMajor(): void
+    {
+        $this->assertThrowsReason(AppError::GeneratedCodeFromOlderMajor, static fn() => self::bootBroker(['codegen' => ['namespace' => GeneratedSet::OLDER_MAJOR_NAMESPACE]]));
     }
 
     public function testBrokerWiresWithTheControlSocketOn(): void

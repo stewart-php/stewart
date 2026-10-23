@@ -16,6 +16,7 @@ use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Runtime\Container\AppContainerBuilder;
 use Stewart\Runtime\Container\AppOptionResolver;
+use Stewart\Runtime\Exception\AppError;
 use Stewart\Runtime\Ipc\Message\AppFailed;
 use Stewart\Runtime\Ipc\WorkerApp;
 use Stewart\Runtime\Lifecycle\AppFailurePhase;
@@ -27,6 +28,7 @@ use Stewart\Runtime\Tests\Fixtures\Container\AppRuntimeServicesFixture;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsScalar;
 use Stewart\Runtime\Tests\Fixtures\Container\NeedsUnregisteredService;
 use Stewart\Runtime\Tests\Fixtures\Container\TypedOptionsApp;
+use Stewart\Runtime\Tests\Fixtures\Generated\GeneratedSet;
 use Stewart\Runtime\Tests\Fixtures\Ipc\NullTransport;
 use Stewart\Runtime\Tests\Fixtures\Ipc\TestBootstrap;
 use Stewart\Runtime\Tests\Fixtures\Lifecycle\BreaksOnDispose;
@@ -113,6 +115,17 @@ final class AppLifecycleTest extends TestCase
 
         self::assertSame(['healthy'], $lifecycle->listAppIdsInState(AppState::Running)->toStrings());
         self::assertSame(['unwirable', 'scalar'], $lifecycle->listAppIdsInState(AppState::Failed)->toStrings());
+    }
+
+    public function testGeneratedCodeFromOlderMajorFailsEveryApp(): void
+    {
+        $lifecycle = $this->createLifecycle(new WorkerApp(id: new AppId('healthy'), class: Healthy::class, options: []), generatedNamespace: GeneratedSet::OLDER_MAJOR_NAMESPACE);
+
+        $lifecycle->constructApps();
+
+        self::assertSame(['healthy'], $lifecycle->listAppIdsInState(AppState::Failed)->toStrings());
+        self::assertSame(AppFailurePhase::Construct, $this->getOnlyFailure()->phase);
+        self::assertSame(AppError::GeneratedCodeFromOlderMajor->value, $this->getOnlyFailure()->details?->reason);
     }
 
     public function testInvalidOptionFailsOnlyThatApp(): void
@@ -411,10 +424,10 @@ final class AppLifecycleTest extends TestCase
     }
 
     /** @param list<WorkerApp>|WorkerApp $apps */
-    private function createLifecycle(array|WorkerApp $apps, ?Duration $initializeTimeout = null, ?string $servicesFile = null): AppLifecycle
+    private function createLifecycle(array|WorkerApp $apps, ?Duration $initializeTimeout = null, ?string $servicesFile = null, string $generatedNamespace = 'Stewart\\Generated'): AppLifecycle
     {
         return new AppLifecycle(
-            TestBootstrap::createForApps(\is_array($apps) ? $apps : [$apps], initializeTimeout: $initializeTimeout, servicesFile: $servicesFile),
+            TestBootstrap::createForApps(\is_array($apps) ? $apps : [$apps], initializeTimeout: $initializeTimeout, servicesFile: $servicesFile, generatedNamespace: $generatedNamespace),
             AppRuntimeServicesFixture::createAppRuntimeServices(
                 transport: $this->transport,
                 resources: $this->resources,
