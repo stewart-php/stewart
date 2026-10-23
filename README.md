@@ -51,6 +51,7 @@ and the skeleton (`skeleton/`) share one version; see [releasing](docs/dev/relea
 | `stewart-php/codegen` | Generates typed entity and service classes |
 | `stewart-php/support` | Internal helpers shared by the packages; not app-facing |
 | `stewart-php/testing` | App harness, recording fakes and virtual time for testing apps; a development dependency |
+| `stewart-php/phpstan` | PHPStan rules that catch mistyped entity IDs and action names; a development dependency |
 
 ## Development
 

@@ -27,7 +27,8 @@ If you have written automations before, most ideas carry over. This page maps th
 | Blueprint inputs | App [options](../guides/apps.md#options) |
 
 What you gain: tests, Git history, refactoring, shared code between automations, and, after `make generate`, PhpStorm
-completing your entity IDs and action names.
+completing your entity IDs and action names and `make stan` [catching typos](../guides/codegen.md#typos-caught-by-phpstan)
+in them.
 
 ## AppDaemon
 

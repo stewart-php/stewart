@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use ShipMonk\ComposerDependencyAnalyser\Config\Configuration;
+use ShipMonk\ComposerDependencyAnalyser\Config\ErrorType;
 
 $config = new Configuration();
 
@@ -16,4 +17,6 @@ foreach (['config', 'bin'] as $productionDirectory) {
 return $config
     ->disableReportingUnmatchedIgnores()
     ->ignoreUnknownFunctionsRegex('~^Symfony\\\\Component\\\\DependencyInjection\\\\Loader\\\\Configurator\\\\~')
-    ->ignoreUnknownClasses(['Stewart\Runtime\Tests\Fixtures\Generated\NotGeneratedYet']);
+    ->ignoreUnknownClasses(['Stewart\Runtime\Tests\Fixtures\Generated\NotGeneratedYet'])
+    // stewart-php/phpstan gets PhpParser from phpstan.phar; the vendor copy comes only with PHPUnit.
+    ->ignoreErrorsOnPackage('nikic/php-parser', [ErrorType::SHADOW_DEPENDENCY]);

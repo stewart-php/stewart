@@ -39,6 +39,11 @@ package "stewart-php/testing\n(dev only)" as testing #F3E8FD {
     class RecordingHaContext
 }
 
+package "stewart-php/phpstan\n(dev only)" as phpstan #F3E8FD {
+    class EntityIdArgumentRule
+    class ActionNameArgumentRule
+}
+
 package "stewart-php/store" as store #FCE8E6 {
     class Stores
     class StoreBackend <<interface>>
@@ -89,6 +94,8 @@ support <-- mqtt
 runtime <-- mqtt
 contracts <-- testing
 support <-- testing
+contracts <-- phpstan
+support <-- phpstan
 store <-- testing
 contracts <-- generated
 codegen ..> generated : writes

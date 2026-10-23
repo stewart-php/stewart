@@ -6,6 +6,9 @@ namespace Stewart\Tests\Architecture\Fixtures;
 
 final readonly class ImportOwner
 {
+    // phpstan.phar ships PhpParser; the vendor copy comes only with tools such as PHPUnit.
+    private const array BUNDLED_BY = ['nikic/php-parser' => 'phpstan/phpstan'];
+
     private function __construct(
         public string $name,
         private bool $core,
@@ -28,11 +31,17 @@ final readonly class ImportOwner
 
     public function isSatisfiedBy(PackageManifest $manifest): bool
     {
-        return $this->core || $this->name === $manifest->name || $manifest->requiresPackage($this->name);
+        return $this->core
+            || $this->name === $manifest->name
+            || $manifest->requiresPackage($this->name)
+            || (isset(self::BUNDLED_BY[$this->name]) && $manifest->requiresPackage(self::BUNDLED_BY[$this->name]));
     }
 
     public function isSatisfiedForTestsBy(PackageManifest $manifest): bool
     {
-        return $this->core || $this->name === $manifest->name || $manifest->requiresPackageForTests($this->name);
+        return $this->core
+            || $this->name === $manifest->name
+            || $manifest->requiresPackageForTests($this->name)
+            || (isset(self::BUNDLED_BY[$this->name]) && $manifest->requiresPackageForTests(self::BUNDLED_BY[$this->name]));
     }
 }

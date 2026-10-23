@@ -1,0 +1,26 @@
+parameters:
+    stewart:
+        manifest: App\Generated\Manifest
+
+parametersSchema:
+    stewart: structure([
+        manifest: string()
+    ])
+
+services:
+    - Stewart\Support\Text\ClosestNameFinder
+    - Stewart\PHPStan\Rule\EntityIdLiterals
+    - Stewart\PHPStan\Rule\TestCodeScope
+    -
+        class: Stewart\PHPStan\Manifest\ManifestCatalogLoader
+        arguments:
+            manifestClass: %stewart.manifest%
+    - Stewart\PHPStan\Manifest\GeneratedHandles
+    -
+        class: Stewart\PHPStan\Cache\ManifestResultCacheValue
+        tags:
+            - phpstan.resultCacheValueExtension
+
+rules:
+    - Stewart\PHPStan\Rule\EntityIdArgumentRule
+    - Stewart\PHPStan\Rule\ActionNameArgumentRule

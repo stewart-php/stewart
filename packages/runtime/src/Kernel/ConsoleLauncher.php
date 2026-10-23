@@ -20,9 +20,21 @@ final readonly class ConsoleLauncher
 
     public static function createForInstalledProject(ClassLoader $loader): self
     {
-        $installPath = InstalledVersions::getRootPackage()['install_path'];
+        $installPath = self::findRootInstallPath($loader) ?? InstalledVersions::getRootPackage()['install_path'];
 
         return new self(realpath($installPath) ?: $installPath, $loader);
+    }
+
+    // InstalledVersions answers for the first Composer autoloader in the process, which can be one inside a PHAR.
+    private static function findRootInstallPath(ClassLoader $loader): ?string
+    {
+        $vendorDir = array_search($loader, ClassLoader::getRegisteredLoaders(), true);
+        $installedFile = \is_string($vendorDir) ? $vendorDir . '/composer/installed.php' : null;
+        $installed = $installedFile !== null && is_file($installedFile) ? require $installedFile : null;
+        $root = \is_array($installed) ? $installed['root'] ?? null : null;
+        $installPath = \is_array($root) ? $root['install_path'] ?? null : null;
+
+        return \is_string($installPath) ? $installPath : null;
     }
 
     public function launchConsole(): int

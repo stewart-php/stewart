@@ -132,6 +132,49 @@ make generate ARGS="--check --snapshot-in=snapshot.json"           # in CI
 Generating from the same snapshot always gives the same files. Keep the snapshot out of public repositories; the same
 goes for `generated/`, which names your entities.
 
+## Typos caught by PHPStan
+
+`stewart-php/phpstan` checks the entity IDs and action names written in your code against what the last
+`make generate` saw, so `make stan` stops a typo before it reaches Home Assistant:
+
+```
+ ------ ---------------------------------------------------------------------------------------------
+  Line   apps/PorchLight.php
+ ------ ---------------------------------------------------------------------------------------------
+  24     Entity ID "light.porhc" was not in Home Assistant at the last stewart generate. Did you mean
+         "light.porch"?
+         🪪  stewart.entityId
+ ------ ---------------------------------------------------------------------------------------------
+```
+
+- It checks every method that takes an entity ID, such as `getState()`, `watchStateChanges()`,
+  `ServiceTarget::forEntities()`, `runAtEntityTime()` and `new EntityId(…)`, and the action names of `callAction()`,
+  including `$ha->getEntity('light.hall')->callAction('turn_on')`.
+- Only IDs written as literals are checked. Globs such as `light.*`, times such as `07:30`, and IDs from options are
+  left alone, and so is code in your tests, which seed made-up entities.
+- An ID left out of the generated classes (excluded, disabled or hidden) is fine for `$ha->getState()`, but
+  `$this->entities->light->getEntity()` throws for it, so PHPStan reports that call.
+- Before the first `make generate` there is nothing to check against, so nothing is reported.
+
+Projects from the skeleton have it. Another project adds it, together with the installer that loads PHPStan
+extensions, from `make sh`:
+
+```bash
+composer config allow-plugins.phpstan/extension-installer true
+composer require --dev stewart-php/phpstan phpstan/extension-installer
+```
+
+With a `codegen.namespace` other than `App\Generated`, tell it where the manifest is in `phpstan.neon.dist`:
+
+```neon
+parameters:
+    stewart:
+        manifest: Home\Generated\Manifest
+```
+
+An entity that exists only at run time, such as one an app creates, can be silenced with PHPStan's
+`ignoreErrors` and the identifier `stewart.entityId` (`stewart.actionName` for actions).
+
 ## In production
 
 Projects from the skeleton require `stewart-php/codegen` like any other package, so `stewart generate` also exists on a

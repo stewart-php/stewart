@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0caafd1c7c84ad119a9c1cb728f3afc7",
+    "content-hash": "76685bced51029e27d22d6324779cbd6",
     "packages": [
         {
             "name": "amphp/amp",
@@ -2227,7 +2227,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/client",
-                "reference": "c3089f29fcda825887bbd796411afe296074fc3f"
+                "reference": "a06882d6eb4cd323b900ec25ce99752d5f25f3a8"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2294,7 +2294,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/contracts",
-                "reference": "0f706e507527bfe14390ba971944c6040c15353e"
+                "reference": "90944218ff471a29271f90b7de93e1068e7af168"
             },
             "require": {
                 "ext-filter": "*",
@@ -2342,7 +2342,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/mqtt",
-                "reference": "5d90e9ee59ff0cf5bd4b1b33ac57d48d1d4bb127"
+                "reference": "a56fc76ebb8869ee88462624825cabbabf12725e"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2396,7 +2396,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/runtime",
-                "reference": "6f955e398c1b50d5b47e54f26b6e3df1a71f69fe"
+                "reference": "cdfdfc0c2eb1556befc61df584915e2375b40223"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2481,7 +2481,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/store",
-                "reference": "07f793bb792b9305fc9458fcc249510dcab0afd9"
+                "reference": "d78099508fcec0434e9ab0b316de59d6b3fd282f"
             },
             "require": {
                 "ext-json": "*",
@@ -2533,7 +2533,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/store-redis",
-                "reference": "619dd6c6d4e25dd7eb09f41a6b6cc403a07a22ef"
+                "reference": "1a3dbd5c72f9ab8f3949549a5e13df534f60b875"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -2592,7 +2592,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/sun",
-                "reference": "52f2ef01963bf0d902de394c2ebe640f6ba35d24"
+                "reference": "283d3c9aa80b835bb0ac0c35d5ac0b25b1aea4ec"
             },
             "require": {
                 "php": ">=8.5.12",
@@ -2639,7 +2639,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/support",
-                "reference": "fe54b34163b421c908f36cc23a9406bd1489010d"
+                "reference": "0890f53a87785a2a09b6b6bdbc8af50f27690e45"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -7799,7 +7799,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/codegen",
-                "reference": "e5066acb89c00ae98475e9ba2f829f0bbc9d4f27"
+                "reference": "51925cdc0f4d83ada65ff668a46f2a8d05f2dcc6"
             },
             "require": {
                 "ext-ctype": "*",
@@ -7851,12 +7851,65 @@
             }
         },
         {
+            "name": "stewart-php/phpstan",
+            "version": "1.x-dev",
+            "dist": {
+                "type": "path",
+                "url": "packages/phpstan",
+                "reference": "79f4ec260f0a5b17e96374d9ba4595b148126db4"
+            },
+            "require": {
+                "php": ">=8.5.12",
+                "phpstan/phpstan": "^2.3",
+                "stewart-php/contracts": "self.version",
+                "stewart-php/support": "self.version"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^13.3"
+            },
+            "type": "phpstan-extension",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "1.x-dev"
+                },
+                "phpstan": {
+                    "includes": [
+                        "extension.neon"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Stewart\\PHPStan\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Stewart\\PHPStan\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "PHPStan rules that check Home Assistant entity IDs and action names against a Stewart project's generated classes",
+            "homepage": "https://github.com/stewart-php/stewart",
+            "support": {
+                "issues": "https://github.com/stewart-php/stewart/issues",
+                "source": "https://github.com/stewart-php/stewart",
+                "docs": "https://stewart-php.github.io/docs/"
+            },
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
             "name": "stewart-php/testing",
             "version": "1.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/testing",
-                "reference": "675bdae6f4ca7736f2488a11b112f8be771c0210"
+                "reference": "44441e6b19a2cd41a248670dde7d060cbda5ee51"
             },
             "require": {
                 "amphp/amp": "^3.1.1",
@@ -8513,6 +8566,7 @@
         "stewart-php/codegen": 20,
         "stewart-php/contracts": 20,
         "stewart-php/mqtt": 20,
+        "stewart-php/phpstan": 20,
         "stewart-php/runtime": 20,
         "stewart-php/store": 20,
         "stewart-php/store-redis": 20,

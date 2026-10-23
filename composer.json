@@ -29,6 +29,7 @@
         "shipmonk/composer-dependency-analyser": "^1.8",
         "staabm/annotate-pull-request-from-checkstyle": "^1.8",
         "stewart-php/codegen": "1.x-dev",
+        "stewart-php/phpstan": "1.x-dev",
         "stewart-php/testing": "1.x-dev"
     },
     "repositories": [
@@ -42,6 +43,7 @@
                     "stewart-php/codegen": "1.x-dev",
                     "stewart-php/contracts": "1.x-dev",
                     "stewart-php/mqtt": "1.x-dev",
+                    "stewart-php/phpstan": "1.x-dev",
                     "stewart-php/runtime": "1.x-dev",
                     "stewart-php/store": "1.x-dev",
                     "stewart-php/store-redis": "1.x-dev",
@@ -68,7 +70,8 @@
             "Stewart\\Sun\\Tests\\": "packages/sun/tests/",
             "Stewart\\Codegen\\Tests\\": "packages/codegen/tests/",
             "Stewart\\Runtime\\Tests\\": "packages/runtime/tests/",
-            "Stewart\\Testing\\Tests\\": "packages/testing/tests/"
+            "Stewart\\Testing\\Tests\\": "packages/testing/tests/",
+            "Stewart\\PHPStan\\Tests\\": "packages/phpstan/tests/"
         }
     },
     "minimum-stability": "stable",

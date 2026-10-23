@@ -38,6 +38,10 @@ release could break; a release's "Upgrading" section says what to change.
   `Scheduler::runAtEntityTime()`, `HaTrigger`, `Registry`, `EntityId`), zones for `onZoneTransition()`, and action
   names for `callAction()`. The generated `Manifest` lists the action names too, through the new
   `Stewart\Contracts\Generated\ActionManifest`
+- `stewart-php/phpstan`, a PHPStan extension, checks literal entity IDs and action names against the generated
+  `Manifest`: a typo fails `make stan` with the closest known name, and a generated `getEntity()` for an entity left
+  out of codegen is reported, since it throws at run time. Its errors use the identifiers `stewart.entityId` and
+  `stewart.actionName`
 - `stewart check` notes, and `stewart doctor` and a reload refuse, an admin port without a token and two HTTP ports on
   one port, which before showed only when the daemon refused to start
 
@@ -75,6 +79,13 @@ release could break; a release's "Upgrading" section says what to change.
      -e "s/->stubService(Answer|Failure)\('([a-z0-9_]+)', *'([a-z0-9_]+)'/->stubAction\1('\2.\3'/g" \
      -e 's/->callService(ForResponse)?\(/->callAction\1(/g' \
      -e 's/->getServiceName\(\)/->getActionName()/g'
+   ```
+3. To have `make stan` check entity IDs and action names, add the PHPStan extension from `make sh`; new projects
+   from the skeleton have it:
+
+   ```bash
+   composer config allow-plugins.phpstan/extension-installer true
+   composer require --dev stewart-php/phpstan:^1.8 phpstan/extension-installer
    ```
 
 ## [1.7.0] - 2026-10-22

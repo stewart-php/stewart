@@ -30,6 +30,7 @@ make check      # every check CI runs
 | `packages/mqtt` | The MQTT client |
 | `packages/sun` | Sun times and positions |
 | `packages/testing` | `AppHarness` and the fakes apps are tested with |
+| `packages/phpstan` | PHPStan rules that check entity IDs and action names against the generated `Manifest` |
 | `packages/support` | Internal helpers with no API promise |
 | `skeleton/` | The template new projects start from |
 | `integrations/home-assistant/` | The Home Assistant integration, in Python |
