@@ -33,6 +33,9 @@ This repository is the only place Stewart is developed. Everything else is publi
   `ActionTargetSource`): a project that has not run `stewart generate` since the upgrade would fail to load its
   classes. New generated members go on a new interface instead, until the next major folds it in.
 - **Trunk and tags.** Releases are cut from `main`. A fix for an older minor is not backported; upgrade instead.
+- **The previous major.** For six months after a new major, `rebuild.yml` keeps rebuilding the previous major's latest
+  release (`PREVIOUS_MAJOR` and `PREVIOUS_MAJOR_UNTIL`), so its image tags get PHP and Alpine fixes: 1.x until
+  2027-04-30. It gets no code fixes, and its docs stay frozen at `/docs/<old>.x/`; there is no maintenance branch.
 - **Branch alias.** `dev-main` is `X.x-dev` for the current major; at a new major change it in every
   `packages/*/composer.json`, the root path repository's `versions`, `PackageManifestTest::BRANCH_ALIAS`,
   `bin/test-package.sh` and `bin/bc-check.sh` together.
@@ -120,7 +123,8 @@ Done once, by an owner of the `stewart-php` organization, before `v0.1.0`.
 - A docs-only fix after a release: merge it, then run **Docs** by hand with the ref to publish (empty means the
   latest tag; `main` publishes unreleased docs, so only do that on purpose).
 - **At a new major**, before its first publish: copy the current `docs/` of the site repository to `docs/<old>.x/`,
-  add a note on its pages that they describe an old version, and commit it. Then tag the release.
+  add a note on its pages that they describe an old version, and commit it. Set `PREVIOUS_MAJOR` and
+  `PREVIOUS_MAJOR_UNTIL` in `rebuild.yml`. Then tag the release.
 
 ## Verifying a published release
 

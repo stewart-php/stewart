@@ -1,5 +1,6 @@
-# Rebuilds the runtime images of the latest release every week, so the rolling tags (0.1, later 1 and 1.2) pick up
-# PHP and Alpine security fixes. Exact version tags stay as released.
+# Rebuilds the runtime image of the latest release every week, and of the previous major's latest release until its
+# support ends, so the rolling tags (2 and 2.0, 1 and 1.8) pick up PHP and Alpine security fixes. Exact version tags
+# stay as released.
 name: Rebuild runtime image
 
 on:
@@ -14,31 +15,41 @@ jobs:
   latest:
     runs-on: ubuntu-24.04
     outputs:
-      tag: ${{ steps.latest.outputs.tag }}
-      version: ${{ steps.latest.outputs.version }}
+      releases: ${{ steps.latest.outputs.releases }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
       - id: latest
-        name: Find the latest release
+        name: Find the latest release, and the previous major's while it is supported
         run: |
-          tag=$(git tag --list 'v*.*.*' --sort=-version:refname | head -n 1)
-          if [ -z "$tag" ]; then echo 'No release to rebuild.' >&2; exit 1; fi
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+          latest=$(git tag --list 'v*.*.*' --sort=-version:refname | head -n 1)
+          if [ -z "$latest" ]; then echo 'No release to rebuild.' >&2; exit 1; fi
+          releases="{\"tag\":\"$latest\",\"version\":\"${latest#v}\"}"
+          previous=$(git tag --list "v$PREVIOUS_MAJOR.*.*" --sort=-version:refname | head -n 1)
+          if [ -n "$previous" ] && [ "$previous" != "$latest" ] && [ "$(date -u +%F)" \< "$PREVIOUS_MAJOR_UNTIL" ]; then
+            releases="$releases,{\"tag\":\"$previous\",\"version\":\"${previous#v}\"}"
+          fi
+          echo "releases=[$releases]" >> "$GITHUB_OUTPUT"
+        env:
+          PREVIOUS_MAJOR: '1'
+          PREVIOUS_MAJOR_UNTIL: '2027-05-01'
 
   image:
     needs: latest
+    strategy:
+      fail-fast: false
+      matrix:
+        release: ${{ fromJSON(needs.latest.outputs.releases) }}
     permissions:
       contents: read
       packages: write
       id-token: write
     uses: ./.github/workflows/runtime-image.yml
     with:
-      ref: ${{ needs.latest.outputs.tag }}
-      version: ${{ needs.latest.outputs.version }}
+      ref: ${{ matrix.release.tag }}
+      version: ${{ matrix.release.version }}
       rolling-only: true
     secrets:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}

@@ -12,7 +12,7 @@ the whole framework source.
 
 ```bash
 docker run --rm -u "$(id -u):$(id -g)" -e COMPOSER_HOME=/tmp/composer -v "$PWD:/work" -w /work \
-  ghcr.io/stewart-php/runtime:1 composer create-project stewart-php/skeleton my-home
+  ghcr.io/stewart-php/runtime:2 composer create-project stewart-php/skeleton my-home
 cd my-home
 make setup        # pull the images, create .env with a control token, install, verify
 ```
@@ -159,7 +159,7 @@ make upgrade VERSION=2.0  # move to another major: requirements, image tags, pul
 
 Stewart follows semantic versioning: `make update` brings minor releases and fixes, and only a new major may break.
 Read its "Upgrading" notes in the [changelog](https://github.com/stewart-php/stewart/blob/main/CHANGELOG.md) before
-running `make upgrade`. The image tag in `Dockerfile` and the compose files is the major (`runtime:1`), which is
+running `make upgrade`. The image tag in `Dockerfile` and the compose files is the major (`runtime:2`), which is
 rebuilt every week with PHP and Alpine fixes; Dependabot proposes Stewart releases.
 
 ## License

@@ -5,18 +5,24 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
-## [Unreleased]
+## [2.0.0] - 2026-10-24
+
+One word for one thing: Stewart calls Home Assistant's actions actions everywhere, from `callAction()` and
+`ActionTarget` to the generated `Actions` classes, the `ha_calls` settings and the metrics, so "service" means only
+your own `services.php` classes. Apps have one way to run code later, the scheduler, and ask `HaContext` how long an
+entity has held its state. New projects use the `Automations` namespace. Everything 1.x deprecated is gone, and a
+project with 1.x generated classes or settings is told what to run instead of failing to start.
 
 ### Added
 
 - `stewart check`, the deploy gate, `stewart run` and a reload refuse generated classes written by Stewart 1.x with
   one line that says to run `stewart generate`, instead of failing to load them; the PHPStan extension reports such a
-  tree once (`stewart.generatedCode`) and checks no entity IDs or action names until it is regenerated
+  tree once (`stewart.generatedCode`) and checks no entity IDs or action names until it is regenerated ([#133](https://github.com/stewart-php/stewart/pull/133))
 - `HaContext::hasHeldStateFor('binary_sensor.hall_motion', Duration::minutes(10))` and `getHeldStateDuration()` say how
-  long an entity has held its state, with no clock to pass; an entity that does not exist has held nothing
+  long an entity has held its state, with no clock to pass; an entity that does not exist has held nothing ([#137](https://github.com/stewart-php/stewart/pull/137))
 - `Scheduler::waitFor($arm, $timeout)` builds a wait of your own: `$arm` starts what resolves it, and the closure it
-  returns cleans up once the wait ends
-- `stewart run --dry-run` turns on `ha_calls.dry_run` for one run, and reloads keep it; `make run DRY_RUN=1` uses it
+  returns cleans up once the wait ends ([#136](https://github.com/stewart-php/stewart/pull/136))
+- `stewart run --dry-run` turns on `ha_calls.dry_run` for one run, and reloads keep it; `make run DRY_RUN=1` uses it ([#134](https://github.com/stewart-php/stewart/pull/134))
 
 ### Changed
 
@@ -24,57 +30,61 @@ release could break; a release's "Upgrading" section says what to change.
   `ActionTarget`, `ActionTargetSource` and `ActionResponse`, with `toActionTarget()`. `ServiceCallException` and
   `ServiceCallError` are `ActionCallException` and `ActionCallError`, with the same reasons; their messages and
   context name the `action`. `ActionResponse::$action` and the testing package's `RecordedActionCall::$action`
-  replace `$service`
+  replace `$service` ([#130](https://github.com/stewart-php/stewart/pull/130))
 - The generated root is `Actions`, and each domain's class is `<Domain>Actions` (`LightActions`), so apps write
   `$this->actions->notify->mobileAppPhone()`. A generated member that clashes with another takes an `Action` suffix
   instead of `Service`. The generated `Manifest` implements `Stewart\Contracts\Generated\Manifest`, which now lists
-  the action names itself
+  the action names itself ([#132](https://github.com/stewart-php/stewart/pull/132))
 - The generated format is 11, so `stewart status` and the start log ask for `stewart generate` until the classes are
-  regenerated
+  regenerated ([#130](https://github.com/stewart-php/stewart/pull/130)), ([#132](https://github.com/stewart-php/stewart/pull/132)), ([#137](https://github.com/stewart-php/stewart/pull/137))
 - `stewart generate` refuses only a run that would leave fewer than half as many generated files as before, so
-  renamed classes no longer need `--allow-shrink`; its summary counts `actions`
+  renamed classes no longer need `--allow-shrink`; its summary counts `actions` ([#132](https://github.com/stewart-php/stewart/pull/132))
 - `service_calls` is now `ha_calls` (`STEWART_HA_CALLS__*`), since its limits and dry run also cover event fires and
   registry edits. An old `service_calls` key or `STEWART_SERVICE_CALLS__*` variable stops the start with the new name.
-  Dry-run log lines name `ha_calls.dry_run`, and an action says `Action call not sent`
+  Dry-run log lines name `ha_calls.dry_run`, and an action says `Action call not sent` ([#134](https://github.com/stewart-php/stewart/pull/134))
 - Metrics and status name what they count, every call to Home Assistant: `stewart_app_service_calls_total`,
   `stewart_app_service_call_duration_seconds`, `stewart_service_calls_in_flight`, `stewart_service_calls_refused_total`
   and `stewart_worker_service_calls_in_flight` are now `stewart_app_ha_calls_total`,
   `stewart_app_ha_call_duration_seconds`, `stewart_ha_calls_in_flight`, `stewart_ha_calls_refused_total` and
   `stewart_worker_ha_calls_in_flight`. In the status JSON, `in_flight_service_calls`, `refused_service_calls` and
   `service_calls` are `in_flight_ha_calls`, `refused_ha_calls` and `ha_calls`, and `stewart status` shows an
-  `HA calls` row
-- Trace lines say `Action call sent` and `Action call answered`, with the name under `action`
+  `HA calls` row ([#135](https://github.com/stewart-php/stewart/pull/135))
+- Trace lines say `Action call sent` and `Action call answered`, with the name under `action` ([#135](https://github.com/stewart-php/stewart/pull/135))
 - `codegen.namespace` is optional and defaults to the namespace `composer.json` maps to `codegen.output_dir`, which
   is `App\Generated` in projects created before 2.0, so they need no setting; `stewart-php/phpstan` finds the generated
-  `Manifest` the same way, and `stewart.manifest` is needed only when several namespaces map the directory
+  `Manifest` the same way, and `stewart.manifest` is needed only when several namespaces map the directory ([#138](https://github.com/stewart-php/stewart/pull/138))
 - New projects use the namespace `Automations` (`Automations\Generated`, `Automations\Tests`) instead of `App`, which
   clashed with the `Stewart\Contracts\App` interface every app imports. Existing projects keep `App` and need no
-  change, and the docs examples use the new namespace
+  change, and the docs examples use the new namespace ([#139](https://github.com/stewart-php/stewart/pull/139))
 - The worker protocol is 35 and the control protocol 34, so `make status` and the other control targets refuse to talk
-  to a daemon that still runs 1.x
+  to a daemon that still runs 1.x ([#130](https://github.com/stewart-php/stewart/pull/130)), ([#135](https://github.com/stewart-php/stewart/pull/135))
 
 ### Removed
 
 - `HaContext::callService()` and `callServiceForResponse()`, the same on `Entity`, and in tests
   `RecordingHaContext::stubServiceAnswer()`, `stubServiceFailure()` and `RecordedServiceCall::getServiceName()`, all
   deprecated since 1.8: use `callAction()`, `callActionForResponse()`, `stubActionAnswer()`, `stubActionFailure()` and
-  `getActionName()`
+  `getActionName()` ([#126](https://github.com/stewart-php/stewart/pull/126))
 - Stewart no longer calls a public `dispose()` on an app that does not implement `Disposable`, deprecated since 1.5,
-  and `stewart check` no longer names such apps
+  and `stewart check` no longer names such apps ([#128](https://github.com/stewart-php/stewart/pull/128))
 - `GET /metrics` on the admin port: only the metrics port (`http.metrics.listen`) serves metrics, and the admin port
-  answers 404 with a pointer to it
+  answers 404 with a pointer to it ([#129](https://github.com/stewart-php/stewart/pull/129))
 - `Stewart\Contracts\Time\Timers` and `TimerHandle`, so apps have one way to run code later: `Scheduler::runAfter()`,
   which shows in status and in traces. In tests, `AppHarness::$timers` and `RecordingHaContext::$timers` are private;
-  use `advanceTime()`, or give `RecordingHaContext` a `ManualTimers` of your own and advance that
+  use `advanceTime()`, or give `RecordingHaContext` a `ManualTimers` of your own and advance that ([#136](https://github.com/stewart-php/stewart/pull/136))
 - `EntityState::hasHeldFor($duration, $clock)` and `getHeldDuration($clock)`: use `HaContext::hasHeldStateFor()` and
-  `getHeldStateDuration()`
-- `Stewart\Contracts\Generated\ActionManifest`: its `listActionNames()` is part of `Manifest`
+  `getHeldStateDuration()` ([#137](https://github.com/stewart-php/stewart/pull/137))
+- `Stewart\Contracts\Generated\ActionManifest`: its `listActionNames()` is part of `Manifest` ([#132](https://github.com/stewart-php/stewart/pull/132))
 - Chart: `adminApi.podMonitor`, deprecated since 1.8; a release that still sets it fails to render and names
-  `metrics.podMonitor`
+  `metrics.podMonitor` ([#129](https://github.com/stewart-php/stewart/pull/129))
 
 ### Upgrading
 
-1. From `make sh`, rewrite the names that 2.0 changed in your apps, tests, `services.php` and settings. The commands
+1. Run `make upgrade VERSION=2.0`. It requires 2.0 and moves the image tags to `runtime:2` (`runtime:2-dev` in
+   `compose.dev.yaml`). Do the steps below before you deploy: the control protocol is now 34, so `make status` and
+   the other control targets refuse to talk to a daemon that still runs 1.x. The Home Assistant integration's
+   protocol is unchanged; update it to 2.0.0 with the rest.
+2. From `make sh`, rewrite the names that 2.0 changed in your apps, tests, `services.php` and settings. The commands
    rewrite the names they recognise; `make stan` then points at the rest, such as names held in a variable:
 
    ```bash
@@ -100,19 +110,21 @@ release could break; a release's "Upgrading" section says what to change.
    `RecordedActionCall` alone, which is `->action` now, and a call to a generated method with a `Service` suffix,
    which has an `Action` suffix now. The third renames `service_calls` in `stewart.yaml` and its variables in `.env`
    and the Makefile; on Kubernetes, rename them in the chart's `config` and `env` values by hand.
-2. Run `make generate` and commit `generated/`: Stewart 2.0 refuses the classes 1.x generated.
-3. An app whose `dispose()` does something implements `Stewart\Contracts\Disposable`, or it no longer runs. Before
+3. Run `make generate` and commit `generated/`: Stewart 2.0 refuses the classes 1.x generated.
+4. An app whose `dispose()` does something implements `Stewart\Contracts\Disposable`, or it no longer runs. Before
    upgrading, `stewart check` on 1.8 names every app this affects.
-4. An app that took `Timers` takes `Scheduler` instead: `startTimer($delay, $callback)` becomes
+5. An app that took `Timers` takes `Scheduler` instead: `startTimer($delay, $callback)` becomes
    `runAfter($delay, $callback)`, `isPending()` on the handle becomes `isActive()`, and `waitFor()` moves to the
    `Scheduler` unchanged. `$state->hasHeldFor($duration, $this->clock)` becomes
    `$this->ha->hasHeldStateFor($state->entityId, $duration)`. `make stan` points at each one.
-5. If Prometheus scrapes the admin port, turn on the metrics port and scrape that: `http.metrics.listen`
+6. If Prometheus scrapes the admin port, turn on the metrics port and scrape that: `http.metrics.listen`
    (`STEWART_HTTP__METRICS__LISTEN`, port 9464 by convention) with Docker, or `metrics.enabled` and
    `metrics.podMonitor.enabled` instead of `adminApi.podMonitor` with the chart. If Prometheus was the only reason for
    `adminApi.host: 0.0.0.0`, set it back to `127.0.0.1`.
-6. Rename the metrics in dashboards and alerts, and the status JSON keys in scripts that read `stewart status --json`;
+7. Rename the metrics in dashboards and alerts, and the status JSON keys in scripts that read `stewart status --json`;
    both lists are under Changed.
+8. On Kubernetes, upgrade the chart to 2.0.0 in the same deploy, after moving any `adminApi.podMonitor` values and
+   any `service_calls` under `config` or `STEWART_SERVICE_CALLS__*` under `env`.
 
 ## [1.8.0] - 2026-10-23
 

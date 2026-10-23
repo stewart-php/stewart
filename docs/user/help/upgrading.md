@@ -20,10 +20,58 @@ integration. Upgrade them together.
 4. Commit `composer.lock` and the changed files, and deploy as usual.
 5. If you use the Stewart integration in Home Assistant, update it to the same version.
 
-Within a major version, such as 1.x, a new release does not break your apps. Notes appear here only when a
-release asks you to do something.
+Within a major version, such as 2.x, a new release does not break your apps. A new major lists everything it
+asks you to change; the other notes appear only when a release asks you to do something.
 
 ## Upgrade notes
+
+### 2.0
+
+1. Run `make upgrade VERSION=2.0`. It requires 2.0 and moves the image tags to `runtime:2` (`runtime:2-dev` in
+   `compose.dev.yaml`). Do the steps below before you deploy: the control protocol is now 34, so `make status` and
+   the other control targets refuse to talk to a daemon that still runs 1.x. The Home Assistant integration's
+   protocol is unchanged; update it to 2.0.0 with the rest.
+2. From `make sh`, rewrite the names that 2.0 changed in your apps, tests, `services.php` and settings. The commands
+   rewrite the names they recognise; `make stan` then points at the rest, such as names held in a variable:
+
+   ```bash
+   grep -rlsE 'callService|stubService|getServiceName|Contracts\\Service|ServiceTarget|ServiceResponse|ServiceCall' \
+     apps tests services.php | xargs -r sed -i -E \
+     -e "s/->callService(ForResponse)?\('([a-z0-9_]+)', *'([a-z0-9_]+)'/->callAction\1('\2.\3'/g" \
+     -e "s/->stubService(Answer|Failure)\('([a-z0-9_]+)', *'([a-z0-9_]+)'/->stubAction\1('\2.\3'/g" \
+     -e 's/->callService(ForResponse)?\(/->callAction\1(/g' \
+     -e 's/->getServiceName\(\)/->getActionName()/g' \
+     -e 's/Stewart\\Contracts\\Service\\/Stewart\\Contracts\\Action\\/g' \
+     -e 's/ServiceTarget/ActionTarget/g' \
+     -e 's/ServiceResponse/ActionResponse/g' \
+     -e 's/ServiceCall(Exception|Error)/ActionCall\1/g' \
+     -e 's/RecordedServiceCall/RecordedActionCall/g'
+   grep -rlsE '\\Generated\\' apps tests services.php \
+     | xargs -r sed -i -E 's/\b([A-Z][A-Za-z0-9]*)?Services\b/\1Actions/g'
+   grep -lsE 'service_calls|STEWART_SERVICE_CALLS__' stewart.yaml .env .env.example Makefile \
+     | xargs -r sed -i -E -e 's/^service_calls:/ha_calls:/' -e 's/STEWART_SERVICE_CALLS__/STEWART_HA_CALLS__/g'
+   ```
+
+   The second command renames the generated `Services` and `<Domain>Services` in files that import generated classes,
+   and a class of yours whose name ends in `Services` there too. It leaves `->service` on an `ActionResponse` or a
+   `RecordedActionCall` alone, which is `->action` now, and a call to a generated method with a `Service` suffix,
+   which has an `Action` suffix now. The third renames `service_calls` in `stewart.yaml` and its variables in `.env`
+   and the Makefile; on Kubernetes, rename them in the chart's `config` and `env` values by hand.
+3. Run `make generate` and commit `generated/`: Stewart 2.0 refuses the classes 1.x generated.
+4. An app whose `dispose()` does something implements `Stewart\Contracts\Disposable`, or it no longer runs. Before
+   upgrading, `stewart check` on 1.8 names every app this affects.
+5. An app that took `Timers` takes `Scheduler` instead: `startTimer($delay, $callback)` becomes
+   `runAfter($delay, $callback)`, `isPending()` on the handle becomes `isActive()`, and `waitFor()` moves to the
+   `Scheduler` unchanged. `$state->hasHeldFor($duration, $this->clock)` becomes
+   `$this->ha->hasHeldStateFor($state->entityId, $duration)`. `make stan` points at each one.
+6. If Prometheus scrapes the admin port, turn on the metrics port and scrape that: `http.metrics.listen`
+   (`STEWART_HTTP__METRICS__LISTEN`, port 9464 by convention) with Docker, or `metrics.enabled` and
+   `metrics.podMonitor.enabled` instead of `adminApi.podMonitor` with the chart. If Prometheus was the only reason for
+   `adminApi.host: 0.0.0.0`, set it back to `127.0.0.1`.
+7. Rename the metrics in dashboards and alerts, and the status JSON keys in scripts that read `stewart status --json`;
+   both lists are under Changed.
+8. On Kubernetes, upgrade the chart to 2.0.0 in the same deploy, after moving any `adminApi.podMonitor` values and
+   any `service_calls` under `config` or `STEWART_SERVICE_CALLS__*` under `env`.
 
 ### 1.8
 
