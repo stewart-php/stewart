@@ -11,6 +11,7 @@ use Stewart\Runtime\Config\EnvironmentOverlay;
 use Stewart\Runtime\Config\EnvironmentPlaceholders;
 use Stewart\Runtime\Config\EnvironmentVariables;
 use Stewart\Runtime\Config\ProjectRoot;
+use Stewart\Runtime\Config\RenamedSettings;
 use Stewart\Runtime\Config\SecretFileReader;
 use Stewart\Runtime\Config\StewartConfigSchema;
 use Stewart\Runtime\Console\ConfigDumpCommand;
@@ -27,12 +28,12 @@ final class ConfigLoaderFixture
         EnvironmentVariables $variables = new EnvironmentVariables(),
         ProjectRoot $projectRoot = new ProjectRoot('/nonexistent'),
     ): ConfigLoader {
-        return new ConfigLoader(self::createPlaceholders($variables), self::createOverlay($variables), new ConfigFileReader(), $projectRoot, new StewartConfigSchema());
+        return new ConfigLoader(self::createPlaceholders($variables), self::createOverlay($variables), new ConfigFileReader(), $projectRoot, new StewartConfigSchema(), new RenamedSettings());
     }
 
     public static function createOverlay(EnvironmentVariables $variables = new EnvironmentVariables()): EnvironmentOverlay
     {
-        return new EnvironmentOverlay($variables, new EnvironmentValueParser(), new ClosestNameFinder(), new SecretFileReader());
+        return new EnvironmentOverlay($variables, new EnvironmentValueParser(), new ClosestNameFinder(), new SecretFileReader(), new RenamedSettings());
     }
 
     public static function createPlaceholders(EnvironmentVariables $variables = new EnvironmentVariables()): EnvironmentPlaceholders

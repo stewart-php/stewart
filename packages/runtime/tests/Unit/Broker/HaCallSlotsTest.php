@@ -21,7 +21,7 @@ use Stewart\Runtime\Broker\HaCallSlots;
 use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
-use Stewart\Runtime\Config\ServiceCallPolicy;
+use Stewart\Runtime\Config\HaCallPolicy;
 use Stewart\Runtime\Ipc\Message\RequestFailed;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
@@ -54,7 +54,7 @@ final class HaCallSlotsTest extends TestCase
 
     public function testWorkerAtLimitIsRefused(): void
     {
-        $slots = self::createSlots(new ServiceCallPolicy(perWorker: 1, total: 0));
+        $slots = self::createSlots(new HaCallPolicy(perWorker: 1, total: 0));
         $worker = self::createHandle(0);
 
         $this->runHeldCall($slots, $worker, 'a');
@@ -67,7 +67,7 @@ final class HaCallSlotsTest extends TestCase
 
     public function testOtherWorkersServedWhileOneIsAtLimit(): void
     {
-        $slots = self::createSlots(new ServiceCallPolicy(perWorker: 1, total: 0));
+        $slots = self::createSlots(new HaCallPolicy(perWorker: 1, total: 0));
         $this->runHeldCall($slots, self::createHandle(0), 'a');
         $other = self::createHandle(1);
 
@@ -79,7 +79,7 @@ final class HaCallSlotsTest extends TestCase
 
     public function testGlobalLimitBoundsEveryWorkerTogether(): void
     {
-        $slots = self::createSlots(new ServiceCallPolicy(perWorker: 0, total: 2));
+        $slots = self::createSlots(new HaCallPolicy(perWorker: 0, total: 2));
         $this->runHeldCall($slots, self::createHandle(0), 'a');
         $second = self::createHandle(1);
         $this->runHeldCall($slots, $second, 'b');
@@ -98,7 +98,7 @@ final class HaCallSlotsTest extends TestCase
 
     public function testReplacementStartsWithoutPredecessorCalls(): void
     {
-        $slots = self::createSlots(new ServiceCallPolicy(perWorker: 1, total: 0));
+        $slots = self::createSlots(new HaCallPolicy(perWorker: 1, total: 0));
         $this->runHeldCall($slots, self::createHandle(0), 'a');
         $replacement = self::createHandle(0);
 
@@ -112,7 +112,7 @@ final class HaCallSlotsTest extends TestCase
     public function testRefusalsAreCountedAndWarnedOnce(): void
     {
         $logger = new RecordingLogger();
-        $slots = self::createSlots(new ServiceCallPolicy(perWorker: 1, total: 0), $logger);
+        $slots = self::createSlots(new HaCallPolicy(perWorker: 1, total: 0), $logger);
         $worker = self::createHandle(0);
 
         $this->runHeldCall($slots, $worker, 'a');
@@ -125,7 +125,7 @@ final class HaCallSlotsTest extends TestCase
 
     public function testUnexpectedFailureAnswersUnreachable(): void
     {
-        $slots = self::createSlots(new ServiceCallPolicy(perWorker: 1, total: 0));
+        $slots = self::createSlots(new HaCallPolicy(perWorker: 1, total: 0));
         $worker = self::createHandle(0);
 
         $slots->runBounded($worker, self::createRequest('a'), static fn(): never => throw new RuntimeException('surprise'));
@@ -137,7 +137,7 @@ final class HaCallSlotsTest extends TestCase
 
     public function testCountedCallIsInFlightButNeverRefused(): void
     {
-        $slots = self::createSlots(new ServiceCallPolicy(perWorker: 1, total: 0));
+        $slots = self::createSlots(new HaCallPolicy(perWorker: 1, total: 0));
         $worker = self::createHandle(0);
         $this->runHeldCall($slots, $worker, 'a');
         $held = $this->held;
@@ -164,7 +164,7 @@ final class HaCallSlotsTest extends TestCase
         EventLoopTicks::settle();
     }
 
-    private static function createSlots(ServiceCallPolicy $policy, LoggerInterface $logger = new NullLogger()): HaCallSlots
+    private static function createSlots(HaCallPolicy $policy, LoggerInterface $logger = new NullLogger()): HaCallSlots
     {
         $timers = new ManualTimers();
 

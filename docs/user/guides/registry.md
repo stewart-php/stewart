@@ -82,7 +82,7 @@ is hidden or disabled. This app hides battery sensors and labels them:
 - `withLabels()` and `withAliases()` replace the whole list. `withAddedLabels()` and `withRemovedLabels()` (and the
   same for aliases) keep the entries others set.
 - `updateEntity()` returns the entry Home Assistant saved. Stewart's copy catches up about a second later.
-- Edits count against the service call limits, and with dry run on they are logged, not sent.
+- Edits count against the `ha_calls` limits, and with dry run on they are logged, not sent.
 
 It throws `RegistryEditException`:
 

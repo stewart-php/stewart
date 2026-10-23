@@ -22,6 +22,7 @@ final readonly class ConfigLoader
         private ConfigFileReader $files,
         private ProjectRoot $projectRoot,
         private StewartConfigSchema $configuration,
+        private RenamedSettings $renamedSettings,
     ) {}
 
     /**
@@ -33,6 +34,7 @@ final readonly class ConfigLoader
     {
         $tree = $this->configuration->buildConfigTree();
         $fileConfig = $this->placeholders->resolve($tree, $this->readConfigFile($path));
+        $this->renamedSettings->refuseRenamedKeys($fileConfig);
         $configs = [$fileConfig, $this->overlay->collectEnvironmentOverrides($tree, $fileConfig)];
 
         if ($cliOverrides !== []) {

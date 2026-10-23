@@ -86,7 +86,7 @@ final readonly class BrokerStateFixture
         $this->heldServiceCalls = new Latch();
         $this->registry = new SubscriptionRegistry();
         $this->metrics = new AppMetrics(WorkerSlotCollection::fromList([self::createSlot(0), self::createSlot(1)]), $this->timers->clock);
-        $this->callSlots = new HaCallSlots(ConfigFixture::createServiceCallPolicy(), $this->metrics, $this->timers->clock, new NullLogger());
+        $this->callSlots = new HaCallSlots(ConfigFixture::createHaCallPolicy(), $this->metrics, $this->timers->clock, new NullLogger());
         $this->drift = new GeneratedCodeDrift($this->session, $this->timers->clock, new NullLogger());
         $this->listener = new RecordingPoolListener();
         $this->pools = WorkerPoolFixture::createWorkerPool(

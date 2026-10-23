@@ -13,7 +13,7 @@ use Stewart\Runtime\Broker\HaCallSlots;
 use Stewart\Runtime\Broker\HaSession;
 use Stewart\Runtime\Broker\ServiceCallTracer;
 use Stewart\Runtime\Broker\WorkerHandle;
-use Stewart\Runtime\Config\ServiceCallPolicy;
+use Stewart\Runtime\Config\HaCallPolicy;
 use Stewart\Runtime\Ipc\Message\ServiceCallRequest;
 use Stewart\Runtime\Ipc\Message\ServiceCallResult;
 use Stewart\Runtime\Ipc\Message\WorkerMessage;
@@ -27,7 +27,7 @@ final readonly class ServiceCallRequestHandler implements WorkerMessageHandler
         private HaSession $session,
         private HaClient $client,
         private HaCallSlots $slots,
-        private ServiceCallPolicy $policy,
+        private HaCallPolicy $policy,
         private ServiceCallTracer $tracer,
         private Clock $clock,
         private LoggerInterface $logger,
@@ -67,7 +67,7 @@ final readonly class ServiceCallRequestHandler implements WorkerMessageHandler
     private function callHomeAssistant(ServiceCallRequest $request): ServiceCallResult
     {
         if ($this->policy->dryRun) {
-            $this->logger->info('Service call not sent: service_calls.dry_run is on', [
+            $this->logger->info('Action call not sent: ha_calls.dry_run is on', [
                 'domain' => $request->domain,
                 'service' => $request->service,
                 'target' => $request->target,

@@ -74,7 +74,7 @@ make test
 
 ## 4. Try it without touching your lights
 
-`DRY_RUN=1` runs Stewart with your real Home Assistant, but logs each service call instead of sending it. `ONLY`
+`DRY_RUN=1` runs Stewart with your real Home Assistant, but logs each action call instead of sending it. `ONLY`
 runs just the apps you name:
 
 ```bash
@@ -82,7 +82,7 @@ make run ONLY=porch-light DRY_RUN=1
 ```
 
 Stewart warns that dry run is on. When a schedule fires, you see the app's log line, followed by
-`Service call not sent: service_calls.dry_run is on` with the service and the target.
+`Action call not sent: ha_calls.dry_run is on` with the action and the target.
 
 While you work on the app, use `make watch` instead of `make run`, with the same `ONLY` and `DRY_RUN`. Every time you
 save a file in `apps/`, `services.php` or `stewart.yaml`, it checks the project and restarts the apps on the new code,

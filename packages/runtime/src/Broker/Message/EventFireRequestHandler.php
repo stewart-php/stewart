@@ -10,7 +10,7 @@ use Stewart\Contracts\Exception\EventFireException;
 use Stewart\Runtime\Broker\HaCallSlots;
 use Stewart\Runtime\Broker\HaSession;
 use Stewart\Runtime\Broker\WorkerHandle;
-use Stewart\Runtime\Config\ServiceCallPolicy;
+use Stewart\Runtime\Config\HaCallPolicy;
 use Stewart\Runtime\Ipc\Message\EventFireRequest;
 use Stewart\Runtime\Ipc\Message\EventFireResult;
 use Stewart\Runtime\Ipc\Message\WorkerMessage;
@@ -24,7 +24,7 @@ final readonly class EventFireRequestHandler implements WorkerMessageHandler
         private HaSession $session,
         private HaClient $client,
         private HaCallSlots $slots,
-        private ServiceCallPolicy $policy,
+        private HaCallPolicy $policy,
         private LoggerInterface $logger,
     ) {}
 
@@ -43,7 +43,7 @@ final readonly class EventFireRequestHandler implements WorkerMessageHandler
     private function fireOnHomeAssistant(EventFireRequest $request): EventFireResult
     {
         if ($this->policy->dryRun) {
-            $this->logger->info('Event not fired: service_calls.dry_run is on', [
+            $this->logger->info('Event not fired: ha_calls.dry_run is on', [
                 'event_type' => $request->eventType,
                 'data' => $request->data,
                 LogOrigin::CONTEXT_KEY => LogOrigin::forScope($request->scope),

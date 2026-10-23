@@ -15,10 +15,10 @@ use Stewart\Runtime\Config\CodegenConfig;
 use Stewart\Runtime\Config\ControlConfig;
 use Stewart\Runtime\Config\ExposeConfig;
 use Stewart\Runtime\Config\GitDeployConfig;
+use Stewart\Runtime\Config\HaCallPolicy;
 use Stewart\Runtime\Config\HttpConfig;
 use Stewart\Runtime\Config\PersistenceConfig;
 use Stewart\Runtime\Config\ProjectRoot;
-use Stewart\Runtime\Config\ServiceCallPolicy;
 use Stewart\Runtime\Config\StewartConfig;
 use Stewart\Runtime\Config\SupervisionConfig;
 use Stewart\Runtime\Exception\ConfigurationException;
@@ -60,7 +60,7 @@ final readonly class BrokerKernel
             ->withService(LogVerbosityPolicy::class, $verbosity)
             ->withService(ConnectionConfig::class, $config->requireHomeAssistant())
             ->withService(SupervisionConfig::class, $config->supervision)
-            ->withService(ServiceCallPolicy::class, $config->serviceCalls)
+            ->withService(HaCallPolicy::class, $config->haCalls)
             ->withService(ControlConfig::class, $config->control)
             ->withService(HttpConfig::class, $config->http)
             ->withService(PersistenceConfig::class, $config->persistence)

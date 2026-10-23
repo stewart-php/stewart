@@ -27,6 +27,7 @@ enum ConfigurationError: string implements ExceptionReason
     case WorkerIndexOutOfRange = 'worker_index_out_of_range';
     case AppSelectionUnknown = 'app_selection_unknown';
     case OptionsConflict = 'options_conflict';
+    case KeyRenamed = 'key_renamed';
     case EnvironmentVariableUnknown = 'environment_variable_unknown';
     case EnvironmentVariableTooDeep = 'environment_variable_too_deep';
     case EnvironmentVariableNamesSection = 'environment_variable_names_section';
@@ -58,6 +59,7 @@ enum ConfigurationError: string implements ExceptionReason
             self::WorkerIndexOutOfRange => 'App "{appId}" is pinned to worker {worker}, but the highest worker index is {highestIndex}.',
             self::AppSelectionUnknown => '{option} names app "{appId}", but no automation has that ID.',
             self::OptionsConflict => '{option} cannot be combined with {conflicting}.',
+            self::KeyRenamed => '{setting} was renamed to {renamedTo}.',
             self::EnvironmentVariableUnknown => '{variable} is not a Stewart setting; run `stewart config:reference` for all options.',
             self::EnvironmentVariableTooDeep => '{variable} is deeper than the configuration; {valuePath} is a value, not a section.',
             self::EnvironmentVariableNamesSection => '{variable} names a section; set the keys under it, such as {variable}{separator}KEY.',

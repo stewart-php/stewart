@@ -78,8 +78,8 @@ in the message.
 **`was refused`.** Too many calls waited for an answer at once. Call one service with several targets instead of one
 call per entity.
 
-**The call succeeds but nothing happens.** Dry run may be on: the log says `service_calls.dry_run is on`. Remove
-`DRY_RUN=1` or `STEWART_SERVICE_CALLS__DRY_RUN`.
+**The call succeeds but nothing happens.** Dry run may be on: the log says `ha_calls.dry_run is on`. Remove
+`DRY_RUN=1`, `--dry-run` or `STEWART_HA_CALLS__DRY_RUN`.
 
 ## Apps are slow, or events are dropped
 

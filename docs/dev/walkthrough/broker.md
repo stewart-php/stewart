@@ -103,7 +103,7 @@ Drops are logged on a throttled schedule.
 ## Service calls
 
 `Broker/Message/ServiceCallRequestHandler` runs each call through `Broker/HaCallSlots::runBounded()`. Over
-`service_calls.max_in_flight` or the per-worker limit, the call is refused with `Overloaded`. Otherwise it runs in its
+`ha_calls.max_in_flight` or the per-worker limit, the call is refused with `Overloaded`. Otherwise it runs in its
 own fiber and always answers on the same handle it came from: `ServiceCallResult`, or `RequestFailed` with the
 exception's class, reason and context. Under dry run it logs and answers with a `dry-run:` context; while Home
 Assistant is disconnected it fails at once as unreachable. The broker keeps no map of calls; the reply carries the

@@ -24,7 +24,7 @@ use Stewart\Runtime\Broker\Message\HistoryRequestHandler;
 use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
-use Stewart\Runtime\Config\ServiceCallPolicy;
+use Stewart\Runtime\Config\HaCallPolicy;
 use Stewart\Runtime\Ipc\Message\HistoryRequest;
 use Stewart\Runtime\Ipc\Message\HistoryResult;
 use Stewart\Runtime\Ipc\Message\RequestFailed;
@@ -60,7 +60,7 @@ final class HistoryRequestHandlerTest extends TestCase
         $slot = new WorkerSlot(new WorkerId(0), AppDefinitionCollection::keyedByAppId([new AppDefinition(new AppId('demo'), Demo::class)]));
         $timers = new ManualTimers();
         $this->slots = new HaCallSlots(
-            new ServiceCallPolicy(perWorker: 1, total: 0),
+            new HaCallPolicy(perWorker: 1, total: 0),
             new AppMetrics(WorkerSlotCollection::fromList([$slot]), $timers->clock),
             $timers->clock,
             new NullLogger(),

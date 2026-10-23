@@ -109,8 +109,8 @@ final class EnvironmentOverlayTest extends TestCase
         ];
 
         yield 'a setting that starts like a service link' => [
-            ['STEWART_SERVICE_CALLS__MAX_IN_FLIGHT' => '8'],
-            ['service_calls' => ['max_in_flight' => 8]],
+            ['STEWART_HA_CALLS__MAX_IN_FLIGHT' => '8'],
+            ['ha_calls' => ['max_in_flight' => 8]],
         ];
 
         yield 'three levels deep' => [
@@ -240,6 +240,13 @@ final class EnvironmentOverlayTest extends TestCase
         $environment = ['STEWART_APPS__DEMO__OPTIONS__API_KEY' => 'inline', 'STEWART_APPS__DEMO__OPTIONS__API_KEY_FILE' => $this->writeSecret('file')];
 
         $this->assertThrowsReason(ConfigurationError::EnvironmentVariableConflict, static fn() => self::apply($environment));
+    }
+
+    public function testRenamedSectionNamesTheNewVariable(): void
+    {
+        $e = $this->assertThrowsReason(ConfigurationError::KeyRenamed, static fn() => self::apply(['STEWART_SERVICE_CALLS__DRY_RUN' => '1']));
+
+        self::assertSame('STEWART_SERVICE_CALLS__DRY_RUN was renamed to STEWART_HA_CALLS__DRY_RUN.', $e->getMessage());
     }
 
     public function testUnreadableOptionSecretFileIsRefused(): void

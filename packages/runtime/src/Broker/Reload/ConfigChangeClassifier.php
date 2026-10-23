@@ -21,7 +21,7 @@ final readonly class ConfigChangeClassifier
         'homeAssistant' => 'home_assistant',
         'reconnectBackoff' => 'reconnect',
         'supervision' => 'supervision',
-        'serviceCalls' => 'service_calls',
+        'haCalls' => 'ha_calls',
         'persistence' => 'persistence',
         'mqtt' => 'mqtt',
         'control' => 'control',

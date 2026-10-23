@@ -23,7 +23,7 @@ use Stewart\Runtime\Broker\OutboxLimits;
 use Stewart\Runtime\Broker\ServiceCallTracer;
 use Stewart\Runtime\Broker\WorkerHandle;
 use Stewart\Runtime\Broker\WorkerSlot;
-use Stewart\Runtime\Config\ServiceCallPolicy;
+use Stewart\Runtime\Config\HaCallPolicy;
 use Stewart\Runtime\Control\Assembler\AppStatusBuilder;
 use Stewart\Runtime\Control\Protocol\Status\ServiceCallStats;
 use Stewart\Runtime\Ipc\Message\EventFireRequest;
@@ -84,7 +84,7 @@ final class EventFireRequestHandlerTest extends TestCase
 
     public function testFiredEventAnswersWithHaContext(): void
     {
-        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0));
+        $handler = $this->createHandler(new HaCallPolicy(perWorker: 1, total: 0));
         $worker = $this->createHandle();
 
         $handler->handle($worker, self::createRequest('a'));
@@ -99,7 +99,7 @@ final class EventFireRequestHandlerTest extends TestCase
 
     public function testServiceCallsAndFiresShareOneBudget(): void
     {
-        $policy = new ServiceCallPolicy(perWorker: 1, total: 0);
+        $policy = new HaCallPolicy(perWorker: 1, total: 0);
         $handler = $this->createHandler($policy);
         $serviceCalls = new ServiceCallRequestHandler($this->session, $this->homeAssistant->client, $this->slots, $policy, new ServiceCallTracer(new NullLogger(), new LogVerbosityPolicy(LogLevel::Info)), new VirtualClock(), new NullLogger());
         $worker = $this->createHandle();
@@ -117,7 +117,7 @@ final class EventFireRequestHandlerTest extends TestCase
 
     public function testDisconnectedFireFailsAsUnreachable(): void
     {
-        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0));
+        $handler = $this->createHandler(new HaCallPolicy(perWorker: 1, total: 0));
         $worker = $this->createHandle();
         $this->session->connected = false;
 
@@ -129,7 +129,7 @@ final class EventFireRequestHandlerTest extends TestCase
 
     public function testFiresAreCountedAsCallsPerApp(): void
     {
-        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0));
+        $handler = $this->createHandler(new HaCallPolicy(perWorker: 1, total: 0));
         $worker = $this->createHandle();
 
         $handler->handle($worker, self::createRequest('a'));
@@ -146,7 +146,7 @@ final class EventFireRequestHandlerTest extends TestCase
     public function testDryRunAnswersWithoutReachingHomeAssistant(): void
     {
         $logger = new RecordingLogger();
-        $handler = $this->createHandler(new ServiceCallPolicy(perWorker: 1, total: 0, dryRun: true), $logger);
+        $handler = $this->createHandler(new HaCallPolicy(perWorker: 1, total: 0, dryRun: true), $logger);
         $worker = $this->createHandle();
 
         $handler->handle($worker, self::createRequest('dry'));
@@ -154,10 +154,10 @@ final class EventFireRequestHandlerTest extends TestCase
 
         self::assertSame('dry-run:dry', self::listSentOfType($worker, EventFireResult::class)[0]->context->id);
         self::assertSame([], $this->homeAssistant->listReceivedEventFires());
-        self::assertSame(['Event not fired: service_calls.dry_run is on'], $logger->listMessagesAt(PsrLogLevel::INFO));
+        self::assertSame(['Event not fired: ha_calls.dry_run is on'], $logger->listMessagesAt(PsrLogLevel::INFO));
     }
 
-    private function createHandler(ServiceCallPolicy $policy, ?RecordingLogger $logger = null): EventFireRequestHandler
+    private function createHandler(HaCallPolicy $policy, ?RecordingLogger $logger = null): EventFireRequestHandler
     {
         $this->slots = new HaCallSlots($policy, $this->metrics, $this->timers->clock, new NullLogger());
 
