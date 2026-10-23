@@ -9,6 +9,8 @@ use Stringable;
 
 final readonly class HttpListenAddress implements Stringable
 {
+    private const array WILDCARD_IPS = ['0.0.0.0', '::'];
+
     /** @var int<1, 65535> */
     public int $port;
 
@@ -38,9 +40,24 @@ final readonly class HttpListenAddress implements Stringable
         throw ConfigurationException::valueInvalid($address, 'an HTTP listen address; use tcp://ip:port or "off"');
     }
 
+    public function isLoopback(): bool
+    {
+        return str_starts_with($this->ip, '127.') || $this->ip === '::1';
+    }
+
+    public function sharesPortWith(self $other): bool
+    {
+        return $this->port === $other->port && ($this->ip === $other->ip || $this->isWildcard() || $other->isWildcard());
+    }
+
     public function __toString(): string
     {
         return self::formatAddress($this->ip, $this->port);
+    }
+
+    private function isWildcard(): bool
+    {
+        return \in_array($this->ip, self::WILDCARD_IPS, true);
     }
 
     private static function formatAddress(string $ip, int $port): string

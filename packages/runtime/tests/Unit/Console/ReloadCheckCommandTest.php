@@ -96,6 +96,17 @@ final class ReloadCheckCommandTest extends TestCase
         self::assertSame(Command::SUCCESS, $status);
     }
 
+    public function testListenersSharingAPortFailTheReload(): void
+    {
+        $this->apps->writeClass('Porch', self::createAppSource('Porch', 'porch'));
+        $config = $this->writeConfig(self::CONFIG . "http:\n  listen: 'tcp://0.0.0.0:8080'\n  metrics:\n    listen: 'tcp://0.0.0.0:8080'\n");
+
+        [$status, $report] = $this->runReloadCheck(['--config' => $config]);
+
+        self::assertSame(Command::FAILURE, $status);
+        self::assertStringStartsWith('http.listen (tcp://0.0.0.0:8080) and http.metrics.listen (tcp://0.0.0.0:8080) use the same port;', (string) $report->findFirstError());
+    }
+
     /**
      * @param array<string, mixed> $input
      * @return array{int, ReloadCheckReport, string}

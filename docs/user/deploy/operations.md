@@ -26,7 +26,8 @@ services:
       - "8080:8080"
 ```
 
-The same goes for the admin port (`http.admin.listen`) and a TCP control socket (`control.listen`).
+The same goes for the admin port (`http.admin.listen`), the metrics port (`http.metrics.listen`) and a TCP control
+socket (`control.listen`).
 
 [Status and control](../guides/status.md#health-checks) describes both answers.
 

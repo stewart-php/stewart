@@ -46,4 +46,23 @@ final class HttpListenAddressTest extends TestCase
     {
         self::assertThrowsReason(ConfigurationError::ValueInvalid, static fn() => HttpListenAddress::parse('tcp://0.0.0.0:70000'));
     }
+
+    public function testLoopbackIsRecognised(): void
+    {
+        self::assertTrue(new HttpListenAddress('127.0.0.1', 8081)->isLoopback());
+        self::assertTrue(new HttpListenAddress('127.0.1.1', 8081)->isLoopback());
+        self::assertTrue(new HttpListenAddress('::1', 8081)->isLoopback());
+        self::assertFalse(new HttpListenAddress('0.0.0.0', 8081)->isLoopback());
+        self::assertFalse(new HttpListenAddress('192.168.1.10', 8081)->isLoopback());
+    }
+
+    public function testPortIsSharedOnlyByTheSameOrAWildcardAddress(): void
+    {
+        $loopback = new HttpListenAddress('127.0.0.1', 8081);
+
+        self::assertTrue($loopback->sharesPortWith(new HttpListenAddress('127.0.0.1', 8081)));
+        self::assertTrue($loopback->sharesPortWith(new HttpListenAddress('::', 8081)));
+        self::assertFalse($loopback->sharesPortWith(new HttpListenAddress('192.168.1.10', 8081)));
+        self::assertFalse($loopback->sharesPortWith(new HttpListenAddress('0.0.0.0', 8082)));
+    }
 }

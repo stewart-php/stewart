@@ -186,7 +186,8 @@ http:
 ```
 
 Set the token from the environment, `STEWART_HTTP__ADMIN__TOKEN`; the daemon
-refuses to start without one.
+refuses to start without one, and `stewart check` and `stewart doctor` say so first. Stewart logs a warning when the
+API listens off loopback, because anyone with the token can pause apps.
 
 | Request | Answer |
 |---|---|
@@ -202,7 +203,7 @@ curl -X POST -H "Authorization: Bearer $TOKEN" localhost:8081/api/apps/porch/pau
 ```
 
 Repeating a change answers 200 with `changed: false`. A missing or wrong token
-is 401, an unknown app or worker 404, a disabled app or a daemon shutting down 409, the wrong method 405; failures
+is 401 and logs a warning (the first, then every 100th), an unknown app or worker 404, a disabled app or a daemon shutting down 409, the wrong method 405; failures
 carry `{"reason","message"}`. Changes are recorded with source `http`, so
 `stewart status` shows `paused by http`. There is no CORS: a browser page on
 another origin cannot send the token. From Home Assistant, a `rest_command`
@@ -217,11 +218,25 @@ rest_command:
       authorization: !secret stewart_admin_bearer   # "Bearer <token>"
 ```
 
-### Metrics
+## Metrics
 
-`GET /metrics` on the same port answers the Prometheus text format (every series is in the
+A third HTTP port serves only `GET /metrics`, so Prometheus needs neither the admin API nor its token. It is off by
+default:
+
+```yaml
+http:
+  metrics:
+    listen: tcp://0.0.0.0:9464
+```
+
+Without a token, anyone who reaches the port reads the metrics, as with most exporters; Stewart logs that at start.
+Set `STEWART_HTTP__METRICS__TOKEN` to require a bearer token, which can only read metrics. A missing or wrong token is
+401, any other path 404, and anything but `GET` or `HEAD` 405. `GET /metrics` on the admin port still answers too,
+under the admin token. Each HTTP port needs a port of its own; the daemon refuses to start when two share one.
+
+The answer is the Prometheus text format (every series is in the
 [metrics reference](../reference/metrics.md)), built from
-the same snapshot as `stewart status`, under the same token. Series are named
+the same snapshot as `stewart status`. Series are named
 `stewart_*`. Per-app series have `app` and `worker` labels, per-worker series
 have `worker`, and service-call latency is the histogram
 `stewart_app_service_call_duration_seconds{outcome}`. Values that are not known
@@ -234,10 +249,19 @@ up to `supervision.ping_interval`.
 ```yaml
 scrape_configs:
   - job_name: stewart
-    authorization:
-      credentials_file: /etc/prometheus/stewart-admin-token
     static_configs:
-      - targets: ["stewart.home.lan:8081"]
+      - targets: ["stewart.home.lan:9464"]
+```
+
+With a token, Prometheus reads it from a file:
+
+```yaml
+scrape_configs:
+  - job_name: stewart
+    authorization:
+      credentials_file: /etc/prometheus/stewart-metrics-token
+    static_configs:
+      - targets: ["stewart.home.lan:9464"]
 ```
 
 ## Another host

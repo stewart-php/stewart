@@ -8,7 +8,6 @@ use Psr\Log\LoggerInterface;
 use Stewart\Runtime\Admin\RuntimeAdmin;
 use Stewart\Runtime\Broker\Http\Collection\HttpListenerCollection;
 use Stewart\Runtime\Config\HttpConfig;
-use Stewart\Runtime\Exception\ConfigurationError;
 use Stewart\Runtime\Exception\ConfigurationException;
 use Stewart\Runtime\Http\Admin\AdminApiCodec;
 use Stewart\Runtime\Http\Admin\AdminRequestHandler;
@@ -28,6 +27,7 @@ final readonly class HttpListenerFactory
     /** @throws ConfigurationException */
     public function createHttpListeners(): HttpListenerCollection
     {
+        $this->http->requireValidListeners();
         $listeners = [];
 
         if ($this->http->listen !== null) {
@@ -37,9 +37,31 @@ final readonly class HttpListenerFactory
         $admin = $this->http->admin;
 
         if ($admin->listen !== null) {
-            $token = $admin->token ?? throw ConfigurationException::createForReason(ConfigurationError::AdminTokenMissing);
-            $requests = new AdminRequestHandler($this->admin, $this->adminCodec, $this->metricsExporter, $this->logger, $token);
+            $requests = new AdminRequestHandler(
+                $this->admin,
+                $this->adminCodec,
+                $this->metricsExporter,
+                $this->logger,
+                new BearerTokenCheck($admin->requireToken()),
+                new UnauthorizedRequestWarnings(HttpListenerRole::Admin, $this->logger),
+            );
             $listeners[] = new AmpHttpListener($admin->listen, $requests, HttpListenerRole::Admin, $this->logger);
+        }
+
+        $metrics = $this->http->metrics;
+
+        if ($metrics->listen !== null) {
+            if ($metrics->token === null) {
+                $this->logger->info('The metrics port has no token, so anyone who reaches it reads the metrics', ['address' => (string) $metrics->listen]);
+            }
+
+            $requests = new MetricsRequestHandler(
+                $this->metricsExporter,
+                new BearerTokenCheck($metrics->token),
+                new UnauthorizedRequestWarnings(HttpListenerRole::Metrics, $this->logger),
+                $this->logger,
+            );
+            $listeners[] = new AmpHttpListener($metrics->listen, $requests, HttpListenerRole::Metrics, $this->logger);
         }
 
         return HttpListenerCollection::fromList($listeners);

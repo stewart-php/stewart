@@ -12,6 +12,7 @@ return [
     'ConfigurationError::EnvironmentValueInvalid' => 'Fix the value in `.env`; `make config-reference` lists the type of every setting.',
     'ConfigurationError::EnvironmentVariableUnknown' => 'Fix the variable name; keys are joined by two underscores.',
     'ConfigurationError::HomeAssistantMissing' => '`make env` creates `.env` with both keys to fill in.',
+    'ConfigurationError::HttpListenAddressShared' => 'Give one of them another port, such as `tcp://0.0.0.0:9464` for `http.metrics.listen`.',
     'ConfigurationError::MqttPackageMissing' => 'Or unset `STEWART_MQTT__URL` if no app uses MQTT.',
     'ConfigurationError::PlaceholderUnset' => 'Add the variable to `.env`.',
     'ContainerError::AppOptionUnknown' => 'Rename the option in `stewart.yaml` to match a constructor parameter.',

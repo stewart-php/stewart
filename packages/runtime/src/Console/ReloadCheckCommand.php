@@ -48,9 +48,16 @@ final class ReloadCheckCommand extends StewartCommand
             return $this->writeReport($output, ReloadCheckReport::failed([$e->getMessage()], $fingerprint));
         }
 
-        return $this->writeReport($output, $result->hasPassed()
-            ? ReloadCheckReport::fromDiscovery($result->discovered, $fingerprint, $this->findGeneratedManifest($result))
-            : ReloadCheckReport::failed($result->errors, $fingerprint));
+        if (!$result->hasPassed()) {
+            return $this->writeReport($output, ReloadCheckReport::failed($result->errors, $fingerprint));
+        }
+
+        // A reload keeps the running listeners, but must not accept a config the next start refuses.
+        if ($result->httpListenerError !== null) {
+            return $this->writeReport($output, ReloadCheckReport::failed([$result->httpListenerError], $fingerprint));
+        }
+
+        return $this->writeReport($output, ReloadCheckReport::fromDiscovery($result->discovered, $fingerprint, $this->findGeneratedManifest($result)));
     }
 
     private function findGeneratedManifest(ProjectCheckResult $result): ?GeneratedManifest

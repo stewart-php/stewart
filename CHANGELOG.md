@@ -5,6 +5,22 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
+## [Unreleased]
+
+### Added
+
+- `http.metrics.listen` (`STEWART_HTTP__METRICS__LISTEN`) serves only `GET /metrics`, on a port of its own, so
+  Prometheus no longer needs the admin token that can pause apps. `http.metrics.token` is optional: without one,
+  anyone who reaches the port reads the metrics. `/metrics` on the admin port keeps working under the admin token
+- `stewart check` notes, and `stewart doctor` and a reload refuse, an admin port without a token and two HTTP ports on
+  one port, which before showed only when the daemon refused to start
+
+### Changed
+
+- The admin API logs a warning when it listens off loopback, as the control socket already does
+- A request refused for a missing or wrong token on the admin or metrics port logs a warning: the first, then every
+  100th
+
 ## [1.7.0] - 2026-10-22
 
 Find out why an automation fired or did not: per-app log levels and traces, and a status that shows when each

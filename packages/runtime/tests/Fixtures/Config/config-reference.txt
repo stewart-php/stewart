@@ -179,10 +179,10 @@ control:
     # Shared secret every client presents. Required while listen is set: the daemon refuses to start without one.
     token:                null
 
-# The read-only HTTP port that answers /healthz and /readyz, for Kubernetes probes.
+# HTTP ports: listen answers /healthz and /readyz for Kubernetes probes; admin and metrics are separate ports.
 http:
 
-    # tcp://ip:port, such as tcp://0.0.0.0:8080 or tcp://[::]:8080. "off" disables the port.
+    # The read-only probe port: tcp://ip:port, such as tcp://0.0.0.0:8080 or tcp://[::]:8080. "off" disables the port.
     listen:               'off'
 
     # The HTTP admin API that lists, pauses and resumes apps. The token is a secret: set it from the environment.
@@ -192,6 +192,15 @@ http:
         listen:               'off'
 
         # Bearer token every request presents. Required while listen is set: the daemon refuses to start without one.
+        token:                null
+
+    # A port that serves only /metrics, so Prometheus needs no admin token. The token is a secret: set it from the environment.
+    metrics:
+
+        # tcp://ip:port, such as tcp://0.0.0.0:9464. "off" disables the port.
+        listen:               'off'
+
+        # Bearer token Prometheus presents. Optional: without one, anyone who reaches the port reads the metrics.
         token:                null
 
 # What `stewart generate` writes: typed classes over the entities and services of your own instance.

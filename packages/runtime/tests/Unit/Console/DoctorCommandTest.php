@@ -148,6 +148,27 @@ final class DoctorCommandTest extends TestCase
         self::assertStringNotContainsString('connection', $tester->getDisplay());
     }
 
+    public function testHttpListenersAreListed(): void
+    {
+        $tester = $this->runDoctor(['STEWART_HTTP__LISTEN' => 'tcp://0.0.0.0:8080', 'STEWART_HTTP__METRICS__LISTEN' => 'tcp://0.0.0.0:9464']);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertMatchesRegularExpression('~^  http\s+✓  probe tcp://0\.0\.0\.0:8080, metrics tcp://0\.0\.0\.0:9464 \(no token\)$~m', $tester->getDisplay());
+    }
+
+    public function testAdminPortWithoutTokenFails(): void
+    {
+        $tester = $this->runDoctor(['STEWART_HTTP__ADMIN__LISTEN' => 'tcp://127.0.0.1:8081']);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode());
+        self::assertMatchesRegularExpression('/^  http\s+✗ FAIL  http\.admin\.token is required/m', $tester->getDisplay());
+    }
+
+    public function testNoListenerMeansNoHttpLine(): void
+    {
+        self::assertDoesNotMatchRegularExpression('/^  http\s/m', $this->runDoctor([])->getDisplay());
+    }
+
     private static function createHomeAssistant(bool $isAdmin, bool $withLocation, ?int $componentProtocol = null): FakeWebsocketConnection
     {
         $socket = FakeWebsocketConnector::createAuthenticatedConnection();
