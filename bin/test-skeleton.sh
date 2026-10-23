@@ -11,12 +11,6 @@ cp -R skeleton/. "$target/"
 cd "$target"
 
 # Copies, not symlinks, so the install sees only what each package ships.
-# A project from an older skeleton adds the PHPStan extension like this; one from a current skeleton already has it.
-if ! grep -q '"stewart-php/phpstan"' composer.json; then
-    constraint=$(php -r 'echo json_decode(file_get_contents("composer.json"), true)["require"]["stewart-php/runtime"];')
-    composer config allow-plugins.phpstan/extension-installer true
-    composer require --dev --no-update "stewart-php/phpstan:$constraint" phpstan/extension-installer:^1.4
-fi
 sh ../../bin/link-packages.sh copy
 composer update --no-interaction --no-progress
 composer run-script create-env

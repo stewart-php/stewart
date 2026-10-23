@@ -6,17 +6,19 @@
     "require": {
         "php": ">=8.5.12",
         "psr/log": "^3.0",
-        "stewart-php/codegen": "^1.7",
-        "stewart-php/contracts": "^1.7",
-        "stewart-php/mqtt": "^1.7",
-        "stewart-php/runtime": "^1.7",
-        "stewart-php/store-redis": "^1.7",
+        "stewart-php/codegen": "^1.8",
+        "stewart-php/contracts": "^1.8",
+        "stewart-php/mqtt": "^1.8",
+        "stewart-php/runtime": "^1.8",
+        "stewart-php/store-redis": "^1.8",
         "symfony/dependency-injection": "^7.4 || ^8.0"
     },
     "require-dev": {
-        "phpstan/phpstan": "^2.2",
+        "phpstan/extension-installer": "^1.4",
+        "phpstan/phpstan": "^2.3",
         "phpunit/phpunit": "^13.3",
-        "stewart-php/testing": "^1.7"
+        "stewart-php/phpstan": "^1.8",
+        "stewart-php/testing": "^1.8"
     },
     "autoload": {
         "psr-4": {
@@ -36,6 +38,9 @@
     "minimum-stability": "stable",
     "prefer-stable": true,
     "config": {
+        "allow-plugins": {
+            "phpstan/extension-installer": true
+        },
         "optimize-autoloader": true,
         "sort-packages": true
     }

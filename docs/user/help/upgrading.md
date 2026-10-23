@@ -25,6 +25,36 @@ release asks you to do something.
 
 ## Upgrade notes
 
+### 1.8
+
+1. Run `make upgrade VERSION=1.8`, then restart Stewart (`make up`, `make deploy` or a new image). The control and
+   worker protocols are unchanged, and so is the Home Assistant integration's.
+2. Run `make generate`. The generated classes of 1.7 and earlier call `callService()`, so until they are regenerated
+   every generated call prints a deprecation line in the log, and `make status` says the classes are of an older
+   format.
+3. Move your apps and tests to the action names. This rewrites the calls whose names are written out; `make stan`
+   then points at the rest, such as names held in a variable:
+
+   ```bash
+   grep -rlE 'callService|stubService|getServiceName' apps tests | xargs sed -i -E \
+     -e "s/->callService(ForResponse)?\('([a-z0-9_]+)', *'([a-z0-9_]+)'/->callAction\1('\2.\3'/g" \
+     -e "s/->stubService(Answer|Failure)\('([a-z0-9_]+)', *'([a-z0-9_]+)'/->stubAction\1('\2.\3'/g" \
+     -e 's/->callService(ForResponse)?\(/->callAction\1(/g' \
+     -e 's/->getServiceName\(\)/->getActionName()/g'
+   ```
+4. To have `make stan` check entity IDs and action names, add the PHPStan extension from `make sh`; new projects
+   from the skeleton have it:
+
+   ```bash
+   composer config allow-plugins.phpstan/extension-installer true
+   composer require --dev stewart-php/phpstan:^1.8 phpstan/extension-installer
+   ```
+5. On Kubernetes with `adminApi.podMonitor.enabled`, switch to `metrics.enabled: true` and
+   `metrics.podMonitor.enabled: true`, and turn `adminApi.podMonitor` off. If Prometheus was the only reason for
+   `adminApi.host: 0.0.0.0`, set it back to `127.0.0.1`.
+6. The `TEMPLATE` variable of `make app` reaches only new projects. To use it, copy the `app` target from the
+   [skeleton's Makefile](https://github.com/stewart-php/skeleton/blob/main/Makefile).
+
 ### 1.7
 
 1. Run `make upgrade VERSION=1.7`, then restart Stewart (`make up`, `make deploy` or a new image). The control
