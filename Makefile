@@ -206,7 +206,7 @@ quality-summary: ## Headline numbers from var/reports into summary.json and summ
 	$(RUN) php bin/quality-summary.php var/reports $(QUALITY_BASELINE)
 
 .PHONY: bc-check
-bc-check: ## Public API backwards-compatibility breaks per package since BC_BASE (default: the latest tag)
+bc-check: ## Public API backwards-compatibility breaks in contracts and testing since BC_BASE (default: the latest tag)
 	$(RUN) env BC_FORMAT=$(if $(GITHUB_ACTIONS),github-actions,console) sh bin/bc-check.sh $(or $(BC_BASE),$(shell git describe --tags --abbrev=0))
 
 .PHONY: audit

@@ -5,6 +5,8 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
+## [Unreleased]
+
 ## [1.8.0] - 2026-10-23
 
 Fewer copies, fewer typos: call actions by the names Home Assistant gives them, run one app class several times with

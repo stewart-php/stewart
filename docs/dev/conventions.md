@@ -79,8 +79,8 @@ generates are declared through `ReservesMemberNames`.
 
 A public method that a minor replaces stays until the next major:
 
-- `#[Deprecated(message: 'use …; it is removed in 2.0', since: 'X.Y')]` goes on the interface method and on every
-  implementation, because PHP raises the deprecation only from the method that runs.
+- `#[Deprecated(message: 'use …; it is removed in N.0', since: 'X.Y')]`, with N the next major, goes on the interface
+  method and on every implementation, because PHP raises the deprecation only from the method that runs.
 - The deprecated method delegates to its replacement, and no Stewart code calls a deprecated method, so one old call
   raises one deprecation.
 - Each deprecated method keeps one test, with `#[IgnoreDeprecations]` and `expectUserDeprecationMessageMatches()`;
