@@ -12,6 +12,7 @@ use Stewart\Contracts\Exception\ScheduleError;
 use Stewart\Contracts\Schedule\ScheduledRun;
 use Stewart\Contracts\Sun\SunEvent;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Contracts\Time\PendingWait;
 use Stewart\Contracts\Time\SunOffset;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\HaContext\RecordingHaContext;
@@ -19,6 +20,10 @@ use Stewart\Testing\Schedule\ManualEntityTimeTask;
 use Stewart\Testing\Schedule\ManualScheduledTask;
 use Stewart\Testing\Schedule\ManualScheduler;
 use Stewart\Testing\Sun\FixedSunCalendar;
+use Stewart\Testing\Time\EventLoopTicks;
+use Stewart\Testing\Time\ManualTimers;
+
+use function Amp\async;
 
 #[CoversClass(ManualScheduler::class)]
 #[CoversClass(ManualScheduledTask::class)]
@@ -26,6 +31,8 @@ use Stewart\Testing\Sun\FixedSunCalendar;
 final class ManualSchedulerTest extends TestCase
 {
     use AssertsReason;
+
+    private ManualTimers $timers;
 
     private RecordingHaContext $ha;
 
@@ -36,8 +43,9 @@ final class ManualSchedulerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->ha = new RecordingHaContext();
-        $this->scheduler = new ManualScheduler($this->ha->timers, new FixedSunCalendar($this->ha->clock), $this->ha);
+        $this->timers = new ManualTimers();
+        $this->ha = new RecordingHaContext($this->timers);
+        $this->scheduler = new ManualScheduler($this->timers, new FixedSunCalendar($this->ha->clock), $this->ha);
         $this->runs = [];
     }
 
@@ -137,6 +145,22 @@ final class ManualSchedulerTest extends TestCase
         self::assertSame(['after@00:02', 'door still open'], $this->runs);
     }
 
+    public function testWaitEndsWhenResolvedOrAtItsTimeout(): void
+    {
+        $resolved = async(fn(): mixed => $this->scheduler->waitFor(function (PendingWait $wait): Closure {
+            $this->scheduler->runAfter(Duration::minutes(1), static fn() => $wait->resolve('arrived'));
+
+            return static fn() => null;
+        }, Duration::minutes(5)));
+        $expired = async(fn(): mixed => $this->scheduler->waitFor(static fn(PendingWait $wait): Closure => static fn() => null, Duration::minutes(5)));
+        EventLoopTicks::settle();
+
+        $this->advance(Duration::minutes(10));
+
+        self::assertSame('arrived', $resolved->await());
+        self::assertNull($expired->await());
+    }
+
     /** @return Closure(ScheduledRun): void */
     private function record(string $label): Closure
     {
@@ -147,6 +171,6 @@ final class ManualSchedulerTest extends TestCase
 
     private function advance(Duration $by): void
     {
-        $this->ha->timers->delay($by);
+        $this->timers->delay($by);
     }
 }

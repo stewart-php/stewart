@@ -17,6 +17,7 @@ use Stewart\Contracts\Sun\SunCalendar;
 use Stewart\Contracts\Sun\SunEvent;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\Instant;
+use Stewart\Contracts\Time\PendingWait;
 use Stewart\Contracts\Time\SunOffset;
 use Stewart\Support\Schedule\CalendarSchedule;
 use Stewart\Support\Schedule\CronSchedule;
@@ -79,6 +80,16 @@ final class ManualScheduler implements Scheduler
     public function runAtSunEvent(SunEvent $event, Closure $handler, ?SunOffset $offset = null): ScheduledTask
     {
         return $this->armWallClockSchedule(SunEventSchedule::forEvent($this->sunCalendar, $event, $offset), $handler);
+    }
+
+    /**
+     * @template T
+     * @param Closure(PendingWait<T>): (Closure(): void) $arm
+     * @return T|null
+     */
+    public function waitFor(Closure $arm, ?Duration $timeout = null): mixed
+    {
+        return $this->timers->waitFor($arm, $timeout);
     }
 
     public function cancelAll(): void

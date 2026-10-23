@@ -62,6 +62,7 @@ handler until an entity reaches a state:
 |---|---|
 | `$this->ha->waitForState('lock.front_door', 'locked', Duration::seconds(30))` | The entity to be in that state; returns at once if it already is |
 | `$stream->waitForNext(Duration::minutes(1))` | The next item of a stream, after its operators |
+| `$this->scheduler->waitFor($arm, Duration::minutes(1))` | Anything else: `$arm` receives a `PendingWait`, starts what will call `$wait->resolve($value)`, and returns a closure that cleans up once the wait ends |
 
 - **A timeout returns `null`.** Without a timeout, the wait lasts until it is met or the app stops.
 - **Other apps keep running** while a handler waits. Later events for the *same* subscription wait their turn.
@@ -73,22 +74,6 @@ handler until an entity reaches a state:
 
 For "has stayed off for 5 minutes", use `whenChangedTo('off', for: Duration::minutes(5))` from
 [State changes](state-changes.md). Waits are for steps that follow one another.
-
-## Schedules or timers
-
-Apps can also ask for `Timers`, whose `startTimer($delay, $callback)` runs a callback once, like `runAfter()`. Prefer
-the schedule:
-
-| | `Scheduler::runAfter()` | `Timers::startTimer()` |
-|---|---|---|
-| Shows in `make status APP=…` with its next and last run | Yes | No |
-| Traced with `apps.<id>.trace` | Yes | No |
-| Handler | May take a `ScheduledRun` (how late, runs missed) | Takes nothing |
-| Returns | `ScheduledTask`: `cancel()`, `isActive()`, `getNextRunAt()` | `TimerHandle`: `cancel()`, `isPending()` |
-
-Both stop when the app stops, and both run on the test harness's virtual clock. `Timers` is there for `waitFor()`,
-which builds a wait of your own from a callback that resolves it, and for code shared with Stewart's own internals;
-an app that only needs a delay uses a schedule.
 
 ## Testing
 

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Schedule;
 
 use Stewart\Contracts\Time\Clock;
-use Stewart\Contracts\Time\Timers;
 use Stewart\Runtime\Logging\EveryNthOccurrence;
+use Stewart\Support\Time\Timers;
 
 final readonly class ScheduleContext
 {

@@ -11,6 +11,7 @@ use Stewart\Contracts\Exception\IdentifierException;
 use Stewart\Contracts\Exception\ScheduleException;
 use Stewart\Contracts\Sun\SunEvent;
 use Stewart\Contracts\Time\Duration;
+use Stewart\Contracts\Time\PendingWait;
 use Stewart\Contracts\Time\SunOffset;
 
 interface Scheduler
@@ -47,4 +48,12 @@ interface Scheduler
      * @throws ScheduleException
      */
     public function runAtSunEvent(SunEvent $event, Closure $handler, ?SunOffset $offset = null): ScheduledTask;
+
+    // Only the first resolve() or fail() counts; the closure $arm returns runs once the wait ends, however it ends.
+    /**
+     * @template T
+     * @param Closure(PendingWait<T>): (Closure(): void) $arm
+     * @return T|null
+     */
+    public function waitFor(Closure $arm, ?Duration $timeout = null): mixed;
 }

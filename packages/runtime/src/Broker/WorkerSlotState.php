@@ -6,9 +6,9 @@ namespace Stewart\Runtime\Broker;
 
 use LogicException;
 use Stewart\Contracts\Time\Instant;
-use Stewart\Contracts\Time\TimerHandle;
 use Stewart\Runtime\Control\Protocol\Status\OutboxStatus;
 use Stewart\Runtime\Lifecycle\WorkerPhase;
+use Stewart\Support\Time\TimerHandle;
 
 final class WorkerSlotState
 {

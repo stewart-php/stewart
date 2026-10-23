@@ -8,7 +8,7 @@ use Closure;
 use Stewart\Contracts\Schedule\ScheduledRun;
 use Stewart\Contracts\Schedule\ScheduledTask;
 use Stewart\Contracts\Time\Instant;
-use Stewart\Contracts\Time\TimerHandle;
+use Stewart\Support\Time\TimerHandle;
 use Stewart\Testing\Time\ManualTimers;
 
 final class ManualScheduledTask implements ScheduledTask

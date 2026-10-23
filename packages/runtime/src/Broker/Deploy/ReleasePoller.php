@@ -9,11 +9,11 @@ use Amp\CancelledException;
 use Amp\DeferredCancellation;
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\Time\Clock;
-use Stewart\Contracts\Time\Timers;
 use Stewart\Runtime\Broker\BrokerRun;
 use Stewart\Runtime\Config\GitDeployConfig;
 use Stewart\Runtime\Exception\DeployException;
 use Stewart\Runtime\Time\RepeatingTimer;
+use Stewart\Support\Time\Timers;
 use Throwable;
 
 use function Amp\async;

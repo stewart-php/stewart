@@ -11,8 +11,8 @@ use Stewart\Contracts\Exception\StateException;
 use Stewart\Contracts\State\StateChange;
 use Stewart\Contracts\StateChangeStream;
 use Stewart\Contracts\Time\Duration;
-use Stewart\Contracts\Time\Timers;
 use Stewart\Support\State\CurrentStateReader;
+use Stewart\Support\Time\Timers;
 
 /**
  * @internal

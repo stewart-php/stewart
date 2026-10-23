@@ -6,8 +6,8 @@ namespace Stewart\Runtime\Time;
 
 use Closure;
 use Stewart\Contracts\Time\Duration;
-use Stewart\Contracts\Time\TimerHandle;
-use Stewart\Contracts\Time\Timers;
+use Stewart\Support\Time\TimerHandle;
+use Stewart\Support\Time\Timers;
 use Throwable;
 
 final class RepeatingTimer

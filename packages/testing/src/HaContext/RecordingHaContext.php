@@ -110,7 +110,7 @@ final class RecordingHaContext implements HaContext
 
     public readonly InMemoryRegistry $registry;
 
-    public function __construct(public readonly ManualTimers $timers = new ManualTimers())
+    public function __construct(private readonly ManualTimers $timers = new ManualTimers())
     {
         $this->clock = $timers->clock;
         $this->registry = new InMemoryRegistry();

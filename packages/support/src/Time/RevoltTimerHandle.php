@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Support\Time;
 
 use Revolt\EventLoop;
-use Stewart\Contracts\Time\TimerHandle;
 
 /** @internal */
 final class RevoltTimerHandle implements TimerHandle

@@ -57,7 +57,7 @@ Each fake is a public property of the harness:
 | `mqtt` | `Mqtt` | `pushMessage()`; read `published` |
 | `logger` | `LoggerInterface` | `listMessagesAt('info')` |
 | `registryEditor` | `RegistryEditor` | read `updates`; edits land in `$harness->ha->registry` |
-| `clock`, `timers` | `Clock`, `Timers` | the virtual clock |
+| `clock` | `Clock` | the virtual clock |
 | `sunCalendar` | `SunCalendar` | sunrise 06:00, solar noon 12:00, sunset 18:00; `stubEventTime()` changes one |
 
 The fakes are usable on their own as well. The per-feature *Testing* sections show `RecordingHaContext`,

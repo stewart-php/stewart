@@ -11,10 +11,10 @@ use Closure;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\MonotonicTime;
 use Stewart\Contracts\Time\PendingWait;
-use Stewart\Contracts\Time\TimerHandle;
-use Stewart\Contracts\Time\Timers;
 use Stewart\Support\Time\Deadlines;
 use Stewart\Support\Time\DeferredWait;
+use Stewart\Support\Time\TimerHandle;
+use Stewart\Support\Time\Timers;
 use Stewart\Testing\Async\HandlerFibers;
 
 final class ManualTimers implements Timers, Deadlines

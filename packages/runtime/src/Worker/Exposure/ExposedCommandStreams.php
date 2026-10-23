@@ -8,13 +8,13 @@ use Stewart\Contracts\EventStream;
 use Stewart\Contracts\Exposure\Command\ExposedCommand;
 use Stewart\Contracts\Exposure\ExposedEntityKey;
 use Stewart\Contracts\Selector\Selector;
-use Stewart\Contracts\Time\Timers;
 use Stewart\Runtime\Dispatch\DispatchSource;
 use Stewart\Runtime\Dispatch\LocalDispatcher;
 use Stewart\Runtime\Dispatch\QueueDiscardReason;
 use Stewart\Runtime\Model\ResourceScope;
 use Stewart\Runtime\Model\SubscriptionKind;
 use Stewart\Support\Stream\OperatorStream;
+use Stewart\Support\Time\Timers;
 
 final readonly class ExposedCommandStreams
 {

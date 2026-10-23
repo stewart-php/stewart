@@ -17,6 +17,7 @@ use Stewart\Contracts\Time\Duration;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\HaContext\RecordingHaContext;
 use Stewart\Testing\Time\EventLoopTicks;
+use Stewart\Testing\Time\ManualTimers;
 
 use function Amp\async;
 
@@ -96,11 +97,12 @@ final class EntityTest extends TestCase
 
     public function testWaitEndsWithNullOnceItsTimeoutPasses(): void
     {
-        $ha = new RecordingHaContext()->seedState('lock.front', 'unlocked');
+        $timers = new ManualTimers();
+        $ha = new RecordingHaContext($timers)->seedState('lock.front', 'unlocked');
         $outcome = async(static fn(): ?EntityState => $ha->getEntity('lock.front')->waitForState('locked', Duration::seconds(10)));
         EventLoopTicks::settle();
 
-        $ha->timers->delay(Duration::seconds(10));
+        $timers->delay(Duration::seconds(10));
 
         self::assertNull($outcome->await());
     }

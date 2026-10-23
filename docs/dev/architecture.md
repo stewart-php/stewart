@@ -100,8 +100,9 @@ API apps see, and depends on PHP alone. That is a rule, not a
 coincidence: it is what allows a test double to exist without an event loop or
 an HTTP stack, and what lets the generated entity classes — thousands of methods
 typed against `HaContext` — exist without dragging in `amphp/parallel`. Time
-reaches the operators through the `Timers` port, never through Revolt directly;
-deadlines and waits are the runtime's own `Deadlines` port.
+reaches the operators through support's internal `Timers` port, never through
+Revolt directly, which is what lets debounce and the scheduler run on a virtual
+clock in tests; deadlines are the `Deadlines` port beside it.
 
 **`stewart-php/support`** holds the helpers the framework packages share and
 apps never see: the stream operators behind `EventStream`, the schedule
@@ -258,7 +259,7 @@ anything `options:` supplies, and any service registered in `services.php` —
 all by type, in any order.
 
 The worker container autowires contract types only: `HaContext`,
-`LoggerInterface`, `Scheduler`, `Timers`, `Clock`, `SunCalendar`, `Store`,
+`LoggerInterface`, `Scheduler`, `Clock`, `SunCalendar`, `Store`,
 `ReadableStore`, `Mqtt`, `EntityExposure`, `RegistryEditor` and the generated
 roots. Everything else the runtime registers sits under an id
 starting with a dot, which autowiring never matches, so the transport, the

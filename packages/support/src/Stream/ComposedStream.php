@@ -12,7 +12,7 @@ use Stewart\Contracts\Stream\Edge;
 use Stewart\Contracts\Subscription;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\PendingWait;
-use Stewart\Contracts\Time\Timers;
+use Stewart\Support\Time\Timers;
 
 /**
  * @internal

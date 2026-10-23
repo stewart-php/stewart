@@ -2,10 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Stewart\Contracts\Time;
+namespace Stewart\Support\Time;
 
 use Closure;
+use Stewart\Contracts\Time\Duration;
+use Stewart\Contracts\Time\PendingWait;
 
+/** @internal */
 interface Timers
 {
     /** @param Closure(): void $callback */

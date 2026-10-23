@@ -12,6 +12,8 @@ release could break; a release's "Upgrading" section says what to change.
 - `stewart check`, the deploy gate, `stewart run` and a reload refuse generated classes written by Stewart 1.x with
   one line that says to run `stewart generate`, instead of failing to load them; the PHPStan extension reports such a
   tree once (`stewart.generatedCode`) and checks no entity IDs or action names until it is regenerated
+- `Scheduler::waitFor($arm, $timeout)` builds a wait of your own: `$arm` starts what resolves it, and the closure it
+  returns cleans up once the wait ends
 - `stewart run --dry-run` turns on `ha_calls.dry_run` for one run, and reloads keep it; `make run DRY_RUN=1` uses it
 
 ### Changed
@@ -53,6 +55,9 @@ release could break; a release's "Upgrading" section says what to change.
   and `stewart check` no longer names such apps
 - `GET /metrics` on the admin port: only the metrics port (`http.metrics.listen`) serves metrics, and the admin port
   answers 404 with a pointer to it
+- `Stewart\Contracts\Time\Timers` and `TimerHandle`, so apps have one way to run code later: `Scheduler::runAfter()`,
+  which shows in status and in traces. In tests, `AppHarness::$timers` and `RecordingHaContext::$timers` are private;
+  use `advanceTime()`, or give `RecordingHaContext` a `ManualTimers` of your own and advance that
 - `Stewart\Contracts\Generated\ActionManifest`: its `listActionNames()` is part of `Manifest`
 - Chart: `adminApi.podMonitor`, deprecated since 1.8; a release that still sets it fails to render and names
   `metrics.podMonitor`
@@ -88,11 +93,14 @@ release could break; a release's "Upgrading" section says what to change.
 2. Run `make generate` and commit `generated/`: Stewart 2.0 refuses the classes 1.x generated.
 3. An app whose `dispose()` does something implements `Stewart\Contracts\Disposable`, or it no longer runs. Before
    upgrading, `stewart check` on 1.8 names every app this affects.
-4. If Prometheus scrapes the admin port, turn on the metrics port and scrape that: `http.metrics.listen`
+4. An app that took `Timers` takes `Scheduler` instead: `startTimer($delay, $callback)` becomes
+   `runAfter($delay, $callback)`, `isPending()` on the handle becomes `isActive()`, and `waitFor()` moves to the
+   `Scheduler` unchanged. `make stan` points at each one.
+5. If Prometheus scrapes the admin port, turn on the metrics port and scrape that: `http.metrics.listen`
    (`STEWART_HTTP__METRICS__LISTEN`, port 9464 by convention) with Docker, or `metrics.enabled` and
    `metrics.podMonitor.enabled` instead of `adminApi.podMonitor` with the chart. If Prometheus was the only reason for
    `adminApi.host: 0.0.0.0`, set it back to `127.0.0.1`.
-5. Rename the metrics in dashboards and alerts, and the status JSON keys in scripts that read `stewart status --json`;
+6. Rename the metrics in dashboards and alerts, and the status JSON keys in scripts that read `stewart status --json`;
    both lists are under Changed.
 
 ## [1.8.0] - 2026-10-23

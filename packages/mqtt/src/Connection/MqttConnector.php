@@ -12,7 +12,6 @@ use Amp\Socket\ConnectContext;
 use Amp\Socket\Socket;
 use Closure;
 use Stewart\Contracts\Mqtt\MqttMessage;
-use Stewart\Contracts\Time\Timers;
 use Stewart\Mqtt\Exception\MqttClientError;
 use Stewart\Mqtt\Exception\MqttClientException;
 use Stewart\Mqtt\Packet\ConnAckPacket;
@@ -21,6 +20,7 @@ use Stewart\Mqtt\Packet\PacketEncoder;
 use Stewart\Mqtt\Packet\PacketReader;
 use Stewart\Runtime\Config\MqttConfig;
 use Stewart\Support\Time\Deadlines;
+use Stewart\Support\Time\Timers;
 use Throwable;
 
 use function Amp\Socket\connect;

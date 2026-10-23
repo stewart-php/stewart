@@ -6,12 +6,12 @@ namespace Stewart\Runtime\Broker;
 
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\Time\Clock;
-use Stewart\Contracts\Time\Timers;
 use Stewart\Runtime\Config\SupervisionConfig;
 use Stewart\Runtime\Ipc\Message\Ping;
 use Stewart\Runtime\Ipc\Message\Pong;
 use Stewart\Runtime\Logging\EveryNthOccurrence;
 use Stewart\Runtime\Time\RepeatingTimer;
+use Stewart\Support\Time\Timers;
 use Throwable;
 
 final class WorkerWatchdog

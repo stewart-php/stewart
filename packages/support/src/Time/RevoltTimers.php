@@ -10,8 +10,6 @@ use Closure;
 use Revolt\EventLoop;
 use Stewart\Contracts\Time\Duration;
 use Stewart\Contracts\Time\PendingWait;
-use Stewart\Contracts\Time\TimerHandle;
-use Stewart\Contracts\Time\Timers;
 
 use function Amp\delay;
 

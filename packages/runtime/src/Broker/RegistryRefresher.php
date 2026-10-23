@@ -7,8 +7,8 @@ namespace Stewart\Runtime\Broker;
 use Psr\Log\LoggerInterface;
 use Stewart\Contracts\Event\HaEvent;
 use Stewart\Contracts\Time\Duration;
-use Stewart\Contracts\Time\TimerHandle;
-use Stewart\Contracts\Time\Timers;
+use Stewart\Support\Time\TimerHandle;
+use Stewart\Support\Time\Timers;
 use Throwable;
 
 use function Amp\async;
