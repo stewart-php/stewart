@@ -19,6 +19,10 @@ description: 'The test suites, where tests live, and the fixtures and goldens th
 its read-only copy would be tested; `make test-packages LOWEST=1` does that for every package with the lowest allowed
 dependencies.
 
+`make test-upgrade` builds a project from v1.8.0, with that release's docs examples as its apps, and upgrades it to
+this checkout: the project's own `make upgrade` script, then the `bash` block under Upgrading in the `Unreleased`
+section of `CHANGELOG.md`. Generate, check, PHPStan and the project's tests must then pass. CI runs it on every change.
+
 The image has `ext-ev`, so the suites run on Revolt's `EvDriver`. To run them on `stream_select()`, which PHP without
 `ext-ev` uses, add `REVOLT_DRIVER='Revolt\EventLoop\Driver\StreamSelectDriver'` to the `make` command.
 `make loop-driver` prints the driver in use.

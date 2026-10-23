@@ -238,6 +238,10 @@ chart-lint: ## Lint the Helm chart and validate what it renders for each charts/
 test-skeleton: ## Install skeleton/ against this checkout and run a new project's first steps
 	$(RUN) sh bin/test-skeleton.sh
 
+.PHONY: test-upgrade
+test-upgrade: ## Upgrade a 1.8.0 project to this checkout with the changelog's upgrading commands, then check it
+	$(RUN) sh bin/test-upgrade.sh
+
 # --- home assistant integration -------------------------------------------
 
 # HA=min tests against the oldest supported Home Assistant, HA=latest (default) against the newest pinned one.
