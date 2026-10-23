@@ -129,3 +129,24 @@ jobs:
           cache-from: type=gha,scope=dev-8.5
       - run: make install
       - run: make test-packages LOWEST=${{ matrix.lowest }}
+
+  # Runs the changelog's upgrading commands on a project built from v1.8.0, which needs the tags.
+  upgrade:
+    name: Upgrade from 1.8
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-docker
+      - name: Build the toolchain image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: .docker/php/Dockerfile
+          target: dev
+          tags: stewart-php:dev
+          load: true
+          cache-from: type=gha,scope=dev-8.5
+      - run: make test-upgrade

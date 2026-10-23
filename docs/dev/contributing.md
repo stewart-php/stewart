@@ -64,6 +64,8 @@ make check      # every check CI runs
    rules and architecture tests.
 3. Add a line to the `Unreleased` section of `CHANGELOG.md` when users notice the change, ending with the pull
    request: `([#94](https://github.com/stewart-php/stewart/pull/94))`.
+   A change that renames something apps use also extends the `bash` block under its Upgrading heading, which
+   `make test-upgrade` runs on a 1.8 project.
 4. Update the user docs in `docs/user/` when behaviour changes, and run `make docs-reference` when a setting,
    command, error or metric changed.
 5. Run `make check`, push, and open a pull request.
