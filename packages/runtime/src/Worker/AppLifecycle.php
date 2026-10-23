@@ -246,8 +246,7 @@ final class AppLifecycle
 
     private function disposeAppInstance(App $app): void
     {
-        // Until 2.0, an app that still declares dispose() without Disposable is disposed too.
-        if ($app instanceof Disposable || \is_callable([$app, 'dispose'])) {
+        if ($app instanceof Disposable) {
             $app->dispose();
         }
     }

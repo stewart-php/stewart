@@ -4,6 +4,9 @@ title The public API surface (stewart-php/contracts)
 
 interface App {
     +initialize(): void
+}
+
+interface Disposable {
     +dispose(): void
 }
 
@@ -114,6 +117,7 @@ class StateChange {
     +changedFrom(state)
 }
 
+App .left. Disposable : an app may also implement
 App -right-> HaContext : constructed with
 App ..> Scheduler : constructed with
 Scheduler ..> Schedule : accepts

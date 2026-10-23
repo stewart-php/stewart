@@ -34,9 +34,8 @@ app stops:
 ```php file=../../examples/apps/EnergyLog.php
 ```
 
-Before Stewart 1.5, `App` declared `dispose()` too, so older apps have an empty one. Delete it, or add
-`implements Disposable` when it does something. Until Stewart 2.0, a `dispose()` without `Disposable` still runs, and
-`stewart check` names the app.
+Stewart calls `dispose()` only on apps that implement `Disposable`. Apps written before Stewart 1.5 may still have an
+empty one from when `App` declared it; delete it, or add `implements Disposable` when it does something.
 
 ## What the constructor can ask for
 

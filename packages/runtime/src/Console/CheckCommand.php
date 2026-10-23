@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Stewart\Runtime\Console;
 
 use Stewart\Runtime\App\AppCatalog;
-use Stewart\Runtime\App\Collection\DiscoveredAppCollection;
 use Stewart\Runtime\App\Collection\UnmarkedAppCollection;
 use Stewart\Runtime\App\DiscoveredApp;
 use Stewart\Runtime\App\DiscoveryResult;
@@ -54,7 +53,6 @@ final class CheckCommand extends StewartCommand
         $this->writeUnmatchedOverridesNotice($output, $apps);
         $this->writeUnmarkedAppNotices($output, $discovered->unmarked);
         $this->writeUnusedTemplateNotices($output, $discovered->listUnusedTemplateClasses());
-        $this->writeDisposeDeprecationNotices($output, $discovered->apps);
         $this->writeAppTable($output, $discovered, $apps, $result->workerSlots);
         $output->writeln(\sprintf('Configuration and %d automations load; %d enabled.', $discovered->apps->count(), $apps->enabled->count()));
 
@@ -80,21 +78,6 @@ final class CheckCommand extends StewartCommand
     {
         foreach ($templates as $template) {
             $this->writeNotice($output, \sprintf('%s is an #[AppTemplate], but no apps.<id>.class names it, so it does not run.', $template));
-        }
-    }
-
-    private function writeDisposeDeprecationNotices(OutputInterface $output, DiscoveredAppCollection $apps): void
-    {
-        $noticed = [];
-
-        foreach ($apps as $app) {
-            if (!isset($noticed[$app->class]) && $app->declaresDisposeWithoutDisposable()) {
-                $noticed[$app->class] = true;
-                $this->writeNotice($output, \sprintf(
-                    '%s declares dispose() without implementing Disposable; delete it if it is empty, or add "implements Disposable". Stewart 2.0 stops calling it.',
-                    $app->class,
-                ));
-            }
         }
     }
 
