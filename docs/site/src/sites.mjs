@@ -57,12 +57,22 @@ export function selectSite() {
         throw new Error(`Unknown DOCS_SITE ${JSON.stringify(name)}; expected one of ${Object.keys(SITES).join(', ')}.`);
     }
 
-    if (process.env.DOCS_PREVIEW !== '1') {
+    const archive = process.env.DOCS_ARCHIVE ?? '';
+
+    if (process.env.DOCS_PREVIEW !== '1' && archive === '') {
         return site;
     }
 
     if (name !== 'user') {
-        throw new Error('DOCS_PREVIEW builds only the user site.');
+        throw new Error('DOCS_PREVIEW and DOCS_ARCHIVE build only the user site.');
+    }
+
+    if (archive !== '') {
+        if (!/^\d+$/.test(archive)) {
+            throw new Error(`DOCS_ARCHIVE ${JSON.stringify(archive)} is not a major version, such as 1.`);
+        }
+
+        return { ...site, base: `${site.base}/${archive}.x`, archive };
     }
 
     return { ...site, base: `${site.base}/next`, preview: true };

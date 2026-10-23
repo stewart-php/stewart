@@ -100,6 +100,11 @@ docs-build: docs-clean docs-diagrams ## Build both documentation sites into docs
 docs-build-next: docs-clean ## Build the unreleased user documentation for /docs/next/
 	$(DOCS_RUN) npm run build:next
 
+# No link check: an archive's pages are checked against today's repository, where some of their files have moved.
+.PHONY: docs-build-archive
+docs-build-archive: docs-clean ## Build docs/user as an older major's documentation for /docs/<MAJOR>.x/ [MAJOR=1 REF=v1.8.0]
+	$(DC) run --rm --no-deps -e DOCS_ARCHIVE=$(or $(MAJOR),$(error Set MAJOR, such as MAJOR=1)) -e DOCS_SOURCE_REF=$(or $(REF),$(error Set REF, such as REF=v1.8.0)) docs npm run build:archive
+
 .PHONY: docs-preview
 docs-preview: ## Serve a built documentation site [SITE=user|dev]
 	$(DC) run --rm --no-deps -p 127.0.0.1:$(if $(filter dev,$(SITE)),$(DOCS_DEV_PORT):$(DOCS_DEV_PORT),$(DOCS_USER_PORT):$(DOCS_USER_PORT)) docs npm run preview:$(SITE) -- --host 0.0.0.0

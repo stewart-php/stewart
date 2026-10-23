@@ -122,9 +122,11 @@ Done once, by an owner of the `stewart-php` organization, before `v0.1.0`.
   `noindex`; `make docs-build-next` builds it locally.
 - A docs-only fix after a release: merge it, then run **Docs** by hand with the ref to publish (empty means the
   latest tag; `main` publishes unreleased docs, so only do that on purpose).
-- **At a new major**, before its first publish: copy the current `docs/` of the site repository to `docs/<old>.x/`,
-  add a note on its pages that they describe an old version, and commit it. Set `PREVIOUS_MAJOR` and
-  `PREVIOUS_MAJOR_UNTIL` in `rebuild.yml`. Then tag the release.
+- **At a new major**, before tagging it: once its release commit is on `main`, run **Docs** by hand with `archive`
+  set to the previous major's last tag (`v1.8.0` before 2.0). It builds that tag's user docs with `main`'s tooling
+  under `/docs/<old>.x/`, with a banner, `noindex` and links into that tag (`make docs-build-archive MAJOR=1
+  REF=v1.8.0` locally, from a checkout whose `docs/user` and `docs/examples` come from that tag). Set
+  `PREVIOUS_MAJOR` and `PREVIOUS_MAJOR_UNTIL` in `rebuild.yml`. Then tag the release.
 
 ## Verifying a published release
 

@@ -28,7 +28,7 @@ export default defineConfig({
             markdown: { processedDirs: [`../${site.tree}`] },
             title: site.title,
             description: site.description,
-            editLink: { baseUrl: EDIT_BASE },
+            ...(site.archive ? {} : { editLink: { baseUrl: EDIT_BASE } }),
             social: [
                 {
                     icon: 'github',
@@ -37,8 +37,11 @@ export default defineConfig({
                 },
             ],
             sidebar: site.sidebar(site),
-            head: site.preview ? [{ tag: 'meta', attrs: { name: 'robots', content: 'noindex' } }] : [],
-            routeMiddleware: site.preview ? ['./src/preview-banner.mjs'] : [],
+            head: site.preview || site.archive ? [{ tag: 'meta', attrs: { name: 'robots', content: 'noindex' } }] : [],
+            routeMiddleware: [
+                ...(site.preview ? ['./src/preview-banner.mjs'] : []),
+                ...(site.archive ? ['./src/archive-banner.mjs'] : []),
+            ],
         }),
     ],
     // The content trees sit above this project, in docs/<tree>/.
