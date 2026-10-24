@@ -5358,22 +5358,22 @@
         },
         {
             "name": "phpstan/phpstan-phpunit",
-            "version": "2.0.21",
+            "version": "2.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpstan-phpunit.git",
-                "reference": "8dbdc3a3e2d7c5dfea655d20ecca5bc9b1b1e441"
+                "reference": "8d16b8478e523a47f8c02e83bce8981b5b5a3b03"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan-phpunit/zipball/8dbdc3a3e2d7c5dfea655d20ecca5bc9b1b1e441",
-                "reference": "8dbdc3a3e2d7c5dfea655d20ecca5bc9b1b1e441",
+                "url": "https://api.github.com/repos/phpstan/phpstan-phpunit/zipball/8d16b8478e523a47f8c02e83bce8981b5b5a3b03",
+                "reference": "8d16b8478e523a47f8c02e83bce8981b5b5a3b03",
                 "shasum": ""
             },
             "require": {
                 "phar-io/version": "^3.2",
                 "php": "^7.4 || ^8.0",
-                "phpstan/phpstan": "^2.2.6"
+                "phpstan/phpstan": "^2.3.0"
             },
             "conflict": {
                 "phpunit/phpunit": "<7.0"
@@ -5410,9 +5410,9 @@
             ],
             "support": {
                 "issues": "https://github.com/phpstan/phpstan-phpunit/issues",
-                "source": "https://github.com/phpstan/phpstan-phpunit/tree/2.0.21"
+                "source": "https://github.com/phpstan/phpstan-phpunit/tree/2.1.1"
             },
-            "time": "2026-10-01T11:59:29+00:00"
+            "time": "2026-10-06T18:12:32+00:00"
         },
         {
             "name": "phpstan/phpstan-strict-rules",
@@ -7799,7 +7799,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/codegen",
-                "reference": "6b40610ca777a615cf321cb16924e505e9650306"
+                "reference": "ca5b0b0df0a07b6f66f78ee19ebd5c0b51bd68d0"
             },
             "require": {
                 "ext-ctype": "*",
@@ -7838,7 +7838,7 @@
             "license": [
                 "MIT"
             ],
-            "description": "Generates typed entity and service classes from a Home Assistant instance",
+            "description": "Generates typed entity and action classes from a Home Assistant instance",
             "homepage": "https://github.com/stewart-php/stewart",
             "support": {
                 "issues": "https://github.com/stewart-php/stewart/issues",
@@ -7856,9 +7856,10 @@
             "dist": {
                 "type": "path",
                 "url": "packages/phpstan",
-                "reference": "fc3f17d0bde22c85f9d7708b1ea54f1239f22de8"
+                "reference": "de6d066db659bc254b4b911fb285a070feb436c2"
             },
             "require": {
+                "composer-runtime-api": "^2.2",
                 "php": ">=8.5.12",
                 "phpstan/phpstan": "^2.3",
                 "stewart-php/contracts": "self.version",
