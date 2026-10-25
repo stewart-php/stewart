@@ -201,8 +201,8 @@ rejection is thrown into the test:
 
 ## Common problems
 
-**`ComponentMissing`.** The Stewart integration is not installed, or Home Assistant was not restarted after installing
-it. The app keeps running without its entities.
+**`ComponentMissing`.** The Stewart integration is not installed, Home Assistant was not restarted after installing
+it, or Home Assistant is still loading it after a restart. The app keeps running without its entities.
 
 **`ProtocolMismatch`.** The integration and Stewart have different versions. Update the one that is behind.
 
