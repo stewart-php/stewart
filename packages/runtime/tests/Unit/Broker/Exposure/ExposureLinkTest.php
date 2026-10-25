@@ -103,6 +103,13 @@ final class ExposureLinkTest extends TestCase
         $this->assertThrowsReason(ExposureError::ComponentMissing, fn() => $this->exposeTemperature(21.4));
     }
 
+    public function testDisabledLinkRefusesExposure(): void
+    {
+        $this->tracker->recordState(ComponentState::Disabled, null);
+
+        $this->assertThrowsReason(ExposureError::Disabled, fn() => $this->exposeTemperature(21.4));
+    }
+
     public function testActiveComponentAnswersWithSnapshot(): void
     {
         $this->activateComponent();

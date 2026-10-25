@@ -237,6 +237,7 @@ final readonly class StatusRenderer
             ComponentState::ProtocolMismatch => \sprintf('%s, protocol %d where Stewart speaks %d', $description, $component->protocol ?? 0, ComponentProtocol::VERSION),
             ComponentState::Refused => $description . ', see the daemon log',
             ComponentState::Replaced => \sprintf('%s, another Stewart uses expose.instance "%s"', $description, $component->instance),
+            ComponentState::Disabled => $description . ', expose.enabled is off',
             ComponentState::Unchecked, ComponentState::Active => $description,
         };
     }

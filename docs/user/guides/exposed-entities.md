@@ -28,6 +28,10 @@ Exposed entities need the **Stewart integration** in Home Assistant, of the same
 Stewart finds the integration each time it connects; `make status` shows it on the `component` row. The integration
 needs Home Assistant 2026.4 or newer, and Stewart's token must belong to an administrator.
 
+A daemon that never exposes entities can set `expose.enabled: false`. It then sends nothing to the integration, and
+`expose*()` throws `Disabled`. Entities it exposed before stay, unavailable; delete them with its hub, as under
+[Pruning](#pruning).
+
 ## How an entity is identified
 
 - The key (`average_temperature`) is the entity's identity: its unique ID is
@@ -169,6 +173,7 @@ Every handle call waits for Stewart's main process and can throw `ExposureExcept
 | Reason | When |
 |---|---|
 | `ComponentMissing`, `ProtocolMismatch`, `ComponentRefused` | The integration is not installed, has another version, or refused the session |
+| `Disabled` | `expose.enabled` is off |
 | `ConfigInvalid` | Home Assistant rejects the configuration, for example a unit that does not fit the device class |
 | `StateInvalid` | Home Assistant rejects the value |
 | `KeyInvalid` | The key is not lowercase letters, digits and `_`, starting with a letter |

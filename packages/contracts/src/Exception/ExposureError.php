@@ -17,6 +17,7 @@ enum ExposureError: string implements ExceptionReason
     case Removed = 'exposure_removed';
     case Unreachable = 'exposure_unreachable';
     case TimedOut = 'exposure_timed_out';
+    case Disabled = 'exposure_disabled';
 
     public function messageTemplate(): string
     {
@@ -32,6 +33,7 @@ enum ExposureError: string implements ExceptionReason
             self::Removed => 'Exposed entity {key} was removed; expose it again to use it.',
             self::Unreachable => 'Could not reach the broker for exposed entity {key}: {detail}',
             self::TimedOut => 'The broker did not answer for exposed entity {key} within {timeout}.',
+            self::Disabled => 'Entity {key} cannot be exposed because expose.enabled is off.',
         };
     }
 }

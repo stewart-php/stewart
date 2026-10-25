@@ -25,6 +25,7 @@ return [
     'ControlError::ProtocolMismatch' => 'Use the `stewart` of the running daemon\'s version, for example `make status`, which runs in its container.',
     'ExposureError::ComponentMissing' => 'Install the Stewart integration in Home Assistant and restart it.',
     'ExposureError::ProtocolMismatch' => 'Update Stewart or the integration so both have the same version.',
+    'ExposureError::Disabled' => 'Turn `expose.enabled` on, or stop exposing entities from the app.',
     'HaClientError::AdministratorRequired' => 'Create the token from a Home Assistant administrator.',
     'HaClientError::ClosedDuringAuthentication' => 'Check `STEWART_HOME_ASSISTANT__TOKEN`, then the Home Assistant log from the same moment.',
     'HaClientError::ConnectFailed' => 'Check `STEWART_HOME_ASSISTANT__URL`; inside the container `localhost` is the container, so use the host name, IP or `host.docker.internal`.',

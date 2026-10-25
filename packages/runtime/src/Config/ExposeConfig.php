@@ -16,6 +16,7 @@ final readonly class ExposeConfig
         public ComponentInstance $instance,
         public Duration $commandTimeout,
         public bool $prune = true,
+        public bool $enabled = true,
     ) {}
 
     /** @throws ConfigurationException */
@@ -25,6 +26,7 @@ final readonly class ExposeConfig
             $expose->readParsedValue('instance', ComponentInstance::parse(...)),
             $expose->readDuration('command_timeout', Duration::milliseconds(1), Duration::seconds(self::LONGEST_COMMAND_TIMEOUT_THE_COMPONENT_ACCEPTS_SECONDS)),
             $expose->readBool('prune'),
+            $expose->readBool('enabled'),
         );
     }
 }

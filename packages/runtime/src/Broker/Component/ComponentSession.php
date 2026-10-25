@@ -122,7 +122,7 @@ final class ComponentSession
     {
         return match ($this->tracker->detection->state) {
             ComponentState::Unchecked, ComponentState::Missing => false,
-            ComponentState::ProtocolMismatch, ComponentState::Refused, ComponentState::Replaced, ComponentState::Active => true,
+            ComponentState::ProtocolMismatch, ComponentState::Refused, ComponentState::Replaced, ComponentState::Active, ComponentState::Disabled => true,
         };
     }
 }

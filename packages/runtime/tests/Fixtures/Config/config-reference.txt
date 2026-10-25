@@ -246,6 +246,9 @@ deploy:
 # Entities apps create in Home Assistant through the stewart integration.
 expose:
 
+    # Talk to the stewart integration. Off sends it nothing, so apps cannot expose entities.
+    enabled:              true
+
     # Name of this Stewart in Home Assistant, part of every exposed unique_id; daemons sharing one Home Assistant need different names.
     instance:             default
 

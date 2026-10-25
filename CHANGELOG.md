@@ -7,6 +7,11 @@ release could break; a release's "Upgrading" section says what to change.
 
 ## [Unreleased]
 
+### Added
+
+- `expose.enabled: false` stops a daemon that exposes no entities from talking to the stewart integration at all;
+  `expose*()` then throws `ExposureError::Disabled`, and `stewart status` and `stewart doctor` say it is off
+
 ### Fixed
 
 - Exposed entities come back after Home Assistant restarts: when Stewart reconnects before Home Assistant has loaded

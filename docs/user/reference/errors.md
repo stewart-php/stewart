@@ -105,6 +105,7 @@ Thrown as `ExposureException`.
 | `Removed` | Exposed entity {key} was removed; expose it again to use it. |  |
 | `Unreachable` | Could not reach the broker for exposed entity {key}: {detail} |  |
 | `TimedOut` | The broker did not answer for exposed entity {key} within {timeout}. |  |
+| `Disabled` | Entity {key} cannot be exposed because expose.enabled is off. | Turn `expose.enabled` on, or stop exposing entities from the app. |
 
 ## HistoryError
 

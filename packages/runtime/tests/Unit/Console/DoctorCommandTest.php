@@ -109,6 +109,16 @@ final class DoctorCommandTest extends TestCase
         self::assertMatchesRegularExpression('/^  integration\s+! warn  not installed/m', $tester->getDisplay());
     }
 
+    public function testDisabledExposureSkipsTheIntegration(): void
+    {
+        $socket = self::createHomeAssistant(isAdmin: true, withLocation: true);
+
+        $tester = $this->runDoctor([...self::HOME_ASSISTANT, 'STEWART_EXPOSE__ENABLED' => 'false'], [], $socket);
+
+        self::assertMatchesRegularExpression('/^  integration\s+– skip  expose\.enabled is off$/m', $tester->getDisplay());
+        self::assertSame([], $socket->listSentOfType('stewart/version'));
+    }
+
     public function testIntegrationOfAnotherProtocolFails(): void
     {
         $socket = self::createHomeAssistant(isAdmin: true, withLocation: true, componentProtocol: ComponentProtocol::VERSION + 1);
