@@ -5,6 +5,14 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
+## [Unreleased]
+
+### Fixed
+
+- Exposed entities come back after Home Assistant restarts: when Stewart reconnects before Home Assistant has loaded
+  the `stewart` integration, it keeps checking and opens the session once the integration is there, instead of leaving
+  the entities unavailable until Stewart restarts; an integration installed while Stewart runs is picked up the same way
+
 ## [2.0.0] - 2026-10-24
 
 One word for one thing: Stewart calls Home Assistant's actions actions everywhere, from `callAction()` and

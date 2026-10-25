@@ -123,6 +123,55 @@ final class ComponentSessionTest extends TestCase
         self::assertCount(2, $this->socket->listSentOfType('stewart/entity/upsert'));
     }
 
+    public function testComponentMissingOnConnectIsRetriedAfterBackoff(): void
+    {
+        $this->openSessionWithExposedSensor();
+        $this->session->markLinkLost();
+        $this->socket->replyWhenSent('stewart/version', self::createRejection('unknown_command'));
+        $this->session->openSession();
+        $startedAt = $this->timers->clock->getMonotonicTime();
+
+        $this->session->startRelinkingUnlessSettled();
+        $this->answerVersionRequest(3);
+
+        self::assertSame(ComponentState::Active, $this->tracker->detection->state);
+        self::assertSame('1s', (string) $this->timers->clock->getMonotonicTime()->elapsedSince($startedAt));
+    }
+
+    public function testActiveComponentIsNotRetried(): void
+    {
+        $this->openSessionWithExposedSensor();
+
+        $this->session->startRelinkingUnlessSettled();
+        EventLoopTicks::settle();
+
+        self::assertCount(1, $this->socket->listSentOfType('stewart/version'));
+    }
+
+    public function testTimedOutRelinkIsRetried(): void
+    {
+        $this->openSessionWithExposedSensor();
+
+        $this->session->relinkAfterSessionEnded();
+        EventLoopTicks::settleUntil(fn(): bool => \count($this->socket->listSentOfType('stewart/version')) === 2);
+        $this->timers->delay(Duration::seconds(1));
+        $this->answerVersionRequest(3);
+
+        self::assertSame(ComponentState::Active, $this->tracker->detection->state);
+    }
+
+    public function testLostConnectionEndsRelinking(): void
+    {
+        $this->openSessionWithExposedSensor();
+
+        $this->session->relinkAfterSessionEnded();
+        EventLoopTicks::settleUntil(fn(): bool => \count($this->socket->listSentOfType('stewart/version')) === 2);
+        $this->socket->close();
+        EventLoopTicks::settle();
+
+        self::assertCount(2, $this->socket->listSentOfType('stewart/version'));
+    }
+
     public function testRepeatedMissingComponentIsLoggedOnce(): void
     {
         $this->openSessionWithExposedSensor();
