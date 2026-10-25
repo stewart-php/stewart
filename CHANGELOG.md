@@ -5,25 +5,32 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
-## [Unreleased]
+## [2.1.0] - 2026-10-25
+
+Stewart and the `stewart` integration find each other again after Home Assistant restarts: exposed entities come back
+on their own, entities an app exposes while the integration loads appear once it answers, and a daemon that exposes
+nothing can leave the integration alone with `expose.enabled: false`.
 
 ### Added
 
 - `expose.enabled: false` stops a daemon that exposes no entities from talking to the stewart integration at all;
-  `expose*()` then throws `ExposureError::Disabled`, and `stewart status` and `stewart doctor` say it is off
+  `expose*()` then throws `ExposureError::Disabled`, and `stewart status` and `stewart doctor` say it is off ([#145](https://github.com/stewart-php/stewart/pull/145))
 
 ### Deprecated
 
 - `ExposureError::ComponentMissing`: Stewart no longer throws it, so a `catch` for it no longer runs; it is removed
-  in 3.0
+  in 3.0 ([#145](https://github.com/stewart-php/stewart/pull/145))
 
 ### Fixed
 
-- `expose*()` while the `stewart` integration is missing or still loading keeps the entity and creates it once the
-  integration answers, instead of throwing `ComponentMissing` and leaving it out until the app exposes it again
 - Exposed entities come back after Home Assistant restarts: when Stewart reconnects before Home Assistant has loaded
   the `stewart` integration, it keeps checking and opens the session once the integration is there, instead of leaving
-  the entities unavailable until Stewart restarts; an integration installed while Stewart runs is picked up the same way
+  the entities unavailable until Stewart restarts; an integration installed while Stewart runs is picked up the same
+  way ([#145](https://github.com/stewart-php/stewart/pull/145))
+- `expose*()` while the `stewart` integration is missing or still loading keeps the entity and creates it once the
+  integration answers, instead of throwing `ComponentMissing` and leaving it out until the app exposes it again ([#145](https://github.com/stewart-php/stewart/pull/145))
+- The log line, `stewart status` and the exposure error for a missing integration say it may still be loading, not
+  only that it is not installed ([#145](https://github.com/stewart-php/stewart/pull/145))
 
 ## [2.0.0] - 2026-10-24
 
