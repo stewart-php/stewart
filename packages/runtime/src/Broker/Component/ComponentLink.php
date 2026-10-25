@@ -70,7 +70,7 @@ final class ComponentLink
 
             if ($version === null) {
                 if ($this->recordDetectedState(ComponentState::Missing, null)) {
-                    $this->logger->info('The stewart Home Assistant integration is not installed, so apps cannot expose entities');
+                    $this->logger->info('The stewart Home Assistant integration is not installed or not loaded yet; Stewart keeps checking, and apps cannot expose entities until it answers');
                 }
 
                 return;

@@ -184,7 +184,7 @@ final class ComponentSessionTest extends TestCase
         $this->rejectVersionRequest(3);
         $this->answerVersionRequest(4);
 
-        $missing = array_filter($this->logger->listMessagesAt(LogLevel::INFO), static fn(string $message): bool => str_contains($message, 'not installed'));
+        $missing = array_filter($this->logger->listMessagesAt(LogLevel::INFO), static fn(string $message): bool => str_contains($message, 'not loaded yet'));
 
         self::assertCount(1, $missing);
     }
