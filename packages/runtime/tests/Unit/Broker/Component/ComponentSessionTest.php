@@ -129,6 +129,20 @@ final class ComponentSessionTest extends TestCase
         self::assertSame('1s', (string) $this->timers->clock->getMonotonicTime()->elapsedSince($startedAt));
     }
 
+    public function testExposureWhileMissingIsUpsertedOnceTheIntegrationAnswers(): void
+    {
+        $this->socket->replyWhenSent('stewart/version', self::createRejection('unknown_command'));
+        $this->session->openSession();
+        $this->exposeSensorBeforeSession();
+        $this->replyToNextOpen();
+
+        $this->session->startRelinkingUnlessSettled();
+        EventLoopTicks::settleUntil(fn(): bool => $this->socket->listSentOfType('stewart/entity/upsert') !== []);
+
+        self::assertSame(ComponentState::Active, $this->tracker->detection->state);
+        self::assertSame(21.0, $this->socket->listSentOfType('stewart/entity/upsert')[0]['state'] ?? null);
+    }
+
     public function testActiveComponentIsNotRetried(): void
     {
         $this->openSessionWithExposedSensor();

@@ -86,11 +86,11 @@ final class ExposureProxyTest extends TestCase
 
     public function testRefusalKeepsItsReason(): void
     {
-        $this->homeAssistant->componentTracker->recordState(ComponentState::Missing, null);
+        $this->homeAssistant->componentTracker->recordState(ComponentState::ProtocolMismatch, null);
 
         $this->forwardExpose(ResourceScope::forApp(new AppId('demo')));
 
-        self::assertSame(ExposureError::ComponentMissing->value, $this->listSentOfType(RequestFailed::class)[0]->details->reason);
+        self::assertSame(ExposureError::ProtocolMismatch->value, $this->listSentOfType(RequestFailed::class)[0]->details->reason);
         self::assertSame(0, $this->slots->inFlight);
     }
 

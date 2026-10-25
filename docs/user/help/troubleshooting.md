@@ -92,8 +92,9 @@ HTTP request, or a long loop, and replace it with a schedule, a wait, or a non-b
 
 ## Exposed entities
 
-**`ComponentMissing`.** The Stewart integration is not installed in Home Assistant, or Home Assistant was not
-restarted after installing it. See [Exposed entities](../guides/exposed-entities.md#setting-it-up).
+**Exposed entities do not appear.** The Stewart integration is not installed in Home Assistant, or Home Assistant
+was not restarted after installing it; `make status` shows `missing` on the `component` row. See
+[Exposed entities](../guides/exposed-entities.md#setting-it-up).
 
 **`ProtocolMismatch`.** Stewart and the integration have different versions.
 

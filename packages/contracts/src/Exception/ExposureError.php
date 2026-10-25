@@ -6,6 +6,7 @@ namespace Stewart\Contracts\Exception;
 
 enum ExposureError: string implements ExceptionReason
 {
+    /** @deprecated since 2.1, exposures wait for the integration instead; removed in 3.0 */
     case ComponentMissing = 'exposure_component_missing';
     case ProtocolMismatch = 'exposure_protocol_mismatch';
     case ComponentRefused = 'exposure_component_refused';

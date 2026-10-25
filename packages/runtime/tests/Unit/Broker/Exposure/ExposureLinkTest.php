@@ -96,11 +96,13 @@ final class ExposureLinkTest extends TestCase
         self::assertSame([], $this->socket->listSentOfType('stewart/entity/upsert'));
     }
 
-    public function testMissingComponentRefusesExposure(): void
+    public function testMissingComponentKeepsExposurePending(): void
     {
         $this->tracker->recordState(ComponentState::Missing, null);
 
-        $this->assertThrowsReason(ExposureError::ComponentMissing, fn() => $this->exposeTemperature(21.4));
+        self::assertNull($this->exposeTemperature(21.4));
+        self::assertSame([], $this->socket->listSentOfType('stewart/entity/upsert'));
+        self::assertSame(1, $this->link->countExposuresOfApp(new AppId('climate')));
     }
 
     public function testDisabledLinkRefusesExposure(): void

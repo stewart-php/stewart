@@ -94,7 +94,7 @@ Thrown as `ExposureException`.
 
 | Reason | Message | What to do |
 | --- | --- | --- |
-| `ComponentMissing` | Entity {key} cannot be exposed because the stewart Home Assistant integration is not installed or not loaded yet; see `stewart status`. | Install the Stewart integration in Home Assistant and restart it. |
+| `ComponentMissing` | Entity {key} cannot be exposed because the stewart Home Assistant integration is not installed or not loaded yet; see `stewart status`. | Nothing: Stewart no longer throws it, and exposures wait for the integration. It is removed in 3.0. |
 | `ProtocolMismatch` | Entity {key} cannot be exposed because the stewart Home Assistant integration speaks another protocol; see `stewart status`. | Update Stewart or the integration so both have the same version. |
 | `ComponentRefused` | Entity {key} cannot be exposed because Home Assistant refused the stewart integration session; see `stewart status`. |  |
 | `OutsideApp` | Entity {key} cannot be exposed outside an app, because its unique ID needs an app ID. |  |

@@ -23,7 +23,7 @@ return [
     'ControlError::ConnectionRejected' => 'For a wrong token, use the daemon\'s `STEWART_CONTROL__TOKEN`; `make status` runs next to the daemon with its `.env`.',
     'ControlError::ControlDisabled' => 'Pass the daemon\'s address, such as `--address tcp://homeassistant.local:7333`, or run `make status` next to the daemon.',
     'ControlError::ProtocolMismatch' => 'Use the `stewart` of the running daemon\'s version, for example `make status`, which runs in its container.',
-    'ExposureError::ComponentMissing' => 'Install the Stewart integration in Home Assistant and restart it.',
+    'ExposureError::ComponentMissing' => 'Nothing: Stewart no longer throws it, and exposures wait for the integration. It is removed in 3.0.',
     'ExposureError::ProtocolMismatch' => 'Update Stewart or the integration so both have the same version.',
     'ExposureError::Disabled' => 'Turn `expose.enabled` on, or stop exposing entities from the app.',
     'HaClientError::AdministratorRequired' => 'Create the token from a Home Assistant administrator.',
