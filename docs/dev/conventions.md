@@ -91,6 +91,11 @@ A public method that a minor replaces stays until the next major:
   `phpstan.neon.dist` allows `method.deprecated` in those test files only.
 - The release's CHANGELOG lists it under Deprecated, and its Upgrading section says how to move off it.
 
+A failure reason Stewart no longer throws keeps its enum case until the next major, with a
+`@deprecated since X.Y, …; removed in N.0` tag instead of the attribute: PHP would raise the attribute's deprecation on
+every `match` over the enum, `messageTemplate()` included. `phpstan.neon.dist` allows `classConstant.deprecated` in
+that enum's file only.
+
 ## Tests
 
 See [Testing](testing.md).

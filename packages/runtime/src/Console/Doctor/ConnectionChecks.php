@@ -14,6 +14,7 @@ use Stewart\Client\HaConfig;
 use Stewart\Contracts\Exception\StewartException;
 use Stewart\Contracts\Exception\StoreException;
 use Stewart\Runtime\Config\ConfigLoader;
+use Stewart\Runtime\Config\ExposeConfig;
 use Stewart\Runtime\Config\HttpConfig;
 use Stewart\Runtime\Config\PersistenceConfig;
 use Stewart\Runtime\Config\ProjectRoot;
@@ -52,7 +53,7 @@ final readonly class ConnectionChecks
             ? new DoctorFinding('config', DoctorOutcome::Pass, 'loads')
             : new DoctorFinding('config', DoctorOutcome::Pass, 'loads from the environment; there is no stewart.yaml');
 
-        return [$environmentFile, $configFile, ...$this->checkHttpListeners($config->http), ...$this->checkHomeAssistant($config->homeAssistant), $this->checkStore($config->persistence)];
+        return [$environmentFile, $configFile, ...$this->checkHttpListeners($config->http), ...$this->checkHomeAssistant($config->homeAssistant, $config->expose), $this->checkStore($config->persistence)];
     }
 
     /** @return list<DoctorFinding> */
@@ -84,7 +85,7 @@ final readonly class ConnectionChecks
     }
 
     /** @return list<DoctorFinding> */
-    private function checkHomeAssistant(?ConnectionConfig $connection): array
+    private function checkHomeAssistant(?ConnectionConfig $connection, ExposeConfig $expose): array
     {
         if ($connection === null) {
             return [new DoctorFinding('connection', DoctorOutcome::Skip, 'set STEWART_HOME_ASSISTANT__URL and STEWART_HOME_ASSISTANT__TOKEN in .env')];
@@ -95,7 +96,7 @@ final readonly class ConnectionChecks
         try {
             $client->connect();
 
-            return $this->checkConnectedHomeAssistant($client, $connection);
+            return $this->checkConnectedHomeAssistant($client, $connection, $expose);
         } catch (HaClientException $e) {
             return [new DoctorFinding('connection', DoctorOutcome::Fail, $e->getMessage())];
         } finally {
@@ -107,7 +108,7 @@ final readonly class ConnectionChecks
      * @return list<DoctorFinding>
      * @throws HaClientException
      */
-    private function checkConnectedHomeAssistant(HaClient $client, ConnectionConfig $connection): array
+    private function checkConnectedHomeAssistant(HaClient $client, ConnectionConfig $connection, ExposeConfig $expose): array
     {
         $user = $client->fetchCurrentUser();
         $userName = $user->name ?? $user->id;
@@ -118,10 +119,20 @@ final readonly class ConnectionChecks
                 ? new DoctorFinding('token', DoctorOutcome::Pass, \sprintf('belongs to %s, an administrator', $userName))
                 : new DoctorFinding('token', DoctorOutcome::Fail, \sprintf('belongs to %s, who is not an administrator; Stewart needs one to receive every event', $userName)),
             $this->checkLocation($client->getConfig()),
-            $user->isAdmin
-                ? $this->checkIntegration($client->findComponentVersion())
-                : new DoctorFinding('integration', DoctorOutcome::Skip, 'only an administrator token can ask for it'),
+            $this->checkIntegrationIfEnabled($client, $user->isAdmin, $expose),
         ];
+    }
+
+    /** @throws HaClientException */
+    private function checkIntegrationIfEnabled(HaClient $client, bool $asAdministrator, ExposeConfig $expose): DoctorFinding
+    {
+        if (!$expose->enabled) {
+            return new DoctorFinding('integration', DoctorOutcome::Skip, 'expose.enabled is off');
+        }
+
+        return $asAdministrator
+            ? $this->checkIntegration($client->findComponentVersion())
+            : new DoctorFinding('integration', DoctorOutcome::Skip, 'only an administrator token can ask for it');
     }
 
     private function checkLocation(HaConfig $haConfig): DoctorFinding

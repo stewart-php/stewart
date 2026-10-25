@@ -25,8 +25,13 @@ Exposed entities need the **Stewart integration** in Home Assistant, of the same
 2. Restart Home Assistant.
 3. Open **Settings → Devices & services → Add integration**, pick **Stewart** and confirm.
 
-Stewart finds the integration each time it connects; `make status` shows it on the `component` row. The integration
+Stewart finds the integration each time it connects; `make status` shows it on the `component` row. While it is
+missing, Stewart keeps checking, and creates the entities apps exposed meanwhile once it answers. The integration
 needs Home Assistant 2026.4 or newer, and Stewart's token must belong to an administrator.
+
+A daemon that never exposes entities can set `expose.enabled: false`. It then sends nothing to the integration, and
+`expose*()` throws `Disabled`. Entities it exposed before stay, unavailable; delete them with its hub, as under
+[Pruning](#pruning).
 
 ## How an entity is identified
 
@@ -168,7 +173,8 @@ Every handle call waits for Stewart's main process and can throw `ExposureExcept
 
 | Reason | When |
 |---|---|
-| `ComponentMissing`, `ProtocolMismatch`, `ComponentRefused` | The integration is not installed, has another version, or refused the session |
+| `ProtocolMismatch`, `ComponentRefused` | The integration has another version, or refused the session |
+| `Disabled` | `expose.enabled` is off |
 | `ConfigInvalid` | Home Assistant rejects the configuration, for example a unit that does not fit the device class |
 | `StateInvalid` | Home Assistant rejects the value |
 | `KeyInvalid` | The key is not lowercase letters, digits and `_`, starting with a letter |
@@ -196,8 +202,9 @@ rejection is thrown into the test:
 
 ## Common problems
 
-**`ComponentMissing`.** The Stewart integration is not installed, or Home Assistant was not restarted after installing
-it. The app keeps running without its entities.
+**Entities do not appear.** The Stewart integration is not installed, Home Assistant was not restarted after
+installing it, or Home Assistant is still loading it; `make status` shows `missing` on the `component` row. Until it
+answers, `getEntityId()` returns `null`, and Stewart creates the entities once it does.
 
 **`ProtocolMismatch`.** The integration and Stewart have different versions. Update the one that is behind.
 

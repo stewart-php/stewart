@@ -331,9 +331,9 @@ final class RecordingEntityExposureTest extends TestCase
     public function testRefusalIsThrown(): void
     {
         $exposure = new RecordingEntityExposure();
-        $exposure->refuseExposures(ExposureException::createForReason(ExposureError::ComponentMissing, key: 'level'));
+        $exposure->refuseExposures(ExposureException::createForReason(ExposureError::ProtocolMismatch, key: 'level'));
 
-        $this->assertThrowsReason(ExposureError::ComponentMissing, static fn() => $exposure->exposeSensor('level'));
+        $this->assertThrowsReason(ExposureError::ProtocolMismatch, static fn() => $exposure->exposeSensor('level'));
         self::assertTrue($exposure->exposures->isEmpty());
     }
 }

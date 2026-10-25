@@ -233,10 +233,11 @@ final readonly class StatusRenderer
         }
 
         return match ($component->state) {
-            ComponentState::Missing => $description . ', install the stewart integration in Home Assistant',
+            ComponentState::Missing => $description . ', not installed in Home Assistant or not loaded yet',
             ComponentState::ProtocolMismatch => \sprintf('%s, protocol %d where Stewart speaks %d', $description, $component->protocol ?? 0, ComponentProtocol::VERSION),
             ComponentState::Refused => $description . ', see the daemon log',
             ComponentState::Replaced => \sprintf('%s, another Stewart uses expose.instance "%s"', $description, $component->instance),
+            ComponentState::Disabled => $description . ', expose.enabled is off',
             ComponentState::Unchecked, ComponentState::Active => $description,
         };
     }

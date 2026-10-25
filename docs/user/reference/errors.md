@@ -94,7 +94,7 @@ Thrown as `ExposureException`.
 
 | Reason | Message | What to do |
 | --- | --- | --- |
-| `ComponentMissing` | Entity {key} cannot be exposed because the stewart Home Assistant integration is not installed; see `stewart status`. | Install the Stewart integration in Home Assistant and restart it. |
+| `ComponentMissing` | Entity {key} cannot be exposed because the stewart Home Assistant integration is not installed or not loaded yet; see `stewart status`. | Nothing: Stewart no longer throws it, and exposures wait for the integration. It is removed in 3.0. |
 | `ProtocolMismatch` | Entity {key} cannot be exposed because the stewart Home Assistant integration speaks another protocol; see `stewart status`. | Update Stewart or the integration so both have the same version. |
 | `ComponentRefused` | Entity {key} cannot be exposed because Home Assistant refused the stewart integration session; see `stewart status`. |  |
 | `OutsideApp` | Entity {key} cannot be exposed outside an app, because its unique ID needs an app ID. |  |
@@ -105,6 +105,7 @@ Thrown as `ExposureException`.
 | `Removed` | Exposed entity {key} was removed; expose it again to use it. |  |
 | `Unreachable` | Could not reach the broker for exposed entity {key}: {detail} |  |
 | `TimedOut` | The broker did not answer for exposed entity {key} within {timeout}. |  |
+| `Disabled` | Entity {key} cannot be exposed because expose.enabled is off. | Turn `expose.enabled` on, or stop exposing entities from the app. |
 
 ## HistoryError
 

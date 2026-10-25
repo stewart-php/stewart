@@ -69,6 +69,28 @@ final class ComponentLinkTest extends TestCase
         self::assertSame(ComponentState::Unchecked, $this->tracker->detection->state);
     }
 
+    public function testDisabledLinkSendsNothing(): void
+    {
+        $link = $this->createDisabledLink();
+
+        $this->client->connect();
+        $link->establishLink();
+
+        self::assertSame(ComponentState::Disabled, $this->tracker->detection->state);
+        self::assertSame([], $this->socket->listSentOfType('stewart/version'));
+    }
+
+    public function testDisabledLinkStaysDisabledWhenLost(): void
+    {
+        $link = $this->createDisabledLink();
+        $this->client->connect();
+        $link->establishLink();
+
+        $link->markLinkLost();
+
+        self::assertSame(ComponentState::Disabled, $this->tracker->detection->state);
+    }
+
     public function testMissingComponentOpensNoSession(): void
     {
         $this->socket->replyWhenSent('stewart/version', self::createRejection('unknown_command'));
@@ -199,6 +221,13 @@ final class ComponentLinkTest extends TestCase
         $this->pushSessionEvent(self::createCommandEvent());
 
         self::assertSame([], $this->commands);
+    }
+
+    private function createDisabledLink(): ComponentLink
+    {
+        $expose = new ExposeConfig(ComponentInstance::parse('upstairs'), Duration::seconds(12), enabled: false);
+
+        return new ComponentLink($this->client, new NullLogger(), $this->tracker, $expose, new StewartVersion(self::STEWART_VERSION));
     }
 
     private function connectAndEstablish(): void

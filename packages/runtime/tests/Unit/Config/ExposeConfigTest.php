@@ -31,6 +31,16 @@ final class ExposeConfigTest extends TestCase
         self::assertThrowsReason(ConfigurationError::KeyParseFailed, static fn() => ConfigFixture::createStewartConfig(['expose' => ['instance' => 'up-stairs']]));
     }
 
+    public function testExposingIsOnByDefault(): void
+    {
+        self::assertTrue(ConfigFixture::createStewartConfig()->expose->enabled);
+    }
+
+    public function testExposingCanBeTurnedOff(): void
+    {
+        self::assertFalse(ConfigFixture::createStewartConfig(['expose' => ['enabled' => false]])->expose->enabled);
+    }
+
     public function testPruneIsOnByDefault(): void
     {
         self::assertTrue(ConfigFixture::createStewartConfig()->expose->prune);

@@ -95,6 +95,7 @@ final class WebsocketHaSession implements HaSession
     {
         $this->open = false;
         $this->stop->cancel();
+        $this->componentSession->markLinkLost();
         $this->client->close();
     }
 
@@ -209,6 +210,8 @@ final class WebsocketHaSession implements HaSession
             $this->establishing = false;
             $this->pendingUpdates = [];
         }
+
+        $this->componentSession->startRelinkingUnlessSettled();
     }
 
     private function onStateUpdated(StateUpdate $update): void

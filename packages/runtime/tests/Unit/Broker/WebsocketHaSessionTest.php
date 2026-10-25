@@ -44,7 +44,9 @@ use Stewart\Runtime\State\StateCache;
 use Stewart\Runtime\Tests\Fixtures\Broker\AppTopologyFixture;
 use Stewart\Runtime\Tests\Fixtures\Broker\RecordingSessionListener;
 use Stewart\Runtime\Tests\Fixtures\Config\ConfigFixture;
+use Stewart\Runtime\Tests\Fixtures\Time\StalledDeadlines;
 use Stewart\Support\State\StateUpdate;
+use Stewart\Support\Time\Deadlines;
 use Stewart\Support\Wire\TriggerSpec;
 use Stewart\Testing\Exception\AssertsReason;
 use Stewart\Testing\Logging\RecordingLogger;
@@ -84,6 +86,8 @@ final class WebsocketHaSessionTest extends TestCase
 
     private ManualTimers $timers;
 
+    private Deadlines $relinkDeadlines;
+
     private RecordingSessionListener $listener;
 
     private RecordingLogger $logger;
@@ -99,6 +103,7 @@ final class WebsocketHaSessionTest extends TestCase
     protected function setUp(): void
     {
         $this->timers = new ManualTimers();
+        $this->relinkDeadlines = new StalledDeadlines();
         $this->listener = new RecordingSessionListener();
         $this->logger = new RecordingLogger();
     }
@@ -354,6 +359,36 @@ final class WebsocketHaSessionTest extends TestCase
         self::assertSame(ComponentState::Active, $this->componentTracker?->detection->state);
     }
 
+    public function testComponentLoadedLaterThanTheReconnectIsLinkedAfterBackoff(): void
+    {
+        $first = self::createHaSocket(['hall' => 'off'], withComponent: true);
+        $second = self::createHaSocket(['hall' => 'on']);
+        $second->answerEverySend('stewart/version', static fn(): array => ['type' => 'result', 'success' => true, 'result' => ['component_version' => '0.9.0', 'protocol' => ComponentProtocol::VERSION]]);
+        $this->relinkDeadlines = $this->timers;
+        $session = $this->open($first, $second);
+
+        $first->close(1001, 'restarting');
+        EventLoopTicks::settleUntil(static fn(): bool => $second->listSentOfType('stewart/session/subscribe') !== []);
+
+        self::assertTrue($session->isConnected());
+        self::assertCount(2, $second->listSentOfType('stewart/version'));
+        self::assertSame(ComponentState::Active, $this->componentTracker?->detection->state);
+    }
+
+    public function testClosingStopsWaitingForTheComponent(): void
+    {
+        $relinks = $this->relinkDeadlines = new StalledDeadlines();
+        $session = $this->open(self::createHaSocket(['hall' => 'off']));
+        EventLoopTicks::settle();
+
+        self::assertSame(1, $relinks->countWaiting());
+
+        $session->close();
+        EventLoopTicks::settle();
+
+        self::assertSame(0, $relinks->countWaiting());
+    }
+
     public function testPendingExposureIsUpsertedOnConnect(): void
     {
         $socket = self::createHaSocket(['hall' => 'off'], withComponent: true);
@@ -377,6 +412,7 @@ final class WebsocketHaSessionTest extends TestCase
 
     public function testEndedComponentSessionIsReopenedAndReplayed(): void
     {
+        $this->relinkDeadlines = $this->timers;
         $socket = self::createHaSocket(['hall' => 'off'], withComponent: true);
         $session = $this->createSession($socket);
         $this->exposures->exposeEntity(
@@ -537,7 +573,7 @@ final class WebsocketHaSessionTest extends TestCase
                 new ExposureReconciler(AppTopologyFixture::createTopology(), $exposures, $client, $this->componentTracker, $expose, $this->timers, new NullLogger()),
                 $this->componentTracker,
                 $config,
-                $this->timers,
+                $this->relinkDeadlines,
                 new NullLogger(),
             ),
             $exposures,

@@ -56,6 +56,12 @@ final class ComponentLink
     /** @throws HaClientException */
     public function establishLink(): void
     {
+        if (!$this->expose->enabled) {
+            $this->tracker->recordState(ComponentState::Disabled, null);
+
+            return;
+        }
+
         $generation = ++$this->connectionGeneration;
         $version = null;
 
@@ -64,7 +70,7 @@ final class ComponentLink
 
             if ($version === null) {
                 if ($this->recordDetectedState(ComponentState::Missing, null)) {
-                    $this->logger->info('The stewart Home Assistant integration is not installed, so apps cannot expose entities');
+                    $this->logger->info('The stewart Home Assistant integration is not installed or not loaded yet; Stewart keeps checking, and apps cannot expose entities until it answers');
                 }
 
                 return;
@@ -108,7 +114,10 @@ final class ComponentLink
     public function markLinkLost(): void
     {
         ++$this->connectionGeneration;
-        $this->tracker->recordStateKeepingVersion(ComponentState::Unchecked);
+
+        if ($this->expose->enabled) {
+            $this->tracker->recordStateKeepingVersion(ComponentState::Unchecked);
+        }
     }
 
     // A relink retries while the component is missing; only the first of those attempts logs.

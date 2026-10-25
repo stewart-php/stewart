@@ -146,8 +146,9 @@ final class StatusRendererTest extends TestCase
     {
         $since = self::createInstantAt(self::NOW - 120.0);
 
-        yield 'missing' => [new ComponentStatus(ComponentState::Missing, $since, 'default'), 'missing since 2m 00s ago, install the stewart integration in Home Assistant'];
+        yield 'missing' => [new ComponentStatus(ComponentState::Missing, $since, 'default'), 'missing since 2m 00s ago, not installed in Home Assistant or not loaded yet'];
         yield 'protocol mismatch' => [new ComponentStatus(ComponentState::ProtocolMismatch, $since, 'default', '0.10.0', 3), 'protocol mismatch since 2m 00s ago, version 0.10.0, protocol 3 where Stewart speaks 2'];
+        yield 'disabled' => [new ComponentStatus(ComponentState::Disabled, $since, 'default'), 'disabled since 2m 00s ago, expose.enabled is off'];
         yield 'replaced' => [new ComponentStatus(ComponentState::Replaced, $since, 'upstairs', '0.9.0', 1), 'replaced since 2m 00s ago, version 0.9.0, another Stewart uses expose.instance "upstairs"'];
     }
 

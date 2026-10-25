@@ -6,6 +6,7 @@ namespace Stewart\Contracts\Exception;
 
 enum ExposureError: string implements ExceptionReason
 {
+    /** @deprecated since 2.1, exposures wait for the integration instead; removed in 3.0 */
     case ComponentMissing = 'exposure_component_missing';
     case ProtocolMismatch = 'exposure_protocol_mismatch';
     case ComponentRefused = 'exposure_component_refused';
@@ -17,11 +18,12 @@ enum ExposureError: string implements ExceptionReason
     case Removed = 'exposure_removed';
     case Unreachable = 'exposure_unreachable';
     case TimedOut = 'exposure_timed_out';
+    case Disabled = 'exposure_disabled';
 
     public function messageTemplate(): string
     {
         return match ($this) {
-            self::ComponentMissing => 'Entity {key} cannot be exposed because the stewart Home Assistant integration is not installed; see `stewart status`.',
+            self::ComponentMissing => 'Entity {key} cannot be exposed because the stewart Home Assistant integration is not installed or not loaded yet; see `stewart status`.',
             self::ProtocolMismatch => 'Entity {key} cannot be exposed because the stewart Home Assistant integration speaks another protocol; see `stewart status`.',
             self::ComponentRefused => 'Entity {key} cannot be exposed because Home Assistant refused the stewart integration session; see `stewart status`.',
             self::OutsideApp => 'Entity {key} cannot be exposed outside an app, because its unique ID needs an app ID.',
@@ -32,6 +34,7 @@ enum ExposureError: string implements ExceptionReason
             self::Removed => 'Exposed entity {key} was removed; expose it again to use it.',
             self::Unreachable => 'Could not reach the broker for exposed entity {key}: {detail}',
             self::TimedOut => 'The broker did not answer for exposed entity {key} within {timeout}.',
+            self::Disabled => 'Entity {key} cannot be exposed because expose.enabled is off.',
         };
     }
 }

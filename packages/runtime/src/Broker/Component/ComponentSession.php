@@ -8,6 +8,7 @@ use Amp\Cancellation;
 use Amp\CancelledException;
 use Amp\DeferredCancellation;
 use Psr\Log\LoggerInterface;
+use Stewart\Client\Exception\HaClientError;
 use Stewart\Client\Exception\HaClientException;
 use Stewart\Runtime\Broker\Exposure\ExposureLink;
 use Stewart\Runtime\Broker\Exposure\ExposureReconciler;
@@ -53,17 +54,17 @@ final class ComponentSession
         }
 
         $this->logger->info('The stewart Home Assistant integration session ended; opening a new one');
-        $relinking = $this->relinking = new DeferredCancellation();
+        $this->startRelinking(0);
+    }
 
-        async(function () use ($relinking): void {
-            try {
-                $this->relinkUntilSettled($relinking->getCancellation());
-            } finally {
-                if ($this->relinking === $relinking) {
-                    $this->relinking = null;
-                }
-            }
-        })->ignore();
+    // Home Assistant answers before it has loaded the integration, so a connect can find it missing.
+    public function startRelinkingUnlessSettled(): void
+    {
+        if ($this->relinking !== null || $this->hasSettled()) {
+            return;
+        }
+
+        $this->startRelinking(1);
     }
 
     public function markLinkLost(): void
@@ -73,22 +74,44 @@ final class ComponentSession
         $this->link->markLinkLost();
     }
 
-    private function relinkUntilSettled(Cancellation $stop): void
+    private function startRelinking(int $attemptsMade): void
     {
-        for ($attempt = 1; ; ++$attempt) {
+        $relinking = $this->relinking = new DeferredCancellation();
+
+        async(function () use ($relinking, $attemptsMade): void {
+            try {
+                $this->relinkUntilSettled($attemptsMade, $relinking->getCancellation());
+            } finally {
+                if ($this->relinking === $relinking) {
+                    $this->relinking = null;
+                }
+            }
+        })->ignore();
+    }
+
+    private function relinkUntilSettled(int $attemptsMade, Cancellation $stop): void
+    {
+        for ($attempt = $attemptsMade + 1; ; ++$attempt) {
+            if ($attempt > 1) {
+                try {
+                    $this->deadlines->delay($this->config->reconnectBackoff->delayFor($attempt - 1), $stop);
+                } catch (CancelledException) {
+                    return;
+                }
+            }
+
             try {
                 $this->openSession();
             } catch (HaClientException $e) {
+                // Any other failure means the connection is gone; the reconnect relinks.
+                if ($e->reason !== HaClientError::CommandTimedOut) {
+                    return;
+                }
+
                 $this->logger->debug('Could not open the stewart integration session yet', ['exception' => $e, 'attempt' => $attempt]);
             }
 
             if ($stop->isRequested() || $this->hasSettled()) {
-                return;
-            }
-
-            try {
-                $this->deadlines->delay($this->config->reconnectBackoff->delayFor($attempt), $stop);
-            } catch (CancelledException) {
                 return;
             }
         }
@@ -99,7 +122,7 @@ final class ComponentSession
     {
         return match ($this->tracker->detection->state) {
             ComponentState::Unchecked, ComponentState::Missing => false,
-            ComponentState::ProtocolMismatch, ComponentState::Refused, ComponentState::Replaced, ComponentState::Active => true,
+            ComponentState::ProtocolMismatch, ComponentState::Refused, ComponentState::Replaced, ComponentState::Active, ComponentState::Disabled => true,
         };
     }
 }

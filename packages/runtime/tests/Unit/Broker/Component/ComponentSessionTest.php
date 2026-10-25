@@ -61,27 +61,18 @@ final class ComponentSessionTest extends TestCase
 
     private RecordingLogger $logger;
 
+    private HaClient $client;
+
     protected function setUp(): void
     {
         $this->timers = new ManualTimers();
         $this->socket = FakeWebsocketConnector::createAuthenticatedConnection();
         $this->tracker = new ComponentTracker($this->timers->clock);
         $this->logger = new RecordingLogger();
+        $this->client = $this->createClient();
+        $this->session = $this->createSession(new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10)));
 
-        $client = $this->createClient();
-        $expose = new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10));
-        $this->exposures = new ExposureLink($client, new NullLogger(), $this->tracker, $expose);
-        $this->session = new ComponentSession(
-            new ComponentLink($client, $this->logger, $this->tracker, $expose, new StewartVersion('0.11.0')),
-            $this->exposures,
-            new ExposureReconciler(AppTopologyFixture::createTopology(), $this->exposures, $client, $this->tracker, $expose, $this->timers, new NullLogger()),
-            $this->tracker,
-            ConfigFixture::createStewartConfig(['reconnect' => ['initial_delay' => '1s', 'max_delay' => '4s']]),
-            $this->timers,
-            $this->logger,
-        );
-
-        $client->connect();
+        $this->client->connect();
     }
 
     public function testOpenSessionUpsertsKeptExposures(): void
@@ -123,6 +114,81 @@ final class ComponentSessionTest extends TestCase
         self::assertCount(2, $this->socket->listSentOfType('stewart/entity/upsert'));
     }
 
+    public function testComponentMissingOnConnectIsRetriedAfterBackoff(): void
+    {
+        $this->openSessionWithExposedSensor();
+        $this->session->markLinkLost();
+        $this->socket->replyWhenSent('stewart/version', self::createRejection('unknown_command'));
+        $this->session->openSession();
+        $startedAt = $this->timers->clock->getMonotonicTime();
+
+        $this->session->startRelinkingUnlessSettled();
+        $this->answerVersionRequest(3);
+
+        self::assertSame(ComponentState::Active, $this->tracker->detection->state);
+        self::assertSame('1s', (string) $this->timers->clock->getMonotonicTime()->elapsedSince($startedAt));
+    }
+
+    public function testExposureWhileMissingIsUpsertedOnceTheIntegrationAnswers(): void
+    {
+        $this->socket->replyWhenSent('stewart/version', self::createRejection('unknown_command'));
+        $this->session->openSession();
+        $this->exposeSensorBeforeSession();
+        $this->replyToNextOpen();
+
+        $this->session->startRelinkingUnlessSettled();
+        EventLoopTicks::settleUntil(fn(): bool => $this->socket->listSentOfType('stewart/entity/upsert') !== []);
+
+        self::assertSame(ComponentState::Active, $this->tracker->detection->state);
+        self::assertSame(21.0, $this->socket->listSentOfType('stewart/entity/upsert')[0]['state'] ?? null);
+    }
+
+    public function testActiveComponentIsNotRetried(): void
+    {
+        $this->openSessionWithExposedSensor();
+
+        $this->session->startRelinkingUnlessSettled();
+        EventLoopTicks::settle();
+
+        self::assertCount(1, $this->socket->listSentOfType('stewart/version'));
+    }
+
+    public function testTimedOutRelinkIsRetried(): void
+    {
+        $this->openSessionWithExposedSensor();
+
+        $this->session->relinkAfterSessionEnded();
+        EventLoopTicks::settleUntil(fn(): bool => \count($this->socket->listSentOfType('stewart/version')) === 2);
+        $this->timers->delay(Duration::seconds(1));
+        $this->answerVersionRequest(3);
+
+        self::assertSame(ComponentState::Active, $this->tracker->detection->state);
+    }
+
+    public function testLostConnectionEndsRelinking(): void
+    {
+        $this->openSessionWithExposedSensor();
+
+        $this->session->relinkAfterSessionEnded();
+        EventLoopTicks::settleUntil(fn(): bool => \count($this->socket->listSentOfType('stewart/version')) === 2);
+        $this->socket->close();
+        EventLoopTicks::settle();
+
+        self::assertCount(2, $this->socket->listSentOfType('stewart/version'));
+    }
+
+    public function testDisabledLinkIsNotRetried(): void
+    {
+        $session = $this->createSession(new ExposeConfig(ComponentInstance::parse('default'), Duration::seconds(10), enabled: false));
+
+        $session->openSession();
+        $session->startRelinkingUnlessSettled();
+        EventLoopTicks::settle();
+
+        self::assertSame(ComponentState::Disabled, $this->tracker->detection->state);
+        self::assertSame([], $this->socket->listSentOfType('stewart/version'));
+    }
+
     public function testRepeatedMissingComponentIsLoggedOnce(): void
     {
         $this->openSessionWithExposedSensor();
@@ -132,7 +198,7 @@ final class ComponentSessionTest extends TestCase
         $this->rejectVersionRequest(3);
         $this->answerVersionRequest(4);
 
-        $missing = array_filter($this->logger->listMessagesAt(LogLevel::INFO), static fn(string $message): bool => str_contains($message, 'not installed'));
+        $missing = array_filter($this->logger->listMessagesAt(LogLevel::INFO), static fn(string $message): bool => str_contains($message, 'not loaded yet'));
 
         self::assertCount(1, $missing);
     }
@@ -219,6 +285,21 @@ final class ComponentSessionTest extends TestCase
     private static function createRejection(string $code): array
     {
         return ['type' => 'result', 'success' => false, 'error' => ['code' => $code, 'message' => 'Refused.']];
+    }
+
+    private function createSession(ExposeConfig $expose): ComponentSession
+    {
+        $this->exposures = new ExposureLink($this->client, new NullLogger(), $this->tracker, $expose);
+
+        return new ComponentSession(
+            new ComponentLink($this->client, $this->logger, $this->tracker, $expose, new StewartVersion('0.11.0')),
+            $this->exposures,
+            new ExposureReconciler(AppTopologyFixture::createTopology(), $this->exposures, $this->client, $this->tracker, $expose, $this->timers, new NullLogger()),
+            $this->tracker,
+            ConfigFixture::createStewartConfig(['reconnect' => ['initial_delay' => '1s', 'max_delay' => '4s']]),
+            $this->timers,
+            $this->logger,
+        );
     }
 
     private function createClient(): HaClient

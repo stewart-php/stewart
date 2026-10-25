@@ -5,6 +5,26 @@ integration share one version. The format follows [Keep a Changelog](https://kee
 1.0 Stewart follows [semantic versioning](https://semver.org/): only a major release breaks. Before 1.0, a minor
 release could break; a release's "Upgrading" section says what to change.
 
+## [Unreleased]
+
+### Added
+
+- `expose.enabled: false` stops a daemon that exposes no entities from talking to the stewart integration at all;
+  `expose*()` then throws `ExposureError::Disabled`, and `stewart status` and `stewart doctor` say it is off
+
+### Deprecated
+
+- `ExposureError::ComponentMissing`: Stewart no longer throws it, so a `catch` for it no longer runs; it is removed
+  in 3.0
+
+### Fixed
+
+- `expose*()` while the `stewart` integration is missing or still loading keeps the entity and creates it once the
+  integration answers, instead of throwing `ComponentMissing` and leaving it out until the app exposes it again
+- Exposed entities come back after Home Assistant restarts: when Stewart reconnects before Home Assistant has loaded
+  the `stewart` integration, it keeps checking and opens the session once the integration is there, instead of leaving
+  the entities unavailable until Stewart restarts; an integration installed while Stewart runs is picked up the same way
+
 ## [2.0.0] - 2026-10-24
 
 One word for one thing: Stewart calls Home Assistant's actions actions everywhere, from `callAction()` and

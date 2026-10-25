@@ -261,10 +261,10 @@ final class ExposureLink
     private function assertComponentUsable(ExposedEntityKey $key): void
     {
         match ($this->tracker->detection->state) {
-            ComponentState::Missing => throw ExposureException::createForReason(ExposureError::ComponentMissing, key: $key->value),
             ComponentState::ProtocolMismatch => throw ExposureException::createForReason(ExposureError::ProtocolMismatch, key: $key->value),
             ComponentState::Refused => throw ExposureException::createForReason(ExposureError::ComponentRefused, key: $key->value),
-            ComponentState::Unchecked, ComponentState::Replaced, ComponentState::Active => null,
+            ComponentState::Disabled => throw ExposureException::createForReason(ExposureError::Disabled, key: $key->value),
+            ComponentState::Unchecked, ComponentState::Missing, ComponentState::Replaced, ComponentState::Active => null,
         };
     }
 

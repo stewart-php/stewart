@@ -12,4 +12,5 @@ enum ComponentState: string
     case Refused = 'refused';
     case Replaced = 'replaced';
     case Active = 'active';
+    case Disabled = 'disabled';
 }

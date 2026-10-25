@@ -56,6 +56,10 @@ parameters:
     phpat:
         ignore_built_in_classes: true
     ignoreErrors:
+        # A reason enum's own match names its deprecated cases.
+        -
+            identifier: classConstant.deprecated
+            path: packages/contracts/src/Exception/ExposureError.php
         # The point of the fixture: an app written against classes nobody has generated yet.
         -
             identifier: class.notFound

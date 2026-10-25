@@ -15,10 +15,11 @@ component.
 ## Connect
 
 Every `stewart/*` command rides the broker's existing WebSocket session, after the core subscriptions and the state
-seed. On each connect the broker:
+seed. With `expose.enabled` off the broker sends none of them. Otherwise, on each connect it:
 
-1. sends `stewart/version`. An `unknown_command` error means no component; a `protocol` other than Stewart's means a
-   mismatch. Either way exposure is off for this connection, and `stewart status` says why.
+1. sends `stewart/version`. An `unknown_command` error means no component yet, often one that Home Assistant is
+   still loading: exposures wait, and the broker asks again on the reconnect backoff until it answers. A `protocol`
+   other than Stewart's means a mismatch, and exposure is off for this connection. `stewart status` says which.
 2. sends `stewart/session/subscribe` with its instance, protocol, version and `command_timeout`. From here the
    component treats the instance as live.
 3. replays every exposed entity (below).
@@ -81,7 +82,7 @@ unavailable. `expose.prune: false` skips the call.
 
 | What happens | How it surfaces | What happens next |
 |---|---|---|
-| The component is not installed | `unknown_command` on `stewart/version` | Exposure off; `expose*()` throws `ExposureError::ComponentMissing` |
+| The component is not installed or not loaded yet | `unknown_command` on `stewart/version` | Exposures wait; the broker asks again on the reconnect backoff and replays them once it answers |
 | Stewart and the component disagree on the protocol | `protocol` differs, or `protocol_mismatch` on subscribe | Exposure off; `expose*()` throws `ExposureError::ProtocolMismatch` |
 | The session ends | Home Assistant closes the subscription | Every entity of the instance becomes unavailable until the replay |
 | A handler is too slow | No `stewart/command/result` within `command_timeout` | The action call fails; a late answer gets `not_found` |
