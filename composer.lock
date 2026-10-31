@@ -5243,11 +5243,11 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "2.3.1",
+            "version": "2.3.3",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/6155239b488e95d26d1ebd95c6b4bb294d7f09db",
-                "reference": "6155239b488e95d26d1ebd95c6b4bb294d7f09db",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/4b57dc8ca7456b635d1661845f44bc060b02c6b0",
+                "reference": "4b57dc8ca7456b635d1661845f44bc060b02c6b0",
                 "shasum": ""
             },
             "require": {
@@ -5303,7 +5303,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-10-08T21:09:11+00:00"
+            "time": "2026-10-27T14:06:26+00:00"
         },
         {
             "name": "phpstan/phpstan-deprecation-rules",
@@ -7799,7 +7799,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/codegen",
-                "reference": "6b40610ca777a615cf321cb16924e505e9650306"
+                "reference": "ca5b0b0df0a07b6f66f78ee19ebd5c0b51bd68d0"
             },
             "require": {
                 "ext-ctype": "*",
@@ -7838,7 +7838,7 @@
             "license": [
                 "MIT"
             ],
-            "description": "Generates typed entity and service classes from a Home Assistant instance",
+            "description": "Generates typed entity and action classes from a Home Assistant instance",
             "homepage": "https://github.com/stewart-php/stewart",
             "support": {
                 "issues": "https://github.com/stewart-php/stewart/issues",
@@ -7856,9 +7856,10 @@
             "dist": {
                 "type": "path",
                 "url": "packages/phpstan",
-                "reference": "fc3f17d0bde22c85f9d7708b1ea54f1239f22de8"
+                "reference": "de6d066db659bc254b4b911fb285a070feb436c2"
             },
             "require": {
+                "composer-runtime-api": "^2.2",
                 "php": ">=8.5.12",
                 "phpstan/phpstan": "^2.3",
                 "stewart-php/contracts": "self.version",
